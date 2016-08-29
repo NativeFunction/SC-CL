@@ -1087,7 +1087,8 @@ public:
         return NULL;
     }
     
-    
+    //int x = 2 + 2;
+	//
     int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, const NamedDecl *lastDecl=NULL) {
         if(isa<IntegerLiteral>(e)) {
             const IntegerLiteral *literal = cast<const IntegerLiteral>(e);
@@ -1193,7 +1194,7 @@ public:
         }
 		else if(isa<CastExpr>(e)) {
             const CastExpr *icast = cast<const CastExpr>(e);
-			out << icast->getCastKindName() << endl;
+			//out << icast->getCastKindName() << endl;
             switch(icast->getCastKind()){
                 case clang::CK_IntegralToFloating:
                 {
@@ -1394,7 +1395,7 @@ public:
                 } else if(isa<DeclRefExpr>(subE)){
                     parseExpression(subE, false, false);
                 } else {
-                    parseExpression(subE, false, false);
+                    parseExpression(subE, false, true);
                 }
                 if(isLtoRValue)
                     out << "pGet" << endl;
@@ -1474,7 +1475,6 @@ public:
 			const BinaryOperator *bOp = cast<const BinaryOperator>(e);
 
 			if (bOp->getOpcode() == BO_Assign) {
-
 				parseExpression(bOp->getRHS(), isAddr, true, true);
 				if (bOp->getRHS()->getType()->isStructureOrClassType()) {
 					int size = getSizeOfType(bOp->getRHS()->getType().getTypePtr());
@@ -1684,7 +1684,7 @@ public:
 						}
 					}
 
-					
+				
 					
 					if (!isLtoRValue) {
 
@@ -1896,6 +1896,7 @@ public:
         
 
         parseExpression(index, false, true);
+
         parseExpression(base, true);
         const DeclRefExpr *declRef = getDeclRefExpr(base);
         const Type *type = base->getType().getTypePtr();//declRef->getType().getTypePtr()->getArrayElementTypeNoTypeQual();
