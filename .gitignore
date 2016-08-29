@@ -8,3 +8,6 @@ cmake_install.cmake
 loop-convert.dir/Debug/
 loop-convert.vcxproj
 loop-convert.vcxproj.filters
+loop-convert.VC.db
+loop-convert.VC.VC.opendb
+loop-convert.sln
