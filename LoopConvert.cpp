@@ -26,6 +26,7 @@ using namespace clang::tooling;
 using namespace std;
 static llvm::cl::OptionCategory ToolingSampleCategory("Tooling Sample");
 
+
 static Rewriter rewriter;
 
 map<string, int> locals;
