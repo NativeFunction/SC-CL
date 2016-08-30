@@ -686,6 +686,11 @@ public:
 			LabelStmt *labelStmt = cast<LabelStmt>(s);
 			out << ":" << labelStmt->getName() << endl;
 		}
+		else if (isa<GCCAsmStmt>(s))
+		{
+			GCCAsmStmt *asmstmt = cast<GCCAsmStmt>(s);
+			out << asmstmt->getAsmString()->getString().str() << endl;
+		}
 		else {
             out << "Unhandled Stmt" << endl;
         }
@@ -1011,7 +1016,7 @@ public:
 						int intValue = intVal->getValue().getSExtValue();
 
 						out << funcName.substr(3);
-						out << ((intValue & 0xFF) == intValue ? "2 " : "2 ");
+						out << ((intValue & 0xFFFF) == intValue ? "2 " : "3 ");
 						out << intValue << endl;
 					}
 					else
