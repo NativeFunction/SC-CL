@@ -825,10 +825,16 @@ public:
 				out << funcName.substr(3) << " ";
 				if (isa<IntegerLiteral>(argArray[2])) {
 					const IntegerLiteral *literal = cast<const IntegerLiteral>(argArray[2]);
-					out << literal->getValue().getSExtValue() << endl;
-				}
-				else if (isa<CastExpr>(argArray[2])) {
-					out << parseCast(cast<const CastExpr>(argArray[2])) << endl;
+					int64_t val = literal->getValue().getSExtValue();
+					if (val > 255 || val < 1)
+					{
+						llvm::errs() << "String max length must be between 1 and 255";
+						return false;
+					}
+					else
+					{
+						out << val << endl;
+					}
 				}
 				else
 				{
