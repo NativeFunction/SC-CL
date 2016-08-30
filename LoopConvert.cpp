@@ -909,7 +909,7 @@ public:
 			out << endl;
 			return true;
 		}
-		else if (funcName == "@__getframe" || funcName == "@__getFramep" || funcName == "@__setframe")
+		else if (funcName == "@__getframe" || funcName == "@__getframep" || funcName == "@__setframe")
 		{
 			if (argCount == 1)
 			{
