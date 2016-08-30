@@ -2700,10 +2700,9 @@ public:
 													b = 0;
 													buffer = 0;
 												}
-												if (ArrayOut[i] <= 255)
-													((uint8_t*)(&buffer))[b] = (uint8_t)ArrayOut[i];
-												else
-													Throw("Value " + to_string(ArrayOut[i]) + " is too large to fit in size char", rewriter, varDecl->getLocStart());
+												
+												((uint8_t*)(&buffer))[b] = ArrayOut[i] % 256;
+												
 											}
 											if (b != 0)
 											{
