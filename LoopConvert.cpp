@@ -815,14 +815,14 @@ public:
 
 		if (funcName == "@__strcopy" || funcName == "@__stradd" || funcName == "@__straddi" || funcName == "@__itos") {
 
-			if (argCount != 2)
+			if (argCount != 3)
 				out << "!!Invalid " << funcName << " parameters!" << endl;
 			else
 			{
 				parseExpression(argArray[1]);
 				parseExpression(argArray[0]);
 
-				out << funcName << " ";
+				out << funcName.substr(3) << " ";
 				if (isa<IntegerLiteral>(argArray[2])) {
 					const IntegerLiteral *literal = cast<const IntegerLiteral>(argArray[2]);
 					out << literal->getValue().getSExtValue() << endl;
