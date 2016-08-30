@@ -977,7 +977,7 @@ public:
 						int intValue = intVal->getValue().getSExtValue();
 
 						out << funcName.substr(3);
-						out << ((intValue & 0xFF) == intValue) ? "2 " : "3 ";
+						out << ((intValue & 0xFFFF) == intValue) ? "2 " : "3 ";
 						out << intValue << endl;
 					}
 					else
@@ -997,7 +997,7 @@ public:
 						int intValue = intVal->getValue().getSExtValue();
 
 						out << funcName.substr(3);
-						out << ((intValue & 0xFF) == intValue) ? "2 " : "3 ";
+						out << ((intValue & 0xFFFF) == intValue) ? "2 " : "3 ";
 						out << intValue << endl;
 					}
 					else
