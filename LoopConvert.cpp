@@ -813,9 +813,15 @@ public:
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
 
+<<<<<<< HEAD
 		if (funcName == "@__strcpy" || funcName == "@__stradd" || funcName == "@__straddi" || funcName == "@__itos") {
 
 			if (argCount != 3)
+=======
+		if (funcName == "@__strcopy" || funcName == "@__stradd" || funcName == "@__straddi" || funcName == "@__itos") {
+
+			if (argCount != 2)
+>>>>>>> e0e7ce01bced1fe2ce8136fe8e51b536e5359040
 				out << "!!Invalid " << funcName << " parameters!" << endl;
 			else
 			{
@@ -962,6 +968,11 @@ public:
 		else if (funcName == "@__getglobal" || funcName == "@__getglobalp" || funcName == "@__getglobal")
 		{
 			if (funcName == "@__getglobal" || funcName == "@__getglobalp")
+<<<<<<< HEAD
+=======
+			//
+			if (funcName == "@__getGlobal" || funcName == "@__getglobalp")
+>>>>>>> e0e7ce01bced1fe2ce8136fe8e51b536e5359040
 			{
 				if (argCount == 1)
 				{
