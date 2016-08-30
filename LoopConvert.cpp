@@ -32,6 +32,43 @@ map<string, int> locals;
 map<string, int> globals;
 map<string, int> statics;
 
+struct local_scope
+{
+	vector<map<string, int>> scope_locals;
+	int scope_level;
+	void reset()
+	{
+		scope_level = 0;
+		scope_locals.clear();
+	}
+	void add_level()
+	{
+		scope_locals.push_back(map<string, int>());
+		scope_level++;
+	}
+	void remove_level()
+	{
+		if (scope_level > 0)
+		{
+			scope_level--;
+			scope_locals.pop_back();
+		}
+	}
+	bool find(string key, int* outIndex)
+	{
+		for(int i = scope_level; i >= 0; i--)
+		{
+			map<string, int>& locals = scope_locals[i];
+			if (locals.find(key) != locals.end())
+			{
+				*outIndex = locals[key];
+				return true;
+			}
+		}
+		return false;
+	}
+};
+
 map<const FunctionDecl*, int> localCounts;
 static int globalInc = 0;
 static int staticInc = 0;
