@@ -1024,7 +1024,6 @@ public:
 			}
 			return true;
 		}
-<<<<<<< HEAD
 		else if (funcName == "@__dup")
 		{
 			if (argCount == 1)
