@@ -961,7 +961,12 @@ public:
 		}
 		else if (funcName == "@__getglobal" || funcName == "@__getglobalp" || funcName == "@__getglobal")
 		{
+<<<<<<< HEAD
 			if (funcName == "@__getglobal" || funcName == "@__getglobalp")
+=======
+			//
+			if (funcName == "@__getGlobal" || funcName == "@__getglobalp")
+>>>>>>> 0c658be0004148f1bc8ca280121242f2255adfb5
 			{
 				if (argCount == 1)
 				{
@@ -1016,7 +1021,7 @@ public:
 			}
 			return true;
 		}
-
+		//
 		return false;
 	}
 
