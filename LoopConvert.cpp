@@ -961,6 +961,7 @@ public:
 		}
 		else if (funcName == "@__getglobal" || funcName == "@__getglobalp" || funcName == "@__getglobal")
 		{
+			//
 			if (funcName == "@__getGlobal" || funcName == "@__getglobalp")
 			{
 				if (argCount == 1)
