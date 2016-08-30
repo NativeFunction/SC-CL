@@ -1813,14 +1813,13 @@ public:
 			const ConditionalOperator *cond = cast<const ConditionalOperator>(e);
 
 			parseExpression(cond->getCond(), false, true);
-			out << "Not" << endl; //invert
-			out << "JumpFalse @" << cond->getLHS()->getLocStart().getRawEncoding() << endl;
-			parseExpression(cond->getRHS(), false, true);
-			out << "Jump @" << cond->getRHS()->getLocEnd().getRawEncoding() << endl;
-
-			out << ":" << cond->getLHS()->getLocStart().getRawEncoding() << endl;
+			out << "JumpFalse @" << cond->getRHS()->getLocStart().getRawEncoding() << endl;
 			parseExpression(cond->getLHS(), false, true);
-			out << ":" << cond->getRHS()->getLocEnd().getRawEncoding() << endl;
+			out << "Jump @" << cond->getLHS()->getLocEnd().getRawEncoding() << endl;
+
+			out << ":" << cond->getRHS()->getLocStart().getRawEncoding() << endl;
+			parseExpression(cond->getRHS(), false, true);
+			out << ":" << cond->getLHS()->getLocEnd().getRawEncoding() << endl;
 		}
 		else {
             out << "unimplemented3 " << endl;
