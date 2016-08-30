@@ -883,13 +883,13 @@ public:
 					const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
 					long longVal = intVal->getValue().getSExtValue();
 
-					if (funcName == "@__Add" || funcName == "@__Mult")
+					if (funcName == "@__add" || funcName == "@__mult")
 					{
 						out << funcName.substr(3);
 						out << ((longVal & 0xFF) == longVal ? "1 " : "2 ");
 						out << longVal;
 					}
-					else if (funcName == "@__Sub" || funcName == "@__Div")
+					else if (funcName == "@__sub" || funcName == "@__div")
 					{
 						out << "Push " << longVal << endl;
 						out << funcName.substr(3);
@@ -961,7 +961,7 @@ public:
 		}
 		else if (funcName == "@__getglobal" || funcName == "@__getglobalp" || funcName == "@__getglobal")
 		{
-			if (funcName == "@__GetGlobal" || funcName == "@__GetGlobalP")
+			if (funcName == "@__getGlobal" || funcName == "@__getglobalp")
 			{
 				if (argCount == 1)
 				{
@@ -980,7 +980,7 @@ public:
 				else
 					Throw("Invalid " + funcName.substr(3) + " Parameters.", rewriter, call->getExprLoc());
 			}
-			else if (funcName == "@__SetGlobal")
+			else if (funcName == "@__setglobal")
 			{
 				if (argCount == 2)
 				{
