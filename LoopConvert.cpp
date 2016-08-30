@@ -813,9 +813,9 @@ public:
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
 
-		if (funcName == "@__strcopy" || funcName == "@__stradd" || funcName == "@__straddi") {
+		if (funcName == "@__strcopy" || funcName == "@__stradd" || funcName == "@__straddi" || funcName == "@__itos") {
 
-			if (argCount < 2)
+			if (argCount != 2)
 				out << "!!Invalid " << funcName << " parameters!" << endl;
 			else
 			{
