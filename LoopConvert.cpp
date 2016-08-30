@@ -307,9 +307,9 @@ public:
 	string GetImm(int size)
 	{
 		int aSize = size * 4;
-		if (size & 0xFF == size)
+		if ((size & 0xFF) == size)
 			return "Add1 " + to_string(aSize) + "\r\npGet";
-		else if (size & 0xFFFF == size)
+		else if ((size & 0xFFFF) == size)
 			return "Add2 " + to_string(aSize) + "\r\npGet";
 		else
 			return iPush(aSize) + "\r\nAdd\r\npGet";
@@ -317,9 +317,9 @@ public:
 	string SetImm(int size)
 	{
 		int aSize = size * 4;
-		if (size & 0xFF == size)
+		if ((size & 0xFF) == size)
 			return "Add1 " + to_string(aSize) + "\r\npSet";
-		else if (size & 0xFFFF == size)
+		else if ((size & 0xFFFF) == size)
 			return "Add2 " + to_string(aSize) + "\r\npSet";
 		else
 			return iPush(aSize) + "\r\nAdd\r\npSet";
@@ -582,7 +582,7 @@ public:
 			}
 			string labelName = ":" + to_string(caseS->getLocEnd().getRawEncoding());
 			if (isa<IntegerLiteral>(LHS)) {
-				IntegerLiteral *literal = cast<IntegerLiteral>(LHS);
+				//IntegerLiteral *literal = cast<IntegerLiteral>(LHS);
 
 				if (FindBuffer.find(labelName) == FindBuffer.end())
 				{
@@ -592,7 +592,7 @@ public:
 
 			}
 			else if (isa<FloatingLiteral>(LHS)) {
-				FloatingLiteral *literal = cast<FloatingLiteral>(LHS);
+				//FloatingLiteral *literal = cast<FloatingLiteral>(LHS);
 				if (FindBuffer.find(labelName) == FindBuffer.end())
 				{
 					FindBuffer.insert(labelName);
@@ -813,15 +813,8 @@ public:
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
 
-<<<<<<< HEAD
-		if (funcName == "@__strcpy" || funcName == "@__stradd" || funcName == "@__straddi" || funcName == "@__itos") {
-
-			if (argCount != 3)
-=======
 		if (funcName == "@__strcopy" || funcName == "@__stradd" || funcName == "@__straddi" || funcName == "@__itos") {
-
-			if (argCount != 2)
->>>>>>> e0e7ce01bced1fe2ce8136fe8e51b536e5359040
+			if (argCount != 3)
 				out << "!!Invalid " << funcName << " parameters!" << endl;
 			else
 			{
@@ -968,11 +961,6 @@ public:
 		else if (funcName == "@__getglobal" || funcName == "@__getglobalp" || funcName == "@__getglobal")
 		{
 			if (funcName == "@__getglobal" || funcName == "@__getglobalp")
-<<<<<<< HEAD
-=======
-			//
-			if (funcName == "@__getGlobal" || funcName == "@__getglobalp")
->>>>>>> e0e7ce01bced1fe2ce8136fe8e51b536e5359040
 			{
 				if (argCount == 1)
 				{
@@ -1830,6 +1818,15 @@ public:
 			out << ":" << cond->getRHS()->getLocStart().getRawEncoding() << endl;
 			parseExpression(cond->getRHS(), false, true);
 			out << ":" << cond->getLHS()->getLocEnd().getRawEncoding() << endl;
+		}
+		else if (isa<ImaginaryLiteral>(e))
+		{
+			Warn("Imaginary literals aren't supported", rewriter, e->getExprLoc());
+			const ImaginaryLiteral *literal = cast<ImaginaryLiteral>(e);
+			const Expr* item = literal->getSubExpr();
+
+			out << "imaginary_literal_push" << endl;
+
 		}
 		else {
             out << "unimplemented3 " << endl;
