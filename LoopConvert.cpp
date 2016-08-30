@@ -691,9 +691,8 @@ public:
 			GCCAsmStmt *asmstmt = cast<GCCAsmStmt>(s);
 			out << asmstmt->getAsmString()->getString().str() << endl;
 		}
-		else {
-            out << "Unhandled Stmt" << endl;
-        }
+		else
+			Throw("Undefined statement \"" + string(s->getStmtClassName()) + "\"", rewriter, s->getLocStart());
         return true;
     }
     
