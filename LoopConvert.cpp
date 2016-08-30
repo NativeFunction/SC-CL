@@ -812,8 +812,8 @@ public:
 		std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
-		//tits
-		if (funcName == "@__StrCopy" || funcName == "@__StrAdd" || funcName == "@__StrAddI") {
+
+		if (funcName == "@__strcopy" || funcName == "@__stradd" || funcName == "@__straddi") {
 
 			if (argCount < 2)
 				out << "!!Invalid " << funcName << " parameters!" << endl;
@@ -838,7 +838,7 @@ public:
 			}
 			return true;
 		}
-		else if (funcName == "@__Pop")
+		else if (funcName == "@__pop")
 		{
 			//	out << call->getExprLoc().
 			if (argCount == 1)
@@ -857,7 +857,7 @@ public:
 				out << "Pop" << endl;
 			return true;
 		}
-		else if (funcName == "@__pCall")
+		else if (funcName == "@__pcall")
 		{
 			if (argCount < 1)
 				out << "!!Invalid PCall Parameters" << endl;
@@ -873,7 +873,7 @@ public:
 
 			return true;
 		}
-		else if (funcName == "@__Add" || funcName == "@__Sub" || funcName == "@__Mult" || funcName == "@__Div")
+		else if (funcName == "@__add" || funcName == "@__sub" || funcName == "@__mult" || funcName == "@__div")
 		{
 			if (argCount == 1)
 			{
@@ -909,7 +909,7 @@ public:
 			out << endl;
 			return true;
 		}
-		else if (funcName == "@__GetFrame" || funcName == "@__GetFrameP" || funcName == "@__SetFrame")
+		else if (funcName == "@__getframe" || funcName == "@__getFramep" || funcName == "@__setframe")
 		{
 			if (argCount == 1)
 			{
@@ -934,7 +934,6 @@ public:
 
 							const VarDecl* varDecl = cast<VarDecl>(declRef->getDecl());
 							std::string name = varDecl->getName();
-							//check for statics after update from Rock's code
 							if (locals.find(name) != locals.end())
 							{
 								int index = locals[name];
@@ -960,7 +959,7 @@ public:
 			}
 			return true;
 		}
-		else if (funcName == "@__GetGlobal" || funcName == "@__GetGlobalP" || funcName == "@__SetGlobal")
+		else if (funcName == "@__getglobal" || funcName == "@__getglobalp" || funcName == "@__getglobal")
 		{
 			if (funcName == "@__GetGlobal" || funcName == "@__GetGlobalP")
 			{
@@ -1217,9 +1216,6 @@ public:
                 case clang::CK_LValueToRValue:
                 {
                     parseExpression(icast->getSubExpr(), isAddr, true, printVTable);
-                   //const Expr *subE = icast->getSubExpr();
-
-                    //handleRValueDeclRef(subE);
                     break;
                 }
                 case clang::CK_UncheckedDerivedToBase:
@@ -1275,9 +1271,6 @@ public:
                 }
 				case clang::CK_IntegralToPointer:
 				{
-					//Fixed support for:
-					//char* test = GET_STRING_PTR();
-					//and other pointers
 					parseExpression(icast->getSubExpr(), false, true);
 					break;
 				}
