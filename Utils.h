@@ -64,6 +64,7 @@ namespace Utils {
 		inline uint16_t SwapEndian(uint16_t x) { return __builtin_bswap16(x); }
 		inline uint32_t SwapEndian(uint32_t x) { return __builtin_bswap32(x); }
 		inline uint64_t SwapEndian(uint64_t x) { return __builtin_bswap64(x); }
+		uint32_t Flip2BytesIn4(uint32_t value);
 	}
 	namespace IO
 	{

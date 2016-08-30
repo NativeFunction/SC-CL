@@ -165,6 +165,16 @@ namespace Utils {
 		}
 	}
 
+	namespace Bitwise
+	{
+		uint32_t Flip2BytesIn4(uint32_t value)
+		{
+			short* ptr = (short*)&value;
+			short ret[2] = { ptr[1], ptr[0] };
+			return *(uint32_t*)ret;
+		}
+	}
+
 	namespace ClangUtils
 	{
 		uint32_t GetLineFromLocation(clang::Rewriter writer, clang::SourceLocation location)
