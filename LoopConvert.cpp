@@ -1042,7 +1042,6 @@ public:
 				out << "Dup" << endl;
 			return true;
 		}
-=======
 		else if (funcName == "@__tovector3")
 		{
 			if(argCount == 1)
@@ -1057,7 +1056,6 @@ public:
 			}
 		}
 		//
->>>>>>> 55f8c1bddaa7c71ea393bd93922eb7825d8a2276
 		return false;
 	}
 
