@@ -1024,6 +1024,19 @@ public:
 			}
 			return true;
 		}
+		else if (funcName == "@__tovector3")
+		{
+			if(argCount == 1)
+			{
+				parseExpression(argArray[0]);
+				out << "FtoV" << endl;
+				return true;
+			}
+			else
+			{
+				llvm::errs() << "Invalid argument count for " << funcName.substr(1);
+			}
+		}
 		//
 		return false;
 	}
