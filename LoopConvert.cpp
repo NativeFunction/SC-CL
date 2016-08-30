@@ -26,7 +26,6 @@ using namespace clang::tooling;
 using namespace std;
 static llvm::cl::OptionCategory ToolingSampleCategory("Tooling Sample");
 
-
 static Rewriter rewriter;
 
 map<string, int> locals;
@@ -1088,8 +1087,7 @@ public:
         return NULL;
     }
     
-    //int x = 2 + 2;
-	//
+    
     int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, const NamedDecl *lastDecl=NULL) {
         if(isa<IntegerLiteral>(e)) {
             const IntegerLiteral *literal = cast<const IntegerLiteral>(e);
@@ -1362,19 +1360,24 @@ public:
                    // out << "fPush " << (double)-(literal->getValue().convertToDouble()) << endl;
                 }
                 return false;
-            } else if(op->getOpcode() == UO_LNot) {
+            } 
+			else if(op->getOpcode() == UO_LNot) {
                 if(isa<IntegerLiteral>(subE)) {
                     const IntegerLiteral *literal = cast<const IntegerLiteral>(subE);
-                    out << iPush(-(literal->getValue().getSExtValue())) << endl;
+                    out << iPush(literal->getValue().getSExtValue()) << endl;
                     
-                }else if(isa<FloatingLiteral>(subE)) {
+                }
+				else if(isa<FloatingLiteral>(subE)) 
+				{
                     const FloatingLiteral *literal = cast<const FloatingLiteral>(subE);
-                    out << "PushF " << (double)-(literal->getValue().convertToDouble()) << endl;
+                    out << "PushF " << literal->getValue().convertToDouble() << endl;
                     
-                } else if(isa<Expr>(subE)) {
+                } else if(isa<Expr>(subE)) 
+				{
                     parseExpression(subE, isAddr, isLtoRValue);
                     
-                } else {
+                } else 
+				{
                     out << "unimplmented UO_Not" << endl;
                 }
                 out << "not" << endl;
@@ -1456,7 +1459,7 @@ public:
             if(printVTable) {
 
 
-//                out << "\n//VTableInit " << endl;
+                //out << "\n//VTableInit " << endl;
                 //out << "call "
                 if(expr->getType()->isArrayType()){
                     out << "dup" << endl;
@@ -1476,6 +1479,7 @@ public:
 			const BinaryOperator *bOp = cast<const BinaryOperator>(e);
 
 			if (bOp->getOpcode() == BO_Assign) {
+
 				parseExpression(bOp->getRHS(), isAddr, true, true);
 				if (bOp->getRHS()->getType()->isStructureOrClassType()) {
 					int size = getSizeOfType(bOp->getRHS()->getType().getTypePtr());
@@ -1685,7 +1689,7 @@ public:
 						}
 					}
 
-				
+					
 					
 					if (!isLtoRValue) {
 
@@ -1886,8 +1890,6 @@ public:
         return offset;
         
     }
-    
-
 
     
     bool parseArraySubscriptExpr(const Expr *e, bool addrOf, bool LValueToRValue = false) {
@@ -1897,7 +1899,6 @@ public:
         
 
         parseExpression(index, false, true);
-
         parseExpression(base, true);
         const DeclRefExpr *declRef = getDeclRefExpr(base);
         const Type *type = base->getType().getTypePtr();//declRef->getType().getTypePtr()->getArrayElementTypeNoTypeQual();
@@ -1947,7 +1948,7 @@ public:
 				QualType type = f->getReturnType();
 				MainRets = Utils::Math::DivInt(getSizeOfQualType(&type), 4);
 			}
-				
+			
             
             
             out << "Function " << to_string(paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0)) << " ";
@@ -2637,6 +2638,12 @@ public:
 			if (InitializationStack.top().type != FBWT_ARRAY)
 				Throw("Stack error on InitListExpr literal");
 		}
+		else if (isa<CharacterLiteral>(e))
+		{
+			const CharacterLiteral *charliteral = cast<const CharacterLiteral>(e);
+			
+			InitializationStack.push({ (int32_t)charliteral->getValue(), FBWT_INT });
+		}
 		else {
 			
 			Throw("Class " + string(e->getStmtClassName()) + " is unimplemented for a static define");
@@ -2651,9 +2658,9 @@ public:
             if(varDecl->hasGlobalStorage()) {
 				if (statics.find(dumpName(cast<NamedDecl>(D))) == statics.end()) {
 					
-					QualType type = varDecl->getType();
-					auto size = getSizeOfQualType(&type);
-					// auto size  = context->getTypeInfoDataSizeInChars(varDecl->getType()).first.getQuantity();
+					//QualType type = varDecl->getType();
+					//auto size = getSizeOfQualType(&type);
+					auto size  = context->getTypeInfoDataSizeInChars(varDecl->getType()).first.getQuantity();
 
 					uint32_t oldStaticInc = staticInc;
 					statics.insert(make_pair(dumpName(cast<NamedDecl>(D)), staticInc));
@@ -2680,6 +2687,8 @@ public:
 								case FBWT_ARRAY:
 									for (uint32_t i = 0; i < ArrayOut.size(); i++)
 									{
+
+
 										DefaultStaticValues.insert({ oldStaticInc + i, to_string(ArrayOut[i]) });
 									}
 									//if (ArrayOut.size() != 0)
@@ -2694,8 +2703,12 @@ public:
 									ArrayOut.clear();
 									InitializationStack.pop();
 									break;
-								default:
-									DefaultStaticValues.insert({ oldStaticInc, to_string(IS_Pop().bytes) });
+								default://FBWT_INT
+
+									if (varDecl->getType()->isCharType())//if char type swap endian
+										DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::SwapEndian(IS_Pop().bytes)) });
+									else
+										DefaultStaticValues.insert({ oldStaticInc, to_string(IS_Pop().bytes) });
 
 									//cout << "stack size: " << sizeb4 << endl
 										//<< "value: " << DefaultStaticValues[oldStaticInc] << endl;
@@ -2920,8 +2933,6 @@ int main(int argc, const char **argv) {
 
     CommonOptionsParser op(argc, argv, ToolingSampleCategory);
     ClangTool Tool(op.getCompilations(), op.getSourcePathList());
-
-	
 
     // ClangTool::run accepts a FrontendActionFactory, which is then used to
     // create new objects implementing the FrontendAction interface. Here we use
