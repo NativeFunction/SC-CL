@@ -2685,12 +2685,51 @@ public:
 							switch (InitializationStack.top().type)
 							{
 								case FBWT_ARRAY:
-									for (uint32_t i = 0; i < ArrayOut.size(); i++)
+									if (varDecl->getType()->isArrayType())
 									{
+										if (isa<InitListExpr>(initializer) && varDecl->getType()->getArrayElementTypeNoTypeQual()->isCharType())
+										{
+											//var decl is char ksjsk[] = {'d','b','n','p','k'};
+											int32_t buffer = 0, b = 0, stvi = 0;
+											
+											for (int32_t i = 0; i < ArrayOut.size(); i++,b++)
+											{
+												if (b >= 4)
+												{
+													DefaultStaticValues.insert({ oldStaticInc + stvi++, to_string(Utils::Bitwise::SwapEndian(buffer)) });
+													b = 0;
+													buffer = 0;
+												}
+												if (ArrayOut[i] <= 255)
+													((uint8_t*)(&buffer))[b] = (uint8_t)ArrayOut[i];
+												else
+													Throw("Value " + to_string(ArrayOut[i]) + " is too large to fit in size char", rewriter, varDecl->getLocStart());
+											}
+											if (b != 0)
+											{
+												DefaultStaticValues.insert({ oldStaticInc + stvi, to_string(Utils::Bitwise::SwapEndian(buffer)) });
+											}
 
 
-										DefaultStaticValues.insert({ oldStaticInc + i, to_string(ArrayOut[i]) });
+										}
+										else
+										{
+											for (uint32_t i = 0; i < ArrayOut.size(); i++)
+											{
+												DefaultStaticValues.insert({ oldStaticInc + i, to_string(ArrayOut[i]) });
+											}
+										}
 									}
+									else
+										Throw("Static var array " + 
+										varDecl->getType().getAsString() + 
+										"  was parsed as an array but declared as different",
+										rewriter,
+										varDecl->getLocStart()
+										);
+									
+
+
 									//if (ArrayOut.size() != 0)
 									//{
 									//	staticInc += ArrayOut.size() - 1;
