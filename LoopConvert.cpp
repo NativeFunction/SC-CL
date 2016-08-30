@@ -307,9 +307,9 @@ public:
 	string GetImm(int size)
 	{
 		int aSize = size * 4;
-		if (size & 0xFF == size)
+		if ((size & 0xFF) == size)
 			return "Add1 " + to_string(aSize) + "\r\npGet";
-		else if (size & 0xFFFF == size)
+		else if ((size & 0xFFFF) == size)
 			return "Add2 " + to_string(aSize) + "\r\npGet";
 		else
 			return iPush(aSize) + "\r\nAdd\r\npGet";
@@ -317,9 +317,9 @@ public:
 	string SetImm(int size)
 	{
 		int aSize = size * 4;
-		if (size & 0xFF == size)
+		if ((size & 0xFF) == size)
 			return "Add1 " + to_string(aSize) + "\r\npSet";
-		else if (size & 0xFFFF == size)
+		else if ((size & 0xFFFF) == size)
 			return "Add2 " + to_string(aSize) + "\r\npSet";
 		else
 			return iPush(aSize) + "\r\nAdd\r\npSet";
@@ -582,7 +582,7 @@ public:
 			}
 			string labelName = ":" + to_string(caseS->getLocEnd().getRawEncoding());
 			if (isa<IntegerLiteral>(LHS)) {
-				IntegerLiteral *literal = cast<IntegerLiteral>(LHS);
+				//IntegerLiteral *literal = cast<IntegerLiteral>(LHS);
 
 				if (FindBuffer.find(labelName) == FindBuffer.end())
 				{
@@ -592,7 +592,7 @@ public:
 
 			}
 			else if (isa<FloatingLiteral>(LHS)) {
-				FloatingLiteral *literal = cast<FloatingLiteral>(LHS);
+				//FloatingLiteral *literal = cast<FloatingLiteral>(LHS);
 				if (FindBuffer.find(labelName) == FindBuffer.end())
 				{
 					FindBuffer.insert(labelName);
@@ -2731,7 +2731,7 @@ public:
 											//var decl is char ksjsk[] = {'d','b','n','p','k'};
 											int32_t buffer = 0, b = 0, stvi = 0;
 											
-											for (int32_t i = 0; i < ArrayOut.size(); i++,b++)
+											for (size_t i = 0; i < ArrayOut.size(); i++,b++)
 											{
 												if (b >= 4)
 												{
