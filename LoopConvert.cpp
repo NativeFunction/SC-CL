@@ -1024,7 +1024,24 @@ public:
 			}
 			return true;
 		}
-		//
+		else if (funcName == "@__dup")
+		{
+			if (argCount == 1)
+			{
+				if (isa<IntegerLiteral>(argArray[0]))
+				{
+					const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
+					int intValue = intVal->getValue().getSExtValue();
+					for (int i = 0; i < intValue; i++)
+						out << "Dup" << endl;
+				}
+				else
+					out << "!!Invalid " << funcName.substr(3) << " Parameters!";
+			}
+			else
+				out << "Dup" << endl;
+			return true;
+		}
 		return false;
 	}
 
@@ -1079,8 +1096,7 @@ public:
             return "@"+decl->getNameAsString();
         }
     }
-    
-    
+
     const DeclRefExpr *getDeclRefExpr(const Expr *e) {
         if(isa<DeclRefExpr>(e)) {
             return cast<const DeclRefExpr>(e);
