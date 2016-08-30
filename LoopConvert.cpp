@@ -35,11 +35,13 @@ map<string, int> statics;
 struct local_scope
 {
 	vector<map<string, int>> scope_locals;
-	int scope_level;
-	void reset()
+	int scope_level = 0;
+	int local_count = 2;//reserved for retn addr and stack base pointer
+	void reset()//call this on function decl
 	{
 		scope_level = 0;
 		scope_locals.clear();
+		local_count = 2;
 	}
 	void add_level()
 	{
@@ -67,6 +69,17 @@ struct local_scope
 		}
 		return false;
 	}
+	int add_decl(string key)
+	{
+		map<string, int>& locals = scope_locals[scope_level];
+		//if(locals.find(key) != locals.end())
+		//{
+		//	//ast should catch this error when you have a redecl in the same scope
+		//}
+		locals[key] = local_count;
+		return local_count++;//incriment local count
+	}
+	
 };
 
 map<const FunctionDecl*, int> localCounts;
