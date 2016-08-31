@@ -1032,7 +1032,7 @@ public:
 							{
 								int index = locals[name];
 								out << funcName.substr(3);
-								out << (((index & 0xFF) == index) ? "1 " : "2 ");
+								out << ((index & 0xFF) == index ? "1 " : "2 ");
 								out << index << " //" << name << endl;
 							}
 							else
@@ -1053,7 +1053,7 @@ public:
 			}
 			return true;
 		}
-		else if (funcName == "@__getglobal" || funcName == "@__getglobalp" || funcName == "@__getglobal")
+		else if (funcName == "@__getglobal" || funcName == "@__getglobalp" || funcName == "@__setglobal")
 		{
 			if (funcName == "@__getglobal" || funcName == "@__getglobalp")
 			{
@@ -1065,7 +1065,7 @@ public:
 						int intValue = intVal->getValue().getSExtValue();
 
 						out << funcName.substr(3);
-						out << ((intValue & 0xFF) == intValue) ? "2 " : "3 ";
+						out << ((intValue & 0xFF) == intValue ? "2 " : "3 ");
 						out << intValue << endl;
 					}
 					else
