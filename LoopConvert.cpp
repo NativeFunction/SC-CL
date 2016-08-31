@@ -1794,7 +1794,7 @@ public:
 			}
 			case clang::CK_IntegralToBoolean:
 			{
-				parseExpression(icast->getSubExpr());
+				parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 				break;
 			}
 			case clang::CK_FloatingComplexToReal:
