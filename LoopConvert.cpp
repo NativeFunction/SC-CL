@@ -1186,6 +1186,390 @@ public:
 		return NULL;
 	}
 
+	bool binaryOpConstantFolding(const BinaryOperator *operation, Expr** newExpr)
+	{
+		BinaryOperatorKind op = operation->getOpcode();
+		const Expr* LHS = operation->getLHS();
+		const Expr* RHS = operation->getRHS();
+		int64_t newInt;
+		double newDouble;
+		if (isa<BinaryOperator>(LHS))
+		{
+			Expr* newExpr;
+			if (binaryOpConstantFolding(cast<BinaryOperator>(LHS), &newExpr))
+			{
+				((BinaryOperator*)operation)->setLHS(newExpr);
+				LHS = operation->getLHS();
+			}
+		}
+
+		if(isa<BinaryOperator>(RHS))
+		{
+			Expr* newExpr;
+			if(binaryOpConstantFolding(cast<BinaryOperator>(RHS), &newExpr))
+			{
+				((BinaryOperator*)operation)->setRHS(newExpr);
+				RHS = operation->getRHS();
+			}
+		}
+
+		if (isa<IntegerLiteral>(LHS) && isa<IntegerLiteral>(RHS))
+		{
+			int64_t lhs = cast<IntegerLiteral>(LHS)->getValue().getSExtValue();
+			int64_t rhs = cast<IntegerLiteral>(RHS)->getValue().getSExtValue();
+			switch (operation->getOpcode())
+			{
+			case BO_SubAssign:
+			case BO_AddAssign:
+			case BO_DivAssign:
+			case BO_MulAssign:
+			case BO_AndAssign:
+			case BO_Assign:
+			case BO_OrAssign:
+			case BO_RemAssign:
+			case BO_ShlAssign:
+			case BO_ShrAssign:
+			case BO_XorAssign:
+				//probably should error here as these operations should have been alread catched
+				return false;
+			case BO_Add:
+				newInt = lhs + rhs;
+				if(newExpr == NULL){
+					out << iPush(newInt) << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Sub:
+				newInt = lhs - rhs;
+				if(newExpr == NULL){
+					out << iPush(newInt) << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Div:
+				newInt = lhs / rhs;
+				if(newExpr == NULL){
+					out << iPush(newInt) << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Mul:
+				newInt = lhs * rhs;
+				if(newExpr == NULL){
+					out << iPush(newInt) << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_And:
+				newInt = lhs & rhs;
+				if(newExpr == NULL){
+					out << iPush(newInt) << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_LAnd:
+				newInt = lhs != 0 && rhs != 0 ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Or:
+				newInt = lhs | rhs;
+				if(newExpr == NULL){
+					out << iPush(newInt) << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_LOr:
+				newInt = lhs != 0 || rhs != 0 ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Xor:
+				newInt = lhs ^ rhs;
+				if(newExpr == NULL){
+					out << iPush(newInt) << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Shl:
+				newInt = lhs << rhs;
+				if(newExpr == NULL){
+					out << iPush(newInt) << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Shr:
+				newInt = lhs >> rhs;
+				if(newExpr == NULL){
+					out << iPush(newInt) << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_EQ:
+				newInt = lhs == rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_NE:
+				newInt = lhs != rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_GE:
+				newInt = lhs >= rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_GT:
+				newInt = lhs > rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_LE:
+				newInt = lhs <= rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_LT:
+				newInt = lhs < rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			default:
+				return false;
+			}
+		}
+		if(isa<FloatingLiteral>(LHS) && isa<FloatingLiteral>(RHS))
+		{
+			const llvm::APFloat lhsFlt = cast<FloatingLiteral>(LHS)->getValue();
+			const llvm::APFloat rhsFlt = cast<FloatingLiteral>(RHS)->getValue();
+			double lhs = &lhsFlt.getSemantics() == &llvm::APFloat::IEEEsingle ? (double)lhsFlt.convertToFloat() : lhsFlt.convertToDouble();
+			double rhs = &rhsFlt.getSemantics() == &llvm::APFloat::IEEEsingle ? (double)rhsFlt.convertToFloat() : rhsFlt.convertToDouble();
+			switch(operation->getOpcode())
+			{
+			case BO_SubAssign:
+			case BO_AddAssign:
+			case BO_DivAssign:
+			case BO_MulAssign:
+			case BO_AndAssign:
+			case BO_Assign:
+			case BO_OrAssign:
+			case BO_RemAssign:
+			case BO_ShlAssign:
+			case BO_ShrAssign:
+			case BO_XorAssign:
+				//probably should error here as these operations should have been alread catched
+				return false;
+			case BO_Add:
+				newDouble = lhs + rhs;
+				if(newExpr == NULL){
+					out << "PushF "<< newDouble << endl;
+				}
+				else
+				{
+					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Sub:
+				newDouble = lhs - rhs;
+				if(newExpr == NULL){
+					out << "PushF " << newDouble << endl;
+				}
+				else
+				{
+					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Div:
+				newDouble = lhs / rhs;
+				if(newExpr == NULL){
+					out << "PushF " << newDouble << endl;
+				}
+				else
+				{
+					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Mul:
+				newDouble = lhs * rhs;
+				if(newExpr == NULL){
+					out << "PushF " << newDouble << endl;
+				}
+				else
+				{
+					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_And:
+				//out << iPush(lhs & rhs) << endl; //unsupported operator
+				return false;
+			case BO_LAnd:
+				newInt = lhs != 0 && rhs != 0 ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Or:
+				//out << iPush(lhs | rhs) << endl; //unsupported operator
+				return false;
+			case BO_LOr:
+				newInt = lhs != 0 || rhs != 0 ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_Xor:
+				//out << iPush(lhs ^ rhs) << endl; //unsupported operator
+				return false;
+			case BO_Shl:
+				//out << iPush(lhs << rhs) << endl; //unsupported operator
+				return false;
+			case BO_Shr:
+				//out << iPush(lhs >> rhs) << endl; //unsupported operator
+				return false;
+			case BO_EQ:
+				newInt = lhs == rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_NE:
+				newInt = lhs != rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_GE:
+				newInt = lhs >= rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_GT:
+				newInt = lhs > rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_LE:
+				newInt = lhs <= rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			case BO_LT:
+				newInt = lhs < rhs ? 1 : 0;
+				if(newExpr == NULL){
+					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
+				}
+				else
+				{
+					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
+				}
+				return true;
+			default:
+				return false;
+			}
+		}
+		return false;
+
+
+	}
 
 	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, const NamedDecl *lastDecl = NULL) {
 		if (isa<IntegerLiteral>(e)) {
@@ -1688,122 +2072,124 @@ public:
 				break;
 			default:
 			{
-				parseExpression(bOp->getLHS(), false, true);
-				parseExpression(bOp->getRHS(), false, true);
+				if(!binaryOpConstantFolding(bOp, NULL)){
+					parseExpression(bOp->getLHS(), false, true);
+					parseExpression(bOp->getRHS(), false, true);
 
 
-				if (bOp->getLHS()->getType()->isFloatingType()) {
-					switch (bOp->getOpcode()) {
-					case BO_EQ:
-						out << "fCmpEQ" << endl;
-						break;
-					case BO_Mul:
-						out << "fMult" << endl;
-						break;
-					case BO_Div:
-						out << "fDiv" << endl;
-						break;
-					case BO_Rem:
-						out << "FMod" << endl;
-						break;
-					case BO_Sub:
-						out << "fSub" << endl;
-						break;
-					case BO_LT:
-						out << "fCmpLT" << endl;
-						break;
-					case BO_GT:
-						out << "fCmpGT" << endl;
-						break;
-					case BO_GE:
-						out << "fCmpGE" << endl;
-						break;
-					case BO_LE:
-						out << "fCmpLE" << endl;
-						break;
-					case BO_NE:
-						out << "fCmpNE" << endl;
-						break;
-					case BO_LAnd:
-					case BO_And:
-						out << "And" << endl;
-						break;
-					case BO_Xor:
-						out << "Xor" << endl;
-						break;
-					case BO_Add:
-						out << "fAdd" << endl;
-						break;
-					case BO_LOr:
-					case BO_Or:
-						out << "Or " << endl;
-						break;
-					case BO_Shl:
-						out << "CallNative shift_left 2 1";
-						break;
-					case BO_Shr:
-						out << "CallNative shift_right 2 1";
-						break;
+					if(bOp->getLHS()->getType()->isFloatingType()) {
+						switch(bOp->getOpcode()) {
+						case BO_EQ:
+							out << "fCmpEQ" << endl;
+							break;
+						case BO_Mul:
+							out << "fMult" << endl;
+							break;
+						case BO_Div:
+							out << "fDiv" << endl;
+							break;
+						case BO_Rem:
+							out << "FMod" << endl;
+							break;
+						case BO_Sub:
+							out << "fSub" << endl;
+							break;
+						case BO_LT:
+							out << "fCmpLT" << endl;
+							break;
+						case BO_GT:
+							out << "fCmpGT" << endl;
+							break;
+						case BO_GE:
+							out << "fCmpGE" << endl;
+							break;
+						case BO_LE:
+							out << "fCmpLE" << endl;
+							break;
+						case BO_NE:
+							out << "fCmpNE" << endl;
+							break;
+						case BO_LAnd:
+						case BO_And:
+							out << "And" << endl;
+							break;
+						case BO_Xor:
+							out << "Xor" << endl;
+							break;
+						case BO_Add:
+							out << "fAdd" << endl;
+							break;
+						case BO_LOr:
+						case BO_Or:
+							out << "Or " << endl;
+							break;
+						case BO_Shl:
+							out << "CallNative shift_left 2 1";
+							break;
+						case BO_Shr:
+							out << "CallNative shift_right 2 1";
+							break;
 
-					default:
-						out << "unimplemented2 " << bOp->getOpcode() << endl;
+						default:
+							out << "unimplemented2 " << bOp->getOpcode() << endl;
+						}
+
 					}
-
-				}
-				else {
-					switch (bOp->getOpcode()) {
-					case BO_EQ:
-						out << "CmpEQ" << endl;
-						break;
-					case BO_Mul:
-						out << "Mult" << endl;
-						break;
-					case BO_Div:
-						out << "Div" << endl;
-						break;
-					case BO_Rem:
-						out << "Mod" << endl;
-						break;
-					case BO_Sub:
-						out << "Sub" << endl;
-						break;
-					case BO_LT:
-						out << "CmpLT" << endl;
-						break;
-					case BO_GT:
-						out << "CmpGT" << endl;
-						break;
-					case BO_GE:
-						out << "CmpGE" << endl;
-						break;
-					case BO_LE:
-						out << "CmpLE" << endl;
-						break;
-					case BO_NE:
-						out << "CmpNE" << endl;
-						break;
-					case BO_LAnd:
-					case BO_And:
-						out << "And" << endl;
-						break;
-					case BO_Xor:
-						out << "Xor" << endl;
-						break;
-					case BO_Add:
-						out << "Add" << endl;
-						break;
-					case BO_LOr:
-					case BO_Or:
-						out << "Or" << endl;
-						break;
-					case BO_Shl:
-						out << "CallNative shift_left 2 1" << endl;
-						break;
-					case BO_Shr:
-						out << "CallNative shift_right 2 1" << endl;
-						break;
-					default:
-						out << "unimplemented2 " << bOp->getOpcode() << endl;
+					else {
+						switch(bOp->getOpcode()) {
+						case BO_EQ:
+							out << "CmpEQ" << endl;
+							break;
+						case BO_Mul:
+							out << "Mult" << endl;
+							break;
+						case BO_Div:
+							out << "Div" << endl;
+							break;
+						case BO_Rem:
+							out << "Mod" << endl;
+							break;
+						case BO_Sub:
+							out << "Sub" << endl;
+							break;
+						case BO_LT:
+							out << "CmpLT" << endl;
+							break;
+						case BO_GT:
+							out << "CmpGT" << endl;
+							break;
+						case BO_GE:
+							out << "CmpGE" << endl;
+							break;
+						case BO_LE:
+							out << "CmpLE" << endl;
+							break;
+						case BO_NE:
+							out << "CmpNE" << endl;
+							break;
+						case BO_LAnd:
+						case BO_And:
+							out << "And" << endl;
+							break;
+						case BO_Xor:
+							out << "Xor" << endl;
+							break;
+						case BO_Add:
+							out << "Add" << endl;
+							break;
+						case BO_LOr:
+						case BO_Or:
+							out << "Or" << endl;
+							break;
+						case BO_Shl:
+							out << "CallNative shift_left 2 1" << endl;
+							break;
+						case BO_Shr:
+							out << "CallNative shift_right 2 1" << endl;
+							break;
+						default:
+							out << "unimplemented2 " << bOp->getOpcode() << endl;
+						}
 					}
 				}
 
