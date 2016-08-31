@@ -8,6 +8,7 @@
 // Eli Bendersky (eliben@gmail.com)
 // This code is in the public domain
 //------------------------------------------------------------------------------
+
 #include <sstream>
 #include <iostream>
 #include <string>
@@ -16,6 +17,8 @@
 #include <map>
 #include <cmath>
 #include "Utils.h"
+
+#define ReplaceText ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
 
 using namespace Utils;
 using namespace Utils::System;
@@ -221,13 +224,16 @@ uint32_t getNumVirtMethods(const CXXRecordDecl *classDecl) {
 }
 uint32_t getSizeOfType(const Type* type) {
 
-	if (type->isCharType()) {
+
+	if (type->isCharType())
 		return 1;
-	}
+	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+		return 2;
+
 	else if (isa<ConstantArrayType>(type)) {
 		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
 
-		return getSizeOfType(type->getArrayElementTypeNoTypeQual())*(arrType->getSize()).getSExtValue();
+		return getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue();
 	}
 	else if (type->isRecordType() && type->getAsCXXRecordDecl()) {
 		CXXRecordDecl *recordDecl = type->getAsCXXRecordDecl();
@@ -283,6 +289,34 @@ uint32_t getSizeOfType(const Type* type) {
 	}
 	return 0;
 }
+
+void TypeRewriter(VarDecl* varDecl)
+{
+	if (varDecl->getType()->isBuiltinType())
+	{
+		const BuiltinType *bt = cast<const BuiltinType>(varDecl->getType());
+
+		switch (bt->getKind())
+		{
+			//QualType qt;
+			
+			case clang::BuiltinType::Kind::Double:
+			QualType* qt;
+			BuiltinType* kll;
+			
+
+			//varDecl->setType();
+
+			break;
+			
+
+		}
+	}
+	else
+		Throw("Unimplemented non builtin type for type rewriter", rewriter, varDecl->getLocStart());
+
+}
+
 
 
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
@@ -868,7 +902,6 @@ public:
 		}
 		return true;
 	}
-
 
 	bool checkIntrinsic(const CallExpr *call) {
 		std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
@@ -1878,8 +1911,11 @@ public:
 
 				if (ueTrait->isArgumentType())
 					size = getSizeOfType(ueTrait->getArgumentType().getTypePtr());
-				else
-					size = context->getTypeInfoDataSizeInChars(ueTrait->getArgumentExpr()->getType()).first.getQuantity();
+				else//size = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
+					size = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr()); 
+				//size = context->getTypeInfoDataSizeInChars(ueTrait->getArgumentExpr()->getType()).first.getQuantity();
+
+
 
 				//Pause("SIZE: " + to_string(size) + "\r\n");
 				if (isLtoRValue)
@@ -2757,7 +2793,10 @@ public:
 
 					//QualType type = varDecl->getType();
 					//auto size = getSizeOfQualType(&type);
-					auto size = context->getTypeInfoDataSizeInChars(varDecl->getType()).first.getQuantity();
+
+
+					auto size = getSizeOfType(varDecl->getType().getTypePtr());
+					//auto size = context->getTypeInfoDataSizeInChars(varDecl->getType()).first.getQuantity();
 
 					uint32_t oldStaticInc = staticInc;
 					statics.insert(make_pair(dumpName(cast<NamedDecl>(D)), staticInc));
@@ -2784,61 +2823,38 @@ public:
 							case FBWT_ARRAY:
 								if (varDecl->getType()->isArrayType())
 								{
-									if (varDecl->getType()->getArrayElementTypeNoTypeQual()->isBuiltinType())
+									int32_t buffer = 0, b = 0, stvi = 0;
+
+									#define AddStaticArraySpecial(loopsize,maxsize,buffsetstmt,buffgetstmt)\
+									for (int32_t i = 0; i < ArrayOut.size(); i++, b++)\
+									{\
+										if (b >= loopsize)\
+										{\
+											DefaultStaticValues.insert({ oldStaticInc + stvi++, to_string(buffgetstmt) });\
+											b = buffer = 0;\
+										}\
+										buffsetstmt = ArrayOut[i] % maxsize;\
+									}\
+									if (b != 0)\
+										DefaultStaticValues.insert({ oldStaticInc + stvi, to_string(buffgetstmt) });
+
+									const Type* type = varDecl->getType()->getArrayElementTypeNoTypeQual();
+
+									if (type->isCharType() && isa<InitListExpr>(initializer))//InitListExpr because of char test[] = "hello world";
 									{
-										const BuiltinType *bt = cast<const BuiltinType>(varDecl->getType()->getArrayElementTypeNoTypeQual());
-
-										int32_t buffer = 0, b = 0, stvi = 0;
-
-										switch (bt->getKind())
-										{
-											default://int, float, ect
-											for (uint32_t i = 0; i < ArrayOut.size(); i++)
-												DefaultStaticValues.insert({ oldStaticInc + i, to_string(ArrayOut[i]) });
-											break;
-											case clang::BuiltinType::Kind::SChar://var decl is char ksjsk[] = {'d','b','n','p','k'};
-											case clang::BuiltinType::Kind::UChar:
-												for (int32_t i = 0; i < ArrayOut.size(); i++, b++)
-												{
-													if (b >= 4)
-													{
-														DefaultStaticValues.insert({ oldStaticInc + stvi++, to_string(Utils::Bitwise::SwapEndian(buffer)) });
-														b = buffer = 0;
-													}
-													
-													((uint8_t*)(&buffer))[b] = ArrayOut[i] % 256;
-												}
-												if (b != 0)
-													DefaultStaticValues.insert({ oldStaticInc + stvi, to_string(Utils::Bitwise::SwapEndian(buffer)) });
-
-											break;
-											case clang::BuiltinType::Kind::UShort:
-											case clang::BuiltinType::Kind::Short:
-												for (int32_t i = 0; i < ArrayOut.size(); i++, b++)
-												{
-													if (b >= 2)
-													{
-														DefaultStaticValues.insert({ oldStaticInc + stvi++, to_string(buffer) });
-														b = buffer = 0;
-													}
-													
-													((uint16_t*)(&buffer))[!b] = ArrayOut[i] % 65536;
-												}
-												if (b != 0)
-													DefaultStaticValues.insert({ oldStaticInc + stvi, to_string(buffer) });
-
-											break;
-
-										}
+										AddStaticArraySpecial(4, 256, ((uint8_t*)(&buffer))[b], Utils::Bitwise::SwapEndian(buffer));
 									}
-									else 
-										Throw("Unimplemented non builtin type for static array initialization", rewriter, varDecl->getLocStart());
+									else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+									{
+										AddStaticArraySpecial(2, 65536, ((uint16_t*)(&buffer))[!b], buffer);
+									}
+									else
+										for (uint32_t i = 0; i < ArrayOut.size(); i++)
+											DefaultStaticValues.insert({ oldStaticInc + i, to_string(ArrayOut[i]) });
 
 								}
 								else
-									Throw("Static var array " +
-										varDecl->getType().getAsString() +
-										"  was parsed as an array but declared as different",
+									Throw("Static var array " + varDecl->getType().getAsString() + "  was parsed as an array but declared as different",
 										rewriter,
 										varDecl->getLocStart()
 									);
@@ -2859,29 +2875,14 @@ public:
 								break;
 							default://FBWT_INT
 
-								if (varDecl->getType()->isBuiltinType())
-								{
-									const BuiltinType *bt = cast<const BuiltinType>(varDecl->getType());
-
-									switch (bt->getKind())
-									{
-										default://int, float, ect
-											DefaultStaticValues.insert({ oldStaticInc, to_string(IS_Pop().bytes) });
-										break;
-										case clang::BuiltinType::Kind::SChar:
-										case clang::BuiltinType::Kind::UChar:
-											DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::SwapEndian(IS_Pop().bytes % 256)) });
-										break;
-										case clang::BuiltinType::Kind::UShort:
-										case clang::BuiltinType::Kind::Short:
-											DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::Flip2BytesIn4(IS_Pop().bytes % 65536)) });
-										break;
-
-									}
-								}
+								if (varDecl->getType()->isCharType())
+									DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::SwapEndian(IS_Pop().bytes % 256)) });
+								else if (varDecl->getType()->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || varDecl->getType()->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+									DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::Flip2BytesIn4(IS_Pop().bytes % 65536)) });
 								else
-									Throw("Unimplemented non builtin type for static initialization", rewriter, varDecl->getLocStart());
+									DefaultStaticValues.insert({ oldStaticInc, to_string(IS_Pop().bytes) });
 
+								
 								//cout << "stack size: " << sizeb4 << endl
 								//<< "value: " << DefaultStaticValues[oldStaticInc] << endl;
 								break;
