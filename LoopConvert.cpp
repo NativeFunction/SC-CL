@@ -1712,6 +1712,13 @@ public:
 			if (call->getType()->isVoidType() == false) {
 				if (!isLtoRValue) {
 					out << "drop//Function Result unused" << endl;
+					int size = getSizeFromBytes(getSizeOfType(call->getType().getTypePtr()));
+					for (int i = 1; i<size;i++)
+					{
+						out << "drop" << endl;
+					}
+
+					
 					call->dump();
 				}
 			}
