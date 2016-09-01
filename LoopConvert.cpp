@@ -15,6 +15,7 @@
 #include <fstream>
 #include <utility>
 #include <map>
+#include <unordered_map>
 #include <cmath>
 #include "Utils.h"
 
@@ -34,6 +35,14 @@ static Rewriter rewriter;
 map<string, int> locals;
 map<string, int> globals;
 map<string, int> statics;
+struct FData
+{
+	uint32_t hash;
+	string name;
+	bool isused;
+	streampos FuncDataPos;
+};
+vector<FData> functions;
 
 
 struct local_scope
@@ -463,6 +472,24 @@ public:
 		}
 		else
 		{
+			string name = "@" +  key;
+			uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
+			uint32_t i = 0;
+			for (; i < functions.size(); i++)
+			{
+				if (functions[i].hash == hash)
+				{
+					if (functions[i].name == name)
+					{
+						functions[i].isused = true;
+						break;
+					}
+				}
+			}
+
+			if (i >= functions.size())
+				Throw("Function pointer \"" + key + "\" not found");
+
 			out << "//DeclRefExpr, nothing else, so func it" << endl;
 			out << "Push GetLoc(\"" << key << "\")" << endl;
 			//out << key << endl;
@@ -1081,17 +1108,18 @@ public:
 			}
 			return true;
 		}
-		else if(funcName.find("@__stacktop", 0, 11) == 0)
+		else if (funcName.find("@__stacktop", 0, 11) == 0)//will cause collisions like __stacktop_zorg_dafuk
 		{
-			if(!call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() == StorageClass::SC_Extern)
+			if (!call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() == StorageClass::SC_Extern)
 			{
-				if(argCount != 0)
+				if (argCount != 0)
 				{
 					Throw(funcName.substr(1) + " must be called with no parameters");
 				}
 				return true;
 			}
 		}
+
 		return false;
 	}
 
@@ -1178,7 +1206,7 @@ public:
 			((BinaryOperator*)operation)->setLHS(temp);
 			LHS = operation->getLHS();
 		}
-		while(isa<ParenExpr>(RHS))
+		while (isa<ParenExpr>(RHS))
 		{
 			Expr*temp = (Expr*)cast<ParenExpr>(RHS)->getSubExpr();
 			((BinaryOperator*)operation)->setRHS(temp);
@@ -1611,29 +1639,48 @@ public:
 
 			if (isa<CastExpr>(call->getCallee()))
 			{
+
 				if (isa<PointerType>(call->getCallee()->getType()) && !call->getDirectCallee())
 				{
 					parseExpression(call->getCallee());
 					out << "PCall" << endl;
 				}
+				else if (!call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
+				{
+					//could turn this into a native
+					out << "//!Undefined Function" << endl;
+
+					return 1;
+				}
 				else
 				{
-					if (!call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
+					if (((call->getDirectCallee()->isDefined() || call->getDirectCallee()->hasPrototype()) || call->getDirectCallee()->getNumParams() == 0) && call->getDirectCallee()->getStorageClass() != clang::StorageClass::SC_Extern)
 					{
-						//could turn this into a native
-						out << "//!Undefined Function" << endl;
+						string name = parseCast(cast<const CastExpr>(call->getCallee()));
+						uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
+						uint32_t i = 0;
+						for (; i < functions.size(); i++)
+						{
+							if (functions[i].hash == hash)
+							{
+								if (functions[i].name == name)
+								{
+									functions[i].isused = true;
+									break;
+								}
+							}
+						}
 
-						return 1;
+						if (i >= functions.size())
+							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
+
+						out << "Call " << name << " //NumArgs: " << call->getNumArgs() << " " << endl;
 					}
 					else
 					{
-						if (((call->getDirectCallee()->isDefined() || call->getDirectCallee()->hasPrototype()) || call->getDirectCallee()->getNumParams() == 0) && call->getDirectCallee()->getStorageClass() != clang::StorageClass::SC_Extern)
-							out << "Call " << parseCast(cast<const CastExpr>(call->getCallee())) << " //NumArgs: " << call->getNumArgs() << " " << endl;
-						else {
 
-							const QualType type = call->getDirectCallee()->getReturnType();
-							out << "CallNative " << (parseCast(cast<const CastExpr>(call->getCallee())).c_str() + 1) << " " << call->getNumArgs() << " " << getSizeFromBytes(getSizeOfQualType(&type)) << endl;
-						}
+						const QualType type = call->getDirectCallee()->getReturnType();
+						out << "CallNative " << (parseCast(cast<const CastExpr>(call->getCallee())).c_str() + 1) << " " << call->getNumArgs() << " " << getSizeFromBytes(getSizeOfQualType(&type)) << endl;
 					}
 				}
 			}
@@ -2440,6 +2487,10 @@ public:
 		// Only function definitions (with bodies), not declarations.
 		int funcNum = 0;
 		if (f->hasBody()) {
+			out.seekg(0,ios::end);
+			functions.push_back({ Utils::Hashing::Joaat((char*)getNameForFunc(f).c_str()), getNameForFunc(f), false, out.tellg()});
+			cout << getNameForFunc(f) << endl;
+
 			if (isa<CXXConstructorDecl>(f))
 				return true;
 
@@ -2454,12 +2505,16 @@ public:
 
 			out << endl << "//Loc: " << f->getBody()->getLocStart().getRawEncoding() << endl;
 
+			
 			string name = dumpName(cast<NamedDecl>(f));
+
+			
 
 			out << ":" << name << endl;
 
-			if (name == "main")
+			if (f->isMain())
 			{
+				functions.back().isused = true;
 				QualType type = f->getReturnType();
 				MainRets = Utils::Math::DivInt(getSizeOfQualType(&type), 4);
 			}
@@ -2721,6 +2776,7 @@ public:
 	set<std::string> FindBuffer;
 	Rewriter &TheRewriter;
 	ASTContext *context;
+	
 	stringstream out;
 	string outfile;
 	const FunctionDecl *currFunction;
@@ -2865,6 +2921,24 @@ public:
 						{
 
 							InitializationStack.push({ 0, FBWT_FUNCTION_PTR });
+
+							string name = "@" + decl->getNameAsString();
+							uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
+							uint32_t i = 0;
+							for (; i < functions.size(); i++)
+							{
+								if (functions[i].hash == hash)
+								{
+									if (functions[i].name == name)
+									{
+										functions[i].isused = true;
+										break;
+									}
+								}
+							}
+							
+							if (i >= functions.size())
+								Throw("Static function pointer \"" + decl->getNameAsString() + "\" not found");
 
 
 							string funcname = "GetLoc(\"" + decl->getNameAsString() + "\")";
@@ -3103,15 +3177,15 @@ public:
 
 
 			if (bOp->getLHS()->getType()->isFloatingType() || islvaluefloat) {
-#define IS_PushF(op)\
+				#define IS_PushF(op)\
 				float stk1 = IntToFloat(IS_Pop().bytes);\
 				float stk2 = IntToFloat(IS_Pop().bytes);\
 				InitializationStack.push({ stk2 op stk1, FBWT_FLOAT });
-#define IS_PushFc(op)\
+				#define IS_PushFc(op)\
 				float stk1 = IntToFloat(IS_Pop().bytes);\
 				float stk2 = IntToFloat(IS_Pop().bytes);\
 				InitializationStack.push({ FloatToInt(stk2 op stk1), FBWT_FLOAT });
-#define IS_PushFi(op)\
+				#define IS_PushFi(op)\
 				int32_t stk1 = IS_Pop().bytes;\
 				int32_t stk2 = IS_Pop().bytes;\
 				InitializationStack.push({ stk2 op stk1, FBWT_FLOAT });
@@ -3148,7 +3222,7 @@ public:
 
 			}
 			else {
-#define IS_PushI(op)\
+				#define IS_PushI(op)\
 				int32_t stk1 = IS_Pop().bytes;\
 				int32_t stk2 = IS_Pop().bytes;\
 				InitializationStack.push({ stk2 op stk1, FBWT_INT });
@@ -3244,7 +3318,7 @@ public:
 								{
 									int32_t buffer = 0, b = 0, stvi = 0;
 
-#define AddStaticArraySpecial(loopsize,maxsize,buffsetstmt,buffgetstmt)\
+									#define AddStaticArraySpecial(loopsize,maxsize,buffsetstmt,buffgetstmt)\
 									for (int32_t i = 0; i < ArrayOut.size(); i++, b++)\
 									{\
 										if (b >= loopsize)\
@@ -3393,9 +3467,6 @@ public:
 	//    }
 	//
 
-
-
-
 	bool VisitDecl(Decl *D) {
 
 		if (isa<FunctionDecl>(D)) {
@@ -3406,8 +3477,6 @@ public:
 		}
 		return true;
 	}
-
-
 
 	string dumpName(const NamedDecl *ND) {
 		if (ND->getDeclName()) {
@@ -3484,8 +3553,13 @@ public:
 			header.seekg(0, ios::end);
 			fwrite(header.str().c_str(), 1, header.tellg(), file);
 
-			Visitor.out.seekg(0, ios::end);
-			fwrite(Visitor.out.str().c_str(), 1, Visitor.out.tellg(), file);
+			string outstr = Visitor.out.str();
+			for (uint32_t i = 0; i < functions.size(); i++)
+			{
+				cout << functions[i].name << endl;
+				if (functions[i].isused)
+					fwrite(outstr.c_str() + functions[i].FuncDataPos, 1, i == functions.size() - 1 ? outstr.size() - functions[i].FuncDataPos : functions[i + 1].FuncDataPos - functions[i].FuncDataPos, file);
+			}
 
 			fclose(file);
 		}
