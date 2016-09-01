@@ -1081,7 +1081,17 @@ public:
 			}
 			return true;
 		}
-
+		else if(funcName.find("@__stacktop", 0, 11) == 0)
+		{
+			if(!call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() == StorageClass::SC_Extern)
+			{
+				if(argCount != 0)
+				{
+					Throw(funcName.substr(1) + " must be called with no parameters");
+				}
+				return true;
+			}
+		}
 		return false;
 	}
 
