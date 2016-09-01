@@ -290,35 +290,6 @@ uint32_t getSizeOfType(const Type* type) {
 	return 0;
 }
 
-void TypeRewriter(VarDecl* varDecl)
-{
-	if (varDecl->getType()->isBuiltinType())
-	{
-		const BuiltinType *bt = cast<const BuiltinType>(varDecl->getType());
-
-		switch (bt->getKind())
-		{
-			//QualType qt;
-			
-			case clang::BuiltinType::Kind::Double:
-			QualType* qt;
-			BuiltinType* kll;
-			
-
-			//varDecl->setType();
-
-			break;
-			
-
-		}
-	}
-	else
-		Throw("Unimplemented non builtin type for type rewriter", rewriter, varDecl->getLocStart());
-
-}
-
-
-
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
 public:
 	MyASTVisitor(Rewriter &R, ASTContext *context, string filename) : TheRewriter(R), context(context), outfile(filename) {}
@@ -785,7 +756,7 @@ public:
 		else
 			Throw("Undefined statement \"" + string(s->getStmtClassName()) + "\"", rewriter, s->getLocStart());
 
-			return true;
+		return true;
 	}
 
 	bool handleDecl(DeclStmt* decl) {
@@ -1116,45 +1087,45 @@ public:
 
 	string parseCast(const CastExpr *castExpr) {
 		switch (castExpr->getCastKind()) {
-		case clang::CK_LValueToRValue:
+			case clang::CK_LValueToRValue:
 			break;
-		case clang::CK_IntegralCast:
-		{
-			const Expr *e = castExpr->getSubExpr();
-			if (isa<IntegerLiteral>(e)) {
-				const IntegerLiteral *literal = cast<const IntegerLiteral>(e);
-				return to_string(literal->getValue().getSExtValue());
+			case clang::CK_IntegralCast:
+			{
+				const Expr *e = castExpr->getSubExpr();
+				if (isa<IntegerLiteral>(e)) {
+					const IntegerLiteral *literal = cast<const IntegerLiteral>(e);
+					return to_string(literal->getValue().getSExtValue());
+				}
+				else if (isa<FloatingLiteral>(e)) {
+					const FloatingLiteral *literal = cast<const FloatingLiteral>(e);
+					if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
+						return to_string(literal->getValue().convertToFloat());
+					else
+						return to_string(literal->getValue().convertToDouble());
+				}
+				else {
+					out << "unhandled cast (IK)" << endl;
+				}
 			}
-			else if (isa<FloatingLiteral>(e)) {
-				const FloatingLiteral *literal = cast<const FloatingLiteral>(e);
-				if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
-					return to_string(literal->getValue().convertToFloat());
-				else
-					return to_string(literal->getValue().convertToDouble());
-			}
-			else {
-				out << "unhandled cast (IK)" << endl;
-			}
-		}
-		case clang::CK_FunctionToPointerDecay:
-		{
-			if (isa<DeclRefExpr>(castExpr->getSubExpr())) {
-				const DeclRefExpr *declRef = cast<const DeclRefExpr>(castExpr->getSubExpr());
-				if (isa<FunctionDecl>(declRef->getDecl())) {
-					const FunctionDecl *decl = cast<const FunctionDecl>(declRef->getDecl());
-					return getNameForFunc(decl);
+			case clang::CK_FunctionToPointerDecay:
+			{
+				if (isa<DeclRefExpr>(castExpr->getSubExpr())) {
+					const DeclRefExpr *declRef = cast<const DeclRefExpr>(castExpr->getSubExpr());
+					if (isa<FunctionDecl>(declRef->getDecl())) {
+						const FunctionDecl *decl = cast<const FunctionDecl>(declRef->getDecl());
+						return getNameForFunc(decl);
+					}
+					else {
+						out << "Unimplemented cast" << endl;
+					}
+
 				}
 				else {
 					out << "Unimplemented cast" << endl;
 				}
-
 			}
-			else {
-				out << "Unimplemented cast" << endl;
-			}
-		}
-		break;
-		default:
+			break;
+			default:
 			out << "unimplemented cast" << endl;
 		}
 		return "";
@@ -1203,10 +1174,10 @@ public:
 			}
 		}
 
-		if(isa<BinaryOperator>(RHS))
+		if (isa<BinaryOperator>(RHS))
 		{
 			Expr* newExpr;
-			if(binaryOpConstantFolding(cast<BinaryOperator>(RHS), &newExpr))
+			if (binaryOpConstantFolding(cast<BinaryOperator>(RHS), &newExpr))
 			{
 				((BinaryOperator*)operation)->setRHS(newExpr);
 				RHS = operation->getRHS();
@@ -1219,22 +1190,22 @@ public:
 			int64_t rhs = cast<IntegerLiteral>(RHS)->getValue().getSExtValue();
 			switch (operation->getOpcode())
 			{
-			case BO_SubAssign:
-			case BO_AddAssign:
-			case BO_DivAssign:
-			case BO_MulAssign:
-			case BO_AndAssign:
-			case BO_Assign:
-			case BO_OrAssign:
-			case BO_RemAssign:
-			case BO_ShlAssign:
-			case BO_ShrAssign:
-			case BO_XorAssign:
+				case BO_SubAssign:
+				case BO_AddAssign:
+				case BO_DivAssign:
+				case BO_MulAssign:
+				case BO_AndAssign:
+				case BO_Assign:
+				case BO_OrAssign:
+				case BO_RemAssign:
+				case BO_ShlAssign:
+				case BO_ShrAssign:
+				case BO_XorAssign:
 				//probably should error here as these operations should have been alread catched
 				return false;
-			case BO_Add:
+				case BO_Add:
 				newInt = lhs + rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << iPush(newInt) << endl;
 				}
 				else
@@ -1242,9 +1213,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Sub:
+				case BO_Sub:
 				newInt = lhs - rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << iPush(newInt) << endl;
 				}
 				else
@@ -1252,9 +1223,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Div:
+				case BO_Div:
 				newInt = lhs / rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << iPush(newInt) << endl;
 				}
 				else
@@ -1262,9 +1233,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Mul:
+				case BO_Mul:
 				newInt = lhs * rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << iPush(newInt) << endl;
 				}
 				else
@@ -1272,9 +1243,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_And:
+				case BO_And:
 				newInt = lhs & rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << iPush(newInt) << endl;
 				}
 				else
@@ -1282,9 +1253,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_LAnd:
+				case BO_LAnd:
 				newInt = lhs != 0 && rhs != 0 ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1292,9 +1263,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Or:
+				case BO_Or:
 				newInt = lhs | rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << iPush(newInt) << endl;
 				}
 				else
@@ -1302,9 +1273,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_LOr:
+				case BO_LOr:
 				newInt = lhs != 0 || rhs != 0 ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1312,9 +1283,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Xor:
+				case BO_Xor:
 				newInt = lhs ^ rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << iPush(newInt) << endl;
 				}
 				else
@@ -1322,9 +1293,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Shl:
+				case BO_Shl:
 				newInt = lhs << rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << iPush(newInt) << endl;
 				}
 				else
@@ -1332,9 +1303,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Shr:
+				case BO_Shr:
 				newInt = lhs >> rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << iPush(newInt) << endl;
 				}
 				else
@@ -1342,9 +1313,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_EQ:
+				case BO_EQ:
 				newInt = lhs == rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1352,9 +1323,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_NE:
+				case BO_NE:
 				newInt = lhs != rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1362,9 +1333,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_GE:
+				case BO_GE:
 				newInt = lhs >= rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1372,9 +1343,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_GT:
+				case BO_GT:
 				newInt = lhs > rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1382,9 +1353,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_LE:
+				case BO_LE:
 				newInt = lhs <= rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1392,9 +1363,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_LT:
+				case BO_LT:
 				newInt = lhs < rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1402,44 +1373,44 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			default:
+				default:
 				return false;
 			}
 		}
-		if(isa<FloatingLiteral>(LHS) && isa<FloatingLiteral>(RHS))
+		if (isa<FloatingLiteral>(LHS) && isa<FloatingLiteral>(RHS))
 		{
 			const llvm::APFloat lhsFlt = cast<FloatingLiteral>(LHS)->getValue();
 			const llvm::APFloat rhsFlt = cast<FloatingLiteral>(RHS)->getValue();
 			double lhs = &lhsFlt.getSemantics() == &llvm::APFloat::IEEEsingle ? (double)lhsFlt.convertToFloat() : lhsFlt.convertToDouble();
 			double rhs = &rhsFlt.getSemantics() == &llvm::APFloat::IEEEsingle ? (double)rhsFlt.convertToFloat() : rhsFlt.convertToDouble();
-			switch(operation->getOpcode())
+			switch (operation->getOpcode())
 			{
-			case BO_SubAssign:
-			case BO_AddAssign:
-			case BO_DivAssign:
-			case BO_MulAssign:
-			case BO_AndAssign:
-			case BO_Assign:
-			case BO_OrAssign:
-			case BO_RemAssign:
-			case BO_ShlAssign:
-			case BO_ShrAssign:
-			case BO_XorAssign:
+				case BO_SubAssign:
+				case BO_AddAssign:
+				case BO_DivAssign:
+				case BO_MulAssign:
+				case BO_AndAssign:
+				case BO_Assign:
+				case BO_OrAssign:
+				case BO_RemAssign:
+				case BO_ShlAssign:
+				case BO_ShrAssign:
+				case BO_XorAssign:
 				//probably should error here as these operations should have been alread catched
 				return false;
-			case BO_Add:
+				case BO_Add:
 				newDouble = lhs + rhs;
-				if(newExpr == NULL){
-					out << "PushF "<< newDouble << endl;
+				if (newExpr == NULL) {
+					out << "PushF " << newDouble << endl;
 				}
 				else
 				{
 					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Sub:
+				case BO_Sub:
 				newDouble = lhs - rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "PushF " << newDouble << endl;
 				}
 				else
@@ -1447,9 +1418,9 @@ public:
 					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Div:
+				case BO_Div:
 				newDouble = lhs / rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "PushF " << newDouble << endl;
 				}
 				else
@@ -1457,9 +1428,9 @@ public:
 					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Mul:
+				case BO_Mul:
 				newDouble = lhs * rhs;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "PushF " << newDouble << endl;
 				}
 				else
@@ -1467,12 +1438,12 @@ public:
 					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_And:
+				case BO_And:
 				//out << iPush(lhs & rhs) << endl; //unsupported operator
 				return false;
-			case BO_LAnd:
+				case BO_LAnd:
 				newInt = lhs != 0 && rhs != 0 ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1480,12 +1451,12 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Or:
+				case BO_Or:
 				//out << iPush(lhs | rhs) << endl; //unsupported operator
 				return false;
-			case BO_LOr:
+				case BO_LOr:
 				newInt = lhs != 0 || rhs != 0 ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1493,18 +1464,18 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_Xor:
+				case BO_Xor:
 				//out << iPush(lhs ^ rhs) << endl; //unsupported operator
 				return false;
-			case BO_Shl:
+				case BO_Shl:
 				//out << iPush(lhs << rhs) << endl; //unsupported operator
 				return false;
-			case BO_Shr:
+				case BO_Shr:
 				//out << iPush(lhs >> rhs) << endl; //unsupported operator
 				return false;
-			case BO_EQ:
+				case BO_EQ:
 				newInt = lhs == rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1512,9 +1483,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_NE:
+				case BO_NE:
 				newInt = lhs != rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1522,9 +1493,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_GE:
+				case BO_GE:
 				newInt = lhs >= rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1532,9 +1503,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_GT:
+				case BO_GT:
 				newInt = lhs > rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1542,9 +1513,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_LE:
+				case BO_LE:
 				newInt = lhs <= rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1552,9 +1523,9 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			case BO_LT:
+				case BO_LT:
 				newInt = lhs < rhs ? 1 : 0;
-				if(newExpr == NULL){
+				if (newExpr == NULL) {
 					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
 				}
 				else
@@ -1562,7 +1533,7 @@ public:
 					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
 				}
 				return true;
-			default:
+				default:
 				return false;
 			}
 		}
@@ -1681,128 +1652,128 @@ public:
 			const CastExpr *icast = cast<const CastExpr>(e);
 			//out << icast->getCastKindName() << endl;
 			switch (icast->getCastKind()) {
-			case clang::CK_IntegralToFloating:
-			{
-				if (isa<IntegerLiteral>(icast->getSubExpr())) {
-					const IntegerLiteral *literal = cast<const IntegerLiteral>(icast->getSubExpr());
-					out << "PushF " << literal->getValue().getSExtValue() << ".0" << endl;
-					return true;
+				case clang::CK_IntegralToFloating:
+				{
+					if (isa<IntegerLiteral>(icast->getSubExpr())) {
+						const IntegerLiteral *literal = cast<const IntegerLiteral>(icast->getSubExpr());
+						out << "PushF " << literal->getValue().getSExtValue() << ".0" << endl;
+						return true;
+					}
+					else {
+						parseExpression(icast->getSubExpr(), false, true);
+						out << "itof" << endl;
+						return true;
+					}
 				}
-				else {
-					parseExpression(icast->getSubExpr(), false, true);
-					out << "itof" << endl;
-					return true;
-				}
-			}
-			case clang::CK_FloatingCast:
-			case clang::CK_IntegralCast:
+				case clang::CK_FloatingCast:
+				case clang::CK_IntegralCast:
 				parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 				break;
-			case clang::CK_ArrayToPointerDecay:
+				case clang::CK_ArrayToPointerDecay:
 				parseExpression(icast->getSubExpr(), true, false);
 				break;
-			case clang::CK_LValueToRValue:
-			{
-				parseExpression(icast->getSubExpr(), isAddr, true, printVTable);
-				//const Expr *subE = icast->getSubExpr();
+				case clang::CK_LValueToRValue:
+				{
+					parseExpression(icast->getSubExpr(), isAddr, true, printVTable);
+					//const Expr *subE = icast->getSubExpr();
 
-				//handleRValueDeclRef(subE);
-				break;
-			}
-			case clang::CK_UncheckedDerivedToBase:
-			{
-				if (isa<DeclRefExpr>(icast->getSubExpr())) {
-					const DeclRefExpr *declRef = cast<const DeclRefExpr>(icast->getSubExpr());
-					CXXRecordDecl *base = declRef->getType()->getAsCXXRecordDecl();
-					int offset = getSizeOfCXXDecl(base, false, false, icast->getType()->getAsCXXRecordDecl());
-					if (offset != 0) {
-						out << endl << iPush(offset / 4) << " //Base+" << offset << endl;
-						parseExpression(declRef, true);
-						out << "GetArrayP2 1  " << " //Cast : " << base->getDeclName().getAsString() << " to " << icast->getType()->getAsCXXRecordDecl()->getDeclName().getAsString() << endl;
-					}
-					else {
-						parseExpression(icast->getSubExpr());
-					}
+					//handleRValueDeclRef(subE);
+					break;
 				}
-				else if (isa<CXXThisExpr>(icast->getSubExpr())) {
-					const CXXThisExpr *expr = cast<const CXXThisExpr>(icast->getSubExpr());
-					const PointerType *pointer = cast<const PointerType>(expr->getType());
-					const PointerType *castPointer = cast<const PointerType>(icast->getType());
-
-					CXXRecordDecl *base = pointer->getPointeeType()->getAsCXXRecordDecl();
-					int offset = getSizeOfCXXDecl(base, false, false, castPointer->getPointeeCXXRecordDecl());
-					if (offset != 0) {
-						out << endl << iPush(offset / 4) << " //Base+" << offset << endl;
-						parseExpression(expr, true);
-						if (icast->getType()->getAsCXXRecordDecl())
+				case clang::CK_UncheckedDerivedToBase:
+				{
+					if (isa<DeclRefExpr>(icast->getSubExpr())) {
+						const DeclRefExpr *declRef = cast<const DeclRefExpr>(icast->getSubExpr());
+						CXXRecordDecl *base = declRef->getType()->getAsCXXRecordDecl();
+						int offset = getSizeOfCXXDecl(base, false, false, icast->getType()->getAsCXXRecordDecl());
+						if (offset != 0) {
+							out << endl << iPush(offset / 4) << " //Base+" << offset << endl;
+							parseExpression(declRef, true);
 							out << "GetArrayP2 1  " << " //Cast : " << base->getDeclName().getAsString() << " to " << icast->getType()->getAsCXXRecordDecl()->getDeclName().getAsString() << endl;
-						else
-							out << "GetArrayP2 1  " << " //Cast : " << base->getDeclName().getAsString() << " to " << icast->getType()->getPointeeCXXRecordDecl()->getDeclName().getAsString() << endl;
+						}
+						else {
+							parseExpression(icast->getSubExpr());
+						}
+					}
+					else if (isa<CXXThisExpr>(icast->getSubExpr())) {
+						const CXXThisExpr *expr = cast<const CXXThisExpr>(icast->getSubExpr());
+						const PointerType *pointer = cast<const PointerType>(expr->getType());
+						const PointerType *castPointer = cast<const PointerType>(icast->getType());
+
+						CXXRecordDecl *base = pointer->getPointeeType()->getAsCXXRecordDecl();
+						int offset = getSizeOfCXXDecl(base, false, false, castPointer->getPointeeCXXRecordDecl());
+						if (offset != 0) {
+							out << endl << iPush(offset / 4) << " //Base+" << offset << endl;
+							parseExpression(expr, true);
+							if (icast->getType()->getAsCXXRecordDecl())
+								out << "GetArrayP2 1  " << " //Cast : " << base->getDeclName().getAsString() << " to " << icast->getType()->getAsCXXRecordDecl()->getDeclName().getAsString() << endl;
+							else
+								out << "GetArrayP2 1  " << " //Cast : " << base->getDeclName().getAsString() << " to " << icast->getType()->getPointeeCXXRecordDecl()->getDeclName().getAsString() << endl;
+						}
+						else {
+							parseExpression(icast->getSubExpr());
+						}
 					}
 					else {
-						parseExpression(icast->getSubExpr());
+						out << "unsupported cast" << endl;
 					}
+
+
+					break;
+
 				}
-				else {
-					out << "unsupported cast" << endl;
+				case clang::CK_DerivedToBase:
+				{
+					parseExpression(icast->getSubExpr());
+					break;
 				}
+				case clang::CK_PointerToIntegral:
+				{
 
+					parseExpression(icast->getSubExpr(), false, true);
+					break;
+				}
+				case clang::CK_IntegralToPointer:
+				{
+					//Fixed support for:
+					//char* test = GET_STRING_PTR();
+					//and other pointers
+					parseExpression(icast->getSubExpr(), false, true);
+					break;
+				}
+				case clang::CK_FloatingToIntegral:
+				{
 
-				break;
-
-			}
-			case clang::CK_DerivedToBase:
-			{
-				parseExpression(icast->getSubExpr());
-				break;
-			}
-			case clang::CK_PointerToIntegral:
-			{
-
-				parseExpression(icast->getSubExpr(), false, true);
-				break;
-			}
-			case clang::CK_IntegralToPointer:
-			{
-				//Fixed support for:
-				//char* test = GET_STRING_PTR();
-				//and other pointers
-				parseExpression(icast->getSubExpr(), false, true);
-				break;
-			}
-			case clang::CK_FloatingToIntegral:
-			{
-
-				parseExpression(icast->getSubExpr());
-				out << "ftoi" << endl;
-				break;
-			}
-			case clang::CK_NoOp:
-			{
-				parseExpression(icast->getSubExpr());
-				break;
-			}
-			case clang::CK_FunctionToPointerDecay:
-			{
-				parseExpression(icast->getSubExpr());
-				break;
-			}
-			case clang::CK_BitCast:
-			{
-				parseExpression(icast->getSubExpr());
-				break;
-			}
-			case clang::CK_IntegralToBoolean:
-			{
-				parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-				break;
-			}
-			case clang::CK_FloatingComplexToReal:
-			{
-				parseExpression(icast->getSubExpr());
-				break;
-			}
-			default:
+					parseExpression(icast->getSubExpr());
+					out << "ftoi" << endl;
+					break;
+				}
+				case clang::CK_NoOp:
+				{
+					parseExpression(icast->getSubExpr());
+					break;
+				}
+				case clang::CK_FunctionToPointerDecay:
+				{
+					parseExpression(icast->getSubExpr());
+					break;
+				}
+				case clang::CK_BitCast:
+				{
+					parseExpression(icast->getSubExpr());
+					break;
+				}
+				case clang::CK_IntegralToBoolean:
+				{
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					break;
+				}
+				case clang::CK_FloatingComplexToReal:
+				{
+					parseExpression(icast->getSubExpr());
+					break;
+				}
+				default:
 				out << "Unhandled cast (CK) of type " << icast->getCastKindName() << endl;
 
 			}
@@ -1998,7 +1969,7 @@ public:
 			}
 
 			switch (bOp->getOpcode()) {
-			case BO_SubAssign:
+				case BO_SubAssign:
 				parseExpression(bOp->getLHS(), false, true);
 				parseExpression(bOp->getRHS(), false, true);//fixed with this line
 				if (bOp->getLHS()->getType()->isFloatingType())
@@ -2007,7 +1978,7 @@ public:
 				out << "Sub" << endl;
 				parseExpression(bOp->getLHS(), false, false);
 				break;
-			case BO_AddAssign:
+				case BO_AddAssign:
 				parseExpression(bOp->getLHS(), false, true);
 				parseExpression(bOp->getRHS(), false, true);
 				if (bOp->getLHS()->getType()->isFloatingType())
@@ -2016,7 +1987,7 @@ public:
 				out << "Add" << endl;
 				parseExpression(bOp->getLHS(), false, false);
 				break;
-			case BO_DivAssign:
+				case BO_DivAssign:
 				parseExpression(bOp->getLHS(), false, true);
 				parseExpression(bOp->getRHS(), false, true);
 				if (bOp->getLHS()->getType()->isFloatingType())
@@ -2024,7 +1995,7 @@ public:
 				out << "Div" << endl;
 				parseExpression(bOp->getLHS(), false, false);
 				break;
-			case BO_MulAssign:
+				case BO_MulAssign:
 				parseExpression(bOp->getLHS(), false, true);
 				parseExpression(bOp->getRHS(), false, true);
 				if (bOp->getLHS()->getType()->isFloatingType())
@@ -2032,19 +2003,19 @@ public:
 				out << "Mult" << endl;
 				parseExpression(bOp->getLHS(), false, false);
 				break;
-			case BO_OrAssign:
+				case BO_OrAssign:
 				parseExpression(bOp->getLHS(), false, true);
 				parseExpression(bOp->getRHS(), false, true);
 				out << "Or" << endl;
 				parseExpression(bOp->getLHS(), false, false);
 				break;
-			case BO_AndAssign:
+				case BO_AndAssign:
 				parseExpression(bOp->getLHS(), false, true);
 				parseExpression(bOp->getRHS(), false, true);
 				out << "And" << endl;
 				parseExpression(bOp->getLHS(), false, false);
 				break;
-			case BO_RemAssign:
+				case BO_RemAssign:
 				parseExpression(bOp->getLHS(), false, true);
 				parseExpression(bOp->getRHS(), false, true);
 				if (bOp->getLHS()->getType()->isFloatingType())
@@ -2052,157 +2023,157 @@ public:
 				out << "Mod" << endl;
 				parseExpression(bOp->getLHS(), false, false);
 				break;
-			case BO_XorAssign:
+				case BO_XorAssign:
 				parseExpression(bOp->getLHS(), false, true);
 				parseExpression(bOp->getRHS(), false, true);
 				out << "Xor" << endl;
 				parseExpression(bOp->getLHS(), false, false);
 				break;
-			case BO_ShlAssign:
+				case BO_ShlAssign:
 				parseExpression(bOp->getLHS(), false, true);
 				parseExpression(bOp->getRHS(), false, true);
 				out << "CallNative shift_left 2 1" << endl;
 				parseExpression(bOp->getLHS(), false, false);
 				break;
-			case BO_ShrAssign:
+				case BO_ShrAssign:
 				parseExpression(bOp->getLHS(), false, true);
 				parseExpression(bOp->getRHS(), false, true);
 				out << "CallNative shift_right 2 1" << endl;
 				parseExpression(bOp->getLHS(), false, false);
 				break;
-			default:
-			{
-				if(!binaryOpConstantFolding(bOp, NULL)){
-					parseExpression(bOp->getLHS(), false, true);
-					parseExpression(bOp->getRHS(), false, true);
+				default:
+				{
+					if (!binaryOpConstantFolding(bOp, NULL)) {
+						parseExpression(bOp->getLHS(), false, true);
+						parseExpression(bOp->getRHS(), false, true);
 
 
-					if(bOp->getLHS()->getType()->isFloatingType()) {
-						switch(bOp->getOpcode()) {
-						case BO_EQ:
-							out << "fCmpEQ" << endl;
-							break;
-						case BO_Mul:
-							out << "fMult" << endl;
-							break;
-						case BO_Div:
-							out << "fDiv" << endl;
-							break;
-						case BO_Rem:
-							out << "FMod" << endl;
-							break;
-						case BO_Sub:
-							out << "fSub" << endl;
-							break;
-						case BO_LT:
-							out << "fCmpLT" << endl;
-							break;
-						case BO_GT:
-							out << "fCmpGT" << endl;
-							break;
-						case BO_GE:
-							out << "fCmpGE" << endl;
-							break;
-						case BO_LE:
-							out << "fCmpLE" << endl;
-							break;
-						case BO_NE:
-							out << "fCmpNE" << endl;
-							break;
-						case BO_LAnd:
-						case BO_And:
-							out << "And" << endl;
-							break;
-						case BO_Xor:
-							out << "Xor" << endl;
-							break;
-						case BO_Add:
-							out << "fAdd" << endl;
-							break;
-						case BO_LOr:
-						case BO_Or:
-							out << "Or " << endl;
-							break;
-						case BO_Shl:
-							out << "CallNative shift_left 2 1";
-							break;
-						case BO_Shr:
-							out << "CallNative shift_right 2 1";
-							break;
+						if (bOp->getLHS()->getType()->isFloatingType()) {
+							switch (bOp->getOpcode()) {
+								case BO_EQ:
+								out << "fCmpEQ" << endl;
+								break;
+								case BO_Mul:
+								out << "fMult" << endl;
+								break;
+								case BO_Div:
+								out << "fDiv" << endl;
+								break;
+								case BO_Rem:
+								out << "FMod" << endl;
+								break;
+								case BO_Sub:
+								out << "fSub" << endl;
+								break;
+								case BO_LT:
+								out << "fCmpLT" << endl;
+								break;
+								case BO_GT:
+								out << "fCmpGT" << endl;
+								break;
+								case BO_GE:
+								out << "fCmpGE" << endl;
+								break;
+								case BO_LE:
+								out << "fCmpLE" << endl;
+								break;
+								case BO_NE:
+								out << "fCmpNE" << endl;
+								break;
+								case BO_LAnd:
+								case BO_And:
+								out << "And" << endl;
+								break;
+								case BO_Xor:
+								out << "Xor" << endl;
+								break;
+								case BO_Add:
+								out << "fAdd" << endl;
+								break;
+								case BO_LOr:
+								case BO_Or:
+								out << "Or " << endl;
+								break;
+								case BO_Shl:
+								out << "CallNative shift_left 2 1";
+								break;
+								case BO_Shr:
+								out << "CallNative shift_right 2 1";
+								break;
 
-						default:
-							out << "unimplemented2 " << bOp->getOpcode() << endl;
+								default:
+								out << "unimplemented2 " << bOp->getOpcode() << endl;
+							}
+
 						}
-
-					}
-					else {
-						switch(bOp->getOpcode()) {
-						case BO_EQ:
-							out << "CmpEQ" << endl;
-							break;
-						case BO_Mul:
-							out << "Mult" << endl;
-							break;
-						case BO_Div:
-							out << "Div" << endl;
-							break;
-						case BO_Rem:
-							out << "Mod" << endl;
-							break;
-						case BO_Sub:
-							out << "Sub" << endl;
-							break;
-						case BO_LT:
-							out << "CmpLT" << endl;
-							break;
-						case BO_GT:
-							out << "CmpGT" << endl;
-							break;
-						case BO_GE:
-							out << "CmpGE" << endl;
-							break;
-						case BO_LE:
-							out << "CmpLE" << endl;
-							break;
-						case BO_NE:
-							out << "CmpNE" << endl;
-							break;
-						case BO_LAnd:
-						case BO_And:
-							out << "And" << endl;
-							break;
-						case BO_Xor:
-							out << "Xor" << endl;
-							break;
-						case BO_Add:
-							out << "Add" << endl;
-							break;
-						case BO_LOr:
-						case BO_Or:
-							out << "Or" << endl;
-							break;
-						case BO_Shl:
-							out << "CallNative shift_left 2 1" << endl;
-							break;
-						case BO_Shr:
-							out << "CallNative shift_right 2 1" << endl;
-							break;
-						default:
-							out << "unimplemented2 " << bOp->getOpcode() << endl;
+						else {
+							switch (bOp->getOpcode()) {
+								case BO_EQ:
+								out << "CmpEQ" << endl;
+								break;
+								case BO_Mul:
+								out << "Mult" << endl;
+								break;
+								case BO_Div:
+								out << "Div" << endl;
+								break;
+								case BO_Rem:
+								out << "Mod" << endl;
+								break;
+								case BO_Sub:
+								out << "Sub" << endl;
+								break;
+								case BO_LT:
+								out << "CmpLT" << endl;
+								break;
+								case BO_GT:
+								out << "CmpGT" << endl;
+								break;
+								case BO_GE:
+								out << "CmpGE" << endl;
+								break;
+								case BO_LE:
+								out << "CmpLE" << endl;
+								break;
+								case BO_NE:
+								out << "CmpNE" << endl;
+								break;
+								case BO_LAnd:
+								case BO_And:
+								out << "And" << endl;
+								break;
+								case BO_Xor:
+								out << "Xor" << endl;
+								break;
+								case BO_Add:
+								out << "Add" << endl;
+								break;
+								case BO_LOr:
+								case BO_Or:
+								out << "Or" << endl;
+								break;
+								case BO_Shl:
+								out << "CallNative shift_left 2 1" << endl;
+								break;
+								case BO_Shr:
+								out << "CallNative shift_right 2 1" << endl;
+								break;
+								default:
+								out << "unimplemented2 " << bOp->getOpcode() << endl;
+							}
 						}
 					}
+
+
+
+					if (!isLtoRValue) {
+
+						Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
+						out << "Drop" << endl;
+					}
+
+
 				}
-
-
-
-				if (!isLtoRValue) {
-
-					Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
-					out << "Drop" << endl;
-				}
-
-
-			}
 
 			}
 		}
@@ -2291,25 +2262,25 @@ public:
 			//out << ueTrait->getKind() << endl;
 			switch (ueTrait->getKind())
 			{
-			case UnaryExprOrTypeTrait::UETT_SizeOf:
-			{
-				int size = 0;
+				case UnaryExprOrTypeTrait::UETT_SizeOf:
+				{
+					int size = 0;
 
-				if (ueTrait->isArgumentType())
-					size = getSizeOfType(ueTrait->getArgumentType().getTypePtr());
-				else//size = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
-					size = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr()); 
-				//size = context->getTypeInfoDataSizeInChars(ueTrait->getArgumentExpr()->getType()).first.getQuantity();
+					if (ueTrait->isArgumentType())
+						size = getSizeOfType(ueTrait->getArgumentType().getTypePtr());
+					else//size = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
+						size = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
+					//size = context->getTypeInfoDataSizeInChars(ueTrait->getArgumentExpr()->getType()).first.getQuantity();
 
 
 
-				//Pause("SIZE: " + to_string(size) + "\r\n");
-				if (isLtoRValue)
-					out << "Push " << size << endl;
+					//Pause("SIZE: " + to_string(size) + "\r\n");
+					if (isLtoRValue)
+						out << "Push " << size << endl;
 
-			}
-			break;
-			default:
+				}
+				break;
+				default:
 				out << "!!Unsupported UnaryExprOrTypeTrait" << endl;
 				break;
 			}
@@ -2338,10 +2309,15 @@ public:
 			out << "imaginary_literal_push" << endl;
 
 		}
-		else {
-			out << "unimplemented3 " << endl;
-
+		else if (isa<GenericSelectionExpr>(e))
+		{
+			const GenericSelectionExpr *gse = cast<GenericSelectionExpr>(e);
+			parseExpression(gse->getResultExpr(), isAddr, isLtoRValue);
 		}
+
+		else
+			Throw("Unimplemented expression " + string(e->getStmtClassName()), rewriter, e->getExprLoc());
+
 		return -1;
 	}
 
@@ -2802,7 +2778,7 @@ public:
 
 			switch (icast->getCastKind())
 			{
-			case CK_ArrayToPointerDecay://char* x = "hello"; is unsupported
+				case CK_ArrayToPointerDecay://char* x = "hello"; is unsupported
 				if (isa<StringLiteral>(icast->getSubExpr()))
 				{
 					Throw("Static initialization of a char* is forbidden", rewriter, icast->getSubExpr()->getExprLoc());
@@ -2811,11 +2787,11 @@ public:
 					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()));
 				break;
 
-			case CK_IntegralCast://int x = 5.0;
-			case CK_FloatingCast://float x = 6.9;
+				case CK_IntegralCast://int x = 5.0;
+				case CK_FloatingCast://float x = 6.9;
 				ParseLiteral(icast->getSubExpr(), isAddr, isLtoRValue);
 				break;
-			case CK_IntegralToFloating://float x = 5;
+				case CK_IntegralToFloating://float x = 5;
 				if (isa<IntegerLiteral>(icast->getSubExpr())) {
 					const IntegerLiteral *literal = cast<const IntegerLiteral>(icast->getSubExpr());
 					float fltliteral = literal->getValue().getSExtValue();
@@ -2827,7 +2803,7 @@ public:
 					InitializationStack.push({ FloatToInt((float)IS_Pop().bytes), FBWT_FLOAT });
 				}
 				break;
-			case CK_FloatingToIntegral:
+				case CK_FloatingToIntegral:
 				if (isa<FloatingLiteral>(icast->getSubExpr())) {
 					const FloatingLiteral *literal = cast<const FloatingLiteral>(icast->getSubExpr());
 					float fltliteral;
@@ -2844,7 +2820,7 @@ public:
 				}
 				break;
 
-			case CK_FunctionToPointerDecay://int (*ggg)(int, float) = test; // test is a function
+				case CK_FunctionToPointerDecay://int (*ggg)(int, float) = test; // test is a function
 
 				if (isa<DeclRefExpr>(icast->getSubExpr())) {
 					const DeclRefExpr *declRef = cast<const DeclRefExpr>(icast->getSubExpr());
@@ -2883,7 +2859,7 @@ public:
 				else Throw("Unimplemented CK_FunctionToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()));
 
 				break;
-			case CK_LValueToRValue://const int h = 5; int k = h;
+				case CK_LValueToRValue://const int h = 5; int k = h;
 
 				if (isa<DeclRefExpr>(icast->getSubExpr())) {
 					const DeclRefExpr *declRef = cast<const DeclRefExpr>(icast->getSubExpr());
@@ -2900,10 +2876,10 @@ public:
 							if (endp == dsit->second.c_str() || *endp != 0)
 								Throw("Unable to convert a const default static value to value", rewriter, declRef->getExprLoc());
 
-							if(declRef->getDecl()->getType()->isFloatingType())
+							if (declRef->getDecl()->getType()->isFloatingType())
 								InitializationStack.push({ value, FBWT_FLOAT });
 							else
-								InitializationStack.push({ value, FBWT_INT});
+								InitializationStack.push({ value, FBWT_INT });
 						}
 						else Throw("Const value index " + string(declRef->getDecl()->getName()) + " was not found", rewriter, declRef->getExprLoc());
 					}
@@ -2913,7 +2889,7 @@ public:
 
 				break;
 
-			default:
+				default:
 				Throw("Unimplemented ImplicitCastExpr of type " + string(icast->getCastKindName()));
 
 			}
@@ -2923,62 +2899,62 @@ public:
 		else if (isa<CastExpr>(e)) {
 			const CastExpr *icast = cast<const CastExpr>(e);
 			switch (icast->getCastKind()) {
-			case clang::CK_IntegralToFloating:
-			{
-				if (isa<IntegerLiteral>(icast->getSubExpr())) {
+				case clang::CK_IntegralToFloating:
+				{
+					if (isa<IntegerLiteral>(icast->getSubExpr())) {
 
-					const IntegerLiteral *literal = cast<const IntegerLiteral>(icast->getSubExpr());
-					InitializationStack.push({ FloatToInt((float)literal->getValue().getSExtValue()), FBWT_FLOAT });
-					return true;
+						const IntegerLiteral *literal = cast<const IntegerLiteral>(icast->getSubExpr());
+						InitializationStack.push({ FloatToInt((float)literal->getValue().getSExtValue()), FBWT_FLOAT });
+						return true;
+					}
+					else {
+						Throw("Unable to cast a non literal on initialization of a static var");
+					}
 				}
-				else {
-					Throw("Unable to cast a non literal on initialization of a static var");
-				}
-			}
-			case clang::CK_FloatingCast:
-			case clang::CK_IntegralCast:
+				case clang::CK_FloatingCast:
+				case clang::CK_IntegralCast:
 				ParseLiteral(icast->getSubExpr(), isAddr, isLtoRValue);
 				break;
-			case clang::CK_ArrayToPointerDecay:
+				case clang::CK_ArrayToPointerDecay:
 
 				ParseLiteral(icast->getSubExpr(), true, false);
 				break;
-			case clang::CK_LValueToRValue:
-			{
-				ParseLiteral(icast->getSubExpr(), isAddr, true, printVTable);
-				//const Expr *subE = icast->getSubExpr();
+				case clang::CK_LValueToRValue:
+				{
+					ParseLiteral(icast->getSubExpr(), isAddr, true, printVTable);
+					//const Expr *subE = icast->getSubExpr();
 
-				//handleRValueDeclRef(subE);
-				break;
-			}
-			case clang::CK_DerivedToBase:
-			{
-				ParseLiteral(icast->getSubExpr());
-				break;
-			}
-			case clang::CK_PointerToIntegral:
-			{
-				ParseLiteral(icast->getSubExpr());
-				break;
-			}
-			case clang::CK_FloatingToIntegral:
-			{
-				ParseLiteral(icast->getSubExpr());
-				InitializationStack.push({ (int32_t)IntToFloat(IS_Pop().bytes), FBWT_INT });
-				break;
-			}
-			case clang::CK_NoOp:
-			{
-				ParseLiteral(icast->getSubExpr());
-				break;
-			}
-			case clang::CK_BitCast:
-			{
-				ParseLiteral(icast->getSubExpr());
-				break;
-			}
+					//handleRValueDeclRef(subE);
+					break;
+				}
+				case clang::CK_DerivedToBase:
+				{
+					ParseLiteral(icast->getSubExpr());
+					break;
+				}
+				case clang::CK_PointerToIntegral:
+				{
+					ParseLiteral(icast->getSubExpr());
+					break;
+				}
+				case clang::CK_FloatingToIntegral:
+				{
+					ParseLiteral(icast->getSubExpr());
+					InitializationStack.push({ (int32_t)IntToFloat(IS_Pop().bytes), FBWT_INT });
+					break;
+				}
+				case clang::CK_NoOp:
+				{
+					ParseLiteral(icast->getSubExpr());
+					break;
+				}
+				case clang::CK_BitCast:
+				{
+					ParseLiteral(icast->getSubExpr());
+					break;
+				}
 
-			default:
+				default:
 				Throw("Cast " + string(icast->getCastKindName()) + " is unimplemented for a static define");
 
 			}
@@ -3105,76 +3081,76 @@ public:
 
 
 			if (bOp->getLHS()->getType()->isFloatingType() || islvaluefloat) {
-				#define IS_PushF(op)\
+#define IS_PushF(op)\
 				float stk1 = IntToFloat(IS_Pop().bytes);\
 				float stk2 = IntToFloat(IS_Pop().bytes);\
 				InitializationStack.push({ stk2 op stk1, FBWT_FLOAT });
-				#define IS_PushFc(op)\
+#define IS_PushFc(op)\
 				float stk1 = IntToFloat(IS_Pop().bytes);\
 				float stk2 = IntToFloat(IS_Pop().bytes);\
 				InitializationStack.push({ FloatToInt(stk2 op stk1), FBWT_FLOAT });
-				#define IS_PushFi(op)\
+#define IS_PushFi(op)\
 				int32_t stk1 = IS_Pop().bytes;\
 				int32_t stk2 = IS_Pop().bytes;\
 				InitializationStack.push({ stk2 op stk1, FBWT_FLOAT });
 
 				switch (bOp->getOpcode()) {
-				case BO_EQ: { IS_PushF(== ); } break;
-				case BO_Mul: { IS_PushFc(*); } break;
-				case BO_Div: { IS_PushFc(/ ); } break;
-				case BO_Rem:
-				{
-					float stk1 = IntToFloat(IS_Pop().bytes);
-					float stk2 = IntToFloat(IS_Pop().bytes);
-					InitializationStack.push({ FloatToInt(fmod(stk2, stk1)), FBWT_FLOAT });
-				}
-				break;
-				case BO_Sub: { IS_PushFc(-); } break;
-				case BO_Add: { IS_PushFc(+); } break;
-				case BO_LT: { IS_PushF(<); } break;
-				case BO_GT: { IS_PushF(>); } break;
-				case BO_GE: { IS_PushF(>= ); } break;
-				case BO_LE: { IS_PushF(<= ); } break;
-				case BO_NE: { IS_PushF(!= ); } break;
-				case BO_LAnd: { IS_PushF(&&); } break;
-				case BO_And: { IS_PushFi(&); } break;
-				case BO_Xor: { IS_PushFi(^); } break;
-				case BO_LOr: { IS_PushF(|| ); } break;
-				case BO_Or: { IS_PushFi(| ); } break;
-				case BO_Shl: { IS_PushFi(<< ); } break;
-				case BO_Shr: { IS_PushFi(>> ); } break;
+					case BO_EQ: { IS_PushF(== ); } break;
+					case BO_Mul: { IS_PushFc(*); } break;
+					case BO_Div: { IS_PushFc(/ ); } break;
+					case BO_Rem:
+					{
+						float stk1 = IntToFloat(IS_Pop().bytes);
+						float stk2 = IntToFloat(IS_Pop().bytes);
+						InitializationStack.push({ FloatToInt(fmod(stk2, stk1)), FBWT_FLOAT });
+					}
+					break;
+					case BO_Sub: { IS_PushFc(-); } break;
+					case BO_Add: { IS_PushFc(+); } break;
+					case BO_LT: { IS_PushF(<); } break;
+					case BO_GT: { IS_PushF(>); } break;
+					case BO_GE: { IS_PushF(>= ); } break;
+					case BO_LE: { IS_PushF(<= ); } break;
+					case BO_NE: { IS_PushF(!= ); } break;
+					case BO_LAnd: { IS_PushF(&&); } break;
+					case BO_And: { IS_PushFi(&); } break;
+					case BO_Xor: { IS_PushFi(^); } break;
+					case BO_LOr: { IS_PushF(|| ); } break;
+					case BO_Or: { IS_PushFi(| ); } break;
+					case BO_Shl: { IS_PushFi(<< ); } break;
+					case BO_Shr: { IS_PushFi(>> ); } break;
 
-				default:
+					default:
 					Throw("flt operator " + to_string(bOp->getOpcode()) + " is unimplemented for a static define");
 				}
 
 			}
 			else {
-				#define IS_PushI(op)\
+#define IS_PushI(op)\
 				int32_t stk1 = IS_Pop().bytes;\
 				int32_t stk2 = IS_Pop().bytes;\
 				InitializationStack.push({ stk2 op stk1, FBWT_INT });
 
 				switch (bOp->getOpcode()) {
-				case BO_EQ: { IS_PushI(== ); } break;
-				case BO_Mul: { IS_PushI(*); } break;
-				case BO_Div: { IS_PushI(/ ); } break;
-				case BO_Rem: { IS_PushI(%); } break;
-				case BO_Sub: { IS_PushI(-); } break;
-				case BO_LT: { IS_PushI(<); } break;
-				case BO_GT: { IS_PushI(>); } break;
-				case BO_GE: { IS_PushI(>= ); } break;
-				case BO_LE: { IS_PushI(<= ); } break;
-				case BO_NE: { IS_PushI(!= ); } break;
-				case BO_LAnd: { IS_PushI(&&); } break;
-				case BO_And: { IS_PushI(&); } break;
-				case BO_Xor: { IS_PushI(^); } break;
-				case BO_Add: { IS_PushI(+); } break;
-				case BO_LOr: { IS_PushI(|| ); } break;
-				case BO_Or: { IS_PushI(| ); } break;
-				case BO_Shl: { IS_PushI(<< ); } break;
-				case BO_Shr: { IS_PushI(>> ); } break;
-				default:
+					case BO_EQ: { IS_PushI(== ); } break;
+					case BO_Mul: { IS_PushI(*); } break;
+					case BO_Div: { IS_PushI(/ ); } break;
+					case BO_Rem: { IS_PushI(%); } break;
+					case BO_Sub: { IS_PushI(-); } break;
+					case BO_LT: { IS_PushI(<); } break;
+					case BO_GT: { IS_PushI(>); } break;
+					case BO_GE: { IS_PushI(>= ); } break;
+					case BO_LE: { IS_PushI(<= ); } break;
+					case BO_NE: { IS_PushI(!= ); } break;
+					case BO_LAnd: { IS_PushI(&&); } break;
+					case BO_And: { IS_PushI(&); } break;
+					case BO_Xor: { IS_PushI(^); } break;
+					case BO_Add: { IS_PushI(+); } break;
+					case BO_LOr: { IS_PushI(|| ); } break;
+					case BO_Or: { IS_PushI(| ); } break;
+					case BO_Shl: { IS_PushI(<< ); } break;
+					case BO_Shr: { IS_PushI(>> ); } break;
+					default:
 					Throw("operator " + to_string(bOp->getOpcode()) + " is unimplemented for a static define");
 				}
 			}
@@ -3241,12 +3217,12 @@ public:
 
 							switch (InitializationStack.top().type)
 							{
-							case FBWT_ARRAY:
+								case FBWT_ARRAY:
 								if (varDecl->getType()->isArrayType())
 								{
 									int32_t buffer = 0, b = 0, stvi = 0;
 
-									#define AddStaticArraySpecial(loopsize,maxsize,buffsetstmt,buffgetstmt)\
+#define AddStaticArraySpecial(loopsize,maxsize,buffsetstmt,buffgetstmt)\
 									for (int32_t i = 0; i < ArrayOut.size(); i++, b++)\
 									{\
 										if (b >= loopsize)\
@@ -3289,12 +3265,12 @@ public:
 								ArrayOut.clear();
 								InitializationStack.pop();
 								break;
-							case FBWT_FUNCTION_PTR:
+								case FBWT_FUNCTION_PTR:
 								DefaultStaticValues.insert({ oldStaticInc, std::string((char*)ArrayOut.data()) });
 								ArrayOut.clear();
 								InitializationStack.pop();
 								break;
-							default://FBWT_INT
+								default://FBWT_INT
 
 								if (varDecl->getType()->isCharType())
 									DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::SwapEndian(IS_Pop().bytes % 256)) });
@@ -3303,7 +3279,7 @@ public:
 								else
 									DefaultStaticValues.insert({ oldStaticInc, to_string(IS_Pop().bytes) });
 
-								
+
 								//cout << "stack size: " << sizeb4 << endl
 								//<< "value: " << DefaultStaticValues[oldStaticInc] << endl;
 								break;
