@@ -1172,6 +1172,18 @@ public:
 		BinaryOperatorKind op = operation->getOpcode();
 		const Expr* LHS = operation->getLHS();
 		const Expr* RHS = operation->getRHS();
+		while (isa<ParenExpr>(LHS))
+		{
+			Expr*temp = (Expr*)cast<ParenExpr>(LHS)->getSubExpr();
+			((BinaryOperator*)operation)->setLHS(temp);
+			LHS = operation->getLHS();
+		}
+		while(isa<ParenExpr>(RHS))
+		{
+			Expr*temp = (Expr*)cast<ParenExpr>(RHS)->getSubExpr();
+			((BinaryOperator*)operation)->setRHS(temp);
+			RHS = operation->getRHS();
+		}
 		int64_t newInt;
 		double newDouble;
 		if (isa<BinaryOperator>(LHS))
