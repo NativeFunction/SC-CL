@@ -2883,6 +2883,35 @@ public:
 				else Throw("Unimplemented CK_FunctionToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()));
 
 				break;
+			case CK_LValueToRValue://const int h = 5; int k = h;
+
+				if (isa<DeclRefExpr>(icast->getSubExpr())) {
+					const DeclRefExpr *declRef = cast<const DeclRefExpr>(icast->getSubExpr());
+					map<string, int>::iterator it = statics.find(declRef->getDecl()->getName());
+
+					if (it != statics.end())
+					{
+						map<uint32_t, string>::iterator dsit = DefaultStaticValues.find(it->second);
+						if (dsit != DefaultStaticValues.end())
+						{
+							char *endp;
+							int32_t value = strtol(dsit->second.c_str(), &endp, 10);
+
+							if (endp == dsit->second.c_str() || *endp != 0)
+								Throw("Unable to convert a const default static value to value", rewriter, declRef->getExprLoc());
+
+							if(declRef->getDecl()->getType()->isFloatingType())
+								InitializationStack.push({ value, FBWT_FLOAT });
+							else
+								InitializationStack.push({ value, FBWT_INT});
+						}
+						else Throw("Const value index " + string(declRef->getDecl()->getName()) + " was not found", rewriter, declRef->getExprLoc());
+					}
+					else Throw("Const value " + string(declRef->getDecl()->getName()) + " was not found", rewriter, declRef->getExprLoc());
+				}
+				else Throw("Unimplemented CK_LValueToRValue for " + string(icast->getSubExpr()->getStmtClassName()));
+
+				break;
 
 			default:
 				Throw("Unimplemented ImplicitCastExpr of type " + string(icast->getCastKindName()));
@@ -2948,6 +2977,7 @@ public:
 				ParseLiteral(icast->getSubExpr());
 				break;
 			}
+
 			default:
 				Throw("Cast " + string(icast->getCastKindName()) + " is unimplemented for a static define");
 
@@ -3069,16 +3099,21 @@ public:
 			ParseLiteral(bOp->getRHS(), false, true);
 
 
-			if (bOp->getLHS()->getType()->isFloatingType()) {
-#define IS_PushF(op)\
+			IS_Exch();
+			bool islvaluefloat = InitializationStack.top().type == FBWT_FLOAT;
+			IS_Exch();
+
+
+			if (bOp->getLHS()->getType()->isFloatingType() || islvaluefloat) {
+				#define IS_PushF(op)\
 				float stk1 = IntToFloat(IS_Pop().bytes);\
 				float stk2 = IntToFloat(IS_Pop().bytes);\
 				InitializationStack.push({ stk2 op stk1, FBWT_FLOAT });
-#define IS_PushFc(op)\
+				#define IS_PushFc(op)\
 				float stk1 = IntToFloat(IS_Pop().bytes);\
 				float stk2 = IntToFloat(IS_Pop().bytes);\
 				InitializationStack.push({ FloatToInt(stk2 op stk1), FBWT_FLOAT });
-#define IS_PushFi(op)\
+				#define IS_PushFi(op)\
 				int32_t stk1 = IS_Pop().bytes;\
 				int32_t stk2 = IS_Pop().bytes;\
 				InitializationStack.push({ stk2 op stk1, FBWT_FLOAT });
@@ -3115,7 +3150,7 @@ public:
 
 			}
 			else {
-#define IS_PushI(op)\
+				#define IS_PushI(op)\
 				int32_t stk1 = IS_Pop().bytes;\
 				int32_t stk2 = IS_Pop().bytes;\
 				InitializationStack.push({ stk2 op stk1, FBWT_INT });
@@ -3329,6 +3364,17 @@ public:
 			return ret;
 		}
 		else Throw("InitializationStack Empty");
+	}
+	void IS_Exch()
+	{
+		if (InitializationStack.size() >= 2)
+		{
+			FBWT val1 = IS_Pop();
+			FBWT val2 = IS_Pop();
+			InitializationStack.push(val1);
+			InitializationStack.push(val2);
+		}
+		else Throw("InitializationStack not big enough to exch");
 	}
 
 
