@@ -1712,13 +1712,14 @@ public:
 			if (call->getType()->isVoidType() == false) {
 				if (!isLtoRValue) {
 					out << "drop//Function Result unused" << endl;
+					
 					int size = getSizeFromBytes(getSizeOfType(call->getType().getTypePtr()));
+					
 					for (int i = 1; i<size;i++)
 					{
 						out << "drop" << endl;
 					}
 
-					
 					call->dump();
 				}
 			}
@@ -2496,7 +2497,6 @@ public:
 		if (f->hasBody()) {
 			out.seekg(0,ios::end);
 			functions.push_back({ Utils::Hashing::Joaat((char*)getNameForFunc(f).c_str()), getNameForFunc(f), false, out.tellg()});
-			cout << getNameForFunc(f) << endl;
 
 			if (isa<CXXConstructorDecl>(f))
 				return true;
