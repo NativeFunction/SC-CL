@@ -45,16 +45,20 @@ struct FData
 vector<FData> functions;
 
 
+map<const FunctionDecl*, int> localCounts;
+static int globalInc = 0;
+static int staticInc = 0;
+static int localInc = 2;
+
+
 struct local_scope
 {
 	vector<map<string, int>> scope_locals;
 	int scope_level = 0;
-	int local_count = 2;//reserved for retn addr and stack base pointer
 	void reset()//call this on function decl
 	{
 		scope_level = 0;
 		scope_locals.clear();
-		local_count = 2;
 	}
 	void add_level()
 	{
@@ -82,23 +86,12 @@ struct local_scope
 		}
 		return false;
 	}
-	int add_decl(string key)
+	void add_decl(string key, int index)
 	{
-		map<string, int>& locals = scope_locals[scope_level];
-		//if(locals.find(key) != locals.end())
-		//{
-		//	//ast should catch this error when you have a redecl in the same scope
-		//}
-		locals[key] = local_count;
-		return local_count++;//incriment local count
+		scope_locals[scope_level].insert({ key, index });
 	}
 
 };
-
-map<const FunctionDecl*, int> localCounts;
-static int globalInc = 0;
-static int staticInc = 0;
-static int localInc = 2;
 
 
 // By implementing RecursiveASTVisitor, we can specify which AST nodes
@@ -311,27 +304,32 @@ public:
 	//    }
 	//
 
-
+	//handleParamVarDecl
 	bool handleParmVarDecl(ParmVarDecl *D) {
 		if (isa<ParmVarDecl>(D)) {
 			ParmVarDecl *decl = cast<ParmVarDecl>(D);
 			if (isa<VarDecl>(decl)) {
+
 				VarDecl *var = cast<VarDecl>(decl);
 				auto size = context->getTypeInfoDataSizeInChars(var->getType()).first.getQuantity();
 				uint32_t oldLocalInc = localInc;
 				locals.insert(make_pair(var->getName().str(), localInc));
+
 				if (var->isCXXInstanceMember())
 					localInc += getSizeFromBytes(getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false));
 				else
 					localInc += getSizeFromBytes(size);
+
 				const Expr *initializer = var->getAnyInitializer();
+
 				if (initializer) {
 					if (isa<CXXConstructExpr>(initializer)) {
 
 						out << pFrame(oldLocalInc) << " //" << var->getNameAsString() << endl;
 						parseExpression(initializer);
 					}
-					else {
+					else
+					{
 						parseExpression(initializer);
 						out << frameSet(oldLocalInc) << "  //" << var->getName().str() << endl;
 					}
@@ -411,7 +409,15 @@ public:
 		}
 
 	}
-
+	string mult(int value)
+	{
+		if (value < 0 || value > 0xFFFF)
+			return iPush(value) + "\r\nMult";
+		else if (value > 0xFF)
+			return "Mult2 " + to_string(value);
+		else 
+			return "Mult1 " + to_string(value);
+	}
 
 	string dumpName(const NamedDecl *ND) {
 		if (isa<CXXMethodDecl>(ND)) {
@@ -798,16 +804,12 @@ public:
 					map<string, int>::iterator StaticFind = statics.find(dumpName(cast<NamedDecl>(*I)));
 					if (StaticFind == statics.end()) {
 
-						QualType type = var->getType();
-						auto size = getSizeOfQualType(&type);
-						// auto size  = context->getTypeInfoDataSizeInChars(varDecl->getType()).first.getQuantity();
-
+						auto size = getSizeOfType(var->getType().getTypePtr());
+						
 						oldStaticInc = staticInc;
 
 						statics.insert(make_pair(dumpName(cast<NamedDecl>(*I)), staticInc));
 						staticInc += getSizeFromBytes(size);
-
-
 					}
 					else
 						oldStaticInc = distance(statics.begin(), StaticFind);
@@ -827,7 +829,8 @@ public:
 				}
 				else
 				{
-					auto size = context->getTypeInfoDataSizeInChars(var->getType()).first.getQuantity();
+					auto size = getSizeOfType(var->getType().getTypePtr());
+
 					uint32_t oldLocalInc = localInc;
 					locals.insert(make_pair(var->getName().str(), localInc));
 
@@ -839,7 +842,7 @@ public:
 							localInc += getSizeFromBytes(size);
 						}
 						else {
-							out << "Unsupported decl" << endl;
+							Throw("Unsupported decl of " + string(var->getDeclKindName()), rewriter, var->getLocStart());
 						}
 
 					}
@@ -884,7 +887,7 @@ public:
 
 						parseExpression(initializer, false, true);
 						if (size > 4) {
-							out << "Push " << size / 4 << " //Type Size" << endl;
+							out << "Push " << getSizeFromBytes(size) << " //Type Size" << endl;
 							out << pFrame(oldLocalInc) << " //&" << var->getNameAsString() << endl;
 							out << "FromStack" << endl;
 						}
@@ -2063,10 +2066,10 @@ public:
 				parseExpression(bOp->getRHS(), isAddr, true, true);
 				if (bOp->getRHS()->getType()->isStructureOrClassType()) {
 					int size = getSizeOfType(bOp->getRHS()->getType().getTypePtr());
-					out << "Push " << size << " //size " << endl;
+					out << "Push " << size << " //size\r\n";
 					parseExpression(bOp->getLHS(), true);
 
-					out << "FromStack" << endl;
+					out << "FromStack\r\n";
 				}
 				else {
 					parseExpression(bOp->getLHS());
@@ -2075,198 +2078,79 @@ public:
 				return true;
 			}
 
+			#define OpAssign(op, isfloat)\
+			parseExpression(bOp->getLHS(), true, true);\
+			out << "dup\r\npGet\r\n";\
+			parseExpression(bOp->getRHS(), false, true);\
+			if (bOp->getLHS()->getType()->isFloatingType() && isfloat)\
+				out << "f" << op << "\r\npPeekSet\r\nDrop\r\n";\
+			else\
+				out << op << "\r\npPeekSet\r\nDrop\r\n";
+
 			switch (bOp->getOpcode()) {
-				case BO_SubAssign:
-				parseExpression(bOp->getLHS(), false, true);
-				parseExpression(bOp->getRHS(), false, true);//fixed with this line
-				if (bOp->getLHS()->getType()->isFloatingType())
-					out << "f";
-
-				out << "Sub" << endl;
-				parseExpression(bOp->getLHS(), false, false);
-				break;
-				case BO_AddAssign:
-				parseExpression(bOp->getLHS(), false, true);
-				parseExpression(bOp->getRHS(), false, true);
-				if (bOp->getLHS()->getType()->isFloatingType())
-					out << "f";
-
-				out << "Add" << endl;
-				parseExpression(bOp->getLHS(), false, false);
-				break;
-				case BO_DivAssign:
-				parseExpression(bOp->getLHS(), false, true);
-				parseExpression(bOp->getRHS(), false, true);
-				if (bOp->getLHS()->getType()->isFloatingType())
-					out << "f";
-				out << "Div" << endl;
-				parseExpression(bOp->getLHS(), false, false);
-				break;
-				case BO_MulAssign:
-				parseExpression(bOp->getLHS(), false, true);
-				parseExpression(bOp->getRHS(), false, true);
-				if (bOp->getLHS()->getType()->isFloatingType())
-					out << "f";
-				out << "Mult" << endl;
-				parseExpression(bOp->getLHS(), false, false);
-				break;
-				case BO_OrAssign:
-				parseExpression(bOp->getLHS(), false, true);
-				parseExpression(bOp->getRHS(), false, true);
-				out << "Or" << endl;
-				parseExpression(bOp->getLHS(), false, false);
-				break;
-				case BO_AndAssign:
-				parseExpression(bOp->getLHS(), false, true);
-				parseExpression(bOp->getRHS(), false, true);
-				out << "And" << endl;
-				parseExpression(bOp->getLHS(), false, false);
-				break;
-				case BO_RemAssign:
-				parseExpression(bOp->getLHS(), false, true);
-				parseExpression(bOp->getRHS(), false, true);
-				if (bOp->getLHS()->getType()->isFloatingType())
-					out << "f";
-				out << "Mod" << endl;
-				parseExpression(bOp->getLHS(), false, false);
-				break;
-				case BO_XorAssign:
-				parseExpression(bOp->getLHS(), false, true);
-				parseExpression(bOp->getRHS(), false, true);
-				out << "Xor" << endl;
-				parseExpression(bOp->getLHS(), false, false);
-				break;
-				case BO_ShlAssign:
-				parseExpression(bOp->getLHS(), false, true);
-				parseExpression(bOp->getRHS(), false, true);
-				out << "CallNative shift_left 2 1" << endl;
-				parseExpression(bOp->getLHS(), false, false);
-				break;
-				case BO_ShrAssign:
-				parseExpression(bOp->getLHS(), false, true);
-				parseExpression(bOp->getRHS(), false, true);
-				out << "CallNative shift_right 2 1" << endl;
-				parseExpression(bOp->getLHS(), false, false);
-				break;
+				case BO_SubAssign: OpAssign("Sub", true); break;
+				case BO_AddAssign: OpAssign("Add", true); break;
+				case BO_DivAssign:  OpAssign("Div", true); break;
+				case BO_MulAssign:  OpAssign("Mult", true); break;
+				case BO_OrAssign:  OpAssign("Or", false); break;
+				case BO_AndAssign:  OpAssign("And", false); break;
+				case BO_RemAssign:  OpAssign("Mod", true); break;
+				case BO_XorAssign:  OpAssign("Xor", false); break;
+				case BO_ShlAssign:  OpAssign("CallNative shift_left 2 1", false); break;
+				case BO_ShrAssign:  OpAssign("CallNative shift_right 2 1", false); break;
 				default:
 				{
 					if (!binaryOpConstantFolding(bOp, NULL)) {
 						parseExpression(bOp->getLHS(), false, true);
 						parseExpression(bOp->getRHS(), false, true);
 
-
 						if (bOp->getLHS()->getType()->isFloatingType()) {
 							switch (bOp->getOpcode()) {
-								case BO_EQ:
-								out << "fCmpEQ" << endl;
-								break;
-								case BO_Mul:
-								out << "fMult" << endl;
-								break;
-								case BO_Div:
-								out << "fDiv" << endl;
-								break;
-								case BO_Rem:
-								out << "FMod" << endl;
-								break;
-								case BO_Sub:
-								out << "fSub" << endl;
-								break;
-								case BO_LT:
-								out << "fCmpLT" << endl;
-								break;
-								case BO_GT:
-								out << "fCmpGT" << endl;
-								break;
-								case BO_GE:
-								out << "fCmpGE" << endl;
-								break;
-								case BO_LE:
-								out << "fCmpLE" << endl;
-								break;
-								case BO_NE:
-								out << "fCmpNE" << endl;
-								break;
+								case BO_EQ: out << "fCmpEQ\r\n"; break;
+								case BO_Mul: out << "fMult\r\n"; break;
+								case BO_Div: out << "fDiv\r\n"; break;
+								case BO_Rem: out << "fMod\r\n"; break;
+								case BO_Sub: out << "fSub\r\n"; break;
+								case BO_LT: out << "fCmpLT\r\n"; break;
+								case BO_GT: out << "fCmpGT\r\n"; break;
+								case BO_GE: out << "fCmpGE\r\n"; break;
+								case BO_LE: out << "fCmpLE\r\n"; break;
+								case BO_NE: out << "fCmpNE\r\n"; break;
 								case BO_LAnd:
-								case BO_And:
-								out << "And" << endl;
-								break;
-								case BO_Xor:
-								out << "Xor" << endl;
-								break;
-								case BO_Add:
-								out << "fAdd" << endl;
-								break;
+								case BO_And: out << "And\r\n"; break;
+								case BO_Xor: out << "Xor\r\n"; break;
+								case BO_Add: out << "fAdd\r\n"; break;
 								case BO_LOr:
-								case BO_Or:
-								out << "Or " << endl;
-								break;
-								case BO_Shl:
-								out << "CallNative shift_left 2 1";
-								break;
-								case BO_Shr:
-								out << "CallNative shift_right 2 1";
-								break;
-
+								case BO_Or: out << "Or\r\n"; break;
+								case BO_Shl: out << "CallNative shift_left 2 1\r\n"; break;
+								case BO_Shr: out << "CallNative shift_right 2 1"; break;
 								default:
-								out << "unimplemented2 " << bOp->getOpcode() << endl;
+								Throw( "Unimplemented binary floating op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
 							}
 
 						}
 						else {
 							switch (bOp->getOpcode()) {
-								case BO_EQ:
-								out << "CmpEQ" << endl;
-								break;
-								case BO_Mul:
-								out << "Mult" << endl;
-								break;
-								case BO_Div:
-								out << "Div" << endl;
-								break;
-								case BO_Rem:
-								out << "Mod" << endl;
-								break;
-								case BO_Sub:
-								out << "Sub" << endl;
-								break;
-								case BO_LT:
-								out << "CmpLT" << endl;
-								break;
-								case BO_GT:
-								out << "CmpGT" << endl;
-								break;
-								case BO_GE:
-								out << "CmpGE" << endl;
-								break;
-								case BO_LE:
-								out << "CmpLE" << endl;
-								break;
-								case BO_NE:
-								out << "CmpNE" << endl;
-								break;
+								case BO_EQ: out << "CmpEQ\r\n"; break;
+								case BO_Mul: out << "Mult\r\n"; break;
+								case BO_Div: out << "Div\r\n"; break;
+								case BO_Rem: out << "Mod\r\n"; break;
+								case BO_Sub: out << "Sub\r\n"; break;
+								case BO_LT: out << "CmpLT\r\n"; break;
+								case BO_GT: out << "CmpGT\r\n"; break;
+								case BO_GE: out << "CmpGE\r\n"; break;
+								case BO_LE: out << "CmpLE\r\n"; break;
+								case BO_NE: out << "CmpNE\r\n"; break;
 								case BO_LAnd:
-								case BO_And:
-								out << "And" << endl;
-								break;
-								case BO_Xor:
-								out << "Xor" << endl;
-								break;
-								case BO_Add:
-								out << "Add" << endl;
-								break;
+								case BO_And: out << "And\r\n"; break;
+								case BO_Xor: out << "Xor\r\n"; break;
+								case BO_Add: out << "Add\r\n"; break;
 								case BO_LOr:
-								case BO_Or:
-								out << "Or" << endl;
-								break;
-								case BO_Shl:
-								out << "CallNative shift_left 2 1" << endl;
-								break;
-								case BO_Shr:
-								out << "CallNative shift_right 2 1" << endl;
-								break;
+								case BO_Or: out << "Or\r\n"; break;
+								case BO_Shl: out << "CallNative shift_left 2 1\r\n"; break;
+								case BO_Shr: out << "CallNative shift_right 2 1"; break;
 								default:
-								out << "unimplemented2 " << bOp->getOpcode() << endl;
+								Throw("Unimplemented binary op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
 							}
 						}
 					}
@@ -2498,8 +2382,9 @@ public:
 		const Expr *index = arr->getIdx();
 
 
-		parseExpression(index, false, true);
 		parseExpression(base, true);
+		parseExpression(index, false, true);
+		
 		const DeclRefExpr *declRef = getDeclRefExpr(base);
 		const Type *type = base->getType().getTypePtr();//declRef->getType().getTypePtr()->getArrayElementTypeNoTypeQual();
 		if (type == NULL) {
@@ -2511,12 +2396,12 @@ public:
 		if (type->isPointerType())
 			type = type->getPointeeType().getTypePtr();
 
-		if (LValueToRValue)
-			out << "GetArray2 " << getSizeFromBytes(getSizeOfType(type)) << endl;
+		if (LValueToRValue && !addrOf)
+			out << mult(getSizeOfType(type)) << "\r\nAdd\r\npGet//GetArray2\r\n";
 		else if (addrOf)
-			out << "GetArrayP2 " << getSizeFromBytes(getSizeOfType(type)) << endl;
+			out << mult(getSizeOfType(type)) << "\r\nAdd//GetArrayP2\r\n";
 		else
-			out << "SetArray2 " << getSizeFromBytes(getSizeOfType(type)) << endl;
+			out << mult(getSizeOfType(type)) << "\r\nAdd\r\npSet//SetArray2\r\n";
 
 		return true;
 	}
@@ -2535,18 +2420,11 @@ public:
 
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i<f->getNumParams(); i++)
-			{
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-			}
 
 
 			out << endl << "//Loc: " << f->getBody()->getLocStart().getRawEncoding() << endl;
-
-
 			string name = dumpName(cast<NamedDecl>(f));
-
-
-
 			out << ":" << name << endl;
 
 			if (f->isMain())
@@ -2555,8 +2433,6 @@ public:
 				QualType type = f->getReturnType();
 				MainRets = Utils::Math::DivInt(getSizeOfQualType(&type), 4);
 			}
-
-
 
 			out << "Function " << to_string(paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0)) << " ";
 
@@ -2570,14 +2446,15 @@ public:
 
 			currFunction = f;
 			locals.clear();
+
 			if (isa<CXXMethodDecl>(f))
 				localInc = 1;
 			else
 				localInc = 0;
 
-			for (uint32_t i = 0; i<f->getNumParams(); i++) {
+			for (uint32_t i = 0; i<f->getNumParams(); i++)
 				handleParmVarDecl(f->getParamDecl(i));
-			}
+
 			localInc += 2;
 			parseStatement(FuncBody);
 
