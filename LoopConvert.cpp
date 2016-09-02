@@ -914,7 +914,7 @@ public:
 				parseExpression(argArray[1]);
 				parseExpression(argArray[0]);
 
-				out << funcName << " ";
+				out << funcName.substr(3) << " ";
 				if (isa<IntegerLiteral>(argArray[2])) {
 					const IntegerLiteral *literal = cast<const IntegerLiteral>(argArray[2]);
 					out << literal->getValue().getSExtValue() << endl;
@@ -1108,7 +1108,7 @@ public:
 			}
 			return true;
 		}
-		else if (funcName.find("@__stacktop", 0, 11) == 0)//will cause collisions like __stacktop_zorg_dafuk
+		else if (funcName == "@__stacktop")
 		{
 			if (!call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() == StorageClass::SC_Extern)
 			{
@@ -1118,6 +1118,32 @@ public:
 				}
 				return true;
 			}
+		}
+		else if (funcName == "@__memcopy")
+		{
+
+			if (argCount == 3)
+			{
+
+				//to stack
+				//size
+				parseExpression(argArray[2], false, true);
+				//src
+				parseExpression(argArray[1], true, true);
+				out << "ToStack" << endl;
+
+
+				//from stack
+				//size
+				parseExpression(argArray[2], false, true);
+				//dest
+				parseExpression(argArray[0], true, true);
+				out << "FromStack" << endl;
+				
+			}
+			else
+				Throw("Invalid " + funcName + " parameters!", rewriter, call->getExprLoc());
+			return true;
 		}
 
 		return false;
