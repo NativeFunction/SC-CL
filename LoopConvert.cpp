@@ -1876,6 +1876,11 @@ public:
 					parseExpression(icast->getSubExpr());
 					break;
 				}
+				case clang::CK_NullToPointer:
+				{
+					parseExpression(icast->getSubExpr());
+					break;
+				}
 				default:
 				out << "Unhandled cast (CK) of type " << icast->getCastKindName() << endl;
 
