@@ -472,7 +472,7 @@ public:
 		}
 		else
 		{
-			string name = "@" +  key;
+			string name = "@" + key;
 			uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
 			uint32_t i = 0;
 			for (; i < functions.size(); i++)
@@ -1139,7 +1139,7 @@ public:
 				//dest
 				parseExpression(argArray[0], true, true);
 				out << "FromStack" << endl;
-				
+
 			}
 			else
 				Throw("Invalid " + funcName + " parameters!", rewriter, call->getExprLoc());
@@ -1738,15 +1738,14 @@ public:
 			if (call->getType()->isVoidType() == false) {
 				if (!isLtoRValue) {
 					out << "drop//Function Result unused" << endl;
-					
+
 					int size = getSizeFromBytes(getSizeOfType(call->getType().getTypePtr()));
-					
-					for (int i = 1; i<size;i++)
+
+					for (int i = 1; i<size; i++)
 					{
 						out << "drop" << endl;
 					}
 
-					call->dump();
 				}
 			}
 
@@ -2526,8 +2525,8 @@ public:
 		// Only function definitions (with bodies), not declarations.
 		int funcNum = 0;
 		if (f->hasBody()) {
-			out.seekg(0,ios::end);
-			functions.push_back({ Utils::Hashing::Joaat((char*)getNameForFunc(f).c_str()), getNameForFunc(f), false, out.tellg()});
+			out.seekg(0, ios::end);
+			functions.push_back({ Utils::Hashing::Joaat((char*)getNameForFunc(f).c_str()), getNameForFunc(f), false, out.tellg() });
 
 			if (isa<CXXConstructorDecl>(f))
 				return true;
@@ -2543,10 +2542,10 @@ public:
 
 			out << endl << "//Loc: " << f->getBody()->getLocStart().getRawEncoding() << endl;
 
-			
+
 			string name = dumpName(cast<NamedDecl>(f));
 
-			
+
 
 			out << ":" << name << endl;
 
@@ -2814,7 +2813,7 @@ public:
 	set<std::string> FindBuffer;
 	Rewriter &TheRewriter;
 	ASTContext *context;
-	
+
 	stringstream out;
 	string outfile;
 	const FunctionDecl *currFunction;
@@ -2974,7 +2973,7 @@ public:
 									}
 								}
 							}
-							
+
 							if (i >= functions.size())
 								Throw("Static function pointer \"" + decl->getNameAsString() + "\" not found");
 
@@ -3386,8 +3385,8 @@ public:
 								}
 								else
 									Throw("Static var array " + varDecl->getType().getAsString() + "  was parsed as an array but declared as different",
-										rewriter,
-										varDecl->getLocStart()
+										  rewriter,
+										  varDecl->getLocStart()
 									);
 
 
@@ -3594,7 +3593,6 @@ public:
 			string outstr = Visitor.out.str();
 			for (uint32_t i = 0; i < functions.size(); i++)
 			{
-				cout << functions[i].name << endl;
 				if (functions[i].isused)
 					fwrite(outstr.c_str() + functions[i].FuncDataPos, 1, i == functions.size() - 1 ? outstr.size() - functions[i].FuncDataPos : functions[i + 1].FuncDataPos - functions[i].FuncDataPos, file);
 			}
