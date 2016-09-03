@@ -53,16 +53,18 @@ static int localInc = 2;
 
 struct local_scope
 {
-	vector<map<string, int>> scope_locals;
+	vector<vector<string>> scope_locals;
+	int maxIndex = 0;
 	int scope_level = 0;
 	void reset()//call this on function decl
 	{
 		scope_level = 0;
 		scope_locals.clear();
+		maxIndex = 0;
 	}
 	void add_level()
 	{
-		scope_locals.push_back(map<string, int>());
+		scope_locals.push_back(vector<string>());
 		scope_level++;
 	}
 	void remove_level()
@@ -77,21 +79,41 @@ struct local_scope
 	{
 		for (int i = scope_level; i >= 0; i--)
 		{
-			map<string, int>& locals = scope_locals[i];
-			if (locals.find(key) != locals.end())
-			{
-				*outIndex = locals[key];
-				return true;
+			vector<string>& locals = scope_locals[i];
+			for(int j = 0, max = locals.size(); j < max; j++){
+				if (locals[j] == key)
+				{
+					int count = j;
+					for (int k = 0; k < i-1;k++)
+					{
+						count += scope_locals[i].size();
+					}
+					*outIndex = count;
+					return true;
+				}
 			}
 		}
 		return false;
 	}
-	void add_decl(string key, int index)
+	void add_decl(string key, int size)//size being number of 4 byte variables it takes up
 	{
-		scope_locals[scope_level].insert({ key, index });
+		scope_locals[scope_level].push_back(key);
+		for (int i = 1; i < size;i++)
+		{
+			scope_locals[scope_level].push_back("");//use a null string for padding
+		}
+		int cursize = 0;
+		for (int i = 0; i<= scope_level;i++)
+		{
+			cursize += scope_locals[i].size();
+		}
+		if (cursize > maxIndex)
+		{
+			maxIndex = cursize;
+		}
 	}
 
-};
+}LocalVariables;
 
 
 // By implementing RecursiveASTVisitor, we can specify which AST nodes
