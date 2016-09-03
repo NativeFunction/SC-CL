@@ -905,7 +905,22 @@ public:
 	}
 
 	bool checkIntrinsic(const CallExpr *call) {
+		const FunctionDecl* callee = call->getDirectCallee();
+		if(!callee->isDefined())
+		{
+			return false;
+		}
+		if (!callee->hasAttr<IntrinsicFuncAttr>())
+		{
+			return false;
+		}
 		std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
+		if (callee->getStorageClass() != SC_Extern)
+		{
+			Warn("Intrinsics must be declared as 'extern'");
+			return false;
+		}
+		
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
 
@@ -1113,14 +1128,11 @@ public:
 		}
 		else if (funcName == "@__stacktop")
 		{
-			if (!call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() == StorageClass::SC_Extern)
-			{
 				if (argCount != 0)
 				{
 					Throw(funcName.substr(1) + " must be called with no parameters");
 				}
 				return true;
-			}
 		}
 		else if (funcName == "@__memcopy")
 		{
@@ -1148,7 +1160,7 @@ public:
 				Throw("Invalid " + funcName + " parameters!", rewriter, call->getExprLoc());
 			return true;
 		}
-
+		Warn("No intrinsic function found named " + funcName);
 		return false;
 	}
 
@@ -1699,10 +1711,14 @@ public:
 				}
 				else
 				{
-					if (call->getDirectCallee()->getStorageClass() == StorageClass::SC_Extern)
+					if (call->getDirectCallee()->hasAttr<NativeFuncAttr>())
 					{
 						const QualType type = call->getDirectCallee()->getReturnType();
 						out << "CallNative " << (parseCast(cast<const CastExpr>(callee)).c_str() + 1) << " " << call->getNumArgs() << " " << getSizeFromBytes(getSizeOfQualType(&type)) << endl;
+						if (call->getDirectCallee()->getStorageClass() != SC_Extern)
+						{
+							Warn("Natives should be defined with the 'extern' keyword");
+						}
 					}
 					else
 					{
