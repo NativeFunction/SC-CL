@@ -1660,60 +1660,10 @@ public:
 			const CallExpr *call = cast<const CallExpr>(e);
 			if (checkIntrinsic(call))
 				return 1;
-
-			const Expr * const*argArray = call->getArgs();
-			for (uint32_t i = 0; i < call->getNumArgs(); i++) {
-				parseExpression(argArray[i], false, true);
-			}
-
-			if (isa<CastExpr>(call->getCallee()))
+			const Expr* callee = call->getCallee();
+			
+			if (isa<MemberExpr>(callee))
 			{
-
-				if (isa<PointerType>(call->getCallee()->getType()) && !call->getDirectCallee())
-				{
-					parseExpression(call->getCallee());
-					out << "PCall" << endl;
-				}
-				else if (!call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
-				{
-					//could turn this into a native
-					out << "//!Undefined Function" << endl;
-
-					return 1;
-				}
-				else
-				{
-					if (((call->getDirectCallee()->isDefined() || call->getDirectCallee()->hasPrototype()) || call->getDirectCallee()->getNumParams() == 0) && call->getDirectCallee()->getStorageClass() != clang::StorageClass::SC_Extern)
-					{
-						string name = parseCast(cast<const CastExpr>(call->getCallee()));
-						uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
-						uint32_t i = 0;
-						for (; i < functions.size(); i++)
-						{
-							if (functions[i].hash == hash)
-							{
-								if (functions[i].name == name)
-								{
-									functions[i].isused = true;
-									break;
-								}
-							}
-						}
-
-						if (i >= functions.size())
-							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
-
-						out << "Call " << name << " //NumArgs: " << call->getNumArgs() << " " << endl;
-					}
-					else
-					{
-
-						const QualType type = call->getDirectCallee()->getReturnType();
-						out << "CallNative " << (parseCast(cast<const CastExpr>(call->getCallee())).c_str() + 1) << " " << call->getNumArgs() << " " << getSizeFromBytes(getSizeOfQualType(&type)) << endl;
-					}
-				}
-			}
-			else if (isa<MemberExpr>(call->getCallee())) {
 				const MemberExpr *expr = cast<const MemberExpr>(call->getCallee());
 				if (isa<CXXMethodDecl>(expr->getMemberDecl())) {
 					const CXXMethodDecl *method = cast<const CXXMethodDecl>(expr->getMemberDecl());
@@ -1734,23 +1684,59 @@ public:
 					out << "Unhandled Call Member Expression" << endl;
 				}
 			}
-			else
-				out << "Unimplemented call" << endl;
-
-
-			if (call->getType()->isVoidType() == false) {
-				if (!isLtoRValue) {
-					out << "drop//Function Result unused" << endl;
-
-					int size = getSizeFromBytes(getSizeOfType(call->getType().getTypePtr()));
-
-					for (int i = 1; i<size; i++)
+			else if (isa<CastExpr>(callee))
+			{
+				const Expr * const*argArray = call->getArgs();
+				if (!call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
+					Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", rewriter, call->getExprLoc());
+				
+				for (uint32_t i = 0; i < call->getNumArgs(); i++)
+					parseExpression(argArray[i], false, true);
+				if (isa<PointerType>(callee->getType()) && !call->getDirectCallee())
+				{
+					parseExpression(call->getCallee());
+					out << "PCall\r\n";
+				}
+				else
+				{
+					if (call->getDirectCallee()->getStorageClass() == StorageClass::SC_Extern)
 					{
-						out << "drop" << endl;
+						const QualType type = call->getDirectCallee()->getReturnType();
+						out << "CallNative " << (parseCast(cast<const CastExpr>(callee)).c_str() + 1) << " " << call->getNumArgs() << " " << getSizeFromBytes(getSizeOfQualType(&type)) << endl;
 					}
+					else
+					{
+						string name = parseCast(cast<const CastExpr>(callee));
+						uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
+						uint32_t i = 0;
+						for (; i < functions.size(); i++)
+							if (functions[i].hash == hash)
+							{
+								if (functions[i].name == name)
+								{
+									functions[i].isused = true;
+									break;
+								}
+							}
+						if (i >= functions.size())
+							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
 
+						out << "Call " << name << " //NumArgs: " << call->getNumArgs() << " " << endl;
+					}
+				}
+
+				if (call->getType()->isVoidType() == false) {
+					if (!isLtoRValue) {
+						out << "Drop//Function Result unused" << endl;
+						int size = getSizeFromBytes(getSizeOfType(call->getType().getTypePtr()));
+						for (int i = 1; i<size; i++)
+							out << "Drop" << endl;
+					}
 				}
 			}
+			else
+				Throw("Unexpected Expression for Callee!", rewriter, callee->getExprLoc());
+			return 1;
 
 		}
 		else if (isa<CastExpr>(e)) {
@@ -2085,9 +2071,9 @@ public:
 
 				return true;
 			}
+
 			string pMult = "";
 			int pSize = 0;
-
 			#define OpAssign(op, isfloat)\
 			parseExpression(bOp->getLHS(), true, true);\
 			out << "dup\r\npGet\r\n";\
