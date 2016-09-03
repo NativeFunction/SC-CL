@@ -1988,25 +1988,33 @@ public:
 			}
 
 
-
+			
+			string pMult = "";
+			if ((op->isPrefix() || op->isPostfix()) && isa<PointerType>(subE->getType()))
+			{
+				const Type* pTypePtr = subE->getType().getTypePtr()->getPointeeType().getTypePtr();
+				int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+				int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+				pMult = "\r\n" + mult(pSize) + "\r\n";
+			}
 
 			if (op->isPrefix()) {
 
 				if (op->isIncrementOp()) {
 					parseExpression(subE, false, true);
-					out << "Push 1" << endl;
-					out << "add" << endl;
+					out << "Push 1" << pMult << endl;
+					out << "Add" << endl;
 					if (isLtoRValue)
-						out << "dup" << endl;
+						out << "Dup" << endl;
 					parseExpression(subE);
 					return 1;
 				}
 				else if (op->isDecrementOp()) {
 					parseExpression(subE, false, true);
-					out << "Push 1" << endl;
-					out << "sub" << endl;
+					out << "Push 1" << pMult << endl;
+					out << "Sub" << endl;
 					if (isLtoRValue)
-						out << "dup" << endl;
+						out << "Dup" << endl;
 					parseExpression(subE);
 					return 1;
 				}
@@ -2015,19 +2023,19 @@ public:
 				if (op->isIncrementOp()) {
 					parseExpression(subE, false, true);
 					if (isLtoRValue)
-						out << "dup" << endl;
-					out << "Push 1" << endl;
-					out << "add" << endl;
+						out << "Dup" << endl;
+					out << "Push 1" << pMult << endl;
+					out << "Add" << endl;
 					parseExpression(subE, false, false);
 					return 1;
 				}
 				else if (op->isDecrementOp()) {
 					parseExpression(subE, false, true);
 
-					out << "Push 1" << endl;
+					out << "Push 1" << pMult << endl;
 					if (isLtoRValue)
-						out << "dup" << endl;
-					out << "sub" << endl;
+						out << "Dup" << endl;
+					out << "Sub" << endl;
 					parseExpression(subE, false, false);
 					return 1;
 				}
@@ -2077,17 +2085,31 @@ public:
 
 				return true;
 			}
+			string pMult = "";
+			int pSize = 0;
 
 			#define OpAssign(op, isfloat)\
 			parseExpression(bOp->getLHS(), true, true);\
 			out << "dup\r\npGet\r\n";\
 			parseExpression(bOp->getRHS(), false, true);\
+		    pMult = "";\
+			pSize = 0;\
+			if (isa<PointerType>(bOp->getLHS()->getType()))\
+			{\
+				const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();\
+				int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;\
+				pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;\
+				pMult = mult(pSize) + "\r\n";\
+			}\
 			if (bOp->getLHS()->getType()->isFloatingType() && isfloat)\
-				out << "f" << op << "\r\npPeekSet\r\nDrop\r\n";\
+				out << pMult << "f" << op << "\r\npPeekSet\r\nDrop\r\n";\
 			else\
-				out << op << "\r\npPeekSet\r\nDrop\r\n";
+			{\
+				out << pMult << op << "\r\npPeekSet\r\nDrop\r\n";\
+			}
 
 			switch (bOp->getOpcode()) {
+				
 				case BO_SubAssign: OpAssign("Sub", true); break;
 				case BO_AddAssign: OpAssign("Add", true); break;
 				case BO_DivAssign:  OpAssign("Div", true); break;
@@ -2102,8 +2124,14 @@ public:
 				{
 					if (!binaryOpConstantFolding(bOp, NULL)) {
 						parseExpression(bOp->getLHS(), false, true);
+						if (isa<PointerType>(bOp->getLHS()->getType()))
+						{
+							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr(); 
+							int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+							int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue; 
+							out << mult(pSize) + "\r\n";
+						}
 						parseExpression(bOp->getRHS(), false, true);
-
 						if (bOp->getLHS()->getType()->isFloatingType()) {
 							switch (bOp->getOpcode()) {
 								case BO_EQ: out << "fCmpEQ\r\n"; break;
@@ -2154,8 +2182,6 @@ public:
 							}
 						}
 					}
-
-
 
 					if (!isLtoRValue) {
 
@@ -2305,7 +2331,7 @@ public:
 			const GenericSelectionExpr *gse = cast<GenericSelectionExpr>(e);
 			parseExpression(gse->getResultExpr(), isAddr, isLtoRValue);
 		}
-
+		
 		else
 			Throw("Unimplemented expression " + string(e->getStmtClassName()), rewriter, e->getExprLoc());
 
