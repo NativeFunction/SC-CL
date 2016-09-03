@@ -53,40 +53,40 @@ static int localInc = 2;
 
 struct local_scope
 {
-	vector<vector<string>> scope_locals;
+	vector<vector<string>> scopeLocals;
 	int maxIndex = 0;
-	int scope_level = 0;
+	int scopeLevel = 0;
 	void reset()//call this on function decl
 	{
-		scope_level = 0;
-		scope_locals.clear();
+		scopeLevel = 0;
+		scopeLocals.clear();
 		maxIndex = 0;
 	}
-	void add_level()
+	void addLevel()
 	{
-		scope_locals.push_back(vector<string>());
-		scope_level++;
+		scopeLocals.push_back(vector<string>());
+		scopeLevel++;
 	}
-	void remove_level()
+	void removeLevel()
 	{
-		if (scope_level > 0)
+		if (scopeLevel > 0)
 		{
-			scope_level--;
-			scope_locals.pop_back();
+			scopeLevel--;
+			scopeLocals.pop_back();
 		}
 	}
 	bool find(string key, int* outIndex)
 	{
-		for (int i = scope_level; i >= 0; i--)
+		for (int i = scopeLevel; i >= 0; i--)
 		{
-			vector<string>& locals = scope_locals[i];
+			vector<string>& locals = scopeLocals[i];
 			for(int j = 0, max = locals.size(); j < max; j++){
 				if (locals[j] == key)
 				{
 					int count = j;
 					for (int k = 0; k < i-1;k++)
 					{
-						count += scope_locals[i].size();
+						count += scopeLocals[i].size();
 					}
 					*outIndex = count;
 					return true;
@@ -95,18 +95,24 @@ struct local_scope
 		}
 		return false;
 	}
+	int getCurrentSize()
+	{
+		int cursize = 0;
+		for(int i = 0; i <= scopeLevel; i++)
+		{
+			cursize += scopeLocals[i].size();
+		}
+		return cursize;
+	}
 	void add_decl(string key, int size)//size being number of 4 byte variables it takes up
 	{
-		scope_locals[scope_level].push_back(key);
+		scopeLocals[scopeLevel].push_back(key);
 		for (int i = 1; i < size;i++)
 		{
-			scope_locals[scope_level].push_back("");//use a null string for padding
+			scopeLocals[scopeLevel].push_back("");//use a null string for padding
 		}
-		int cursize = 0;
-		for (int i = 0; i<= scope_level;i++)
-		{
-			cursize += scope_locals[i].size();
-		}
+		
+		int cursize = getCurrentSize();
 		if (cursize > maxIndex)
 		{
 			maxIndex = cursize;
