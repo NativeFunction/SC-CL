@@ -906,7 +906,7 @@ public:
 
 	bool checkIntrinsic(const CallExpr *call) {
 		const FunctionDecl* callee = call->getDirectCallee();
-		if(!callee->isDefined())
+		if(callee == NULL)
 		{
 			return false;
 		}
@@ -1128,11 +1128,11 @@ public:
 		}
 		else if (funcName == "@__stacktop")
 		{
-				if (argCount != 0)
-				{
-					Throw(funcName.substr(1) + " must be called with no parameters");
-				}
-				return true;
+			if (argCount != 0)
+			{
+				Throw(funcName.substr(1) + " must be called with no parameters");
+			}
+			return true;
 		}
 		else if (funcName == "@__memcopy")
 		{
@@ -1699,7 +1699,8 @@ public:
 			else if (isa<CastExpr>(callee))
 			{
 				const Expr * const*argArray = call->getArgs();
-				if (!call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
+				std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
+				if (call->getDirectCallee() && !call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
 					Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", rewriter, call->getExprLoc());
 				
 				for (uint32_t i = 0; i < call->getNumArgs(); i++)
