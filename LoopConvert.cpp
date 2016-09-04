@@ -19,7 +19,7 @@
 #include <cmath>
 #include "Utils.h"
 
-#define ReplaceText ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
+#undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
 
 using namespace Utils;
 using namespace Utils::System;
@@ -80,11 +80,11 @@ struct local_scope
 		for (int i = scopeLevel; i >= 0; i--)
 		{
 			vector<string>& locals = scopeLocals[i];
-			for(int j = 0, max = locals.size(); j < max; j++){
+			for (int j = 0, max = locals.size(); j < max; j++) {
 				if (locals[j] == key)
 				{
 					int count = j;
-					for (int k = 0; k < i-1;k++)
+					for (int k = 0; k < i - 1; k++)
 					{
 						count += scopeLocals[i].size();
 					}
@@ -98,7 +98,7 @@ struct local_scope
 	int getCurrentSize()
 	{
 		int cursize = 0;
-		for(int i = 0; i <= scopeLevel; i++)
+		for (int i = 0; i <= scopeLevel; i++)
 		{
 			cursize += scopeLocals[i].size();
 		}
@@ -107,11 +107,11 @@ struct local_scope
 	void add_decl(string key, int size)//size being number of 4 byte variables it takes up
 	{
 		scopeLocals[scopeLevel].push_back(key);
-		for (int i = 1; i < size;i++)
+		for (int i = 1; i < size; i++)
 		{
 			scopeLocals[scopeLevel].push_back("");//use a null string for padding
 		}
-		
+
 		int cursize = getCurrentSize();
 		if (cursize > maxIndex)
 		{
@@ -120,8 +120,6 @@ struct local_scope
 	}
 
 }LocalVariables;
-
-
 // By implementing RecursiveASTVisitor, we can specify which AST nodes
 // we're interested in by overriding relevant methods.
 
@@ -254,15 +252,9 @@ uint32_t getNumVirtMethods(const CXXRecordDecl *classDecl) {
 }
 uint32_t getSizeOfType(const Type* type) {
 
-
-	if (type->isCharType())
-		return 1;
-	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
-		return 2;
-
-	else if (isa<ConstantArrayType>(type)) {
+	if (isa<ConstantArrayType>(type)) {
 		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
-
+		//arrType->get
 		return getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue();
 	}
 	else if (type->isRecordType() && type->getAsCXXRecordDecl()) {
@@ -308,15 +300,15 @@ uint32_t getSizeOfType(const Type* type) {
 		}
 
 	}
-	else if (type->isIntegerType() || type->isBooleanType() || type->isCharType() || type->isFloatingType() || type->isPointerType()) {
+	else if (type->isCharType())
+		return 1;
+	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+		return 2;
+	else if (type->isIntegerType() || type->isBooleanType() || type->isFloatingType() || type->isPointerType())
 		return 4;
-	}
-	else if (type->isVoidType()) {
+	else if (type->isVoidType())
 		return 0;
-	}
-	else {
-		return 0;
-	}
+
 	return 0;
 }
 
@@ -443,7 +435,7 @@ public:
 			return iPush(value) + "\r\nMult";
 		else if (value > 0xFF)
 			return "Mult2 " + to_string(value);
-		else 
+		else
 			return "Mult1 " + to_string(value);
 	}
 
@@ -833,7 +825,7 @@ public:
 					if (StaticFind == statics.end()) {
 
 						auto size = getSizeOfType(var->getType().getTypePtr());
-						
+
 						oldStaticInc = staticInc;
 
 						statics.insert(make_pair(dumpName(cast<NamedDecl>(*I)), staticInc));
@@ -934,7 +926,7 @@ public:
 
 	bool checkIntrinsic(const CallExpr *call) {
 		const FunctionDecl* callee = call->getDirectCallee();
-		if(callee == NULL)
+		if (callee == NULL)
 		{
 			return false;
 		}
@@ -948,7 +940,7 @@ public:
 			Warn("Intrinsics must be declared as 'extern'");
 			return false;
 		}
-		
+
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
 
@@ -1701,7 +1693,7 @@ public:
 			if (checkIntrinsic(call))
 				return 1;
 			const Expr* callee = call->getCallee();
-			
+
 			if (isa<MemberExpr>(callee))
 			{
 				const MemberExpr *expr = cast<const MemberExpr>(call->getCallee());
@@ -1730,7 +1722,7 @@ public:
 				std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
 				if (call->getDirectCallee() && !call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
 					Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", rewriter, call->getExprLoc());
-				
+
 				for (uint32_t i = 0; i < call->getNumArgs(); i++)
 					parseExpression(argArray[i], false, true);
 				if (isa<PointerType>(callee->getType()) && !call->getDirectCallee())
@@ -2019,7 +2011,7 @@ public:
 			}
 
 
-			
+
 			string pMult = "";
 			if ((op->isPrefix() || op->isPostfix()) && isa<PointerType>(subE->getType()))
 			{
@@ -2140,7 +2132,7 @@ public:
 			}
 
 			switch (bOp->getOpcode()) {
-				
+
 				case BO_SubAssign: OpAssign("Sub", true); break;
 				case BO_AddAssign: OpAssign("Add", true); break;
 				case BO_DivAssign:  OpAssign("Div", true); break;
@@ -2157,9 +2149,9 @@ public:
 						parseExpression(bOp->getLHS(), false, true);
 						if (isa<PointerType>(bOp->getLHS()->getType()))
 						{
-							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr(); 
+							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
 							int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
-							int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue; 
+							int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 							out << mult(pSize) + "\r\n";
 						}
 						parseExpression(bOp->getRHS(), false, true);
@@ -2184,7 +2176,7 @@ public:
 								case BO_Shl: out << "CallNative shift_left 2 1\r\n"; break;
 								case BO_Shr: out << "CallNative shift_right 2 1"; break;
 								default:
-								Throw( "Unimplemented binary floating op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
+								Throw("Unimplemented binary floating op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
 							}
 
 						}
@@ -2362,7 +2354,7 @@ public:
 			const GenericSelectionExpr *gse = cast<GenericSelectionExpr>(e);
 			parseExpression(gse->getResultExpr(), isAddr, isLtoRValue);
 		}
-		
+
 		else
 			Throw("Unimplemented expression " + string(e->getStmtClassName()), rewriter, e->getExprLoc());
 
@@ -2438,12 +2430,9 @@ public:
 		const Expr *base = arr->getBase();
 		const Expr *index = arr->getIdx();
 
-
-		parseExpression(base, true);
-		parseExpression(index, false, true);
-		
 		const DeclRefExpr *declRef = getDeclRefExpr(base);
 		const Type *type = base->getType().getTypePtr();//declRef->getType().getTypePtr()->getArrayElementTypeNoTypeQual();
+
 		if (type == NULL) {
 			type = declRef->getType().getTypePtr();
 		}
@@ -2453,12 +2442,59 @@ public:
 		if (type->isPointerType())
 			type = type->getPointeeType().getTypePtr();
 
+
+		if (!addrOf && !LValueToRValue)
+		{
+			//1 byte indexing
+			if (type->isCharType())
+			{
+				//mod for narrowing conversion
+				out << "PushS 256\r\nMod\r\nPushB 24\r\nCallNative shift_left 2 1\r\n";
+				parseExpression(base, true);
+				parseExpression(index, false, true);
+				out << mult(getSizeOfType(type)) << "\r\nAdd\r\npGet\r\nPushI24 0xFFFFFF\r\nand\r\nor\r\n";
+			}
+			//2 byte indexing
+			else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+			{
+				//mod for narrowing conversion
+				out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1\r\n";
+				parseExpression(base, true);
+				parseExpression(index, false, true);
+				out << mult(getSizeOfType(type)) << "\r\nAdd\r\npGet\r\nPushI24 0xFFFF\r\nand\r\nor\r\n";
+			}
+		}
+
+
+		parseExpression(base, true);
+		parseExpression(index, false, true);
+
+
 		if (LValueToRValue && !addrOf)
+		{
 			out << mult(getSizeOfType(type)) << "\r\nAdd\r\npGet//GetArray2\r\n";
+
+			//1 byte indexing
+			if (type->isCharType())
+				out << "PushB 24\r\nCallNative shift_right 2 1\r\n";
+			//2 byte indexing
+			else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+				out << "PushB 16\r\nCallNative shift_right 2 1\r\n";
+
+		}
 		else if (addrOf)
-			out << mult(getSizeOfType(type)) << "\r\nAdd//GetArrayP2\r\n";
+		{
+			int size = getSizeOfType(type);
+			if (type->isArrayType())
+				size = getSizeFromBytes(size) * 4;
+
+			out << mult(size) << "\r\nAdd//GetArrayP2\r\n";
+		}
 		else
+		{
 			out << mult(getSizeOfType(type)) << "\r\nAdd\r\npSet//SetArray2\r\n";
+		}
+
 
 		return true;
 	}
@@ -2753,6 +2789,7 @@ public:
 	const FunctionDecl *currFunction;
 };
 
+
 class GlobalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
 public:
 	GlobalsVisitor(Rewriter &R, ASTContext *context) : TheRewriter(R), context(context) {}
@@ -2860,7 +2897,7 @@ public:
 						fltliteral = literal->getValue().convertToFloat();
 					else
 						fltliteral = (float)literal->getValue().convertToDouble();
-					InitializationStack.push({ (int32_t)IntToFloat(fltliteral), FBWT_INT });
+					InitializationStack.push({ (int32_t)fltliteral, FBWT_INT });
 				}
 				else
 				{
@@ -2978,6 +3015,24 @@ public:
 						Throw("Unable to cast a non literal on initialization of a static var");
 					}
 				}
+				case clang::CK_FloatingToIntegral:
+				{
+					if (isa<FloatingLiteral>(icast->getSubExpr())) {
+						const FloatingLiteral *literal = cast<const FloatingLiteral>(icast->getSubExpr());
+						float fltliteral;
+						if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
+							fltliteral = literal->getValue().convertToFloat();
+						else
+							fltliteral = (float)literal->getValue().convertToDouble();
+						InitializationStack.push({ (int32_t)fltliteral, FBWT_INT });
+					}
+					else
+					{
+						ParseLiteral(icast->getSubExpr(), false, true);
+						InitializationStack.push({ (int32_t)IntToFloat(IS_Pop().bytes), FBWT_INT });
+					}
+					break;
+				}
 				case clang::CK_FloatingCast:
 				case clang::CK_IntegralCast:
 				ParseLiteral(icast->getSubExpr(), isAddr, isLtoRValue);
@@ -3002,12 +3057,6 @@ public:
 				case clang::CK_PointerToIntegral:
 				{
 					ParseLiteral(icast->getSubExpr());
-					break;
-				}
-				case clang::CK_FloatingToIntegral:
-				{
-					ParseLiteral(icast->getSubExpr());
-					InitializationStack.push({ (int32_t)IntToFloat(IS_Pop().bytes), FBWT_INT });
 					break;
 				}
 				case clang::CK_NoOp:
@@ -3227,9 +3276,13 @@ public:
 		{
 			InitializationStack.push({ 0, FBWT_ARRAY });
 			const InitListExpr *init = cast<const InitListExpr>(e);
+
 			for (unsigned int i = 0; i<init->getNumInits(); i++) {
 				ParseLiteral(init->getInit(i));
-				ArrayOut.push_back(IS_Pop().bytes);
+				if (InitializationStack.top().type != FBWT_ARRAY)
+					ArrayOut.push_back(IS_Pop().bytes);
+				else
+					IS_Pop();
 
 			}
 			if (InitializationStack.top().type != FBWT_ARRAY)
@@ -3285,7 +3338,7 @@ public:
 							switch (InitializationStack.top().type)
 							{
 								case FBWT_ARRAY:
-								if (varDecl->getType()->isArrayType())
+								if (varDecl->getType()->isArrayType() || varDecl->getType()->isStructureType())
 								{
 									int32_t buffer = 0, b = 0, stvi = 0;
 
@@ -3302,7 +3355,10 @@ public:
 									if (b != 0)\
 										DefaultStaticValues.insert({ oldStaticInc + stvi, to_string(buffgetstmt) });
 
-									const Type* type = varDecl->getType()->getArrayElementTypeNoTypeQual();
+									const Type* type = varDecl->getType().getTypePtr();
+
+									while (isa<ConstantArrayType>(type))
+										type = type->getArrayElementTypeNoTypeQual();
 
 									if (type->isCharType() && isa<InitListExpr>(initializer))//InitListExpr because of char test[] = "hello world";
 									{
@@ -3313,8 +3369,11 @@ public:
 										AddStaticArraySpecial(2, 65536, ((uint16_t*)(&buffer))[!b], buffer);
 									}
 									else
+									{
+										cout << type->getTypeClassName() << endl;
 										for (uint32_t i = 0; i < ArrayOut.size(); i++)
 											DefaultStaticValues.insert({ oldStaticInc + i, to_string(ArrayOut[i]) });
+									}
 
 								}
 								else
@@ -3425,6 +3484,7 @@ private:
 	Rewriter &TheRewriter;
 	ASTContext *context;
 };
+
 
 class LocalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
 public:
