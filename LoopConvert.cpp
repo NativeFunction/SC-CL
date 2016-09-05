@@ -85,9 +85,9 @@ struct local_scope
 				if (locals[j] == key)
 				{
 					int count = j;
-					for (int k = 0; k < i - 1; k++)
+					for (int k = 0; k < i; k++)
 					{
-						count += scopeLocals[i].size();
+						count += scopeLocals[k].size();
 					}
 					*outIndex = count;
 					return true;
@@ -107,6 +107,7 @@ struct local_scope
 	}
 	void addDecl(string key, int size)//size being number of 4 byte variables it takes up
 	{
+		assert(size > 0);
 		scopeLocals[scopeLevel].push_back(key);
 		for (int i = 1; i < size; i++)
 		{
@@ -572,15 +573,17 @@ public:
 
 			parseExpression(conditional, false, true);
 			out << "JumpFalse @" << (Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd) << endl;
-
+			LocalVariables.addLevel();
 			parseStatement(Then, breakLoc, continueLoc);
-
+			LocalVariables.removeLevel();
 
 			out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
 
 			if (Else) {
 				out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
+				LocalVariables.addLevel();
 				parseStatement(Else, breakLoc, continueLoc);
+				LocalVariables.removeLevel();
 				out << "//" << Else->getLocStart().getRawEncoding() << " " << Else->getLocEnd().getRawEncoding() << endl;
 			}
 			if (Then)
@@ -597,13 +600,17 @@ public:
 			Expr *conditional = whileStmt->getCond();
 
 			Stmt *body = whileStmt->getBody();
+			LocalVariables.addLevel();
 
 			out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
 			parseExpression(conditional, false, true);
 			out << "JumpFalse @" << whileStmt->getLocEnd().getRawEncoding() << endl;
+			
 			parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding());
+			
 			out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
 			out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
+			LocalVariables.removeLevel();
 		}
 		else if (isa<ForStmt>(s)) {
 			ForStmt *forStmt = cast<ForStmt>(s);
@@ -611,6 +618,7 @@ public:
 			Expr *conditional = forStmt->getCond();
 			Expr *increment = forStmt->getInc();
 			Stmt *body = forStmt->getBody();
+			LocalVariables.addLevel();
 			if (decl) {
 				if (isa<DeclStmt>(decl)) {
 					handleDecl(cast<DeclStmt>(decl));
@@ -645,6 +653,7 @@ public:
 
 
 			out << endl << ":" << body->getLocEnd().getRawEncoding() << "//forend lbl" << endl;
+			LocalVariables.removeLevel();
 
 
 		}
@@ -656,12 +665,11 @@ public:
 			Expr *conditional = doStmt->getCond();
 
 			Stmt *body = doStmt->getBody();
-
+			LocalVariables.addLevel();
 
 			out << endl << ":" << body->getLocStart().getRawEncoding() << endl;
-
+			
 			parseStatement(body, conditional->getLocEnd().getRawEncoding(), body->getLocStart().getRawEncoding());
-
 
 
 
@@ -670,6 +678,7 @@ public:
 			out << "not //Invert Result" << endl;
 			out << "JumpFalse @" << body->getLocStart().getRawEncoding() << endl;
 			out << endl << ":" << conditional->getLocEnd().getRawEncoding() << "" << endl;
+			LocalVariables.removeLevel();
 
 		}
 		else if (isa<ReturnStmt>(s)) {
