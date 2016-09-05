@@ -32,7 +32,7 @@ static llvm::cl::OptionCategory ToolingSampleCategory("Tooling Sample");
 
 static Rewriter rewriter;
 
-map<string, int> locals;
+//map<string, int> locals;
 map<string, int> globals;
 map<string, int> statics;
 struct FData
@@ -48,18 +48,19 @@ vector<FData> functions;
 map<const FunctionDecl*, int> localCounts;
 static int globalInc = 0;
 static int staticInc = 0;
-static int localInc = 2;
+//static int localInc = 2;
 
 
 struct local_scope
 {
 	vector<vector<string>> scopeLocals;
-	int maxIndex = 0;
+	uint32_t maxIndex = 0;
 	int scopeLevel = 0;
 	void reset()//call this on function decl
 	{
 		scopeLevel = 0;
 		scopeLocals.clear();
+		scopeLocals.push_back(vector<string>());
 		maxIndex = 0;
 	}
 	void addLevel()
@@ -95,16 +96,16 @@ struct local_scope
 		}
 		return false;
 	}
-	int getCurrentSize()
+	uint32_t getCurrentSize()
 	{
-		int cursize = 0;
+		uint32_t cursize = 0;
 		for (int i = 0; i <= scopeLevel; i++)
 		{
 			cursize += scopeLocals[i].size();
 		}
 		return cursize;
 	}
-	void add_decl(string key, int size)//size being number of 4 byte variables it takes up
+	void addDecl(string key, int size)//size being number of 4 byte variables it takes up
 	{
 		scopeLocals[scopeLevel].push_back(key);
 		for (int i = 1; i < size; i++)
@@ -112,7 +113,7 @@ struct local_scope
 			scopeLocals[scopeLevel].push_back("");//use a null string for padding
 		}
 
-		int cursize = getCurrentSize();
+		uint32_t cursize = getCurrentSize();
 		if (cursize > maxIndex)
 		{
 			maxIndex = cursize;
@@ -332,29 +333,35 @@ public:
 
 				VarDecl *var = cast<VarDecl>(decl);
 				auto size = context->getTypeInfoDataSizeInChars(var->getType()).first.getQuantity();
-				uint32_t oldLocalInc = localInc;
-				locals.insert(make_pair(var->getName().str(), localInc));
+				//uint32_t curIndex = localInc;
+				uint32_t curIndex = LocalVariables.getCurrentSize();
+				//locals.insert(make_pair(var->getName().str(), localInc));
 
-				if (var->isCXXInstanceMember())
-					localInc += getSizeFromBytes(getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false));
-				else
-					localInc += getSizeFromBytes(size);
+				int actsize = var->isCXXInstanceMember() ?
+					getSizeFromBytes(getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false))
+					: getSizeFromBytes(size);
+				LocalVariables.addDecl(var->getName().str(), actsize);
+				
+
+				//if (var->isCXXInstanceMember())
+				//	localInc += getSizeFromBytes(getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false));
+				//else
+				//	localInc += getSizeFromBytes(size);
 
 				const Expr *initializer = var->getAnyInitializer();
 
 				if (initializer) {
 					if (isa<CXXConstructExpr>(initializer)) {
 
-						out << pFrame(oldLocalInc) << " //" << var->getNameAsString() << endl;
+						out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
 						parseExpression(initializer);
 					}
 					else
 					{
 						parseExpression(initializer);
-						out << frameSet(oldLocalInc) << "  //" << var->getName().str() << endl;
+						out << frameSet(curIndex) << "  //" << var->getName().str() << endl;
 					}
 				}
-
 			}
 		}
 		return true;
@@ -460,8 +467,20 @@ public:
 			out << "Push " << size << "//size" << endl;
 			isAddr = true;
 		}
+		
+		if (LocalVariables.find(key, &index))
+		{
+			if(isLtoRValue && !isAddr) {
+				out << frameGet(index) << " //" << key << endl;
+			}
+			else if(isAddr)
+				out << pFrame(index) << " //&" << key << endl;
+			else {
+				out << frameSet(index) << " //" << key << endl;
 
-
+			}
+		}
+		/*old code needs removing once new system is implemented
 		if (locals.find(key) != locals.end()) {
 			index = locals[key];
 			if (isLtoRValue && !isAddr) {
@@ -473,9 +492,7 @@ public:
 				out << frameSet(index) << " //" << key << endl;
 
 			}
-
-
-		}
+		}*/
 		else if (globals.find(key) != globals.end()) {
 			index = globals[key];
 			if (isLtoRValue && !isAddr)
@@ -851,15 +868,17 @@ public:
 				{
 					auto size = getSizeOfType(var->getType().getTypePtr());
 
-					uint32_t oldLocalInc = localInc;
-					locals.insert(make_pair(var->getName().str(), localInc));
+					//uint32_t curIndex = localInc;
+					uint32_t curIndex = LocalVariables.getCurrentSize();
+					//locals.insert(make_pair(var->getName().str(), localInc));
 
 					const ArrayType *arr = NULL;
 					if ((arr = var->getType()->getAsArrayTypeUnsafe()) && arr->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl()) {
 						if (isa<ConstantArrayType>(arr)) {
 							const ConstantArrayType *cArrType = cast<const ConstantArrayType>(arr);
 							size = getSizeOfCXXDecl(arr->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl(), true, false) * cArrType->getSize().getSExtValue();
-							localInc += getSizeFromBytes(size);
+							//localInc += getSizeFromBytes(size);
+							LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
 						}
 						else {
 							Throw("Unsupported decl of " + string(var->getDeclKindName()), rewriter, var->getLocStart());
@@ -868,10 +887,14 @@ public:
 					}
 					else if (var->getType()->getAsCXXRecordDecl()) {
 						size = getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false);
-						localInc += getSizeFromBytes(size);
+						//localInc += getSizeFromBytes(size);
+						LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
 					}
 					else
-						localInc += getSizeFromBytes(size);
+					{
+						//localInc += getSizeFromBytes(size);
+						LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
+					}
 
 					const Expr *initializer = var->getAnyInitializer();
 					if (initializer) {
@@ -889,7 +912,7 @@ public:
 								out << "JumpFalse @vTableEnd_" << vTableInitInc << endl;
 
 								out << "dup #index" << endl;
-								out << pFrame(oldLocalInc) << " //" << var->getNameAsString() << endl;
+								out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
 								out << "ArrayGetP " << getSizeFromBytes(getSizeOfCXXDecl(arr->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl(), true, true)) << "//index Array" << endl;
 								parseExpression(initializer, true, false, true, var);
 								out << "Push 1" << endl;
@@ -900,7 +923,7 @@ public:
 								vTableInitInc++;
 								return true;
 							}
-							out << pFrame(oldLocalInc) << " //" << var->getNameAsString() << endl;
+							out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
 							parseExpression(initializer, true, false, true, var);
 							return true;
 						}
@@ -908,11 +931,11 @@ public:
 						parseExpression(initializer, false, true);
 						if (size > 4) {
 							out << "Push " << getSizeFromBytes(size) << " //Type Size" << endl;
-							out << pFrame(oldLocalInc) << " //&" << var->getNameAsString() << endl;
+							out << pFrame(curIndex) << " //&" << var->getNameAsString() << endl;
 							out << "FromStack" << endl;
 						}
 						else {
-							out << frameSet(oldLocalInc) << "  //" << var->getName().str() << endl;
+							out << frameSet(curIndex) << "  //" << var->getName().str() << endl;
 						}
 					}
 
@@ -1064,13 +1087,20 @@ public:
 
 							const VarDecl* varDecl = cast<VarDecl>(declRef->getDecl());
 							std::string name = varDecl->getName();
-							if (locals.find(name) != locals.end())
+							int index;
+							if (LocalVariables.find(name, &index))
+							{
+								out << funcName.substr(3);
+								out << ((index & 0xFF) == index ? "1 " : "2 ");
+								out << index << " //" << name << endl;
+							}
+							/*if (locals.find(name) != locals.end())
 							{
 								int index = locals[name];
 								out << funcName.substr(3);
 								out << ((index & 0xFF) == index ? "1 " : "2 ");
 								out << index << " //" << name << endl;
-							}
+							}*/
 							else
 								Throw("Could not find variable " + name + ".", rewriter, argArray[0]->getExprLoc());
 						}
@@ -2112,7 +2142,7 @@ public:
 			string pMult = "";
 			int pSize = 0;
 			#define OpAssign(op, isfloat)\
-			parseExpression(bOp->getLHS(), true, true);\
+			parseExpression(bOp->getLHS(), true, false);\
 			out << "dup\r\npGet\r\n";\
 			parseExpression(bOp->getRHS(), false, true);\
 		    pMult = "";\
@@ -2538,17 +2568,21 @@ public:
 			out << "\r\n//" + getNameForFunc(f) + "\r\n";
 
 			currFunction = f;
-			locals.clear();
+			//locals.clear();
+			LocalVariables.reset();
+			if(isa<CXXMethodDecl>(f))
+				LocalVariables.addDecl("", 1);
 
-			if (isa<CXXMethodDecl>(f))
-				localInc = 1;
-			else
-				localInc = 0;
+			//if (isa<CXXMethodDecl>(f))
+			//	localInc = 1;
+			//else
+			//	localInc = 0;
 
 			for (uint32_t i = 0; i<f->getNumParams(); i++)
 				handleParmVarDecl(f->getParamDecl(i));
 
-			localInc += 2;
+			LocalVariables.addDecl("", 2);//base pointer and return address
+			//localInc += 2;
 			parseStatement(FuncBody);
 
 			if (f->getReturnType().getTypePtr()->isVoidType()) {
@@ -2571,7 +2605,8 @@ public:
 
 			//Throw(f->getNameAsString() + ": not all control paths return a value", rewriter, f->getLocEnd());
 
-			uint32_t FunctionStackCount = localInc - isa<CXXMethodDecl>(f);
+			//uint32_t FunctionStackCount = localInc - isa<CXXMethodDecl>(f);
+			uint32_t FunctionStackCount = LocalVariables.maxIndex - (isa<CXXMethodDecl>(f) ? 1 : 0) - paramSize;
 			string FunctionStackCountStr = to_string(FunctionStackCount);
 
 			if (FunctionStackCount > 65536)
@@ -2723,9 +2758,11 @@ public:
 		for (auto *CS : d->ctors()) {
 			if (!CS->hasBody())
 				continue;
-			localInc = 1;
-			locals.clear();
-			locals.insert(make_pair(d->getDeclName().getAsString(), 0));
+			//localInc = 1;
+			//locals.clear();
+			//locals.insert(make_pair(d->getDeclName().getAsString(), 0));
+			LocalVariables.reset();
+			LocalVariables.addDecl(d->getDeclName().getAsString(), 1);
 
 			out << endl << endl;
 			out << ":" << getLocStart(CS) << endl << ":" << CS->getDeclName().getAsString() << endl << "Function " << CS->getNumParams() + 1 << "//" << getNameForFunc(CS) << endl;
@@ -2734,7 +2771,7 @@ public:
 			for (auto *PI : CS->params()) {
 				handleParmVarDecl(PI);
 			}
-			localInc = (3 + CS->getNumParams());
+			//localInc = (3 + CS->getNumParams());
 			for (auto *IS : CS->inits()) {
 
 				if (IS->getMember()) {
@@ -2764,8 +2801,8 @@ public:
 			}
 			out << "Return " << paramSize + (isa<CXXMethodDecl>(currFunction)) << " 0" << endl;
 
-			out << "#FuncEnd L " << localInc - isa<CXXMethodDecl>(CS) << endl << endl;
-
+			//out << "#FuncEnd L " << localInc - isa<CXXMethodDecl>(CS) << endl << endl;
+			out << "#FuncEnd L " << LocalVariables.getCurrentSize() - (isa<CXXMethodDecl>(CS) ? 1 : 0) << endl << endl;
 			if (d->isPolymorphic()) {
 				out << endl << endl;
 				out << "Function 1 1 @" << d->getNameAsString() << "::VTableInit" << endl;
@@ -3503,7 +3540,8 @@ public:
 		if (isa<FunctionDecl>(D)) {
 			const FunctionDecl *func = cast<const FunctionDecl>(D);
 			if (currentFunction) {
-				localCounts.insert(make_pair(currentFunction, localInc - currentFunction->getNumParams() - (isa<CXXMethodDecl>(currentFunction) ? 1 : 0)));
+				//localCounts.insert(make_pair(currentFunction, localInc - currentFunction->getNumParams() - (isa<CXXMethodDecl>(currentFunction) ? 1 : 0)));
+				localCounts.insert(make_pair(currentFunction, LocalVariables.getCurrentSize() - currentFunction->getNumParams() - (isa<CXXMethodDecl>(currentFunction) ? 1 : 0)));
 			}
 		}
 		return true;
@@ -3520,7 +3558,10 @@ public:
 	bool TraverseDecl(Decl *D) {
 		RecursiveASTVisitor::TraverseDecl(D);
 		if (currentFunction)
-			localCounts.insert(make_pair(currentFunction, localInc));
+		{
+			//localCounts.insert(make_pair(currentFunction, localInc));
+			localCounts.insert(make_pair(currentFunction, LocalVariables.getCurrentSize()));
+		}
 		return true;
 	}
 
