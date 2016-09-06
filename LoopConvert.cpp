@@ -33,7 +33,6 @@ static llvm::cl::OptionCategory ToolingSampleCategory("Tooling Sample");
 
 static Rewriter rewriter;
 
-//map<string, int> locals;
 map<string, int> globals;
 map<string, int> statics;
 struct FData
@@ -49,7 +48,6 @@ vector<FData> functions;
 map<const FunctionDecl*, int> localCounts;
 static int globalInc = 0;
 static int staticInc = 0;
-//static int localInc = 2;
 
 
 struct local_scope
@@ -335,20 +333,12 @@ public:
 
 				VarDecl *var = cast<VarDecl>(decl);
 				auto size = context->getTypeInfoDataSizeInChars(var->getType()).first.getQuantity();
-				//uint32_t curIndex = localInc;
 				uint32_t curIndex = LocalVariables.getCurrentSize();
-				//locals.insert(make_pair(var->getName().str(), localInc));
 
 				int actsize = var->isCXXInstanceMember() ?
 					getSizeFromBytes(getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false))
 					: getSizeFromBytes(size);
 				LocalVariables.addDecl(var->getName().str(), actsize);
-				
-
-				//if (var->isCXXInstanceMember())
-				//	localInc += getSizeFromBytes(getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false));
-				//else
-				//	localInc += getSizeFromBytes(size);
 
 				const Expr *initializer = var->getAnyInitializer();
 
@@ -532,19 +522,6 @@ public:
 
 			}
 		}
-		/*old code needs removing once new system is implemented
-		if (locals.find(key) != locals.end()) {
-			index = locals[key];
-			if (isLtoRValue && !isAddr) {
-				out << frameGet(index) << " //" << key << endl;
-			}
-			else if (isAddr)
-				out << pFrame(index) << " //&" << key << endl;
-			else {
-				out << frameSet(index) << " //" << key << endl;
-
-			}
-		}*/
 		else if (globals.find(key) != globals.end()) {
 			index = globals[key];
 			if (isLtoRValue && !isAddr)
@@ -931,16 +908,13 @@ public:
 				{
 					auto size = getSizeOfType(var->getType().getTypePtr());
 
-					//uint32_t curIndex = localInc;
 					uint32_t curIndex = LocalVariables.getCurrentSize();
-					//locals.insert(make_pair(var->getName().str(), localInc));
 
 					const ArrayType *arr = NULL;
 					if ((arr = var->getType()->getAsArrayTypeUnsafe()) && arr->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl()) {
 						if (isa<ConstantArrayType>(arr)) {
 							const ConstantArrayType *cArrType = cast<const ConstantArrayType>(arr);
 							size = getSizeOfCXXDecl(arr->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl(), true, false) * cArrType->getSize().getSExtValue();
-							//localInc += getSizeFromBytes(size);
 							LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
 						}
 						else {
@@ -950,12 +924,10 @@ public:
 					}
 					else if (var->getType()->getAsCXXRecordDecl()) {
 						size = getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false);
-						//localInc += getSizeFromBytes(size);
 						LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
 					}
 					else
 					{
-						//localInc += getSizeFromBytes(size);
 						LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
 					}
 
@@ -1156,13 +1128,6 @@ public:
 								out << ((index & 0xFF) == index ? "1 " : "2 ");
 								out << index << " //" << name << endl;
 							}
-							/*if (locals.find(name) != locals.end())
-							{
-								int index = locals[name];
-								out << funcName.substr(3);
-								out << ((index & 0xFF) == index ? "1 " : "2 ");
-								out << index << " //" << name << endl;
-							}*/
 							else
 								Throw("Could not find variable " + name + ".", rewriter, argArray[0]->getExprLoc());
 						}
@@ -1364,16 +1329,10 @@ public:
 			}
 		}
 		if (isa<IntegerLiteral>(e)) {
-			const IntegerLiteral *literal = cast<const IntegerLiteral>(e);
-			out << iPush(literal->getValue().getSExtValue()) << endl;
+			out << iPush(cast<const IntegerLiteral>(e)->getValue().getSExtValue()) << endl;
 		}
 		else if (isa<FloatingLiteral>(e)) {
-			const FloatingLiteral *literal = cast<const FloatingLiteral>(e);
-			if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
-				out << "PushF " << (double)literal->getValue().convertToFloat() << endl;
-			else
-				out << "PushF " << literal->getValue().convertToDouble() << endl;
-			//Throw("My Error", rewriter, e);
+			out << fPush(cast<const FloatingLiteral>(e)->getValue()) << endl;
 		}
 		else if (isa<CompoundLiteralExpr>(e)) {
 			const CompoundLiteralExpr *cLit = cast<const CompoundLiteralExpr>(e);
@@ -2313,21 +2272,14 @@ public:
 			out << "\r\n//" + getNameForFunc(f) + "\r\n";
 
 			currFunction = f;
-			//locals.clear();
 			LocalVariables.reset();
 			if(isa<CXXMethodDecl>(f))
 				LocalVariables.addDecl("", 1);
-
-			//if (isa<CXXMethodDecl>(f))
-			//	localInc = 1;
-			//else
-			//	localInc = 0;
 
 			for (uint32_t i = 0; i<f->getNumParams(); i++)
 				handleParmVarDecl(f->getParamDecl(i));
 
 			LocalVariables.addDecl("", 2);//base pointer and return address
-			//localInc += 2;
 			parseStatement(FuncBody);
 
 			if (f->getReturnType().getTypePtr()->isVoidType()) {
@@ -2349,8 +2301,6 @@ public:
 			}
 
 			//Throw(f->getNameAsString() + ": not all control paths return a value", rewriter, f->getLocEnd());
-
-			//uint32_t FunctionStackCount = localInc - isa<CXXMethodDecl>(f);
 			uint32_t FunctionStackCount = LocalVariables.maxIndex - (isa<CXXMethodDecl>(f) ? 1 : 0) - paramSize;
 			string FunctionStackCountStr = to_string(FunctionStackCount);
 
@@ -2503,9 +2453,7 @@ public:
 		for (auto *CS : d->ctors()) {
 			if (!CS->hasBody())
 				continue;
-			//localInc = 1;
-			//locals.clear();
-			//locals.insert(make_pair(d->getDeclName().getAsString(), 0));
+
 			LocalVariables.reset();
 			LocalVariables.addDecl(d->getDeclName().getAsString(), 1);
 
@@ -2516,7 +2464,7 @@ public:
 			for (auto *PI : CS->params()) {
 				handleParmVarDecl(PI);
 			}
-			//localInc = (3 + CS->getNumParams());
+
 			for (auto *IS : CS->inits()) {
 
 				if (IS->getMember()) {
@@ -2546,7 +2494,6 @@ public:
 			}
 			out << "Return " << paramSize + (isa<CXXMethodDecl>(currFunction)) << " 0" << endl;
 
-			//out << "#FuncEnd L " << localInc - isa<CXXMethodDecl>(CS) << endl << endl;
 			out << "#FuncEnd L " << LocalVariables.getCurrentSize() - (isa<CXXMethodDecl>(CS) ? 1 : 0) << endl << endl;
 			if (d->isPolymorphic()) {
 				out << endl << endl;
@@ -3285,7 +3232,6 @@ public:
 		if (isa<FunctionDecl>(D)) {
 			const FunctionDecl *func = cast<const FunctionDecl>(D);
 			if (currentFunction) {
-				//localCounts.insert(make_pair(currentFunction, localInc - currentFunction->getNumParams() - (isa<CXXMethodDecl>(currentFunction) ? 1 : 0)));
 				localCounts.insert(make_pair(currentFunction, LocalVariables.getCurrentSize() - currentFunction->getNumParams() - (isa<CXXMethodDecl>(currentFunction) ? 1 : 0)));
 			}
 		}
@@ -3304,7 +3250,6 @@ public:
 		RecursiveASTVisitor::TraverseDecl(D);
 		if (currentFunction)
 		{
-			//localCounts.insert(make_pair(currentFunction, localInc));
 			localCounts.insert(make_pair(currentFunction, LocalVariables.getCurrentSize()));
 		}
 		return true;
