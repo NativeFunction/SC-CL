@@ -20,7 +20,7 @@
 #include "Utils.h"
 
 #undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
-#define MultValue(pTypePtr) pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4
+#define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4)
 
 using namespace Utils;
 using namespace Utils::System;
@@ -438,8 +438,39 @@ public:
 		{
 			return "Push " + to_string(val);
 		}
-
 	}
+
+	string fPush(double value)
+	{
+		if(value == -1.0)
+			return "PushF_-1";
+		if(value == 0.0 || value == -0.0)//double has -ive 0 and +ive 0
+			return "PushF_0";
+		if(value == 1.0)
+			return "PushF_1";
+		if(value == 2.0)
+			return "PushF_2";
+		if(value == 3.0)
+			return "PushF_3";
+		if(value == 4.0)
+			return "PushF_4";
+		if(value == 5.0)
+			return "PushF_5";
+		if(value == 6.0)
+			return "PushF_6";
+		if(value == 7.0)
+			return "PushF_7";
+		return "PushF " + to_string(value);
+	}
+
+	string fPush(llvm::APFloat value)
+	{
+		if(&value.getSemantics() == &llvm::APFloat::IEEEsingle)
+			return fPush((double)value.convertToFloat());
+		else
+			return fPush(value.convertToDouble());
+	}
+
 	string mult(int value)
 	{
 		if (value < -32768 || value > 32767)
@@ -1310,404 +1341,21 @@ public:
 		return NULL;
 	}
 
-	bool binaryOpConstantFolding(const BinaryOperator *operation, Expr** newExpr)
-	{
-		BinaryOperatorKind op = operation->getOpcode();
-		const Expr* LHS = operation->getLHS();
-		const Expr* RHS = operation->getRHS();
-		while (isa<ParenExpr>(LHS))
-		{
-			Expr*temp = (Expr*)cast<ParenExpr>(LHS)->getSubExpr();
-			((BinaryOperator*)operation)->setLHS(temp);
-			LHS = operation->getLHS();
-		}
-		while (isa<ParenExpr>(RHS))
-		{
-			Expr*temp = (Expr*)cast<ParenExpr>(RHS)->getSubExpr();
-			((BinaryOperator*)operation)->setRHS(temp);
-			RHS = operation->getRHS();
-		}
-		int64_t newInt;
-		double newDouble;
-		if (isa<BinaryOperator>(LHS))
-		{
-			Expr* newExpr;
-			if (binaryOpConstantFolding(cast<BinaryOperator>(LHS), &newExpr))
-			{
-				((BinaryOperator*)operation)->setLHS(newExpr);
-				LHS = operation->getLHS();
-			}
-		}
-
-		if (isa<BinaryOperator>(RHS))
-		{
-			Expr* newExpr;
-			if (binaryOpConstantFolding(cast<BinaryOperator>(RHS), &newExpr))
-			{
-				((BinaryOperator*)operation)->setRHS(newExpr);
-				RHS = operation->getRHS();
-			}
-		}
-
-		if (isa<IntegerLiteral>(LHS) && isa<IntegerLiteral>(RHS))
-		{
-			int64_t lhs = cast<IntegerLiteral>(LHS)->getValue().getSExtValue();
-			int64_t rhs = cast<IntegerLiteral>(RHS)->getValue().getSExtValue();
-			switch (operation->getOpcode())
-			{
-				case BO_SubAssign:
-				case BO_AddAssign:
-				case BO_DivAssign:
-				case BO_MulAssign:
-				case BO_AndAssign:
-				case BO_Assign:
-				case BO_OrAssign:
-				case BO_RemAssign:
-				case BO_ShlAssign:
-				case BO_ShrAssign:
-				case BO_XorAssign:
-				//probably should error here as these operations should have been alread catched
-				return false;
-				case BO_Add:
-				newInt = lhs + rhs;
-				if (newExpr == NULL) {
-					out << iPush(newInt) << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Sub:
-				newInt = lhs - rhs;
-				if (newExpr == NULL) {
-					out << iPush(newInt) << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Div:
-				newInt = lhs / rhs;
-				if (newExpr == NULL) {
-					out << iPush(newInt) << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Mul:
-				newInt = lhs * rhs;
-				if (newExpr == NULL) {
-					out << iPush(newInt) << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_And:
-				newInt = lhs & rhs;
-				if (newExpr == NULL) {
-					out << iPush(newInt) << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_LAnd:
-				newInt = lhs != 0 && rhs != 0 ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Or:
-				newInt = lhs | rhs;
-				if (newExpr == NULL) {
-					out << iPush(newInt) << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_LOr:
-				newInt = lhs != 0 || rhs != 0 ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Xor:
-				newInt = lhs ^ rhs;
-				if (newExpr == NULL) {
-					out << iPush(newInt) << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Shl:
-				newInt = lhs << rhs;
-				if (newExpr == NULL) {
-					out << iPush(newInt) << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Shr:
-				newInt = lhs >> rhs;
-				if (newExpr == NULL) {
-					out << iPush(newInt) << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_EQ:
-				newInt = lhs == rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_NE:
-				newInt = lhs != rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_GE:
-				newInt = lhs >= rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_GT:
-				newInt = lhs > rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_LE:
-				newInt = lhs <= rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_LT:
-				newInt = lhs < rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				default:
-				return false;
-			}
-		}
-		if (isa<FloatingLiteral>(LHS) && isa<FloatingLiteral>(RHS))
-		{
-			const llvm::APFloat lhsFlt = cast<FloatingLiteral>(LHS)->getValue();
-			const llvm::APFloat rhsFlt = cast<FloatingLiteral>(RHS)->getValue();
-			double lhs = &lhsFlt.getSemantics() == &llvm::APFloat::IEEEsingle ? (double)lhsFlt.convertToFloat() : lhsFlt.convertToDouble();
-			double rhs = &rhsFlt.getSemantics() == &llvm::APFloat::IEEEsingle ? (double)rhsFlt.convertToFloat() : rhsFlt.convertToDouble();
-			switch (operation->getOpcode())
-			{
-				case BO_SubAssign:
-				case BO_AddAssign:
-				case BO_DivAssign:
-				case BO_MulAssign:
-				case BO_AndAssign:
-				case BO_Assign:
-				case BO_OrAssign:
-				case BO_RemAssign:
-				case BO_ShlAssign:
-				case BO_ShrAssign:
-				case BO_XorAssign:
-				//probably should error here as these operations should have been alread catched
-				return false;
-				case BO_Add:
-				newDouble = lhs + rhs;
-				if (newExpr == NULL) {
-					out << "PushF " << newDouble << endl;
-				}
-				else
-				{
-					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Sub:
-				newDouble = lhs - rhs;
-				if (newExpr == NULL) {
-					out << "PushF " << newDouble << endl;
-				}
-				else
-				{
-					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Div:
-				newDouble = lhs / rhs;
-				if (newExpr == NULL) {
-					out << "PushF " << newDouble << endl;
-				}
-				else
-				{
-					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Mul:
-				newDouble = lhs * rhs;
-				if (newExpr == NULL) {
-					out << "PushF " << newDouble << endl;
-				}
-				else
-				{
-					*newExpr = FloatingLiteral::Create(*context, llvm::APFloat(newDouble), true, context->DoubleTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_And:
-				//out << iPush(lhs & rhs) << endl; //unsupported operator
-				return false;
-				case BO_LAnd:
-				newInt = lhs != 0 && rhs != 0 ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Or:
-				//out << iPush(lhs | rhs) << endl; //unsupported operator
-				return false;
-				case BO_LOr:
-				newInt = lhs != 0 || rhs != 0 ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_Xor:
-				//out << iPush(lhs ^ rhs) << endl; //unsupported operator
-				return false;
-				case BO_Shl:
-				//out << iPush(lhs << rhs) << endl; //unsupported operator
-				return false;
-				case BO_Shr:
-				//out << iPush(lhs >> rhs) << endl; //unsupported operator
-				return false;
-				case BO_EQ:
-				newInt = lhs == rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_NE:
-				newInt = lhs != rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_GE:
-				newInt = lhs >= rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_GT:
-				newInt = lhs > rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_LE:
-				newInt = lhs <= rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				case BO_LT:
-				newInt = lhs < rhs ? 1 : 0;
-				if (newExpr == NULL) {
-					out << "iPush_" << (newInt != 0 ? "1" : "0") << endl;
-				}
-				else
-				{
-					*newExpr = IntegerLiteral::Create(*context, llvm::APInt(64, (uint64_t)newInt, true), context->LongLongTy, operation->getOperatorLoc());
-				}
-				return true;
-				default:
-				return false;
-			}
-		}
-		return false;
-
-
-	}
-
 	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, const NamedDecl *lastDecl = NULL) {
+		Expr::EvalResult result;
+		if (e->EvaluateAsRValue(result, *context))
+		{
+			if (result.Val.isInt())
+			{
+				out << iPush(result.Val.getInt().getSExtValue()) << endl;
+				return -1;
+			}
+			else if (result.Val.isFloat())
+			{
+				out << fPush(result.Val.getFloat()) << endl;
+				return -1;
+			}
+		}
 		if (isa<IntegerLiteral>(e)) {
 			const IntegerLiteral *literal = cast<const IntegerLiteral>(e);
 			out << iPush(literal->getValue().getSExtValue()) << endl;
@@ -2185,43 +1833,40 @@ public:
 
 				case BO_SubAssign: OpAssign("Sub", true); break;
 				case BO_AddAssign:
-					parseExpression(bOp->getLHS(), true, false); 
-					out << "dup\r\npGet\r\n"; 
-					if (isa<BinaryOperator>(bOp->getRHS()))
+				{
+					parseExpression(bOp->getLHS(), true, false);
+				out << "dup\r\npGet\r\n";
+				llvm::APSInt intRes;
+				if(bOp->getRHS()->EvaluateAsInt(intRes, *context))
+				{
+					int64_t val = intRes.getSExtValue();
+					if(isa<PointerType>(bOp->getLHS()->getType()))
 					{
-						Expr* newExpr;
-						if (binaryOpConstantFolding(cast<BinaryOperator>(bOp->getRHS()), &newExpr))
-						{
-							((BinaryOperator*)bOp)->setRHS(newExpr);
-						}
+						const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
+						out << add(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << "\r\npPeekSet\r\nDrop\r\n";
 					}
-					if (isa<IntegerLiteral>(bOp->getRHS()))
+					else
 					{
-						int64_t val = cast<IntegerLiteral>(bOp->getRHS())->getValue().getSExtValue();
-						if(isa<PointerType>(bOp->getLHS()->getType()))
-						{
-							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-							out << add(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << "\r\npPeekSet\r\nDrop\r\n";
-						}else
-						{
-							out << add(val) << "\r\npPeekSet\r\nDrop\r\n";
-						}
-					}else
-					{
-						parseExpression(bOp->getRHS(), false, true);
-						pMult = "";
-						if(isa<PointerType>(bOp->getLHS()->getType()))
-						{
-							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-							pMult = mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";
-						}
-						if(bOp->getLHS()->getType()->isFloatingType())
-							out << pMult << "fadd" << "\r\npPeekSet\r\nDrop\r\n";
-						else
-						{
-							out << pMult << "Add" << "\r\npPeekSet\r\nDrop\r\n";
-						}
+						out << add(val) << "\r\npPeekSet\r\nDrop\r\n";
 					}
+				}
+				else
+				{
+					parseExpression(bOp->getRHS(), false, true);
+					pMult = "";
+					if(isa<PointerType>(bOp->getLHS()->getType()))
+					{
+						const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
+						pMult = mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";
+					}
+					if(bOp->getLHS()->getType()->isFloatingType())
+						out << pMult << "fadd" << "\r\npPeekSet\r\nDrop\r\n";
+					else
+					{
+						out << pMult << "Add" << "\r\npPeekSet\r\nDrop\r\n";
+					}
+				}
+				}
 					break;
 				case BO_DivAssign:  OpAssign("Div", true); break;
 				case BO_MulAssign:  OpAssign("Mult", true); break;
@@ -2233,68 +1878,66 @@ public:
 				case BO_ShrAssign:  OpAssign("CallNative shift_right 2 1", false); break;
 				default:
 				{
-					if (!binaryOpConstantFolding(bOp, NULL)) {
-						parseExpression(bOp->getLHS(), false, true);
-						if (isa<PointerType>(bOp->getLHS()->getType()))
-						{
-							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-							int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
-							int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
-							out << mult(pSize) + "\r\n";
+					parseExpression(bOp->getLHS(), false, true);
+					if(isa<PointerType>(bOp->getLHS()->getType()))
+					{
+						const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
+						int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+						int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+						out << mult(pSize) + "\r\n";
+					}
+					parseExpression(bOp->getRHS(), false, true);
+					if(bOp->getLHS()->getType()->isFloatingType()) {
+						switch(bOp->getOpcode()) {
+						case BO_EQ: out << "fCmpEQ\r\n"; break;
+						case BO_Mul: out << "fMult\r\n"; break;
+						case BO_Div: out << "fDiv\r\n"; break;
+						case BO_Rem: out << "fMod\r\n"; break;
+						case BO_Sub: out << "fSub\r\n"; break;
+						case BO_LT: out << "fCmpLT\r\n"; break;
+						case BO_GT: out << "fCmpGT\r\n"; break;
+						case BO_GE: out << "fCmpGE\r\n"; break;
+						case BO_LE: out << "fCmpLE\r\n"; break;
+						case BO_NE: out << "fCmpNE\r\n"; break;
+						case BO_LAnd:
+						case BO_And: out << "And\r\n"; break;
+						case BO_Xor: out << "Xor\r\n"; break;
+						case BO_Add: out << "fAdd\r\n"; break;
+						case BO_LOr:
+						case BO_Or: out << "Or\r\n"; break;
+						case BO_Shl: out << "CallNative shift_left 2 1\r\n"; break;
+						case BO_Shr: out << "CallNative shift_right 2 1"; break;
+						default:
+							Throw("Unimplemented binary floating op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
 						}
-						parseExpression(bOp->getRHS(), false, true);
-						if (bOp->getLHS()->getType()->isFloatingType()) {
-							switch (bOp->getOpcode()) {
-								case BO_EQ: out << "fCmpEQ\r\n"; break;
-								case BO_Mul: out << "fMult\r\n"; break;
-								case BO_Div: out << "fDiv\r\n"; break;
-								case BO_Rem: out << "fMod\r\n"; break;
-								case BO_Sub: out << "fSub\r\n"; break;
-								case BO_LT: out << "fCmpLT\r\n"; break;
-								case BO_GT: out << "fCmpGT\r\n"; break;
-								case BO_GE: out << "fCmpGE\r\n"; break;
-								case BO_LE: out << "fCmpLE\r\n"; break;
-								case BO_NE: out << "fCmpNE\r\n"; break;
-								case BO_LAnd:
-								case BO_And: out << "And\r\n"; break;
-								case BO_Xor: out << "Xor\r\n"; break;
-								case BO_Add: out << "fAdd\r\n"; break;
-								case BO_LOr:
-								case BO_Or: out << "Or\r\n"; break;
-								case BO_Shl: out << "CallNative shift_left 2 1\r\n"; break;
-								case BO_Shr: out << "CallNative shift_right 2 1"; break;
-								default:
-								Throw("Unimplemented binary floating op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
-							}
 
-						}
-						else {
-							switch (bOp->getOpcode()) {
-								case BO_EQ: out << "CmpEQ\r\n"; break;
-								case BO_Mul: out << "Mult\r\n"; break;
-								case BO_Div: out << "Div\r\n"; break;
-								case BO_Rem: out << "Mod\r\n"; break;
-								case BO_Sub: out << "Sub\r\n"; break;
-								case BO_LT: out << "CmpLT\r\n"; break;
-								case BO_GT: out << "CmpGT\r\n"; break;
-								case BO_GE: out << "CmpGE\r\n"; break;
-								case BO_LE: out << "CmpLE\r\n"; break;
-								case BO_NE: out << "CmpNE\r\n"; break;
-								case BO_LAnd:
-								case BO_And: out << "And\r\n"; break;
-								case BO_Xor: out << "Xor\r\n"; break;
-								case BO_Add: out << "Add\r\n"; break;
-								case BO_LOr:
-								case BO_Or: out << "Or\r\n"; break;
-								case BO_Shl: out << "CallNative shift_left 2 1\r\n"; break;
-								case BO_Shr: out << "CallNative shift_right 2 1"; break;
-								default:
-								Throw("Unimplemented binary op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
-							}
+					}
+					else {
+						switch(bOp->getOpcode()) {
+						case BO_EQ: out << "CmpEQ\r\n"; break;
+						case BO_Mul: out << "Mult\r\n"; break;
+						case BO_Div: out << "Div\r\n"; break;
+						case BO_Rem: out << "Mod\r\n"; break;
+						case BO_Sub: out << "Sub\r\n"; break;
+						case BO_LT: out << "CmpLT\r\n"; break;
+						case BO_GT: out << "CmpGT\r\n"; break;
+						case BO_GE: out << "CmpGE\r\n"; break;
+						case BO_LE: out << "CmpLE\r\n"; break;
+						case BO_NE: out << "CmpNE\r\n"; break;
+						case BO_LAnd:
+						case BO_And: out << "And\r\n"; break;
+						case BO_Xor: out << "Xor\r\n"; break;
+						case BO_Add: out << "Add\r\n"; break;
+						case BO_LOr:
+						case BO_Or: out << "Or\r\n"; break;
+						case BO_Shl: out << "CallNative shift_left 2 1\r\n"; break;
+						case BO_Shr: out << "CallNative shift_right 2 1"; break;
+						default:
+							Throw("Unimplemented binary op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
 						}
 					}
 
-					if (!isLtoRValue) {
+					if(!isLtoRValue) {
 
 						Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
 						out << "Drop" << endl;
