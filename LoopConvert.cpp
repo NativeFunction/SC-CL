@@ -402,6 +402,7 @@ public:
 	}
 	string GetImm(int size)
 	{
+		return add(size * 4) + "\r\npGet";
 		int aSize = size * 4;
 		if ((size & 0xFF) == size)
 			return "Add1 " + to_string(aSize) + "\r\npGet";
@@ -412,6 +413,7 @@ public:
 	}
 	string SetImm(int size)
 	{
+		return add(size * 4) + "\r\npSet";
 		int aSize = size * 4;
 		if ((size & 0xFF) == size)
 			return "Add1 " + to_string(aSize) + "\r\npSet";
@@ -427,7 +429,7 @@ public:
 			return "Push_" + to_string(val);
 		else if ((val & 0xFF) == val)
 			return "PushB " + to_string(val);
-		else if ((val & 0xFFFF) == val)
+		else if(val > -32768 && val < 32767)
 			return "PushS " + to_string(val);
 		else if ((val & 0xFFFFFF) == val)
 			return "PushI24 " + to_string(val);
@@ -439,12 +441,22 @@ public:
 	}
 	string mult(int value)
 	{
-		if (value < 0 || value > 0xFFFF)
+		if (value < -32768 || value > 32767)
 			return iPush(value) + "\r\nMult";
-		else if (value > 0xFF)
+		else if (value > 0xFF || value < 0)
 			return "Mult2 " + to_string(value);
 		else
 			return "Mult1 " + to_string(value);
+	}
+
+	string add(int value)
+	{
+		if(value < -32768 || value > 32767)
+			return iPush(value) + "\r\nAdd";
+		else if(value > 0xFF || value < 0)
+			return "Add2 " + to_string(value);
+		else
+			return "Add1 " + to_string(value);
 	}
 
 	string dumpName(const NamedDecl *ND) {
@@ -927,8 +939,7 @@ public:
 								out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
 								out << "ArrayGetP " << getSizeFromBytes(getSizeOfCXXDecl(arr->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl(), true, true)) << "//index Array" << endl;
 								parseExpression(initializer, true, false, true, var);
-								out << "Push 1" << endl;
-								out << "add" << endl;
+								out << "Add1 1" << endl;
 								out << "Jump @vTableConditional_" << vTableInitInc << endl;
 								out << ":vTableEnd_" << vTableInitInc << endl << endl;
 								//}
@@ -2266,7 +2277,6 @@ public:
 
 			if (E->isArrow()) {
 				parseExpression(BaseExpr, false);
-
 			}
 			else
 				parseExpression(BaseExpr, true);
@@ -2308,7 +2318,12 @@ public:
 
 			int size = getSizeFromBytes(offset);
 
-			out << "Push " << size * 4 << " // ." << ND->getName().str() << "\r\nAdd\r\n";
+			if(size > 0){
+				out << add(size * 4) << " // ." << ND->getName().str() << "\r\n";
+			}else
+			{
+				out << "// ." << ND->getName().str() << "\r\n";
+			}
 
 
 			if (isLtoRValue)
