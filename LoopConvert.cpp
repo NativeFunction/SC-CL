@@ -303,6 +303,11 @@ uint32_t getSizeOfType(const Type* type) {
 		}
 
 	}
+	else if(type->isAnyComplexType())
+	{
+		//Throw("Complex data types arent supported");
+		return 8;
+	}
 	else if (type->isCharType())
 		return 1;
 	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
@@ -311,10 +316,7 @@ uint32_t getSizeOfType(const Type* type) {
 		return 4;
 	else if (type->isVoidType())
 		return 0;
-	else if (type->isAnyComplexType())
-	{
-		Throw("Complex data types arent supported");
-	}
+	
 	return 0;
 }
 
@@ -1332,6 +1334,18 @@ public:
 				out << fPush(result.Val.getFloat()) << endl;
 				return -1;
 			}
+			else if (result.Val.isComplexFloat())
+			{
+				out << fPush(result.Val.getComplexFloatReal()) << endl;
+				out << fPush(result.Val.getComplexFloatImag()) << endl;
+				return -1;
+			}
+			else if(result.Val.isComplexInt())
+			{
+				out << iPush(result.Val.getComplexIntReal().getSExtValue()) << endl;
+				out << iPush(result.Val.getComplexIntImag().getSExtValue()) << endl;
+				return -1;
+			}
 		}
 		if (isa<IntegerLiteral>(e)) {
 			out << iPush(cast<const IntegerLiteral>(e)->getValue().getSExtValue()) << endl;
@@ -1782,6 +1796,109 @@ public:
 				return true;
 			}
 
+
+			if (bOp->getLHS()->getType()->isAnyComplexType())
+			{
+				if (currFunction)
+				{
+					LocalVariables.addLevel();
+					int startindex = LocalVariables.addDecl("complex", 4);
+					parseExpression(bOp->getLHS(), isAddr, true, true);
+					parseExpression(bOp->getRHS(), isAddr, true, true);
+					out << "Push_4\r\n" << pFrame(startindex) << "\r\nFromStack\r\n";
+					string isFloat = bOp->getLHS()->getType()->isComplexIntegerType() ? "" : "f";
+					switch(bOp->getOpcode())
+					{
+					case BO_Add:
+						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Add //Calc Real Part\r\n";
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Add //Calc Imag Part\r\n";
+						break;
+					case BO_AddAssign:
+						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Add //Calc Real Part\r\n";
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Add //Calc Imag Part\r\n";
+						out << "Push 2 //size\r\n";
+						parseExpression(bOp->getLHS(), true);
+						out << "FromStack\r\n";
+					case BO_Sub:
+						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Sub //Calc Real Part\r\n";
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Sub //Calc Imag Part\r\n";
+						break;
+					case BO_SubAssign:
+						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Sub //Calc Real Part\r\n";
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Sub //Calc Imag Part\r\n";
+						out << "Push 2 //size\r\n";
+						parseExpression(bOp->getLHS(), true);
+						out << "FromStack\r\n";
+						break;
+					case BO_Mul:
+						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+						out << isFloat << "Sub //Calc Real Part\r\n";
+
+						out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+						out << isFloat << "Add //Calc Imag Part\r\n";
+						break;
+					case BO_MulAssign:
+						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+						out << isFloat << "Sub //Calc Real Part\r\n";
+
+						out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+						out << isFloat << "Add //Calc Imag Part\r\n";
+						out << "Push 2 //size\r\n";
+						parseExpression(bOp->getLHS(), true);
+						out << "FromStack\r\n";
+						break;
+					case BO_Div:
+						LocalVariables.addDecl("divide", 1);
+						out << frameGet(startindex + 2) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
+						out << frameGet(startindex + 3) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
+						out << isFloat << "Add //Calc Comp Denominator\r\n" << frameSet(startindex + 4) << endl;
+
+						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+						out << isFloat << "Add //Calc Real Part\r\n";
+						out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
+
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+						out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+						out << isFloat << "Sub //Calc Imag Part\r\n";
+						out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
+						break;
+					case BO_DivAssign:
+						LocalVariables.addDecl("divide", 1);
+						out << frameGet(startindex + 2) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
+						out << frameGet(startindex + 3) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
+						out << isFloat << "Add //Calc Comp Denominator\r\n" << frameSet(startindex + 4) << endl;
+
+						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+						out << isFloat << "Add //Calc Real Part\r\n";
+						out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
+
+						out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+						out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+						out << isFloat << "Sub //Calc Imag Part\r\n";
+						out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
+						out << "Push 2 //size\r\n";
+						parseExpression(bOp->getLHS(), true);
+						out << "FromStack\r\n";
+						break;
+					default:
+						Throw("Unsupported binary operator for Complex data type", rewriter, bOp->getOperatorLoc());
+					}
+					LocalVariables.removeLevel();
+					return true;
+				}
+				else
+				{
+					Throw("Complex binary operations can only be done in functions");
+				}
+			}
+
+
 			#define OpAssign(op, isfloat)\
 			parseExpression(bOp->getLHS(), true, false);\
 			out << "dup\r\npGet\r\n";\
@@ -2080,10 +2197,17 @@ public:
 		else if (isa<ImaginaryLiteral>(e))
 		{
 			Warn("Imaginary literals aren't supported", rewriter, e->getExprLoc());
-			const ImaginaryLiteral *literal = cast<ImaginaryLiteral>(e);
+			/*const ImaginaryLiteral *literal = cast<ImaginaryLiteral>(e);
 			const Expr* item = literal->getSubExpr();
-
-			out << "imaginary_literal_push" << endl;
+			if (isa<FloatingLiteral>(item))
+			{
+				Warn("Temp");
+			}
+			else if (isa<IntegerLiteral>(item))
+			{
+				Warn("Temp");
+			}
+			out << "imaginary_literal_push" << endl;*/
 
 		}
 		else if (isa<GenericSelectionExpr>(e))
