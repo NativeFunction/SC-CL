@@ -740,12 +740,13 @@ public:
 					out << labelName << endl;
 				}
 			}
-
+			LocalVariables.addLevel();
 			if (caseS->getRHS())
 				parseExpression(caseS->getRHS());
 
 			if (caseS->getSubStmt())
 				parseStatement(caseS->getSubStmt(), breakLoc);
+			LocalVariables.removeLevel();
 		}
 		else if (isa<SwitchStmt>(s)) {
 			SwitchStmt *switchStmt = cast<SwitchStmt>(s);
@@ -798,7 +799,9 @@ public:
 			while (switchCaseDefaultSearcher != NULL) {
 				if (isa<DefaultStmt>(switchCaseDefaultSearcher)) {
 					DefaultStmt *stmt = cast<DefaultStmt>(switchCaseDefaultSearcher);
-					parseStatement(stmt->getSubStmt(), breakLoc, continueLoc);
+					LocalVariables.addLevel();
+					parseStatement(stmt->getSubStmt(), switchStmt->getLocEnd().getRawEncoding(), continueLoc);
+					LocalVariables.removeLevel();
 					out << "Jump @" << switchStmt->getLocEnd().getRawEncoding() << endl;
 					hasDefault = true;
 					break;
