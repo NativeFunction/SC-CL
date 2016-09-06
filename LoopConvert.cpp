@@ -104,20 +104,22 @@ struct local_scope
 		}
 		return cursize;
 	}
-	void addDecl(string key, int size)//size being number of 4 byte variables it takes up
+	int addDecl(string key, int size)//size being number of 4 byte variables it takes up
 	{
 		assert(size > 0);
 		scopeLocals[scopeLevel].push_back(key);
+		int prevSize = getCurrentSize();
 		for (int i = 1; i < size; i++)
 		{
 			scopeLocals[scopeLevel].push_back("");//use a null string for padding
 		}
 
-		uint32_t cursize = getCurrentSize();
+		uint32_t cursize = prevSize + size;
 		if (cursize > maxIndex)
 		{
 			maxIndex = cursize;
 		}
+		return prevSize;
 	}
 
 }LocalVariables;
@@ -309,7 +311,10 @@ uint32_t getSizeOfType(const Type* type) {
 		return 4;
 	else if (type->isVoidType())
 		return 0;
-
+	else if (type->isAnyComplexType())
+	{
+		Throw("Complex data types arent supported");
+	}
 	return 0;
 }
 
@@ -1777,7 +1782,6 @@ public:
 				return true;
 			}
 
-			string pMult = "";
 			#define OpAssign(op, isfloat)\
 			parseExpression(bOp->getLHS(), true, false);\
 			out << "dup\r\npGet\r\n";\
@@ -1852,17 +1856,16 @@ public:
 					else
 					{
 						parseExpression(bOp->getRHS(), false, true);
-						pMult = "";
 						if(isa<PointerType>(bOp->getLHS()->getType()))
 						{
 							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-							pMult = mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";
+							out << mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";
 						}
 						if(bOp->getLHS()->getType()->isFloatingType())
-							out << pMult << "fadd" << "\r\npPeekSet\r\nDrop\r\n";
+							out << "fadd" << "\r\npPeekSet\r\nDrop\r\n";
 						else
 						{
-							out << pMult << "Add" << "\r\npPeekSet\r\nDrop\r\n";
+							out << "Add" << "\r\npPeekSet\r\nDrop\r\n";
 						}
 					}
 				}
