@@ -20,6 +20,7 @@
 #include "Utils.h"
 
 #undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
+#define MultValue(pTypePtr) pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4
 
 using namespace Utils;
 using namespace Utils::System;
@@ -2163,19 +2164,15 @@ public:
 			}
 
 			string pMult = "";
-			int pSize = 0;
 			#define OpAssign(op, isfloat)\
 			parseExpression(bOp->getLHS(), true, false);\
 			out << "dup\r\npGet\r\n";\
 			parseExpression(bOp->getRHS(), false, true);\
 		    pMult = "";\
-			pSize = 0;\
 			if (isa<PointerType>(bOp->getLHS()->getType()))\
 			{\
 				const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();\
-				int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;\
-				pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;\
-				pMult = mult(pSize) + "\r\n";\
+				pMult = mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";\
 			}\
 			if (bOp->getLHS()->getType()->isFloatingType() && isfloat)\
 				out << pMult << "f" << op << "\r\npPeekSet\r\nDrop\r\n";\
@@ -2187,7 +2184,45 @@ public:
 			switch (bOp->getOpcode()) {
 
 				case BO_SubAssign: OpAssign("Sub", true); break;
-				case BO_AddAssign: OpAssign("Add", true); break;
+				case BO_AddAssign:
+					parseExpression(bOp->getLHS(), true, false); 
+					out << "dup\r\npGet\r\n"; 
+					if (isa<BinaryOperator>(bOp->getRHS()))
+					{
+						Expr* newExpr;
+						if (binaryOpConstantFolding(cast<BinaryOperator>(bOp->getRHS()), &newExpr))
+						{
+							((BinaryOperator*)bOp)->setRHS(newExpr);
+						}
+					}
+					if (isa<IntegerLiteral>(bOp->getRHS()))
+					{
+						int64_t val = cast<IntegerLiteral>(bOp->getRHS())->getValue().getSExtValue();
+						if(isa<PointerType>(bOp->getLHS()->getType()))
+						{
+							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
+							out << add(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << "\r\npPeekSet\r\nDrop\r\n";
+						}else
+						{
+							out << add(val) << "\r\npPeekSet\r\nDrop\r\n";
+						}
+					}else
+					{
+						parseExpression(bOp->getRHS(), false, true);
+						pMult = "";
+						if(isa<PointerType>(bOp->getLHS()->getType()))
+						{
+							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
+							pMult = mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";
+						}
+						if(bOp->getLHS()->getType()->isFloatingType())
+							out << pMult << "fadd" << "\r\npPeekSet\r\nDrop\r\n";
+						else
+						{
+							out << pMult << "Add" << "\r\npPeekSet\r\nDrop\r\n";
+						}
+					}
+					break;
 				case BO_DivAssign:  OpAssign("Div", true); break;
 				case BO_MulAssign:  OpAssign("Mult", true); break;
 				case BO_OrAssign:  OpAssign("Or", false); break;
