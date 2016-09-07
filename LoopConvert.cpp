@@ -579,13 +579,13 @@ public:
 
 	}
 
-	bool parseStatement(Stmt *s, uint64_t breakLoc = -1, uint64_t continueLoc = -1) {
+	bool parseStatement(Stmt *s, uint64_t breakLoc = -1, uint64_t continueLoc = -1, uint64_t returnLoc = -1) {
 		if (isa<CompoundStmt>(s)) {
 			CompoundStmt *cSt = cast<CompoundStmt>(s);
 			//            cSt->dump();
 			for (auto *CS : cSt->body()) {
 				if (isa<Stmt>(*CS))
-					parseStatement(cast<Stmt>(CS), breakLoc, continueLoc);
+					parseStatement(cast<Stmt>(CS), breakLoc, continueLoc, returnLoc);
 				else if (isa<Expr>(CS))
 					parseExpression(cast<const Expr>(CS));
 			}
@@ -606,7 +606,7 @@ public:
 			parseExpression(conditional, false, true);
 			out << "JumpFalse @" << (Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd) << endl;
 			LocalVariables.addLevel();
-			parseStatement(Then, breakLoc, continueLoc);
+			parseStatement(Then, breakLoc, continueLoc, returnLoc);
 			LocalVariables.removeLevel();
 
 			out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
@@ -614,7 +614,7 @@ public:
 			if (Else) {
 				out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
 				LocalVariables.addLevel();
-				parseStatement(Else, breakLoc, continueLoc);
+				parseStatement(Else, breakLoc, continueLoc, returnLoc);
 				LocalVariables.removeLevel();
 				out << "//" << Else->getLocStart().getRawEncoding() << " " << Else->getLocEnd().getRawEncoding() << endl;
 			}
@@ -638,7 +638,7 @@ public:
 			parseExpression(conditional, false, true);
 			out << "JumpFalse @" << whileStmt->getLocEnd().getRawEncoding() << endl;
 			
-			parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding());
+			parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
 			
 			out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
 			out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
@@ -670,7 +670,8 @@ public:
 			parseStatement(
 				body,
 				forStmt->getLocEnd().getRawEncoding(),
-				increment->getLocStart().getRawEncoding());
+				increment->getLocStart().getRawEncoding(), 
+				returnLoc);
 
 			if (increment)
 				out << endl << ":" << increment->getLocStart().getRawEncoding() << "//forstmt inc lbl" << endl;
@@ -701,7 +702,7 @@ public:
 
 			out << endl << ":" << body->getLocStart().getRawEncoding() << endl;
 			
-			parseStatement(body, conditional->getLocEnd().getRawEncoding(), body->getLocStart().getRawEncoding());
+			parseStatement(body, conditional->getLocEnd().getRawEncoding(), body->getLocStart().getRawEncoding(), returnLoc);
 
 
 
@@ -718,17 +719,24 @@ public:
 			const Expr* retVal = ret->getRetValue();
 			if (retVal)
 				parseExpression(retVal, false, true);
-			int size = 0;
-			if (ret->getRetValue()) {
-				QualType type = ret->getRetValue()->getType();
-				size = context->getTypeInfoDataSizeInChars(type).first.getQuantity();
-			}
+			if (returnLoc == -1)
+			{
+				int size = 0;
+				if(ret->getRetValue()) {
+					QualType type = ret->getRetValue()->getType();
+					size = context->getTypeInfoDataSizeInChars(type).first.getQuantity();
+				}
 
-			int32_t paramSize = 0;
-			for (uint32_t i = 0; i < currFunction->getNumParams(); i++) {
-				paramSize += getSizeFromBytes(getSizeOfType(currFunction->getParamDecl(i)->getType().getTypePtr()));
+				int32_t paramSize = 0;
+				for(uint32_t i = 0; i < currFunction->getNumParams(); i++) {
+					paramSize += getSizeFromBytes(getSizeOfType(currFunction->getParamDecl(i)->getType().getTypePtr()));
+				}
+				out << "Return " << paramSize + (isa<CXXMethodDecl>(currFunction) ? 1 : 0) << " " << getSizeFromBytes(size) << endl;
+			}else
+			{
+				out << "Jump @" << returnLoc << endl; 
 			}
-			out << "Return " << paramSize + (isa<CXXMethodDecl>(currFunction) ? 1 : 0) << " " << getSizeFromBytes(size) << endl;
+			
 		}
 		else if (isa<Expr>(s)) {
 			parseExpression(cast<const Expr>(s));
@@ -753,7 +761,7 @@ public:
 			LocalVariables.addLevel();
 
 			if(caseD->getSubStmt())
-				parseStatement(caseD->getSubStmt(), breakLoc);
+				parseStatement(caseD->getSubStmt(), breakLoc, continueLoc, returnLoc);
 			LocalVariables.removeLevel();
 		}
 		else if (isa<CaseStmt>(s)) {
@@ -770,7 +778,7 @@ public:
 				parseExpression(caseS->getRHS());
 
 			if (caseS->getSubStmt())
-				parseStatement(caseS->getSubStmt(), breakLoc);
+				parseStatement(caseS->getSubStmt(), breakLoc, continueLoc, returnLoc);
 			LocalVariables.removeLevel();
 		}
 		else if (isa<SwitchStmt>(s)) {
@@ -832,7 +840,7 @@ public:
 			}
 
 			//parse all
-			parseStatement(switchStmt->getBody(), switchStmt->getLocEnd().getRawEncoding(), continueLoc);
+			parseStatement(switchStmt->getBody(), switchStmt->getLocEnd().getRawEncoding(), continueLoc, returnLoc);
 			out << "//SwitchEnd" << endl << endl;
 			out << ":" << switchStmt->getLocEnd().getRawEncoding() << endl;
 			FindBuffer.clear();
