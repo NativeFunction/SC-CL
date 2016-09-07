@@ -1244,7 +1244,7 @@ public:
 				Throw("Invalid " + funcName + " parameters!", rewriter, call->getExprLoc());
 			return true;
 		}
-		else if (funcName == "@__creal")
+		else if (funcName == "@creal")
 		{
 			if(argCount == 1){
 				if (call->getCallReturnType(*context)->isIntegerType())
@@ -1257,9 +1257,9 @@ public:
 					}
 				}
 			}
-			Throw("__creal must have signature \"extern __intrinsic int __creal(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("creal must have signature \"extern __intrinsic int creal(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
 		}
-		else if(funcName == "@__cimag")
+		else if(funcName == "@cimag")
 		{
 			if(argCount == 1){
 				if(call->getCallReturnType(*context)->isIntegerType())
@@ -1275,9 +1275,9 @@ public:
 					}
 				}
 			}
-			Throw("__cimag must have signature \"extern __intrinsic int __cimag(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("cimag must have signature \"extern __intrinsic int cimag(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
 		}
-		else if(funcName == "@__crealf")
+		else if(funcName == "@crealf")
 		{
 			if(argCount == 1){
 				if(call->getCallReturnType(*context)->isRealFloatingType())
@@ -1290,9 +1290,9 @@ public:
 					}
 				}
 			}
-			Throw("__crealf must have signature \"extern __intrinsic float __crealf(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("crealf must have signature \"extern __intrinsic float crealf(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
 		}
-		else if(funcName == "@__cimagf")
+		else if(funcName == "@cimagf")
 		{
 			if(argCount == 1){
 				if(call->getCallReturnType(*context)->isRealFloatingType())
@@ -1308,9 +1308,9 @@ public:
 					}
 				}
 			}
-			Throw("__cimagf must have signature \"extern __intrinsic float __cimagf(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("cimagf must have signature \"extern __intrinsic float cimagf(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
 		}
-		else if(funcName == "@__cconj")
+		else if(funcName == "@cconj")
 		{
 			if(argCount == 1){
 				if(call->getCallReturnType(*context)->isComplexIntegerType())
@@ -1323,9 +1323,9 @@ public:
 					}
 				}
 			}
-			Throw("__cconj must have signature \"extern __intrinsic int _Complex __cconj(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("cconj must have signature \"extern __intrinsic int _Complex cconj(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
 		}
-		else if(funcName == "@__cconjf")
+		else if(funcName == "@cconjf")
 		{
 			if(argCount == 1){
 				if(call->getCallReturnType(*context)->isComplexType())
@@ -1338,7 +1338,7 @@ public:
 					}
 				}
 			}
-			Throw("__cconjf must have signature \"extern __intrinsic float _Complex __cconj(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("cconjf must have signature \"extern __intrinsic float _Complex cconj(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
 		}
 		Warn("No intrinsic function found named " + funcName);
 		return false;
