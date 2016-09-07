@@ -513,7 +513,7 @@ public:
 		int index = -1;
 
 		if (size > 1 && isLtoRValue) {
-			out << "Push " << size << "//size" << endl;
+			out << iPush(size) << "//Type Size" << endl;
 			isAddr = true;
 		}
 		
@@ -971,7 +971,7 @@ public:
 
 						parseExpression(initializer, false, true);
 						if (size > 4) {
-							out << "Push " << getSizeFromBytes(size) << " //Type Size" << endl;
+							out << iPush(getSizeFromBytes(size)) << " //Type Size" << endl;
 							out << pFrame(curIndex) << " //&" << var->getNameAsString() << endl;
 							out << "FromStack" << endl;
 						}
@@ -1243,6 +1243,102 @@ public:
 			else
 				Throw("Invalid " + funcName + " parameters!", rewriter, call->getExprLoc());
 			return true;
+		}
+		else if (funcName == "@__creal")
+		{
+			if(argCount == 1){
+				if (call->getCallReturnType(*context)->isIntegerType())
+				{
+					parseExpression(argArray[0]);
+					if(argArray[0]->getType()->isComplexType())
+					{
+						out << "drop //drop the Imag Part\r\n";
+						return true;
+					}
+				}
+			}
+			Throw("__creal must have signature \"extern __intrinsic int __creal(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
+		}
+		else if(funcName == "@__cimag")
+		{
+			if(argCount == 1){
+				if(call->getCallReturnType(*context)->isIntegerType())
+				{
+					if(argArray[0]->getType()->isComplexIntegerType())
+					{
+						parseExpression(argArray[0]);
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("imag_part", 1);
+						out << frameSet(index) << " //Store Imag Part\r\ndrop\r\n" << frameGet(index) << " //Retrieve Imag Part\r\n";
+						LocalVariables.removeLevel();
+						return true;
+					}
+				}
+			}
+			Throw("__cimag must have signature \"extern __intrinsic int __cimag(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
+		}
+		else if(funcName == "@__crealf")
+		{
+			if(argCount == 1){
+				if(call->getCallReturnType(*context)->isRealFloatingType())
+				{
+					parseExpression(argArray[0]);
+					if(argArray[0]->getType()->isComplexType())
+					{
+						out << "drop //drop the Imag Part\r\n";
+						return true;
+					}
+				}
+			}
+			Throw("__crealf must have signature \"extern __intrinsic float __crealf(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
+		}
+		else if(funcName == "@__cimagf")
+		{
+			if(argCount == 1){
+				if(call->getCallReturnType(*context)->isRealFloatingType())
+				{
+					if(argArray[0]->getType()->isComplexType())
+					{
+						parseExpression(argArray[0]);
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("imag_part", 1);
+						out << frameSet(index) << " //Store Imag Part\r\ndrop\r\n" << frameGet(index) << " //Retrieve Imag Part\r\n";
+						LocalVariables.removeLevel();
+						return true;
+					}
+				}
+			}
+			Throw("__cimagf must have signature \"extern __intrinsic float __cimagf(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
+		}
+		else if(funcName == "@__cconj")
+		{
+			if(argCount == 1){
+				if(call->getCallReturnType(*context)->isComplexIntegerType())
+				{
+					if(argArray[0]->getType()->isComplexIntegerType())
+					{
+						parseExpression(argArray[0]);
+						out << "Neg //Negate the Imag Part\r\n";
+						return true;
+					}
+				}
+			}
+			Throw("__cconj must have signature \"extern __intrinsic int _Complex __cconj(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
+		}
+		else if(funcName == "@__cconjf")
+		{
+			if(argCount == 1){
+				if(call->getCallReturnType(*context)->isComplexType())
+				{
+					if(argArray[0]->getType()->isComplexType())
+					{
+						parseExpression(argArray[0]);
+						out << "Neg //Negate the Imag Part\r\n";
+						return true;
+					}
+				}
+			}
+			Throw("__cconjf must have signature \"extern __intrinsic float _Complex __cconj(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
 		}
 		Warn("No intrinsic function found named " + funcName);
 		return false;
@@ -1784,9 +1880,14 @@ public:
 				parseExpression(bOp->getRHS(), isAddr, true, true);
 				if (bOp->getRHS()->getType()->isStructureOrClassType()) {
 					int size = getSizeOfType(bOp->getRHS()->getType().getTypePtr());
-					out << "Push " << size << " //size\r\n";
+					out << iPush(size) << " //size\r\n";
 					parseExpression(bOp->getLHS(), true);
 
+					out << "FromStack\r\n";
+				}else if (bOp->getRHS()->getType()->isAnyComplexType())
+				{
+					out << "Push_2\r\n";
+					parseExpression(bOp->getLHS(), true);
 					out << "FromStack\r\n";
 				}
 				else {
@@ -1816,7 +1917,7 @@ public:
 					case BO_AddAssign:
 						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Add //Calc Real Part\r\n";
 						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Add //Calc Imag Part\r\n";
-						out << "Push 2 //size\r\n";
+						out << "Push_2 //Type Size\r\n";
 						parseExpression(bOp->getLHS(), true);
 						out << "FromStack\r\n";
 					case BO_Sub:
@@ -1826,7 +1927,7 @@ public:
 					case BO_SubAssign:
 						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Sub //Calc Real Part\r\n";
 						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Sub //Calc Imag Part\r\n";
-						out << "Push 2 //size\r\n";
+						out << "Push_2 //Type Size\r\n";
 						parseExpression(bOp->getLHS(), true);
 						out << "FromStack\r\n";
 						break;
@@ -1847,7 +1948,7 @@ public:
 						out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
 						out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
 						out << isFloat << "Add //Calc Imag Part\r\n";
-						out << "Push 2 //size\r\n";
+						out << "Push_2 //Type Size\r\n";
 						parseExpression(bOp->getLHS(), true);
 						out << "FromStack\r\n";
 						break;
@@ -1882,7 +1983,7 @@ public:
 						out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
 						out << isFloat << "Sub //Calc Imag Part\r\n";
 						out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
-						out << "Push 2 //size\r\n";
+						out << "Push_2 //Type Size\r\n";
 						parseExpression(bOp->getLHS(), true);
 						out << "FromStack\r\n";
 						break;
