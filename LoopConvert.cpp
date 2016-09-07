@@ -743,8 +743,18 @@ public:
 			out << "Jump @" << continueLoc << "//contstmt jmp" << endl;
 		}
 		else if (isa<DefaultStmt>(s)) {
-			//            DefaultStmt *stmt = cast<DefaultStmt>(s);
-			//            parseStatement(stmt->getSubStmt(), breakLoc);
+			DefaultStmt *caseD = cast<DefaultStmt>(s);
+			string labelName = ":" + to_string(caseD->getLocEnd().getRawEncoding());
+			if(FindBuffer.find(labelName) == FindBuffer.end())
+			{
+				FindBuffer.insert(labelName);
+				out << labelName << endl;
+			}
+			LocalVariables.addLevel();
+
+			if(caseD->getSubStmt())
+				parseStatement(caseD->getSubStmt(), breakLoc);
+			LocalVariables.removeLevel();
 		}
 		else if (isa<CaseStmt>(s)) {
 			CaseStmt *caseS = cast<CaseStmt>(s);
@@ -772,6 +782,7 @@ public:
 
 			//Build case switch list first
 			SwitchCase *switchCaseList = switchStmt->getSwitchCaseList();
+			DefaultStmt *defaultCase = NULL;
 			stack<string> caseLabels;
 			while (switchCaseList != NULL)
 			{
@@ -795,7 +806,10 @@ public:
 				}
 				else if (isa<DefaultStmt>(switchCaseList))
 				{
-					//We don't handle the default case here..
+					if(defaultCase){
+						Throw("Multiple default statements found in switch", rewriter, switchStmt->getSwitchLoc());
+					}
+					defaultCase = cast<DefaultStmt>(switchCaseList);
 				}
 				else
 					llvm::errs() << "Unexpected Statement: " << switchCaseList->getStmtClassName();
@@ -808,24 +822,11 @@ public:
 			}
 			out << caseLabels.top() << endl;
 
-			//Get default case
-			SwitchCase *switchCaseDefaultSearcher = switchStmt->getSwitchCaseList();
-
-			bool hasDefault = false;
-			while (switchCaseDefaultSearcher != NULL) {
-				if (isa<DefaultStmt>(switchCaseDefaultSearcher)) {
-					DefaultStmt *stmt = cast<DefaultStmt>(switchCaseDefaultSearcher);
-					LocalVariables.addLevel();
-					parseStatement(stmt->getSubStmt(), switchStmt->getLocEnd().getRawEncoding(), continueLoc);
-					LocalVariables.removeLevel();
-					out << "Jump @" << switchStmt->getLocEnd().getRawEncoding() << endl;
-					hasDefault = true;
-					break;
-				}
-				switchCaseDefaultSearcher = switchCaseDefaultSearcher->getNextSwitchCase();
+			if (defaultCase)
+			{
+				out << "Jump @" << defaultCase->getLocEnd().getRawEncoding() << endl;
 			}
-
-			if (!hasDefault)
+			else
 			{
 				out << "Jump @" << switchStmt->getLocEnd().getRawEncoding() << endl;
 			}
