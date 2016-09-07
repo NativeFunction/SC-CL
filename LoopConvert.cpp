@@ -21,7 +21,7 @@
 
 #undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
 #define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4)
-
+#define IsIntrin(directCallee)(directCallee != NULL && directCallee->hasAttr<IntrinsicFuncAttr>() && directCallee->getStorageClass() == SC_Extern)
 using namespace Utils;
 using namespace Utils::System;
 using namespace Utils::DataConversion;
@@ -797,19 +797,19 @@ public:
 				if (isa<CaseStmt>(switchCaseList))
 				{
 					CaseStmt *caseS = cast<CaseStmt>(switchCaseList);
-					Expr *LHS = caseS->getLHS();
-					if (isa<CastExpr>(LHS)) {
-						LHS = cast<CastExpr>(LHS)->getSubExpr();
+					Expr::EvalResult result;
+					if(caseS->getLHS()->EvaluateAsRValue(result, *context)){
+						if(result.Val.isInt())
+						{
+							out << "[" << result.Val.getInt().getSExtValue() << " @" << caseS->getLocEnd().getRawEncoding() << "]";
+						}
+						else if(result.Val.isFloat())
+						{
+							out << "[" << result.Val.getFloat().convertToFloat() << " @" << caseS->getLocEnd().getRawEncoding() << "]";
+						}
+						else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getExprLoc());
 					}
-					if (isa<IntegerLiteral>(LHS)) {
-						IntegerLiteral *literal = cast<IntegerLiteral>(LHS);
-						out << "[" << literal->getValue().getSExtValue() << " @" << caseS->getLocEnd().getRawEncoding() << "]";
-					}
-					else if (isa<FloatingLiteral>(LHS)) {
-						FloatingLiteral *literal = cast<FloatingLiteral>(LHS);
-						out << "[" << literal->getValue().convertToFloat() << " @" << caseS->getLocEnd().getRawEncoding() << "]";
-					}
-					else Throw("Unsupported case statement \"" + string(LHS->getStmtClassName()) + "\"", rewriter, LHS->getExprLoc());
+					else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getExprLoc());
 
 				}
 				else if (isa<DefaultStmt>(switchCaseList))
@@ -987,28 +987,42 @@ public:
 		}
 		return true;
 	}
-
+	
 	bool checkIntrinsic(const CallExpr *call) {
 		const FunctionDecl* callee = call->getDirectCallee();
-		if (callee == NULL)
-		{
-			return false;
-		}
-		if (!callee->hasAttr<IntrinsicFuncAttr>())
+		if (!IsIntrin(callee))
 		{
 			return false;
 		}
 		std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
-		if (callee->getStorageClass() != SC_Extern)
-		{
-			Warn("Intrinsics must be declared as 'extern'");
-			return false;
-		}
 
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
-
-		if (funcName == "@strcpy" || funcName == "@stradd" || funcName == "@straddi" || funcName == "@itos") {
+		if (funcName == "@GetHash")
+		{
+			if(call->getCallReturnType(*context)->isIntegerType())
+			{
+				if(call->getNumArgs() == 1)
+				{
+					const Expr* Arg = call->getArg(0);
+					while (isa<CastExpr>(Arg))
+					{
+						const CastExpr *castee = cast<CastExpr>(Arg);
+						Arg = castee->getSubExpr();
+					}
+					if(isa<StringLiteral>(Arg))
+					{
+						std::string hashStr = cast<StringLiteral>(Arg)->getString().str();
+						out << iPush((int)Utils::Hashing::Joaat((char*)hashStr.c_str())) << " //GetHash(" << hashStr << ")\r\n";
+						return true;
+					}
+					else Throw("GetHash intrinsic requires a single constant string parameter", rewriter, call->getLocStart());
+				}
+				else Throw("GetHash intrinsic requires a single constant string parameter", rewriter, call->getLocStart());
+			}
+			else Throw("GetHash intrinsic must return an integer type", rewriter, call->getLocStart());
+		}
+		else if (funcName == "@strcpy" || funcName == "@stradd" || funcName == "@straddi" || funcName == "@itos") {
 			if (argCount != 3)
 				out << "!!Invalid " << funcName << " parameters!" << endl;
 			else
