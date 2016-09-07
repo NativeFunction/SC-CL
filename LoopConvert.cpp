@@ -107,8 +107,8 @@ struct local_scope
 	int addDecl(string key, int size)//size being number of 4 byte variables it takes up
 	{
 		assert(size > 0);
-		scopeLocals[scopeLevel].push_back(key);
 		int prevSize = getCurrentSize();
+		scopeLocals[scopeLevel].push_back(key);
 		for (int i = 1; i < size; i++)
 		{
 			scopeLocals[scopeLevel].push_back("");//use a null string for padding
@@ -752,28 +752,11 @@ public:
 		else if (isa<CaseStmt>(s)) {
 			CaseStmt *caseS = cast<CaseStmt>(s);
 
-			Expr *LHS = caseS->getLHS();
-			if (isa<CastExpr>(LHS)) {
-				LHS = cast<CastExpr>(LHS)->getSubExpr();
-			}
 			string labelName = ":" + to_string(caseS->getLocEnd().getRawEncoding());
-			if (isa<IntegerLiteral>(LHS)) {
-				//IntegerLiteral *literal = cast<IntegerLiteral>(LHS);
-
-				if (FindBuffer.find(labelName) == FindBuffer.end())
-				{
-					FindBuffer.insert(labelName);
-					out << labelName << endl;
-				}
-
-			}
-			else if (isa<FloatingLiteral>(LHS)) {
-				//FloatingLiteral *literal = cast<FloatingLiteral>(LHS);
-				if (FindBuffer.find(labelName) == FindBuffer.end())
-				{
-					FindBuffer.insert(labelName);
-					out << labelName << endl;
-				}
+			if(FindBuffer.find(labelName) == FindBuffer.end())
+			{
+				FindBuffer.insert(labelName);
+				out << labelName << endl;
 			}
 			LocalVariables.addLevel();
 			if (caseS->getRHS())
@@ -1702,6 +1685,18 @@ public:
 					parseExpression(icast->getSubExpr());
 					break;
 				}
+				case clang::CK_FloatingRealToComplex:
+				{
+					parseExpression(icast->getSubExpr());
+					out << "PushF_0\r\n"; //Push 0.0f for imag part
+					break;
+				}
+				case clang::CK_IntegralRealToComplex:
+				{
+					parseExpression(icast->getSubExpr());
+					out << "Push_0\r\n"; //Push 0 for imag part
+					break;
+				}
 				default:
 				out << "Unhandled cast (CK) of type " << icast->getCastKindName() << endl;
 
@@ -1754,27 +1749,76 @@ public:
 			else if (op->getOpcode() == UO_LNot) {
 				if (isa<IntegerLiteral>(subE)) {
 					const IntegerLiteral *literal = cast<const IntegerLiteral>(subE);
-					out << iPush(literal->getValue().getSExtValue()) << endl;
+					out << iPush(!literal->getValue().getSExtValue()) << endl;
 
 				}
 				else if (isa<FloatingLiteral>(subE))
 				{
 					const FloatingLiteral *literal = cast<const FloatingLiteral>(subE);
-					out << "PushF " << literal->getValue().convertToDouble() << endl;
+					out << fPush(!literal->getValue().convertToDouble()) << endl;
 
 				}
 				else if (isa<Expr>(subE))
 				{
 					parseExpression(subE, isAddr, isLtoRValue);
+					if(subE->getType()->isComplexType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("imagPart", 1);
+						out << frameSet(index) << "\r\nPushF_0\r\nfCmpEq\r\n" << frameGet(index) << "\r\nPushF_0\r\nfCmpEq\r\nAnd\r\n";
+						LocalVariables.removeLevel();
+					}
+					else if (subE->getType()->isComplexIntegerType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("imagPart", 1);
+						out << frameSet(index) << "\r\nnot\r\n" << frameGet(index) << "\r\nnot\r\nAnd\r\n";
+						LocalVariables.removeLevel();
+					}
+					else if (subE->getType()->isFloatingType())
+					{
+						out << "PushF_0\r\nfCmpEq\r\n";
+					}else
+					{
+						out << "not\r\n";
+					}
+					
+				}
+				else
+				{
+					out << "unimplmented UO_LNot" << endl;
+				}
+				
+				return true;
+			}
+			else if(op->getOpcode() == UO_Not)
+			{
+				if(isa<IntegerLiteral>(subE)) {
+					const IntegerLiteral *literal = cast<const IntegerLiteral>(subE);
+					out << iPush(~literal->getValue().getSExtValue()) << endl;
 
+				}
+				else if(isa<Expr>(subE))
+				{
+					parseExpression(subE, isAddr, isLtoRValue);
+					//Not operator for complex numbers is the conjugate
+					if (subE->getType()->isComplexIntegerType())
+					{
+						out << "Neg\r\n";
+					}
+					else if (subE->getType()->isComplexType())
+					{
+						out << "fNeg\r\n";
+					}else
+					{
+						out << "Add1 1\r\nNeg\r\n";
+					}
 				}
 				else
 				{
 					out << "unimplmented UO_Not" << endl;
 				}
-				out << "not" << endl;
 				return true;
-
 			}
 			else if (op->getOpcode() == UO_AddrOf) {
 				if (isa<ArraySubscriptExpr>(subE)) {
