@@ -1744,6 +1744,37 @@ public:
 					out << endl;
 					// out << "fPush " << (double)-(literal->getValue().convertToDouble()) << endl;
 				}
+				else if (isa<Expr>(subE))
+				{
+					parseExpression(subE, isAddr, isLtoRValue);
+					if(subE->getType()->isComplexType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("imagPart", 1);
+						out << frameSet(index) << "\r\nfNeg\r\n" << frameGet(index) << "\r\nfNeg\r\n";
+						LocalVariables.removeLevel();
+					}
+					else if(subE->getType()->isComplexType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("imagPart", 1);
+						out << frameSet(index) << "\r\nNeg\r\n" << frameGet(index) << "\r\nNeg\r\n";
+						LocalVariables.removeLevel();
+					}
+					else if (subE->getType()->isRealFloatingType())
+					{
+						out << "fNeg\r\n";
+					}
+					else
+					{
+						out << "Neg\r\n";
+					}
+
+				}
+				else
+				{
+					out << "unimplmented UO_MINUS" << endl;
+				}
 				return false;
 			}
 			else if (op->getOpcode() == UO_LNot) {
