@@ -1677,7 +1677,14 @@ public:
 				}
 				case clang::CK_FloatingComplexToReal:
 				{
-					parseExpression(icast->getSubExpr());
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					out << "Drop\r\n";
+					break;
+				}
+				case clang::CK_IntegralComplexToReal:
+				{
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					out << "Drop\r\n";
 					break;
 				}
 				case clang::CK_NullToPointer:
@@ -1687,14 +1694,60 @@ public:
 				}
 				case clang::CK_FloatingRealToComplex:
 				{
-					parseExpression(icast->getSubExpr());
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					out << "PushF_0\r\n"; //Push 0.0f for imag part
 					break;
 				}
 				case clang::CK_IntegralRealToComplex:
 				{
-					parseExpression(icast->getSubExpr());
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					out << "Push_0\r\n"; //Push 0 for imag part
+					break;
+				}
+				case clang::CK_FloatingComplexToIntegralComplex:
+				{
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					LocalVariables.addLevel();
+					int index = LocalVariables.addDecl("imagPart", 1);
+					out << frameSet(index) << "\r\nFtoI\r\n" << frameGet(index) << "\r\nFtoI\r\n";
+					LocalVariables.removeLevel();
+					break;
+				}
+				case clang::CK_IntegralComplexToFloatingComplex:
+				{
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					LocalVariables.addLevel();
+					int index = LocalVariables.addDecl("imagPart", 1);
+					out << frameSet(index) << "\r\ItoF\r\n" << frameGet(index) << "\r\ItoF\r\n";
+					LocalVariables.removeLevel();
+					break;
+				}
+				case clang::CK_FloatingComplexCast:
+				{
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					break;
+				}
+				case clang::CK_IntegralComplexCast:
+				{
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					break;
+				}
+				case clang::CK_FloatingComplexToBoolean:
+				{
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					LocalVariables.addLevel();
+					int index = LocalVariables.addDecl("imagPart", 1);
+					out << frameSet(index) << "\r\PushF_0\r\nfCmpEq\r\n" << frameGet(index) << "r\PushF_0\r\nfCmpEq\r\nAnd\r\n";
+					LocalVariables.removeLevel();
+					break;
+				}
+				case clang::CK_IntegralComplexToBoolean:
+				{
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					LocalVariables.addLevel();
+					int index = LocalVariables.addDecl("imagPart", 1);
+					out << frameSet(index) << "\r\Push_0\r\nCmpEq\r\n" << frameGet(index) << "r\Push_0\r\nCmpEq\r\nAnd\r\n";
+					LocalVariables.removeLevel();
 					break;
 				}
 				default:
@@ -2025,16 +2078,59 @@ public:
 			}
 
 
-			if (bOp->getLHS()->getType()->isAnyComplexType())
+			if(bOp->getLHS()->getType()->isAnyComplexType() || bOp->getRHS()->getType()->isAnyComplexType())
 			{
-				if (currFunction)
+				if(currFunction)
 				{
+					parseExpression(bOp->getLHS(), isAddr, true, true);
+					if(!bOp->getLHS()->getType()->isAnyComplexType())
+					{
+						if(bOp->getLHS()->getType()->isFloatingType())
+						{
+							out << "PushF_0\r\n";
+						}
+						else
+						{
+							out << "Push_0\r\n";
+						}
+					}
+					parseExpression(bOp->getRHS(), isAddr, true, true);
+					if (!bOp->getRHS()->getType()->isAnyComplexType())
+					{
+						if (bOp->getRHS()->getType()->isFloatingType())
+						{
+							out << "PushF_0\r\n";
+						}else
+						{
+							out << "Push_0\r\n";
+						}
+					}
+					bool isFlt = bOp->getLHS()->getType()->isFloatingType();
+					string isFloat = isFlt ? "f" : "";
+					if(!isFlt)
+					{
+						if(bOp->getRHS()->getType()->isFloatingType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("imagPart", 1);
+							out << frameSet(index) << "\r\nFtoI\r\n" << frameGet(index) << "\r\nFtoI\r\n";
+							LocalVariables.removeLevel();
+						}
+					}
+					else
+					{
+						if(!bOp->getRHS()->getType()->isFloatingType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("imagPart", 1);
+							out << frameSet(index) << "\r\nItoF\r\n" << frameGet(index) << "\r\nItoF\r\n";
+							LocalVariables.removeLevel();
+						}
+					}
 					LocalVariables.addLevel();
 					int startindex = LocalVariables.addDecl("complex", 4);
-					parseExpression(bOp->getLHS(), isAddr, true, true);
-					parseExpression(bOp->getRHS(), isAddr, true, true);
 					out << "Push_4\r\n" << pFrame(startindex) << "\r\nFromStack\r\n";
-					string isFloat = bOp->getLHS()->getType()->isComplexIntegerType() ? "" : "f";
+
 					switch(bOp->getOpcode())
 					{
 					case BO_Add:
@@ -2114,8 +2210,35 @@ public:
 						parseExpression(bOp->getLHS(), true);
 						out << "FromStack\r\n";
 						break;
+
+					case BO_LAnd:
+						if(!isFlt)
+						{
+							out << frameGet(startindex) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+							out << frameGet(startindex + 2) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+						}
+						else
+						{
+							out << frameGet(startindex) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+							out << frameGet(startindex + 2) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+						}
+						out << "And\r\n";
+						break;
+					case BO_LOr:
+						if(!isFlt)
+						{
+							out << frameGet(startindex) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+							out << frameGet(startindex + 2) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+						}
+						else
+						{
+							out << frameGet(startindex) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+							out << frameGet(startindex + 2) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+						}
+						out << "Or\r\n";
+						break;
 					default:
-						Throw("Unsupported binary operator for Complex data type", rewriter, bOp->getOperatorLoc());
+						Throw("Unsupported binary operator \"" + bOp->getOpcodeStr().str() + "\" for Complex data type", rewriter, bOp->getOperatorLoc());
 					}
 					LocalVariables.removeLevel();
 					return true;
@@ -2124,6 +2247,7 @@ public:
 				{
 					Throw("Complex binary operations can only be done in functions");
 				}
+
 			}
 
 
