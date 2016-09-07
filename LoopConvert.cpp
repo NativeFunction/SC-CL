@@ -1880,7 +1880,46 @@ public:
 					out << "pSet" << endl;
 				return true;
 			}
-
+			else if (op->getOpcode() == UO_Real)
+			{
+				if (isa<Expr>(subE))
+				{
+					parseExpression(subE, isAddr, isLtoRValue);
+					if (subE->getType()->isAnyComplexType())
+					{
+						out << "Drop\r\n";
+					}
+					else
+					{
+						Throw("__real operator used on non complex data type");
+					}
+				}
+				else
+				{
+					out << "unimplmented UO_Real" << endl;
+				}
+			}
+			else if(op->getOpcode() == UO_Imag)
+			{
+				if(isa<Expr>(subE))
+				{
+					parseExpression(subE, isAddr, isLtoRValue);
+					if(subE->getType()->isAnyComplexType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("imagPart", 1);
+						out << frameSet(index) << "\r\nDrop\r\n" << frameGet(index) << endl;
+					}
+					else
+					{
+						Throw("__imag operator used on non complex data type");
+					}
+				}
+				else
+				{
+					out << "unimplmented UO_Real" << endl;
+				}
+			}
 
 
 			string pMult = "";
