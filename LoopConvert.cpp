@@ -304,15 +304,12 @@ uint32_t getSizeOfType(const Type* type) {
 
 	}
 	else if(type->isAnyComplexType())
-	{
-		//Throw("Complex data types arent supported");
 		return 8;
-	}
 	else if (type->isCharType())
 		return 1;
 	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 		return 2;
-	else if (type->isIntegerType() || type->isBooleanType() || type->isFloatingType() || type->isPointerType())
+	else if (type->isIntegerType() || type->isBooleanType() || type->isRealFloatingType() || type->isPointerType())
 		return 4;
 	else if (type->isVoidType())
 		return 0;
@@ -775,6 +772,7 @@ public:
 
 			//Build case switch list first
 			SwitchCase *switchCaseList = switchStmt->getSwitchCaseList();
+			stack<string> caseLabels;
 			while (switchCaseList != NULL)
 			{
 				if (isa<CaseStmt>(switchCaseList))
@@ -784,11 +782,11 @@ public:
 					if(caseS->getLHS()->EvaluateAsRValue(result, *context)){
 						if(result.Val.isInt())
 						{
-							out << "[" << result.Val.getInt().getSExtValue() << " @" << caseS->getLocEnd().getRawEncoding() << "]";
+							caseLabels.push("[" + to_string(result.Val.getInt().getSExtValue()) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
 						}
 						else if(result.Val.isFloat())
 						{
-							out << "[" << result.Val.getFloat().convertToFloat() << " @" << caseS->getLocEnd().getRawEncoding() << "]";
+							caseLabels.push("[" + to_string(result.Val.getFloat().convertToFloat()) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
 						}
 						else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getExprLoc());
 					}
@@ -801,15 +799,15 @@ public:
 				}
 				else
 					llvm::errs() << "Unexpected Statement: " << switchCaseList->getStmtClassName();
-
-				bool isStmt = isa<DefaultStmt>(switchCaseList);
 				switchCaseList = switchCaseList->getNextSwitchCase();
-				if (switchCaseList == NULL)
-					out << endl;
-				else
-					if (!isStmt)
-						out << ":";
 			}
+			while (caseLabels.size() > 1)
+			{
+				out << caseLabels.top() << ":";
+				caseLabels.pop();
+			}
+			out << caseLabels.top() << endl;
+
 			//Get default case
 			SwitchCase *switchCaseDefaultSearcher = switchStmt->getSwitchCaseList();
 
