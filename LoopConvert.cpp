@@ -1008,7 +1008,7 @@ public:
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
 
-		if (funcName == "@__strcopy" || funcName == "@__stradd" || funcName == "@__straddi" || funcName == "@__itos") {
+		if (funcName == "@strcpy" || funcName == "@stradd" || funcName == "@straddi" || funcName == "@itos") {
 			if (argCount != 3)
 				out << "!!Invalid " << funcName << " parameters!" << endl;
 			else
@@ -1016,7 +1016,7 @@ public:
 				parseExpression(argArray[1]);
 				parseExpression(argArray[0]);
 
-				out << funcName.substr(3) << " ";
+				out << (funcName == "@strcpy" ? "strcopy" : funcName.substr(1)) << " ";
 				if (isa<IntegerLiteral>(argArray[2])) {
 					const IntegerLiteral *literal = cast<const IntegerLiteral>(argArray[2]);
 					out << literal->getValue().getSExtValue() << endl;
@@ -1032,7 +1032,7 @@ public:
 			}
 			return true;
 		}
-		else if (funcName == "@__pop")
+		else if (funcName == "@pop")
 		{
 			//	out << call->getExprLoc().
 			if (argCount == 1)
@@ -1045,13 +1045,13 @@ public:
 						out << "Pop" << endl;
 				}
 				else
-					out << "!!Invalid " << funcName.substr(3) << " Parameters!";
+					out << "!!Invalid " << funcName.substr(1) << " Parameters!";
 			}
 			else
 				out << "Pop" << endl;
 			return true;
 		}
-		else if (funcName == "@__pcall")
+		else if (funcName == "@pcall")
 		{
 			if (argCount < 1)
 				out << "!!Invalid PCall Parameters" << endl;
@@ -1067,7 +1067,7 @@ public:
 
 			return true;
 		}
-		else if (funcName == "@__add" || funcName == "@__sub" || funcName == "@__mult" || funcName == "@__div")
+		else if (funcName == "@add" || funcName == "@sub" || funcName == "@mult" || funcName == "@div")
 		{
 			if (argCount == 1)
 			{
@@ -1077,22 +1077,22 @@ public:
 					const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
 					long longVal = intVal->getValue().getSExtValue();
 
-					if (funcName == "@__add" || funcName == "@__mult")
+					if (funcName == "@add" || funcName == "@mult")
 					{
-						out << funcName.substr(3);
+						out << funcName.substr(1);
 						out << ((longVal & 0xFF) == longVal ? "1 " : "2 ");
 						out << longVal;
 					}
-					else if (funcName == "@__sub" || funcName == "@__div")
+					else if (funcName == "@sub" || funcName == "@div")
 					{
 						out << "Push " << longVal << endl;
-						out << funcName.substr(3);
+						out << funcName.substr(1);
 					}
 				}
 				else if (isa<Expr>(argArray[0]))
 				{
 					parseExpression(argArray[0]);
-					out << funcName.substr(3);
+					out << funcName.substr(1);
 				}
 				else
 				{
@@ -1103,14 +1103,14 @@ public:
 			out << endl;
 			return true;
 		}
-		else if (funcName == "@__getframe" || funcName == "@__getframep" || funcName == "@__setframe")
+		else if (funcName == "@getframe" || funcName == "@getframep" || funcName == "@setframe")
 		{
 			if (argCount == 1)
 			{
 
 				if (isa<IntegerLiteral>(argArray[0]))
 				{
-					out << funcName.substr(3);
+					out << funcName.substr(1);
 					const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
 					long intValue = intVal->getValue().getSExtValue();
 					out << ((intValue & 0xFF) == intValue ? "1 " : "2 ");
@@ -1131,7 +1131,7 @@ public:
 							int index;
 							if (LocalVariables.find(name, &index))
 							{
-								out << funcName.substr(3);
+								out << funcName.substr(1);
 								out << ((index & 0xFF) == index ? "1 " : "2 ");
 								out << index << " //" << name << endl;
 							}
@@ -1139,23 +1139,23 @@ public:
 								Throw("Could not find variable " + name + ".", rewriter, argArray[0]->getExprLoc());
 						}
 						else
-							Throw("Invalid " + funcName.substr(3) + " Parameters.", rewriter, argArray[0]->getExprLoc());
+							Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, argArray[0]->getExprLoc());
 					}
 					else
-						Throw("Invalid " + funcName.substr(3) + " Parameters.", rewriter, argArray[0]->getExprLoc());
+						Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, argArray[0]->getExprLoc());
 				}
 				else
-					Throw("Invalid " + funcName.substr(3) + " Parameters.", rewriter, argArray[0]->getExprLoc());
+					Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, argArray[0]->getExprLoc());
 			}
 			else
 			{
-				Throw("Invalid " + funcName.substr(3) + " Parameters.", rewriter, argArray[0]->getExprLoc());
+				Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, argArray[0]->getExprLoc());
 			}
 			return true;
 		}
-		else if (funcName == "@__getglobal" || funcName == "@__getglobalp" || funcName == "@__setglobal")
+		else if (funcName == "@getglobal" || funcName == "@getglobalp" || funcName == "@setglobal")
 		{
-			if (funcName == "@__getglobal" || funcName == "@__getglobalp")
+			if (funcName == "@getglobal" || funcName == "@getglobalp")
 			{
 				if (argCount == 1)
 				{
@@ -1164,7 +1164,7 @@ public:
 						const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
 						int intValue = intVal->getValue().getSExtValue();
 
-						out << funcName.substr(3);
+						out << funcName.substr(1);
 						out << ((intValue & 0xFF) == intValue ? "2 " : "3 ");
 						out << intValue << endl;
 					}
@@ -1172,9 +1172,9 @@ public:
 						Throw("Expected Integer Literal.", rewriter, argArray[0]->getExprLoc());
 				}
 				else
-					Throw("Invalid " + funcName.substr(3) + " Parameters.", rewriter, call->getExprLoc());
+					Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, call->getExprLoc());
 			}
-			else if (funcName == "@__setglobal")
+			else if (funcName == "@setglobal")
 			{
 				if (argCount == 2)
 				{
@@ -1184,8 +1184,8 @@ public:
 						const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
 						int intValue = intVal->getValue().getSExtValue();
 
-						out << funcName.substr(3);
-						out << ((intValue & 0xFF) == intValue ? "2 " : "2 ");
+						out << "setglobal";
+						out << ((intValue & 0xFFFF) == intValue ? "2 " : "3 ");
 						out << intValue << endl;
 					}
 					else
@@ -1198,19 +1198,19 @@ public:
 						const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
 						int intValue = intVal->getValue().getSExtValue();
 
-						out << funcName.substr(3);
-						out << ((intValue & 0xFF) == intValue ? "2 " : "2 ");
+						out << "setglobal";
+						out << ((intValue & 0xFFFF) == intValue ? "2 " : "3 ");
 						out << intValue << endl;
 					}
 					else
 						Throw("Expected Integer Literal.", rewriter, argArray[0]->getExprLoc());
 				}
 				else
-					Throw("Invalid " + funcName.substr(3) + " Parameters.", rewriter, call->getExprLoc());
+					Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, call->getExprLoc());
 			}
 			return true;
 		}
-		else if (funcName == "@__stacktop")
+		else if (funcName == "@stacktop")
 		{
 			if (argCount != 0)
 			{
@@ -1218,12 +1218,11 @@ public:
 			}
 			return true;
 		}
-		else if (funcName == "@__memcopy")
+		else if (funcName == "@memcpy")
 		{
 
 			if (argCount == 3)
 			{
-
 				//to stack
 				//size
 				parseExpression(argArray[2], false, true);
