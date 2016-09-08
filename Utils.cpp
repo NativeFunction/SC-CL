@@ -49,7 +49,7 @@ namespace Utils {
 			cout << brightred << "Exception: " << white << str << "\r\nPress ENTER to exit..." << flush;
 			cin.clear();
 			cin.ignore(STREAMSIZE_MAX, '\n');
-			exit(0);
+			exit(-1);
 		}
 		void Throw(string str, int line, int col)
 		{
@@ -59,7 +59,7 @@ namespace Utils {
 				<< "\r\nPress ENTER to exit..." << flush;
 			cin.clear();
 			cin.ignore(STREAMSIZE_MAX, '\n');
-			exit(0);
+			exit(-1);
 		}
 		void Throw(string str, clang::Rewriter writer, clang::SourceLocation location)
 		{
@@ -70,7 +70,7 @@ namespace Utils {
 				<< "\r\nPress ENTER to exit..." << flush;
 			cin.clear();
 			cin.ignore(STREAMSIZE_MAX, '\n');
-			exit(0);
+			exit(-1);
 		}
 		void Warn(string str)
 		{
