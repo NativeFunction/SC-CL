@@ -257,8 +257,7 @@ uint32_t getSizeOfType(const Type* type) {
 
 	if (isa<ConstantArrayType>(type)) {
 		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
-		//arrType->get
-		return getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue();
+		return ((getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue()) + 4 - 1) & ~3;
 	}
 	else if (type->isRecordType() && type->getAsCXXRecordDecl()) {
 		CXXRecordDecl *recordDecl = type->getAsCXXRecordDecl();
@@ -271,10 +270,9 @@ uint32_t getSizeOfType(const Type* type) {
 
 			uint32_t size = 0;
 			for (const auto *CS : rd->fields()) {
-				const  QualType type = CS->getType();
-				int temp = getSizeOfQualType(&type);
+				const Type* type = CS->getType().getTypePtr();
 
-				size += max(temp, 4);
+				size += (getSizeOfType(type) + 4 - 1) & ~3;
 			}
 			//cout << "struct: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
 
@@ -290,10 +288,9 @@ uint32_t getSizeOfType(const Type* type) {
 
 			uint32_t size = 0;
 			for (const auto *CS : rd->fields()) {
-				const  QualType type = CS->getType();
-				int temp = getSizeOfQualType(&type);
+				const Type* type = CS->getType().getTypePtr();
 
-				uint32_t sz = max(temp, 4);
+				uint32_t sz = (getSizeOfType(type) + 4 - 1) & ~3;
 				if (sz > size)
 					size = sz;
 			}
@@ -303,17 +300,73 @@ uint32_t getSizeOfType(const Type* type) {
 		}
 
 	}
-	else if(type->isAnyComplexType())
-		return 8;
 	else if (type->isCharType())
 		return 1;
 	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 		return 2;
-	else if (type->isIntegerType() || type->isBooleanType() || type->isRealFloatingType() || type->isPointerType())
+	else if (type->isIntegerType() || type->isBooleanType() || type->isFloatingType() || type->isPointerType())
 		return 4;
 	else if (type->isVoidType())
 		return 0;
-	
+
+	return 0;
+}
+uint32_t getLiteralSizeOfType(const Type* type) {
+
+	if (isa<ConstantArrayType>(type)) {
+		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
+		return getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue();
+	}
+	else if (type->isRecordType() && type->getAsCXXRecordDecl()) {
+		CXXRecordDecl *recordDecl = type->getAsCXXRecordDecl();
+		return getSizeOfCXXDecl(recordDecl, true, false);
+	}
+	else if (type->isStructureType()) {
+		const RecordType *record = type->getAsStructureType();
+
+		if (RecordDecl *rd = record->getDecl()) {
+
+			uint32_t size = 0;
+			for (const auto *CS : rd->fields()) {
+				const Type* type = CS->getType().getTypePtr();
+
+				size += getSizeOfType(type);
+			}
+			//cout << "struct: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
+
+			return size;
+		}
+
+	}
+	else if (type->isUnionType())
+	{
+		const RecordType *record = type->getAsUnionType();
+
+		if (RecordDecl *rd = record->getDecl()) {
+
+			uint32_t size = 0;
+			for (const auto *CS : rd->fields()) {
+				const Type* type = CS->getType().getTypePtr();
+
+				uint32_t sz = getSizeOfType(type);
+				if (sz > size)
+					size = sz;
+			}
+			//cout << "union: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
+
+			return size;
+		}
+
+	}
+	else if (type->isCharType())
+		return 1;
+	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+		return 2;
+	else if (type->isIntegerType() || type->isBooleanType() || type->isFloatingType() || type->isPointerType())
+		return 4;
+	else if (type->isVoidType())
+		return 0;
+
 	return 0;
 }
 
@@ -2384,7 +2437,7 @@ public:
 						case BO_LOr:
 						case BO_Or: out << "Or\r\n"; break;
 						case BO_Shl: out << "CallNative shift_left 2 1\r\n"; break;
-						case BO_Shr: out << "CallNative shift_right 2 1"; break;
+						case BO_Shr: out << "CallNative shift_right 2 1\r\n"; break;
 						default:
 							Throw("Unimplemented binary floating op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
 						}
@@ -2409,7 +2462,7 @@ public:
 						case BO_LOr:
 						case BO_Or: out << "Or\r\n"; break;
 						case BO_Shl: out << "CallNative shift_left 2 1\r\n"; break;
-						case BO_Shr: out << "CallNative shift_right 2 1"; break;
+						case BO_Shr: out << "CallNative shift_right 2 1\r\n"; break;
 						default:
 							Throw("Unimplemented binary op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
 						}
@@ -3013,6 +3066,7 @@ public:
 	{
 		if (isa<IntegerLiteral>(e)) {
 			const IntegerLiteral *literal = cast<const IntegerLiteral>(e);
+			
 			InitializationStack.push({ (int32_t)literal->getValue().getSExtValue(), FBWT_INT });
 		}
 		else if (isa<FloatingLiteral>(e)) {
@@ -3050,26 +3104,41 @@ public:
 			{
 				InitializationStack.push({ 0, FBWT_ARRAY });
 
-				int32_t StrIntSize = (literal->getString().str().length() + 4 - 1) & ~3;
-				int32_t StrRem = StrIntSize - literal->getString().str().length();
+				string strlit = literal->getString().str();
+				e->getType().getTypePtr();
 
-				int32_t LoopSize = StrIntSize / 4;
+				int32_t strsize = getLiteralSizeOfType(e->getType().getTypePtr());
 
-				for (int32_t i = 0; i < LoopSize; i++)
+				//int32_t StrIntSize = (literal->getString().str().length() + 4 - 1) & ~3;
+				//int32_t StrRem = StrIntSize - literal->getString().str().length();
+				//
+				//int32_t LoopSize = StrIntSize / 4;
+				
+
+				int32_t buffer = 0;
+				int32_t i = 0, b = 0;
+				cout << "strlit size:" << strsize << endl;
+				for (; i < strsize; i++, b++)
 				{
-					if (i < LoopSize - 1)
-						ArrayOut.push_back(Utils::Bitwise::SwapEndian(*(int32_t*)(literal->getString().str().c_str() + (i * 4))));
-					else
+					if (b >= 4)
 					{
-						int32_t buffer = 0;
-						memcpy(&buffer, literal->getString().str().substr(StrIntSize - 4, StrRem).c_str(), 4 - StrRem);
-						ArrayOut.push_back(Utils::Bitwise::SwapEndian(buffer));
-						if (StrRem == 4)//if str size is equal to a mult of 4 we need to add a null terminator
-							ArrayOut.push_back(0);
+						DefaultStaticValues.insert({ oldStaticInc++, to_string(Utils::Bitwise::SwapEndian(buffer)) });
+						b = 0;
+						buffer = 0;
 					}
+					if (i >= strlit.length())
+						((uint8_t*)&buffer)[b] = 0;//add padding
+					else
+						((uint8_t*)&buffer)[b] = strlit[i];
 
+					
+					
 				}
+				if(b != 0)
+					DefaultStaticValues.insert({ oldStaticInc++, to_string(Utils::Bitwise::SwapEndian(buffer)) });
+				
 			}
+
 			return true;
 
 		}
@@ -3128,22 +3197,7 @@ public:
 					if (isa<FunctionDecl>(declRef->getDecl())) {
 						const FunctionDecl *decl = cast<const FunctionDecl>(declRef->getDecl());
 
-						if (isa<CXXMethodDecl>(decl)) {
-							const CXXMethodDecl *methodDecl = cast<const CXXMethodDecl>(decl);
-							const CXXRecordDecl *record = methodDecl->getParent();
-
-							InitializationStack.push({ 0, FBWT_FUNCTION_PTR });
-
-							string funcname = "GetLoc(\"" + record->getNameAsString() + "::" + methodDecl->getNameAsString() + "\")";
-							int64_t length = Utils::Math::CeilDivInt(funcname.length(), 4);
-
-							ArrayOut.resize(funcname.length() % 4 == 0 ? length + 1 : length, 0);
-							memcpy(ArrayOut.data(), funcname.c_str(), funcname.length());
-						}
-						else
-						{
-
-							InitializationStack.push({ 0, FBWT_FUNCTION_PTR });
+							InitializationStack.push({ 0, FBWT_ARRAY });
 
 							string name = "@" + decl->getNameAsString();
 							uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
@@ -3163,13 +3217,8 @@ public:
 							if (i >= functions.size())
 								Throw("Static function pointer \"" + decl->getNameAsString() + "\" not found");
 
-
 							string funcname = "GetLoc(\"" + decl->getNameAsString() + "\")";
-							int64_t length = Utils::Math::CeilDivInt(funcname.length(), 4);
-
-							ArrayOut.resize(funcname.length() % 4 == 0 ? length + 1 : length, 0);
-							memcpy(ArrayOut.data(), funcname.c_str(), funcname.length());
-						}
+							DefaultStaticValues.insert({ oldStaticInc++, funcname });
 
 					}
 					else Throw("Unimplemented CK_FunctionToPointerDecay DeclRefExpr for " + string(declRef->getStmtClassName()));
@@ -3487,32 +3536,189 @@ public:
 			}
 
 		}
-		else if (isa<InitListExpr>(e))
+		else if (isa<InitListExpr>(e))//kill on myself
 		{
-			InitializationStack.push({ 0, FBWT_ARRAY });
+			
 			const InitListExpr *init = cast<const InitListExpr>(e);
 
-			for (unsigned int i = 0; i<init->getNumInits(); i++) {
-				ParseLiteral(init->getInit(i));
-				if (InitializationStack.top().type != FBWT_ARRAY)
-					ArrayOut.push_back(IS_Pop().bytes);
-				else
-					IS_Pop();
+			const Type* type = init->getType().getTypePtr();
+			int32_t size = getSizeOfType(type);
+
+			int32_t itemType = 0;
+
+			//int32_t oldArrayOutSize = ArrayOut.size();
+			InitializationStack.push({ 0, FBWT_INIT_LIST });
+
+			if (isa<ConstantArrayType>(type))//will fuck up with array of array of array
+				type = type->getArrayElementTypeNoTypeQual();
+			else if (type->isStructureType())
+			{
+				const RecordType *record = type->getAsStructureType();
+				type = record;
+
+				if (RecordDecl *rd = record->getDecl()) {
+
+					for (const auto *CS : rd->fields()) {
+						const QualType qtype = CS->getType();
+						
+						const Type* type = qtype.getTypePtr();
+
+						if (isa<ConstantArrayType>(type))
+							type = type->getArrayElementTypeNoTypeQual();
+
+						cout << "\trecord type size: " << getSizeOfQualType(&qtype) << " is char: " << type->isCharType() << endl;
+
+						//size += max(temp, 4);
+					}
+					//cout << "struct: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
+				}
 
 			}
-			if (InitializationStack.top().type != FBWT_ARRAY)
+
+			cout << "init size: " << size << "\tType size: " << getSizeFromBytes(size) << "\tClass: " << type->getTypeClassName() << "\tis char: " << type->isCharType() << endl;
+
+			vector<uint8_t> initdata;
+			for (unsigned int i = 0; i < init->getNumInits(); i++) {
+				const Expr* expr = init->getInit(i);
+				if (isa<BuiltinType>(expr->getType().getTypePtr()))
+				{
+					const BuiltinType *bt = cast<const BuiltinType>(expr->getType().getTypePtr());
+					cout << "BT:" << bt->getKind() << "\tsize:" << getSizeOfType(expr->getType().getTypePtr());
+
+					if(init->getType().getTypePtr()->isStructureType())
+						cout << "\tarr size:" << getSizeOfType(init->getType().getTypePtr()->getAsStructureType()->getDecl()->field_begin()->getType().getTypePtr()) << endl;
+					else
+						cout << "\tarr size:" << getSizeOfType(init->getType().getTypePtr()) << endl;
+					
+
+				}
+				
+				ParseLiteral(expr);
+
+				if (InitializationStack.top().type != FBWT_ARRAY)
+				{
+					cout << "istype: " << InitializationStack.top().type << endl;
+					
+					const Type* type = init->getType().getTypePtr();
+					const Type* exprtype = expr->getType().getTypePtr();
+					size_t size = 0;
+
+					if (type->isStructureType())
+						type = type->getAsStructureType()->getDecl()->field_begin()->getType().getTypePtr();
+					
+					size = getSizeOfType(type);
+
+					if (exprtype->isCharType())
+					{
+						if (size == 1)
+							DefaultStaticValues.insert({ oldStaticInc++, to_string((IS_Pop().bytes % 256) << 24) });
+						else
+						{
+							cout << "pushing 1\n";
+							initdata.push_back(IS_Pop().bytes % 256);
+						}
+					}
+					else if (exprtype->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || exprtype->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+					{
+						if (size == 2)
+							DefaultStaticValues.insert({ oldStaticInc++, to_string((IS_Pop().bytes % 65536) << 16) });
+						else
+						{
+							cout << "pushing 2\n";
+							initdata.resize(initdata.size() + 2);
+							int16_t data = IS_Pop().bytes % 65536;
+							memcpy(initdata.data() + initdata.size() - 2, &data, 2);
+						}
+					}
+					else if(InitializationStack.top().type != FBWT_INIT_LIST)
+					{
+						if (size == 4)
+							DefaultStaticValues.insert({ oldStaticInc++, to_string(IS_Pop().bytes) });
+						else
+						{
+							cout << "pushing 4\n";
+							initdata.resize(initdata.size() + 4);
+							int32_t data = IS_Pop().bytes;
+							memcpy(initdata.data() + initdata.size() - 4, &data, 4);
+						}
+					}
+
+					//add padding at end of init list expression
+					if (i == init->getNumInits() - 1 && !isa<InitListExpr>(expr))
+					{
+						cout << "push size: " << size << endl;
+						cout << "pushing 0 ints times " << (size - initdata.size()) / 4 << endl;
+						while (initdata.size() < size)
+						{
+							initdata.push_back(0);
+						}
+					}
+				}
+				//else is array which is already padded and good to go
+				else
+				{
+					IS_Pop();
+					if (InitializationStack.top().type != FBWT_INIT_LIST)
+						Throw("Stack error on InitListExpr literal");
+				}
+					
+			}
+			
+			//read data into statics
+			for (int i = 0; i < initdata.size(); i += 4)
+			{
+				if (i + 4 > initdata.size())
+				{
+					int32_t buffer = 0;
+					for (int j = 0; j < initdata.size() - i; j++)
+						((uint8_t*)&buffer)[j] = initdata[i + j];
+
+					//swapping bytes
+					if (type->isCharType())
+						buffer = Utils::Bitwise::SwapEndian(buffer);
+					else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+						buffer = Utils::Bitwise::Flip2BytesIn4(buffer);
+
+					cout << "read b: " << buffer << "\n";
+					DefaultStaticValues.insert({ oldStaticInc++, to_string(buffer) });
+				}
+				else
+				{
+					int32_t value = *(uint32_t*)(initdata.data() + i);
+
+					//swapping bytes
+					if (type->isCharType())
+						value = Utils::Bitwise::SwapEndian(value);
+					else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+						value = Utils::Bitwise::Flip2BytesIn4(value);
+					
+					cout << "read: " <<  to_string(value) << "\n";
+					DefaultStaticValues.insert({ oldStaticInc++, to_string(value) });
+				}
+			}
+
+			//if (oldArrayOutSize + itemSize < ArrayOut.size())
+			//	Throw("ArrayOut Overflow!!!");
+			//
+			//if (oldArrayOutSize + itemSize > ArrayOut.size())
+			//{
+			//	int count = ArrayOut.size() - (oldArrayOutSize + itemSize);
+			//
+			//	for(int i = 0; i < count; i++)
+			//		ArrayOut.push_back(0);
+			//
+			//}
+
+			if (InitializationStack.empty() || InitializationStack.top().type != FBWT_INIT_LIST)
 				Throw("Stack error on InitListExpr literal");
 		}
 		else if (isa<CharacterLiteral>(e))
 		{
 			const CharacterLiteral *charliteral = cast<const CharacterLiteral>(e);
-
-			InitializationStack.push({ (int32_t)charliteral->getValue(), FBWT_INT });
+			InitializationStack.push({ (int32_t)charliteral->getValue(), FBWT_CHAR });
 		}
 		else {
-
 			Throw("Class " + string(e->getStmtClassName()) + " is unimplemented for a static define");
-
 		}
 		return -1;
 	}
@@ -3526,11 +3732,10 @@ public:
 					//QualType type = varDecl->getType();
 					//auto size = getSizeOfQualType(&type);
 
-
 					auto size = getSizeOfType(varDecl->getType().getTypePtr());
 					//auto size = context->getTypeInfoDataSizeInChars(varDecl->getType()).first.getQuantity();
 
-					uint32_t oldStaticInc = staticInc;
+					oldStaticInc = staticInc;
 					statics.insert(make_pair(dumpName(cast<NamedDecl>(D)), staticInc));
 					staticInc += getSizeFromBytes(size);
 
@@ -3553,62 +3758,12 @@ public:
 							switch (InitializationStack.top().type)
 							{
 								case FBWT_ARRAY:
-								if (varDecl->getType()->isArrayType() || varDecl->getType()->isStructureType())
-								{
-									int32_t buffer = 0, b = 0, stvi = 0;
-
-									#define AddStaticArraySpecial(loopsize,maxsize,buffsetstmt,buffgetstmt)\
-									for (int32_t i = 0; i < ArrayOut.size(); i++, b++)\
-									{\
-										if (b >= loopsize)\
-										{\
-											DefaultStaticValues.insert({ oldStaticInc + stvi++, to_string(buffgetstmt) });\
-											b = buffer = 0;\
-										}\
-										buffsetstmt = ArrayOut[i] % maxsize;\
-									}\
-									if (b != 0)\
-										DefaultStaticValues.insert({ oldStaticInc + stvi, to_string(buffgetstmt) });
-
-									const Type* type = varDecl->getType().getTypePtr();
-
-									while (isa<ConstantArrayType>(type))
-										type = type->getArrayElementTypeNoTypeQual();
-
-									if (type->isCharType() && isa<InitListExpr>(initializer))//InitListExpr because of char test[] = "hello world";
-									{
-										AddStaticArraySpecial(4, 256, ((uint8_t*)(&buffer))[b], Utils::Bitwise::SwapEndian(buffer));
-									}
-									else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
-									{
-										AddStaticArraySpecial(2, 65536, ((uint16_t*)(&buffer))[!b], buffer);
-									}
-									else
-									{
-										cout << type->getTypeClassName() << endl;
-										for (uint32_t i = 0; i < ArrayOut.size(); i++)
-											DefaultStaticValues.insert({ oldStaticInc + i, to_string(ArrayOut[i]) });
-									}
-
-								}
-								else
-									Throw("Static var array " + varDecl->getType().getAsString() + "  was parsed as an array but declared as different",
-										  rewriter,
-										  varDecl->getLocStart()
-									);
-
-
+								case FBWT_INIT_LIST:
 
 								//if (ArrayOut.size() != 0)
 								//{
 								//	staticInc += ArrayOut.size() - 1;
 								//}
-								ArrayOut.clear();
-								InitializationStack.pop();
-								break;
-								case FBWT_FUNCTION_PTR:
-								DefaultStaticValues.insert({ oldStaticInc, std::string((char*)ArrayOut.data()) });
-								ArrayOut.clear();
 								InitializationStack.pop();
 								break;
 								default://FBWT_INT
@@ -3657,15 +3812,30 @@ public:
 		return "";
 	}
 
+	enum AOWT_Types : uint8_t
+	{
+		AOWT_4BYTE,
+		AOWT_2BYTE,
+		AOWT_1BYTE,
+		AOWT_STR_LITERAL
+	};
+	typedef struct {
+		AOWT_Types type;
+		vector<int32_t> out;
+	} AOWT;
 	vector<int32_t> ArrayOut;
+
+	uint32_t oldStaticInc = 0;
 	map<uint32_t, string> DefaultStaticValues;//index, value
 
 	enum FBWT_Types : uint8_t
 	{
 		FBWT_INT,
+		FBWT_CHAR,
+		FBWT_SHORT,
 		FBWT_FLOAT,
 		FBWT_ARRAY,
-		FBWT_FUNCTION_PTR
+		FBWT_INIT_LIST
 	};
 	typedef struct {
 		int32_t bytes;
@@ -3681,6 +3851,13 @@ public:
 			return ret;
 		}
 		else Throw("InitializationStack Empty");
+	}
+	void IS_Clear()
+	{
+		while (!InitializationStack.empty())
+		{
+			InitializationStack.pop();
+		}
 	}
 	void IS_Exch()
 	{
@@ -3699,6 +3876,7 @@ private:
 	Rewriter &TheRewriter;
 	ASTContext *context;
 };
+
 
 
 class LocalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
