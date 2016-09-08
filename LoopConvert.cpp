@@ -300,11 +300,13 @@ uint32_t getLiteralSizeOfType(const Type* type) {
 		}
 
 	}
+	else if (type->isAnyComplexType())
+		return 8;
 	else if (type->isCharType())
 		return 1;
 	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 		return 2;
-	else if (type->isIntegerType() || type->isBooleanType() || type->isFloatingType() || type->isPointerType())
+	else if (type->isIntegerType() || type->isBooleanType() || type->isRealFloatingType() || type->isPointerType())
 		return 4;
 	else if (type->isVoidType())
 		return 0;
@@ -368,6 +370,22 @@ uint32_t getSizeOfType(const Type* type) {
 		return 0;
 
 	return 0;
+}
+bool CheckExprForSizeOf(const Expr* expr, int *outSize)
+{
+	if (isa<UnaryExprOrTypeTraitExpr>(expr))
+	{
+		const UnaryExprOrTypeTraitExpr *ueTrait = cast<UnaryExprOrTypeTraitExpr>(expr);
+		if (ueTrait->getKind() == UETT_SizeOf)
+		{
+			if(ueTrait->isArgumentType())
+				*outSize = getSizeOfType(ueTrait->getArgumentType().getTypePtr());
+			else//size = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
+				*outSize = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
+			return true;
+		}
+	}
+	return false;
 }
 
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
@@ -855,7 +873,11 @@ public:
 					if (caseS->getLHS()->EvaluateAsRValue(result, *context)) {
 						if (result.Val.isInt())
 						{
-							caseLabels.push("[" + to_string(result.Val.getInt().getSExtValue()) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
+							int val;
+							if (CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
+								caseLabels.push("[" + to_string(val) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
+							else
+								caseLabels.push("[" + to_string(result.Val.getInt().getSExtValue()) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
 						}
 						else if (result.Val.isFloat())
 						{
@@ -1042,31 +1064,7 @@ public:
 
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
-		if (funcName == "@GetHash")
-		{
-			if (call->getCallReturnType(*context)->isIntegerType())
-			{
-				if (call->getNumArgs() == 1)
-				{
-					const Expr* Arg = call->getArg(0);
-					while (isa<CastExpr>(Arg))
-					{
-						const CastExpr *castee = cast<CastExpr>(Arg);
-						Arg = castee->getSubExpr();
-					}
-					if (isa<StringLiteral>(Arg))
-					{
-						std::string hashStr = cast<StringLiteral>(Arg)->getString().str();
-						out << iPush((int)Utils::Hashing::Joaat((char*)hashStr.c_str())) << " //GetHash(" << hashStr << ")\r\n";
-						return true;
-					}
-					else Throw("GetHash intrinsic requires a single constant string parameter", rewriter, call->getLocStart());
-				}
-				else Throw("GetHash intrinsic requires a single constant string parameter", rewriter, call->getLocStart());
-			}
-			else Throw("GetHash intrinsic must return an integer type", rewriter, call->getLocStart());
-		}
-		else if (funcName == "@strcpy" || funcName == "@stradd" || funcName == "@straddi" || funcName == "@itos") {
+		if (funcName == "@strcpy" || funcName == "@stradd" || funcName == "@straddi" || funcName == "@itos") {
 			if (argCount != 3)
 				out << "!!Invalid " << funcName << " parameters!" << endl;
 			else
@@ -1479,7 +1477,11 @@ public:
 		{
 			if (result.Val.isInt())
 			{
-				out << iPush(result.Val.getInt().getSExtValue()) << endl;
+				int val;
+				if(CheckExprForSizeOf(e->IgnoreParens(), &val))
+					out << iPush(val) << endl;
+				else
+					out << iPush(result.Val.getInt().getSExtValue()) << endl;
 				return -1;
 			}
 			else if (result.Val.isFloat())
@@ -2593,7 +2595,18 @@ public:
 				}
 				break;
 				case UnaryExprOrTypeTrait::UETT_JenkinsHash:
-				break;
+				{
+					if(const Expr* arg = ueTrait->getArgumentExpr()->IgnoreParens())
+					{
+						if(isa<StringLiteral>(arg))
+						{
+							string str = cast<StringLiteral>(arg)->getString().str();
+							out << iPush((int)Utils::Hashing::Joaat((char*)str.c_str())) << " //Joaat(\"" << str << "\")\r\n";
+							break;
+						}
+					}
+				}
+				Throw("Jenkins Method called with unsupported arg type, please use StringLiterals only", rewriter, ueTrait->getLocStart());
 				default:
 				out << "!!Unsupported UnaryExprOrTypeTrait" << endl;
 				break;
