@@ -49,7 +49,7 @@ namespace Utils {
 			cout << brightred << "Exception: " << white << str << "\r\nPress ENTER to exit..." << flush;
 			cin.clear();
 			cin.ignore(STREAMSIZE_MAX, '\n');
-			exit(-1);
+			exit(0);
 		}
 		void Throw(string str, int line, int col)
 		{
@@ -59,7 +59,7 @@ namespace Utils {
 				<< "\r\nPress ENTER to exit..." << flush;
 			cin.clear();
 			cin.ignore(STREAMSIZE_MAX, '\n');
-			exit(-1);
+			exit(0);
 		}
 		void Throw(string str, clang::Rewriter writer, clang::SourceLocation location)
 		{
@@ -70,7 +70,7 @@ namespace Utils {
 				<< "\r\nPress ENTER to exit..." << flush;
 			cin.clear();
 			cin.ignore(STREAMSIZE_MAX, '\n');
-			exit(-1);
+			exit(0);
 		}
 		void Warn(string str)
 		{
@@ -149,11 +149,9 @@ namespace Utils {
 	{
 		uint32_t Joaat(char* key)
 		{
-			unsigned int hash, i;
-			for (hash = i = 0;; i++)
+			uint32_t hash, i;
+			for (hash = i = 0; key[i]; ++i)
 			{
-				if (key[i] == '\0')
-					break;
 				hash += tolower(key[i]);
 				hash += (hash << 10);
 				hash ^= (hash >> 6);
