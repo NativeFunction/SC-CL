@@ -3556,6 +3556,18 @@ public:
 			}
 
 		}
+		else if (isa<ImplicitValueInitExpr>(e))
+		{
+			const ImplicitValueInitExpr *ivie = cast<const ImplicitValueInitExpr>(e);
+			
+			const Type* type = ivie->getType().getTypePtr();
+			uint32_t size = getSizeFromBytes(getSizeOfType(type));
+			InitializationStack.push({ 0, FBWT_ARRAY });
+
+			for (uint32_t i = 0; i < size; i++)
+				DefaultStaticValues.insert({ oldStaticInc++, "0" });
+
+		}
 		else if (isa<InitListExpr>(e))//kill on myself
 		{
 
@@ -3603,8 +3615,7 @@ public:
 				if (isa<BuiltinType>(expr->getType().getTypePtr()))
 				{
 					const BuiltinType *bt = cast<const BuiltinType>(expr->getType().getTypePtr());
-					cout << "BT:" << bt->getKind() << "\tsize:" << getSizeOfType(expr->getType().getTypePtr());
-
+					cout << "BT:" << bt->getKind() << endl;
 					if (init->getType().getTypePtr()->isStructureType())
 						cout << "\tarr size:" << getSizeOfType(init->getType().getTypePtr()->getAsStructureType()->getDecl()->field_begin()->getType().getTypePtr()) << endl;
 					else
@@ -3644,11 +3655,15 @@ public:
 					}
 
 					size = getSizeOfType(type);
+					cout << "size: " << size << endl;
 
 					if (exprtype->isCharType())
 					{
 						if (size == 1)
+						{
 							DefaultStaticValues.insert({ oldStaticInc++, to_string((IS_Pop().bytes % 256) << 24) });
+							size--;
+						}
 						else
 						{
 							cout << "pushing 1\n";
@@ -3658,7 +3673,10 @@ public:
 					else if (exprtype->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || exprtype->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 					{
 						if (size == 2)
+						{
 							DefaultStaticValues.insert({ oldStaticInc++, to_string((IS_Pop().bytes % 65536) << 16) });
+							size -= 2;
+						}
 						else
 						{
 							cout << "pushing 2\n";
@@ -3670,7 +3688,10 @@ public:
 					else if (InitializationStack.top().type != FBWT_INIT_LIST)
 					{
 						if (size == 4)
+						{
 							DefaultStaticValues.insert({ oldStaticInc++, to_string(IS_Pop().bytes) });
+							size -= 4;
+						}
 						else
 						{
 							cout << "pushing 4\n";
@@ -3913,6 +3934,7 @@ private:
 	Rewriter &TheRewriter;
 	ASTContext *context;
 };
+
 
 
 
