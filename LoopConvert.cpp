@@ -43,7 +43,35 @@ struct FData
 	streampos FuncDataPos;
 };
 vector<FData> functions;
+struct InlineData{ uint32_t hash; string name; };
+vector<InlineData> InlineItems;
 
+bool isFunctionInInline(string fName)
+{
+	uint32_t hash = Utils::Hashing::Joaat((char*)fName.c_str());
+	for (InlineData data : InlineItems)
+	{
+		if (data.hash == hash)
+		{
+			if(data.name == fName)
+				return true;
+		}
+	}
+	return false;
+}
+bool addFunctionInline(string fName)
+{
+	if(isFunctionInInline(fName))
+		return false;
+	InlineItems.push_back({ Utils::Hashing::Joaat((char*)fName.c_str()) , fName });
+	return true;
+}
+void removeFunctionInline(string fName)
+{
+	assert(InlineItems.back().name == fName);
+	InlineItems.pop_back();
+
+}
 
 map<const FunctionDecl*, int> localCounts;
 static int globalInc = 0;
@@ -1588,7 +1616,9 @@ public:
 						bool inlined = false;
 						if (const FunctionDecl * cDecl = call->getDirectCallee())
 						{
-							if (cDecl->hasBody())
+							string name = dumpName(cast<NamedDecl>(cDecl));
+							string curName = dumpName(cast<NamedDecl>(currFunction));
+							if (cDecl->hasBody() && !isFunctionInInline(name) && curName != name)
 							{
 								Stmt *body = cDecl->getBody();
 								Stmt *subBody = body;
@@ -1624,6 +1654,10 @@ public:
 									if(!noInline && (isRet || isExpr || inlineSpec)) //inline it
 									{
 										inlined = true;
+										if (!addFunctionInline(name))
+										{
+											assert(false);
+										}
 										LocalVariables.addLevel();
 										int Index = LocalVariables.getCurrentSize();
 										int32_t paramSize = 0;
@@ -1643,6 +1677,8 @@ public:
 										parseStatement(body, -1, -1, callee->getLocEnd().getRawEncoding());
 										out << ":" << callee->getLocEnd().getRawEncoding() << endl;
 										LocalVariables.removeLevel();
+										removeFunctionInline(name);
+									
 									}
 								}
 								
