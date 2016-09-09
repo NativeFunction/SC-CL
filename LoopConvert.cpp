@@ -2509,6 +2509,10 @@ public:
 					out << "FromStack\r\n";
 				}
 				else {
+					if (isLtoRValue)
+					{
+						out << "dup //duplicate value for set\r\n";
+					}
 					parseExpression(bOp->getLHS());
 				}
 
