@@ -797,7 +797,7 @@ public:
 			bool result;
 			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
-				Warn("If condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getLocStart());
+				Warn("If condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				if (result)
 				{
 					LocalVariables.addLevel();
@@ -866,7 +866,7 @@ public:
 			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
 				if (!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
-					Warn("While condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getLocStart());
+					Warn("While condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				if (result)
 				{
 					out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
@@ -966,7 +966,7 @@ public:
 			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
 				if (!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
-					Warn("Do while condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getLocStart());
+					Warn("Do while condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				if (result)
 				{
 					out << "Jump @" << body->getLocStart().getRawEncoding() << endl;
@@ -1082,15 +1082,15 @@ public:
 						{
 							caseLabels.push("[" + to_string(result.Val.getFloat().convertToFloat()) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
 						}
-						else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getExprLoc());
+						else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getSourceRange());
 					}
-					else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getExprLoc());
+					else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getSourceRange());
 
 				}
 				else if (isa<DefaultStmt>(switchCaseList))
 				{
 					if (defaultCase) {
-						Throw("Multiple default statements found in switch", rewriter, switchStmt->getSwitchLoc());
+						Throw("Multiple default statements found in switch", rewriter, defaultCase->getLocStart(), switchCaseList->getLocEnd());
 					}
 					defaultCase = cast<DefaultStmt>(switchCaseList);
 				}
@@ -1132,11 +1132,11 @@ public:
 		}
 		else if (isa<GCCAsmStmt>(s))
 		{
+			GCCAsmStmt *asmstmt = cast<GCCAsmStmt>(s);
 			if (InlineItems.size())
 			{
-				Warn("Using a __asm__ statement in an inlined function may lead to undesireable effects\r\nConsider marking the function as __attribute__((__noinline__))", rewriter, s->getLocStart());
+				Warn("Using a __asm__ statement in an inlined function may lead to undesireable effects\r\nConsider marking the function as __attribute__((__noinline__))", rewriter, asmstmt->getSourceRange());
 			}
-			GCCAsmStmt *asmstmt = cast<GCCAsmStmt>(s);
 			out << asmstmt->getAsmString()->getString().str() << endl;
 		}
 		else
