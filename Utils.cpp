@@ -67,18 +67,115 @@ namespace Utils {
 			int col = ClangUtils::GetColumnFromLocation(writer, location);
 			cout << brightred << "Exception: " << white << str
 				<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, location)
-				<< "\r\nLine: " << ClangUtils::GetLineFromLocation(writer, location)
-				<< "\r\nColumn: " << ClangUtils::GetColumnFromLocation(writer, location)
+				<< "\r\n(Line:Col): (" << ClangUtils::GetLineFromLocation(writer, location) << ":" << col << ")"
 				<< "\r\n----->" << ClangUtils::GetLineStringFromLocation(writer, location)
 				<< endl << "      ";
 			for(int i = 0; i <col; i++)
 			{
 				cout << " ";
 			}
-			cout << brightyellow << "^\r\n" << white << "\r\nPress ENTER to exit..." << flush;
+			cout << brightred << "^\r\n" << white << "\r\nPress ENTER to exit..." << flush;
 			cin.clear();
 			cin.ignore(STREAMSIZE_MAX, '\n');
 			exit(EXIT_FAILURE);
+		}
+		void Throw(string str, clang::Rewriter writer, clang::SourceLocation start, clang::SourceLocation end)
+		{
+			clang::SourceLocation startExp = writer.getSourceMgr().getExpansionLoc(start);
+			clang::SourceLocation endExp = writer.getSourceMgr().getExpansionLoc(end);
+			if(startExp.getRawEncoding() > endExp.getRawEncoding())
+			{
+				clang::SourceLocation temp = startExp;
+				startExp = endExp;
+				endExp = temp;
+			}
+			else if(startExp.getRawEncoding() == endExp.getRawEncoding())
+			{
+				Warn(str, writer, start);//same position, just use default output
+				return;
+			}
+			if(writer.getSourceMgr().getFileID(startExp).getHashValue() != writer.getSourceMgr().getFileID(endExp).getHashValue())//different files(should never happen)
+			{
+				uint32_t col = ClangUtils::GetColumnFromLocation(writer, startExp);
+				cout << brightred << "Exception: " << white << str
+					<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, startExp)
+					<< "\r\n(Line:Col): (" << ClangUtils::GetLineFromLocation(writer, startExp) << ":" << col << ")"
+					<< "\r\n----->" << ClangUtils::GetLineStringFromLocation(writer, startExp)
+					<< endl << "     ";
+				for(uint32_t i = 0; i <col; i++)
+				{
+					cout << " ";
+				}
+				cout << brightred << "^\r\n" << white << "\r\nPress ENTER to exit..." << flush;
+				cin.clear();
+				cin.ignore(STREAMSIZE_MAX, '\n');
+				exit(EXIT_FAILURE);
+			}
+			else
+			{
+				uint32_t lineS = ClangUtils::GetLineFromLocation(writer, startExp);
+				uint32_t lineE = ClangUtils::GetLineFromLocation(writer, endExp);
+				uint32_t colS = ClangUtils::GetColumnFromLocation(writer, startExp);
+				uint32_t colE = ClangUtils::GetColumnFromLocation(writer, endExp);
+				if(lineS == lineE)
+				{
+					cout << brightred << "Exception: " << white << str
+						<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, startExp)
+						<< "\r\n(Line:Col): (" << ClangUtils::GetLineFromLocation(writer, startExp) << ":" << colS << "-" << colE << ")"
+						<< "\r\n----->" << ClangUtils::GetLineStringFromLocation(writer, startExp)
+						<< endl << "     ";
+					for(uint32_t i = 0; i < colS; i++)
+					{
+						cout << " ";
+					}
+					cout << brightred << "^";
+					for(uint32_t i = colS + 1; i < colE; i++)
+					{
+						cout << "-";
+					}
+					cout << "^\r\n" << white << "\r\nPress ENTER to exit..." << flush;
+					cin.clear();
+					cin.ignore(STREAMSIZE_MAX, '\n');
+					exit(EXIT_FAILURE);
+				}
+				else
+				{
+					string linetext = ClangUtils::GetLineStringFromLocation(writer, startExp);
+					cout << brightred << "Exception: " << white << str
+						<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, startExp)
+						<< "\r\n(Line:Col): (" << ClangUtils::GetLineFromLocation(writer, startExp) << ":" << colS << ") - ("
+						<< ClangUtils::GetLineFromLocation(writer, endExp) << " : " << colE << ")"
+						<< "\r\n----->" << linetext
+						<< endl << "     ";
+					for(uint32_t i = 0; i < colS; i++)
+					{
+						cout << " ";
+					}
+					cout << brightred << "^";
+					for(int i = colS; i <linetext.size(); i++)
+					{
+						cout << "-";
+					}
+					if(lineE - lineS > 1)
+					{
+						cout << "\r\n     ...";
+					}
+					cout << white << "\r\n----->" << ClangUtils::GetLineStringFromLocation(writer, endExp) << brightred
+						<< endl << "     ";
+					for(uint32_t i = 0; i < colS; i++)
+					{
+						cout << "-";
+					}
+					cout << "^\r\n" << white << "\r\nPress ENTER to exit..." << flush;
+					cin.clear();
+					cin.ignore(STREAMSIZE_MAX, '\n');
+					exit(EXIT_FAILURE);
+				}
+			}
+		}
+		void Throw(string str, clang::Rewriter writer, clang::SourceRange range)
+		{
+			Throw(str, writer, range.getBegin(), range.getEnd());
 		}
 		void Warn(string str)
 		{
@@ -87,19 +184,107 @@ namespace Utils {
 		void Warn(string str, clang::Rewriter writer, clang::SourceLocation location)
 		{
 			location = writer.getSourceMgr().getExpansionLoc(location);
-			int col = ClangUtils::GetColumnFromLocation(writer, location);
+			uint32_t col = ClangUtils::GetColumnFromLocation(writer, location);
 			cout << brightyellow << "Warning: " << white << str
 				<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, location)
-				<< "\r\nLine: " << ClangUtils::GetLineFromLocation(writer, location)
-				<< "\r\nColumn: " << col
+				<< "\r\n(Line:Col): (" << ClangUtils::GetLineFromLocation(writer, location) << ":" << col << ")"
 				<< "\r\n----->" << ClangUtils::GetLineStringFromLocation(writer, location)
 				<< endl << "     ";
-				for (int i = 0; i <col;i++)
+			for(uint32_t i = 0; i <col; i++)
+			{
+				cout << " ";
+			}
+			cout << brightyellow << "^\r\n\r\n" << white;
+
+		}
+		void Warn(string str, clang::Rewriter writer, clang::SourceLocation start, clang::SourceLocation end)
+		{
+			clang::SourceLocation startExp = writer.getSourceMgr().getExpansionLoc(start);
+			clang::SourceLocation endExp = writer.getSourceMgr().getExpansionLoc(end);
+			if (startExp.getRawEncoding() > endExp.getRawEncoding())
+			{
+				clang::SourceLocation temp = startExp;
+				startExp = endExp;
+				endExp = temp;
+			}
+			else if (startExp.getRawEncoding() == endExp.getRawEncoding())
+			{
+				Warn(str, writer, start);//same position, just use default output
+				return;
+			}
+			if (writer.getSourceMgr().getFileID(startExp).getHashValue() != writer.getSourceMgr().getFileID(endExp).getHashValue())//different files(should never happen)
+			{
+				uint32_t col = ClangUtils::GetColumnFromLocation(writer, startExp);
+				cout << brightyellow << "Warning: " << white << str
+					<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, startExp)
+					<< "\r\n(Line:Col): (" << ClangUtils::GetLineFromLocation(writer, startExp) << ":" << col << ")"
+					<< "\r\n----->" << ClangUtils::GetLineStringFromLocation(writer, startExp)
+					<< endl << "     ";
+				for(uint32_t i = 0; i <col; i++)
 				{
 					cout << " ";
 				}
-				cout << brightyellow << "^\r\n" << white;
-
+				cout << brightyellow << "^\r\n\r\n" << white;
+			}
+			else
+			{
+				uint32_t lineS = ClangUtils::GetLineFromLocation(writer, startExp);
+				uint32_t lineE = ClangUtils::GetLineFromLocation(writer, endExp);
+				uint32_t colS = ClangUtils::GetColumnFromLocation(writer, startExp);
+				uint32_t colE = ClangUtils::GetColumnFromLocation(writer, endExp);
+				if(lineS == lineE)
+				{
+					cout << brightyellow << "Warning: " << white << str
+						<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, startExp)
+						<< "\r\n(Line:Col): (" << ClangUtils::GetLineFromLocation(writer, startExp) << ":" << colS << "-" << colE << ")"
+						<< "\r\n----->" << ClangUtils::GetLineStringFromLocation(writer, startExp)
+						<< endl << "     ";
+					for(uint32_t i = 0; i < colS; i++)
+					{
+						cout << " ";
+					}
+					cout << brightyellow << "^";
+					for(uint32_t i = colS + 1; i < colE; i++)
+					{
+						cout << "-";
+					}
+					cout << "^\r\n\r\n" << white;
+				}
+				else
+				{
+					string linetext = ClangUtils::GetLineStringFromLocation(writer, startExp);
+					cout << brightyellow << "Warning: " << white << str
+						<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, startExp)
+						<< "\r\n(Line:Col): (" << ClangUtils::GetLineFromLocation(writer, startExp) << ":" << colS << ") - (" 
+						<< ClangUtils::GetLineFromLocation(writer, endExp) << " : " << colE << ")"
+						<< "\r\n----->" << linetext
+						<< endl << "     ";
+					for(uint32_t i = 0; i < colS; i++)
+					{
+						cout << " ";
+					}
+					cout << brightyellow << "^";
+					for (int i = colS; i <linetext.size();i++)
+					{
+						cout << "-";
+					}
+					if (lineE - lineS > 1)
+					{
+						cout << "\r\n     ...";
+					}
+					cout << white << "\r\n----->" << ClangUtils::GetLineStringFromLocation(writer, endExp) << brightyellow
+						<< endl << "     ";
+					for(uint32_t i = 0; i < colS; i++)
+					{
+						cout << "-";
+					}
+					cout << "^\r\n\r\n" << white;
+				}
+			}
+		}
+		void Warn(string str, clang::Rewriter writer, clang::SourceRange range)
+		{
+			Warn(str, writer, range.getBegin(), range.getEnd());
 		}
 		void Pause(string str)
 		{

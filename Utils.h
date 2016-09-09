@@ -76,8 +76,12 @@ namespace Utils {
 		void Throw(string str);
 		void Throw(string str, int line, int col);
 		void Throw(string str, clang::Rewriter writer, clang::SourceLocation location);
+		void Throw(string str, clang::Rewriter writer, clang::SourceLocation start, clang::SourceLocation end);
+		void Throw(string str, clang::Rewriter writer, clang::SourceRange range);
 		void Warn(string str);
 		void Warn(string str, clang::Rewriter writer, clang::SourceLocation location);
+		void Warn(string str, clang::Rewriter writer, clang::SourceLocation start, clang::SourceLocation end);
+		void Warn(string str, clang::Rewriter writer, clang::SourceRange range);
 	}
 	namespace Math
 	{
