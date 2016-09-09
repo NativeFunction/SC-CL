@@ -2648,7 +2648,28 @@ public:
 			const GenericSelectionExpr *gse = cast<GenericSelectionExpr>(e);
 			parseExpression(gse->getResultExpr(), isAddr, isLtoRValue);
 		}
+		else if (isa<BinaryConditionalOperator>(e))
+		{
+			const BinaryConditionalOperator *bco = cast<BinaryConditionalOperator>(e);
 
+			//out << "COND:" << endl;
+			parseExpression(bco->getCond(), false, true);
+			out << "JumpFalse @" << bco->getFalseExpr()->getExprLoc().getRawEncoding() << endl;
+
+			//out << "//TRUE: " << endl;
+			parseExpression(bco->getTrueExpr(), false, true);
+			out << "Jump @" << bco->getLocStart().getRawEncoding() << endl;
+
+			//out << "//FALSE: " << endl;
+			out << ":" << bco->getFalseExpr()->getExprLoc().getRawEncoding() << endl;
+			parseExpression(bco->getFalseExpr(), false, true);
+			out << ":" << bco->getLocStart().getRawEncoding() << endl;
+		}
+		else if (isa<OpaqueValueExpr>(e))
+		{
+			const OpaqueValueExpr *ov = cast<OpaqueValueExpr>(e);
+			parseExpression(ov->getSourceExpr(), isAddr, isLtoRValue);
+		}
 		else
 			Throw("Unimplemented expression " + string(e->getStmtClassName()), rewriter, e->getExprLoc());
 
