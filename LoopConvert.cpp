@@ -798,7 +798,7 @@ public:
 			bool result;
 			if(conditional->EvaluateAsBooleanCondition(result, *context))
 			{
-				Warn("If condition always evaluates to " + (result ? string("true") : string("false")), rewriter, s->getLocStart());
+				Warn("If condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getLocStart());
 				if(result)
 				{
 					LocalVariables.addLevel();
@@ -1922,8 +1922,8 @@ public:
 										}
 										else
 										{
-											parseStatement(body, -1, -1, callee->getLocEnd().getRawEncoding());
-											out << ":" << callee->getLocEnd().getRawEncoding() << endl;
+											parseStatement(body, -1, -1, e->getLocEnd().getRawEncoding());
+											out << ":" << e->getLocEnd().getRawEncoding() << endl;
 										}
 										LocalVariables.removeLevel();
 										removeFunctionInline(name);

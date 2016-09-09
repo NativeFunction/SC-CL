@@ -89,6 +89,7 @@ namespace Utils {
 		uint32_t GetLineFromLocation(clang::Rewriter writer, clang::SourceLocation location);
 		uint32_t GetColumnFromLocation(clang::Rewriter writer, clang::SourceLocation location);
 		string GetFileFromLocation(clang::Rewriter writer, clang::SourceLocation location);
+		string GetLineStringFromLocation(clang::Rewriter writer, clang::SourceLocation location);
 	}
 }
 

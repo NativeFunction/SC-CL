@@ -63,11 +63,18 @@ namespace Utils {
 		}
 		void Throw(string str, clang::Rewriter writer, clang::SourceLocation location)
 		{
+			int col = ClangUtils::GetColumnFromLocation(writer, location);
 			cout << brightred << "Exception: " << white << str
 				<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, location)
 				<< "\r\nLine: " << ClangUtils::GetLineFromLocation(writer, location)
 				<< "\r\nColumn: " << ClangUtils::GetColumnFromLocation(writer, location)
-				<< "\r\nPress ENTER to exit..." << flush;
+				<< "\r\n----->" << ClangUtils::GetLineStringFromLocation(writer, location)
+				<< endl << "      ";
+			for(int i = 0; i <col; i++)
+			{
+				cout << " ";
+			}
+			cout << "^\r\n\r\nPress ENTER to exit..." << flush;
 			cin.clear();
 			cin.ignore(STREAMSIZE_MAX, '\n');
 			exit(EXIT_FAILURE);
@@ -78,11 +85,19 @@ namespace Utils {
 		}
 		void Warn(string str, clang::Rewriter writer, clang::SourceLocation location)
 		{
+			int col = ClangUtils::GetColumnFromLocation(writer, location);
 			cout << brightyellow << "Warning: " << white << str
 				<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, location)
 				<< "\r\nLine: " << ClangUtils::GetLineFromLocation(writer, location)
-				<< "\r\nColumn: " << ClangUtils::GetColumnFromLocation(writer, location)
-				<< endl;
+				<< "\r\nColumn: " << col
+				<< "\r\n----->" << ClangUtils::GetLineStringFromLocation(writer, location)
+				<< endl << "      ";
+				for (int i = 0; i <col;i++)
+				{
+					cout << " ";
+				}
+				cout << "^\r\n";
+
 		}
 		void Pause(string str)
 		{
@@ -186,6 +201,16 @@ namespace Utils {
 		string GetFileFromLocation(clang::Rewriter writer, clang::SourceLocation location)
 		{
 			return writer.getSourceMgr().getFilename(location).str();
+		}
+		string GetLineStringFromLocation(clang::Rewriter writer, clang::SourceLocation location)
+		{
+			uint32_t col = GetColumnFromLocation(writer, location);
+			clang::SourceLocation start = location.getLocWithOffset(1-col);
+			const char* lineStart = writer.getSourceMgr().getCharacterData(start);
+			int len = 0;
+			while(lineStart[len] != '\n' && lineStart[len] != '\r' && lineStart[len] != '\0')
+				len++;
+			return string(lineStart, len);
 		}
 
 	}
