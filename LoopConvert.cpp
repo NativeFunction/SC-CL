@@ -42,7 +42,7 @@ struct FData
 	streampos FuncDataPos;
 };
 vector<FData> functions;
-struct InlineData{ uint32_t hash; string name; };
+struct InlineData { uint32_t hash; string name; };
 vector<InlineData> InlineItems;
 
 bool isFunctionInInline(string fName)
@@ -52,7 +52,7 @@ bool isFunctionInInline(string fName)
 	{
 		if (data.hash == hash)
 		{
-			if(data.name == fName)
+			if (data.name == fName)
 				return true;
 		}
 	}
@@ -60,7 +60,7 @@ bool isFunctionInInline(string fName)
 }
 bool addFunctionInline(string fName)
 {
-	if(isFunctionInInline(fName))
+	if (isFunctionInInline(fName))
 		return false;
 	InlineItems.push_back({ Utils::Hashing::Joaat((char*)fName.c_str()) , fName });
 	return true;
@@ -619,77 +619,77 @@ public:
 		if (isa<BinaryOperator>(condition))
 		{
 			BinaryOperator* bCond = cast<BinaryOperator>(condition);
-			if(bCond->getLHS()->getType()->isIntegerType() && bCond->getRHS()->getType()->isIntegerType())
+			if (bCond->getLHS()->getType()->isIntegerType() && bCond->getRHS()->getType()->isIntegerType())
 			{
-				switch(bCond->getOpcode())
+				switch (bCond->getOpcode())
 				{
-				case BO_EQ:
-				case BO_NE:
-				case BO_GT:
-				case BO_GE:
-				case BO_LT:
-				case BO_LE:
+					case BO_EQ:
+					case BO_NE:
+					case BO_GT:
+					case BO_GE:
+					case BO_LT:
+					case BO_LE:
 					parseExpression(bCond->getLHS(), false, true);
 					parseExpression(bCond->getRHS(), false, true);
-					if(invert){
-						switch(bCond->getOpcode())
+					if (invert) {
+						switch (bCond->getOpcode())
 						{
-						case BO_EQ:
+							case BO_EQ:
 							out << "JumpEQ @";
 							return;
-						case BO_NE:
+							case BO_NE:
 							out << "JumpNE @";
 							return;
-						case BO_GT:
+							case BO_GT:
 							out << "JumpGT @";
 							return;
-						case BO_GE:
+							case BO_GE:
 							out << "JumpGE @";
 							return;
-						case BO_LT:
+							case BO_LT:
 							out << "JumpLT @";
 							return;
-						case BO_LE:
+							case BO_LE:
 							out << "JumpLE @";
 							return;
-						default:
+							default:
 							assert(false);//this shouldnt happen
 						}
 					}
 					else
 					{
-						switch(bCond->getOpcode())
+						switch (bCond->getOpcode())
 						{
-						case BO_EQ:
+							case BO_EQ:
 							out << "JumpNE @";
 							return;
-						case BO_NE:
+							case BO_NE:
 							out << "JumpEQ @";
 							return;
-						case BO_GT:
+							case BO_GT:
 							out << "JumpLE @";
 							return;
-						case BO_GE:
+							case BO_GE:
 							out << "JumpLT @";
 							return;
-						case BO_LT:
+							case BO_LT:
 							out << "JumpGE @";
 							return;
-						case BO_LE:
+							case BO_LE:
 							out << "JumpGT @";
 							return;
-						default:
+							default:
 							assert(false);//this shouldnt happen
 						}
 					}
 					break;
-				default:
+					default:
 					break;
 				}
 			}
 		}
 		parseExpression(condition, false, true);
-		if(invert)
+		if (invert)
 		{
 			out << "not //Invert the result\r\n";
 		}
@@ -785,7 +785,7 @@ public:
 			DeclStmt *decl = cast<DeclStmt>(s);
 			handleDecl(decl);
 		}
-		else if(isa<IfStmt>(s)) {
+		else if (isa<IfStmt>(s)) {
 			IfStmt *IfStatement = cast<IfStmt>(s);
 			Expr *conditional = IfStatement->getCond();
 			Stmt *Then = IfStatement->getThen();
@@ -795,15 +795,15 @@ public:
 				to_string(Then->getLocEnd().getRawEncoding());
 
 			bool result;
-			if(conditional->EvaluateAsBooleanCondition(result, *context))
+			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
 				Warn("If condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getLocStart());
-				if(result)
+				if (result)
 				{
 					LocalVariables.addLevel();
 					parseStatement(Then, breakLoc, continueLoc, returnLoc);
 					LocalVariables.removeLevel();
-					if(Else)//still parse the else code just incase there are goto labels in there
+					if (Else)//still parse the else code just incase there are goto labels in there
 					{
 						out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
 						LocalVariables.addLevel();
@@ -819,7 +819,7 @@ public:
 					LocalVariables.addLevel();
 					parseStatement(Then, breakLoc, continueLoc, returnLoc);
 					LocalVariables.removeLevel();
-					if(Else)
+					if (Else)
 					{
 						out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
 						out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
@@ -840,14 +840,14 @@ public:
 
 				out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
 
-				if(Else) {
+				if (Else) {
 					out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
 					LocalVariables.addLevel();
 					parseStatement(Else, breakLoc, continueLoc, returnLoc);
 					LocalVariables.removeLevel();
 					out << "//" << Else->getLocStart().getRawEncoding() << " " << Else->getLocEnd().getRawEncoding() << endl;
 				}
-				if(Then)
+				if (Then)
 				{
 					out << "//" << Then->getLocStart().getRawEncoding() << " " << Then->getLocEnd().getRawEncoding() << endl;
 				}
@@ -863,9 +863,9 @@ public:
 			LocalVariables.addLevel();
 
 			bool result;
-			if(conditional->EvaluateAsBooleanCondition(result, *context))
+			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
-				if(!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
+				if (!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
 					Warn("While condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getLocStart());
 				if (result)
 				{
@@ -887,7 +887,7 @@ public:
 				}
 
 			}
-			else{
+			else {
 
 				out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
 				parseJumpFalseCondition(conditional);
@@ -921,7 +921,7 @@ public:
 			{
 				out << endl << ":" << body->getLocStart().getRawEncoding() << endl;
 			}
-			 
+
 			parseStatement(
 				body,
 				forStmt->getLocEnd().getRawEncoding(),
@@ -963,23 +963,23 @@ public:
 
 			out << endl << ":" << body->getLocEnd().getRawEncoding() << "" << endl;
 			bool result;
-			if(conditional->EvaluateAsBooleanCondition(result, *context))
+			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
-				if(!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
+				if (!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
 					Warn("Do while condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getLocStart());
 				if (result)
 				{
 					out << "Jump @" << body->getLocStart().getRawEncoding() << endl;
 				}
 				//no need for else, just jump right out
-				
+
 			}
 			else
 			{
 				parseJumpFalseCondition(conditional, true);
 				out << body->getLocStart().getRawEncoding() << endl;
 			}
-			
+
 			out << endl << ":" << conditional->getLocEnd().getRawEncoding() << "" << endl;
 			LocalVariables.removeLevel();
 
@@ -1298,22 +1298,22 @@ public:
 			}
 			Throw("pop must have signature \"extern __intrinsic void pop();\"", rewriter, callee->getLocation());
 		}
-		else if(funcName == "popMult")
+		else if (funcName == "popMult")
 		{
 			//	out << call->getExprLoc().
-			if(argCount == 1 && callee->getReturnType()->isVoidType())
+			if (argCount == 1 && callee->getReturnType()->isVoidType())
 			{
 				llvm::APSInt result;
 				if (argArray[0]->getType()->isIntegerType())
 				{
-					if(argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, *context))
 					{
 						int intValue = result.getSExtValue();
 						if (intValue <= 0)
 						{
 							Throw("Argument for popMult(int) must be a positive number", rewriter, argArray[0]->getExprLoc());
 						}
-						for(int i = 0; i < intValue; i++)
+						for (int i = 0; i < intValue; i++)
 							out << "Pop" << endl;
 						return true;;
 					}
@@ -1614,10 +1614,10 @@ public:
 		}
 		else if (funcName == "reinterpretIntToFloat")
 		{
-			if(argCount == 1) {
-				if(call->getCallReturnType(*context)->isRealFloatingType())
+			if (argCount == 1) {
+				if (call->getCallReturnType(*context)->isRealFloatingType())
 				{
-					if(argArray[0]->getType()->isIntegerType())
+					if (argArray[0]->getType()->isIntegerType())
 					{
 						parseExpression(argArray[0], false, true);
 						out << "//reinterpretIntToFloat\r\n";
@@ -1629,10 +1629,10 @@ public:
 		}
 		else if (funcName == "reinterpretFloatToInt")
 		{
-			if(argCount == 1) {
-				if(call->getCallReturnType(*context)->isIntegerType())
+			if (argCount == 1) {
+				if (call->getCallReturnType(*context)->isIntegerType())
 				{
-					if(argArray[0]->getType()->isRealFloatingType())
+					if (argArray[0]->getType()->isRealFloatingType())
 					{
 						parseExpression(argArray[0], false, true);
 						out << "//reinterpretFloatToInt\r\n";
@@ -1644,10 +1644,10 @@ public:
 		}
 		else if (funcName == "pushFloat")
 		{
-			if(argCount == 1) {
-				if(call->getCallReturnType(*context)->isVoidType())
+			if (argCount == 1) {
+				if (call->getCallReturnType(*context)->isVoidType())
 				{
-					if(argArray[0]->getType()->isRealFloatingType())
+					if (argArray[0]->getType()->isRealFloatingType())
 					{
 						parseExpression(argArray[0], false, true);
 						return true;
@@ -1658,10 +1658,10 @@ public:
 		}
 		else if (funcName == "pushInt")
 		{
-			if(argCount == 1) {
-				if(call->getCallReturnType(*context)->isVoidType())
+			if (argCount == 1) {
+				if (call->getCallReturnType(*context)->isVoidType())
 				{
-					if(argArray[0]->getType()->isIntegerType())
+					if (argArray[0]->getType()->isIntegerType())
 					{
 						parseExpression(argArray[0], false, true);
 						return true;
@@ -1672,8 +1672,8 @@ public:
 		}
 		else if (funcName == "dupStackTop")
 		{
-			if(argCount == 0) {
-				if(call->getCallReturnType(*context)->isVoidType())
+			if (argCount == 0) {
+				if (call->getCallReturnType(*context)->isVoidType())
 				{
 					out << "dup //dupStackTop\r\n";
 					return true;
@@ -1850,16 +1850,16 @@ public:
 				std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
 				for (uint32_t i = 0; i < call->getNumArgs(); i++)
 					parseExpression(argArray[i], false, true);
-				if(call->getDirectCallee() && call->getDirectCallee()->hasAttr<NativeFuncAttr>())
+				if (call->getDirectCallee() && call->getDirectCallee()->hasAttr<NativeFuncAttr>())
 				{
-					if(call->getDirectCallee()->getStorageClass() != SC_Extern)
+					if (call->getDirectCallee()->getStorageClass() != SC_Extern)
 					{
 						Throw("Natives should be defined with the 'extern' keyword", rewriter, call->getDirectCallee()->getLocation());
 					}
 					const QualType type = call->getDirectCallee()->getReturnType();
 					out << "CallNative " << (parseCast(cast<const CastExpr>(callee)).c_str() + 1) << " " << call->getNumArgs() << " " << getSizeFromBytes(getSizeOfQualType(&type)) << endl;
 				}
-				else if(call->getDirectCallee() && !call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
+				else if (call->getDirectCallee() && !call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
 					Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", rewriter, call->getExprLoc());
 				else if (isa<PointerType>(callee->getType()) && !call->getDirectCallee())
 				{
@@ -1869,32 +1869,32 @@ public:
 				else
 				{
 					bool inlined = false;
-					if(const FunctionDecl * cDecl = call->getDirectCallee())
+					if (const FunctionDecl * cDecl = call->getDirectCallee())
 					{
 						string name = dumpName(cast<NamedDecl>(cDecl));
 						string curName = dumpName(cast<NamedDecl>(currFunction));
-						if(cDecl->hasBody() && !isFunctionInInline(name) && curName != name)
+						if (cDecl->hasBody() && !isFunctionInInline(name) && curName != name)
 						{
 							Stmt *body = cDecl->getBody();
 							Stmt *subBody = body;
 							bool isEmpty = false;
-							if(isa<CompoundStmt>(body))
+							if (isa<CompoundStmt>(body))
 							{
-								if(cast<CompoundStmt>(body)->size() == 0)
+								if (cast<CompoundStmt>(body)->size() == 0)
 								{
 									isEmpty = true;
 								}
-								else if(cast<CompoundStmt>(body)->size() == 1)
+								else if (cast<CompoundStmt>(body)->size() == 1)
 								{
 									subBody = cast<CompoundStmt>(body)->body_front();
 								}
 							}
-							if(isEmpty)
+							if (isEmpty)
 							{
 								inlined = true;
-								for(uint32_t i = 0; i < cDecl->getNumParams(); i++)
+								for (uint32_t i = 0; i < cDecl->getNumParams(); i++)
 								{
-									for(int32_t paramSize = getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr())); paramSize--;)
+									for (int32_t paramSize = getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr())); paramSize--;)
 									{
 										out << "Drop\r\n";
 									}
@@ -1906,34 +1906,34 @@ public:
 								bool isRet = isa<ReturnStmt>(subBody);
 								bool isExpr = isa<Expr>(subBody);
 								bool inlineSpec = cDecl->isInlineSpecified();
-								if(!noInline && (isRet || isExpr || inlineSpec)) //inline it
+								if (!noInline && (isRet || isExpr || inlineSpec)) //inline it
 								{
 									inlined = true;
-									if(!addFunctionInline(name))
+									if (!addFunctionInline(name))
 									{
 										assert(false);
 									}
 									LocalVariables.addLevel();
 									int Index = LocalVariables.getCurrentSize();
 									int32_t paramSize = 0;
-									for(uint32_t i = 0; i < cDecl->getNumParams(); i++)
+									for (uint32_t i = 0; i < cDecl->getNumParams(); i++)
 									{
 										paramSize += getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr()));
 										handleParmVarDecl((ParmVarDecl*)(cDecl->getParamDecl(i)));
 									}
-									if(paramSize == 1)
+									if (paramSize == 1)
 									{
 										out << frameSet(Index) << endl;
 									}
-									else if(paramSize > 1)
+									else if (paramSize > 1)
 									{
 										out << iPush(paramSize) << endl << pFrame(Index) << "\r\nFromStack\r\n";
 									}
-									if(isRet){
-										if(Expr* retval = cast<ReturnStmt>(subBody)->getRetValue())
+									if (isRet) {
+										if (Expr* retval = cast<ReturnStmt>(subBody)->getRetValue())
 											parseExpression(retval, false, true);
 									}
-									else if(isExpr)
+									else if (isExpr)
 									{
 										parseExpression(cast<Expr>(subBody));
 									}
@@ -1950,21 +1950,21 @@ public:
 
 						}
 					}
-					if(!inlined)
+					if (!inlined)
 					{
 						string name = parseCast(cast<const CastExpr>(callee));
 						uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
 						uint32_t i = 0;
-						for(; i < functions.size(); i++)
-							if(functions[i].hash == hash)
+						for (; i < functions.size(); i++)
+							if (functions[i].hash == hash)
 							{
-								if(functions[i].name == name)
+								if (functions[i].name == name)
 								{
 									functions[i].isused = true;
 									break;
 								}
 							}
-						if(i >= functions.size())
+						if (i >= functions.size())
 							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
 
 						out << "Call " << name << " //NumArgs: " << call->getNumArgs() << " " << endl;
@@ -2362,12 +2362,12 @@ public:
 				}
 				if (!isAddr)
 				{
-					if(isLtoRValue)
+					if (isLtoRValue)
 						out << "pGet" << endl;
 					else
 						out << "pSet" << endl;
 				}
-				
+
 				return true;
 			}
 			else if (op->getOpcode() == UO_Real)
@@ -2983,11 +2983,13 @@ public:
 							break;
 						}
 						Throw("Jenkins Method called with unsupported arg type, please use a StringLiteral argument", rewriter, arg->getLocStart());
+						break;
 					}
 				}
 				Throw("Jenkins Method called without any argument, please use a StringLiteral argument", rewriter, ueTrait->getLocStart());
+				break;
 				default:
-				out << "!!Unsupported UnaryExprOrTypeTrait" << endl;
+					Throw("Unsupported UnaryExprOrTypeTrait Type:" + to_string(ueTrait->getKind()), rewriter, ueTrait->getLocStart());
 				break;
 			}
 		}
@@ -4208,6 +4210,7 @@ public:
 
 					const Expr *initializer = varDecl->getAnyInitializer();
 
+
 					if (initializer) {
 						if (isa<CXXConstructExpr>(initializer)) {
 							//out << "GetStaticP2 " << oldStaticInc << " //" << varDecl->getName().str() << endl;
@@ -4216,6 +4219,9 @@ public:
 
 						ParseLiteral(initializer, false, true);
 						//out << "SetStatic2 " << oldStaticInc << "  //" << varDecl->getName().str() << endl;
+
+						if (oldStaticInc > staticInc)//undefined length arrays
+							staticInc = oldStaticInc;
 
 						uint32_t sizeb4 = 0;
 						if (!InitializationStack.empty())
@@ -4263,6 +4269,10 @@ public:
 						//cout << "!init Name: " << varDecl->getName().str() << '\n';
 						//Pause();
 					}
+
+					if (oldStaticInc > staticInc)
+						Warn("Static Overflow Old:" + to_string(oldStaticInc) + " New:" + to_string(staticInc));
+
 
 				}
 				else
