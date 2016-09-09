@@ -961,6 +961,10 @@ public:
 		}
 		else if (isa<GCCAsmStmt>(s))
 		{
+			if (InlineItems.size())
+			{
+				Warn("Using a __asm__ statement in an inlined function may lead to undesireable effects\r\nConsider marking the function as __attribute__((__noinline__))", rewriter, s->getLocStart());
+			}
 			GCCAsmStmt *asmstmt = cast<GCCAsmStmt>(s);
 			out << asmstmt->getAsmString()->getString().str() << endl;
 		}
