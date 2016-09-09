@@ -441,7 +441,6 @@ public:
 				int actsize = var->isCXXInstanceMember() ?
 					getSizeFromBytes(getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false))
 					: getSizeFromBytes(size);
-				LocalVariables.addDecl(var->getName().str(), actsize);
 
 				const Expr *initializer = var->getAnyInitializer();
 
@@ -457,6 +456,7 @@ public:
 						out << frameSet(curIndex) << "  //" << var->getName().str() << endl;
 					}
 				}
+				LocalVariables.addDecl(var->getName().str(), actsize);
 			}
 		}
 		return true;
@@ -1016,7 +1016,6 @@ public:
 						if (isa<ConstantArrayType>(arr)) {
 							const ConstantArrayType *cArrType = cast<const ConstantArrayType>(arr);
 							size = getSizeOfCXXDecl(arr->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl(), true, false) * cArrType->getSize().getSExtValue();
-							LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
 						}
 						else {
 							Throw("Unsupported decl of " + string(var->getDeclKindName()), rewriter, var->getLocStart());
@@ -1025,11 +1024,6 @@ public:
 					}
 					else if (var->getType()->getAsCXXRecordDecl()) {
 						size = getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false);
-						LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
-					}
-					else
-					{
-						LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
 					}
 
 					const Expr *initializer = var->getAnyInitializer();
@@ -1073,7 +1067,7 @@ public:
 							out << frameSet(curIndex) << "  //" << var->getName().str() << endl;
 						}
 					}
-
+					LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
 				}
 
 
@@ -1332,7 +1326,7 @@ public:
 			if (argCount == 1) {
 				if (call->getCallReturnType(*context)->isIntegerType())
 				{
-					parseExpression(argArray[0]);
+					parseExpression(argArray[0], false, true);
 					if (argArray[0]->getType()->isComplexType())
 					{
 						out << "drop //drop the Imag Part\r\n";
@@ -1340,7 +1334,7 @@ public:
 					}
 				}
 			}
-			Throw("creal must have signature \"extern __intrinsic int creal(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("creal must have signature \"extern __intrinsic int creal(int _Complex complexInteger);\"", rewriter, callee->getLocation());
 		}
 		else if (funcName == "@cimag")
 		{
@@ -1349,7 +1343,7 @@ public:
 				{
 					if (argArray[0]->getType()->isComplexIntegerType())
 					{
-						parseExpression(argArray[0]);
+						parseExpression(argArray[0], false, true);
 						LocalVariables.addLevel();
 						int index = LocalVariables.addDecl("imag_part", 1);
 						out << frameSet(index) << " //Store Imag Part\r\ndrop\r\n" << frameGet(index) << " //Retrieve Imag Part\r\n";
@@ -1358,14 +1352,14 @@ public:
 					}
 				}
 			}
-			Throw("cimag must have signature \"extern __intrinsic int cimag(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("cimag must have signature \"extern __intrinsic int cimag(int _Complex complexInteger);\"", rewriter, callee->getLocation());
 		}
 		else if (funcName == "@crealf")
 		{
 			if (argCount == 1) {
 				if (call->getCallReturnType(*context)->isRealFloatingType())
 				{
-					parseExpression(argArray[0]);
+					parseExpression(argArray[0], false, true);
 					if (argArray[0]->getType()->isComplexType())
 					{
 						out << "drop //drop the Imag Part\r\n";
@@ -1373,7 +1367,7 @@ public:
 					}
 				}
 			}
-			Throw("crealf must have signature \"extern __intrinsic float crealf(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("crealf must have signature \"extern __intrinsic float crealf(float _Complex complexFloat);\"", rewriter, callee->getLocation());
 		}
 		else if (funcName == "@cimagf")
 		{
@@ -1382,7 +1376,7 @@ public:
 				{
 					if (argArray[0]->getType()->isComplexType())
 					{
-						parseExpression(argArray[0]);
+						parseExpression(argArray[0], false, true);
 						LocalVariables.addLevel();
 						int index = LocalVariables.addDecl("imag_part", 1);
 						out << frameSet(index) << " //Store Imag Part\r\ndrop\r\n" << frameGet(index) << " //Retrieve Imag Part\r\n";
@@ -1391,7 +1385,7 @@ public:
 					}
 				}
 			}
-			Throw("cimagf must have signature \"extern __intrinsic float cimagf(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("cimagf must have signature \"extern __intrinsic float cimagf(float _Complex complexFloat);\"", rewriter, callee->getLocation());
 		}
 		else if (funcName == "@cconj")
 		{
@@ -1400,13 +1394,13 @@ public:
 				{
 					if (argArray[0]->getType()->isComplexIntegerType())
 					{
-						parseExpression(argArray[0]);
+						parseExpression(argArray[0], false, true);
 						out << "Neg //Negate the Imag Part\r\n";
 						return true;
 					}
 				}
 			}
-			Throw("cconj must have signature \"extern __intrinsic int _Complex cconj(int _Complex complexInteger);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("cconj must have signature \"extern __intrinsic int _Complex cconj(int _Complex complexInteger);\"", rewriter, callee->getLocation());
 		}
 		else if (funcName == "@cconjf")
 		{
@@ -1415,15 +1409,84 @@ public:
 				{
 					if (argArray[0]->getType()->isComplexType())
 					{
-						parseExpression(argArray[0]);
+						parseExpression(argArray[0], false, true);
 						out << "Neg //Negate the Imag Part\r\n";
 						return true;
 					}
 				}
 			}
-			Throw("cconjf must have signature \"extern __intrinsic float _Complex cconj(float _Complex complexFloat);\"", rewriter, call->getCalleeDecl()->getLocation());
+			Throw("cconjf must have signature \"extern __intrinsic float _Complex cconj(float _Complex complexFloat);\"", rewriter, callee->getLocation());
 		}
-		Warn("No intrinsic function found named " + funcName);
+		else if (funcName == "@reinterpretIntToFloat")
+		{
+			if(argCount == 1) {
+				if(call->getCallReturnType(*context)->isRealFloatingType())
+				{
+					if(argArray[0]->getType()->isIntegerType())
+					{
+						parseExpression(argArray[0], false, true);
+						out << "//reinterpretIntToFloat\r\n";
+						return true;
+					}
+				}
+			}
+			Throw("reinterpretIntToFloat must have signature \"extern __intrinsic float reinterpretIntToFloat(int intValue);\"", rewriter, callee->getLocation());
+		}
+		else if (funcName == "@reinterpretFloatToInt")
+		{
+			if(argCount == 1) {
+				if(call->getCallReturnType(*context)->isIntegerType())
+				{
+					if(argArray[0]->getType()->isRealFloatingType())
+					{
+						parseExpression(argArray[0], false, true);
+						out << "//reinterpretFloatToInt\r\n";
+						return true;
+					}
+				}
+			}
+			Throw("reinterpretFloatToInt must have signature \"extern __intrinsic int reinterpretFloatToInt(float floatValue);\"", rewriter, callee->getLocation());
+		}
+		else if (funcName == "@pushFloat")
+		{
+			if(argCount == 1) {
+				if(call->getCallReturnType(*context)->isVoidType())
+				{
+					if(argArray[0]->getType()->isRealFloatingType())
+					{
+						parseExpression(argArray[0], false, true);
+						return true;
+					}
+				}
+			}
+			Throw("pushFloat must have signature \"extern __intrinsic void pushFloat(float floatValue);\"", rewriter, callee->getLocation());
+		}
+		else if(funcName == "@pushInt")
+		{
+			if(argCount == 1) {
+				if(call->getCallReturnType(*context)->isVoidType())
+				{
+					if(argArray[0]->getType()->isIntegerType())
+					{
+						parseExpression(argArray[0], false, true);
+						return true;
+					}
+				}
+			}
+			Throw("pushInt must have signature \"extern __intrinsic void pushInt(int intValue);\"", rewriter, callee->getLocation());
+		}
+		else if(funcName == "@dupStackTop")
+		{
+			if(argCount == 0) {
+				if(call->getCallReturnType(*context)->isVoidType())
+				{
+					out << "dup //dupStackTop\r\n";
+					return true;
+				}
+			}
+			Throw("dupStackTop must have signature \"extern __intrinsic void dupStackTop();\"", rewriter, callee->getLocation());
+		}
+		Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
 		return false;
 	}
 
@@ -1674,8 +1737,19 @@ public:
 										{
 											out << iPush(paramSize) << endl << pFrame(Index) << "\r\nFromStack\r\n";
 										}
-										parseStatement(body, -1, -1, callee->getLocEnd().getRawEncoding());
-										out << ":" << callee->getLocEnd().getRawEncoding() << endl;
+										if(isRet){
+											if(Expr* retval = cast<ReturnStmt>(subBody)->getRetValue())
+												parseExpression(retval, false, true);
+										}
+										else if (isExpr)
+										{
+											parseExpression(cast<Expr>(subBody));
+										}
+										else
+										{
+											parseStatement(body, -1, -1, callee->getLocEnd().getRawEncoding());
+											out << ":" << callee->getLocEnd().getRawEncoding() << endl;
+										}
 										LocalVariables.removeLevel();
 										removeFunctionInline(name);
 									
