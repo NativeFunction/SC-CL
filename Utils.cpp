@@ -74,7 +74,7 @@ namespace Utils {
 			{
 				cout << " ";
 			}
-			cout << "^\r\n\r\nPress ENTER to exit..." << flush;
+			cout << brightyellow << "^\r\n" << white << "\r\nPress ENTER to exit..." << flush;
 			cin.clear();
 			cin.ignore(STREAMSIZE_MAX, '\n');
 			exit(EXIT_FAILURE);
@@ -91,12 +91,12 @@ namespace Utils {
 				<< "\r\nLine: " << ClangUtils::GetLineFromLocation(writer, location)
 				<< "\r\nColumn: " << col
 				<< "\r\n----->" << ClangUtils::GetLineStringFromLocation(writer, location)
-				<< endl << "      ";
+				<< endl << "     ";
 				for (int i = 0; i <col;i++)
 				{
 					cout << " ";
 				}
-				cout << "^\r\n";
+				cout << brightyellow << "^\r\n" << white;
 
 		}
 		void Pause(string str)
@@ -210,7 +210,9 @@ namespace Utils {
 			int len = 0;
 			while(lineStart[len] != '\n' && lineStart[len] != '\r' && lineStart[len] != '\0')
 				len++;
-			return string(lineStart, len);
+			string line(lineStart, len);
+			replace(line.begin(), line.end(), '\t', ' ');//replace tabs with spaces so ^ aligns nicely on the console
+			return line;
 		}
 
 	}

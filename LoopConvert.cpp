@@ -21,7 +21,6 @@
 
 #undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
 #define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4)
-#define IsIntrin(directCallee)(directCallee != NULL && directCallee->hasAttr<IntrinsicFuncAttr>() && directCallee->getStorageClass() == SC_Extern)
 using namespace Utils;
 using namespace Utils::System;
 using namespace Utils::DataConversion;
@@ -867,7 +866,7 @@ public:
 			if(conditional->EvaluateAsBooleanCondition(result, *context))
 			{
 				if(!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
-					Warn("While condition always evaluates to " + (result ? string("true") : string("false")), rewriter, whileStmt->getLocStart());
+					Warn("While condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getLocStart());
 				if (result)
 				{
 					out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
@@ -1253,15 +1252,19 @@ public:
 
 	bool checkIntrinsic(const CallExpr *call) {
 		const FunctionDecl* callee = call->getDirectCallee();
-		if (!IsIntrin(callee))
+		if (callee == NULL || !callee->hasAttr<IntrinsicFuncAttr>())
 		{
 			return false;
 		}
-		std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
+		if (callee->getStorageClass() != SC_Extern)
+		{
+			Throw("Intrinsic functions must be declared with the 'extern' keyword", rewriter, callee->getLocation());
+		}
+		string funcName = dumpName(cast<NamedDecl>(callee));
 
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
-		if (funcName == "@strcpy" || funcName == "@stradd" || funcName == "@straddi" || funcName == "@itos") {
+		if (funcName == "strcpy" || funcName == "stradd" || funcName == "straddi" || funcName == "itos") {
 			if (argCount != 3)
 				out << "!!Invalid " << funcName << " parameters!" << endl;
 			else
@@ -1269,7 +1272,7 @@ public:
 				parseExpression(argArray[1]);
 				parseExpression(argArray[0]);
 
-				out << (funcName == "@strcpy" ? "strcopy" : funcName.substr(1)) << " ";
+				out << (funcName == "strcpy" ? "strcopy" : funcName) << " ";
 				if (isa<IntegerLiteral>(argArray[2])) {
 					const IntegerLiteral *literal = cast<const IntegerLiteral>(argArray[2]);
 					out << literal->getValue().getSExtValue() << endl;
@@ -1285,7 +1288,7 @@ public:
 			}
 			return true;
 		}
-		else if (funcName == "@pop")
+		else if (funcName == "pop")
 		{
 			//	out << call->getExprLoc().
 			if (argCount == 1)
@@ -1298,13 +1301,13 @@ public:
 						out << "Pop" << endl;
 				}
 				else
-					out << "!!Invalid " << funcName.substr(1) << " Parameters!";
+					out << "!!Invalid " << funcName << " Parameters!";
 			}
 			else
 				out << "Pop" << endl;
 			return true;
 		}
-		else if (funcName == "@pcall")
+		else if (funcName == "pcall")
 		{
 			if (argCount < 1)
 				out << "!!Invalid PCall Parameters" << endl;
@@ -1320,7 +1323,7 @@ public:
 
 			return true;
 		}
-		else if (funcName == "@add" || funcName == "@sub" || funcName == "@mult" || funcName == "@div")
+		else if (funcName == "add" || funcName == "sub" || funcName == "mult" || funcName == "div")
 		{
 			if (argCount == 1)
 			{
@@ -1330,40 +1333,40 @@ public:
 					const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
 					long longVal = intVal->getValue().getSExtValue();
 
-					if (funcName == "@add" || funcName == "@mult")
+					if (funcName == "add" || funcName == "mult")
 					{
-						out << funcName.substr(1);
+						out << funcName;
 						out << ((longVal & 0xFF) == longVal ? "1 " : "2 ");
 						out << longVal;
 					}
-					else if (funcName == "@sub" || funcName == "@div")
+					else if (funcName == "sub" || funcName == "div")
 					{
 						out << "Push " << longVal << endl;
-						out << funcName.substr(1);
+						out << funcName;
 					}
 				}
 				else if (isa<Expr>(argArray[0]))
 				{
 					parseExpression(argArray[0]);
-					out << funcName.substr(1);
+					out << funcName;
 				}
 				else
 				{
-					out << "!!Invalid " << funcName.substr(1) << " Parameters!" << endl;
+					out << "!!Invalid " << funcName << " Parameters!" << endl;
 					return true;
 				}
 			}
 			out << endl;
 			return true;
 		}
-		else if (funcName == "@getframe" || funcName == "@getframep" || funcName == "@setframe")
+		else if (funcName == "getframe" || funcName == "getframep" || funcName == "setframe")
 		{
 			if (argCount == 1)
 			{
 
 				if (isa<IntegerLiteral>(argArray[0]))
 				{
-					out << funcName.substr(1);
+					out << funcName;
 					const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
 					long intValue = intVal->getValue().getSExtValue();
 					out << ((intValue & 0xFF) == intValue ? "1 " : "2 ");
@@ -1384,7 +1387,7 @@ public:
 							int index;
 							if (LocalVariables.find(name, &index))
 							{
-								out << funcName.substr(1);
+								out << funcName;
 								out << ((index & 0xFF) == index ? "1 " : "2 ");
 								out << index << " //" << name << endl;
 							}
@@ -1392,23 +1395,23 @@ public:
 								Throw("Could not find variable " + name + ".", rewriter, argArray[0]->getExprLoc());
 						}
 						else
-							Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, argArray[0]->getExprLoc());
+							Throw("Invalid " + funcName + " Parameters.", rewriter, argArray[0]->getExprLoc());
 					}
 					else
-						Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, argArray[0]->getExprLoc());
+						Throw("Invalid " + funcName + " Parameters.", rewriter, argArray[0]->getExprLoc());
 				}
 				else
-					Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, argArray[0]->getExprLoc());
+					Throw("Invalid " + funcName + " Parameters.", rewriter, argArray[0]->getExprLoc());
 			}
 			else
 			{
-				Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, argArray[0]->getExprLoc());
+				Throw("Invalid " + funcName + " Parameters.", rewriter, argArray[0]->getExprLoc());
 			}
 			return true;
 		}
-		else if (funcName == "@getglobal" || funcName == "@getglobalp" || funcName == "@setglobal")
+		else if (funcName == "getglobal" || funcName == "getglobalp" || funcName == "setglobal")
 		{
-			if (funcName == "@getglobal" || funcName == "@getglobalp")
+			if (funcName == "getglobal" || funcName == "getglobalp")
 			{
 				if (argCount == 1)
 				{
@@ -1417,17 +1420,17 @@ public:
 						const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
 						int intValue = intVal->getValue().getSExtValue();
 
-						out << funcName.substr(1);
-						out << ((intValue & 0xFF) == intValue ? "2 " : "3 ");
+						out << funcName;
+						out << ((intValue & 0xFFFF) == intValue ? "2 " : "3 ");
 						out << intValue << endl;
 					}
 					else
 						Throw("Expected Integer Literal.", rewriter, argArray[0]->getExprLoc());
 				}
 				else
-					Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, call->getExprLoc());
+					Throw("Invalid " + funcName + " Parameters.", rewriter, call->getExprLoc());
 			}
-			else if (funcName == "@setglobal")
+			else if (funcName == "setglobal")
 			{
 				if (argCount == 2)
 				{
@@ -1459,19 +1462,19 @@ public:
 						Throw("Expected Integer Literal.", rewriter, argArray[0]->getExprLoc());
 				}
 				else
-					Throw("Invalid " + funcName.substr(1) + " Parameters.", rewriter, call->getExprLoc());
+					Throw("Invalid " + funcName + " Parameters.", rewriter, call->getExprLoc());
 			}
 			return true;
 		}
-		else if (funcName == "@stacktop")
+		else if (funcName == "stacktop")
 		{
 			if (argCount != 0)
 			{
-				Throw(funcName.substr(1) + " must be called with no parameters");
+				Throw(funcName + " must be called with no parameters");
 			}
 			return true;
 		}
-		else if (funcName == "@memcpy")
+		else if (funcName == "memcpy")
 		{
 
 			if (argCount == 3)
@@ -1496,7 +1499,7 @@ public:
 				Throw("Invalid " + funcName + " parameters!", rewriter, call->getExprLoc());
 			return true;
 		}
-		else if (funcName == "@creal")
+		else if (funcName == "creal")
 		{
 			if (argCount == 1) {
 				if (call->getCallReturnType(*context)->isIntegerType())
@@ -1511,7 +1514,7 @@ public:
 			}
 			Throw("creal must have signature \"extern __intrinsic int creal(int _Complex complexInteger);\"", rewriter, callee->getLocation());
 		}
-		else if (funcName == "@cimag")
+		else if (funcName == "cimag")
 		{
 			if (argCount == 1) {
 				if (call->getCallReturnType(*context)->isIntegerType())
@@ -1529,7 +1532,7 @@ public:
 			}
 			Throw("cimag must have signature \"extern __intrinsic int cimag(int _Complex complexInteger);\"", rewriter, callee->getLocation());
 		}
-		else if (funcName == "@crealf")
+		else if (funcName == "crealf")
 		{
 			if (argCount == 1) {
 				if (call->getCallReturnType(*context)->isRealFloatingType())
@@ -1544,7 +1547,7 @@ public:
 			}
 			Throw("crealf must have signature \"extern __intrinsic float crealf(float _Complex complexFloat);\"", rewriter, callee->getLocation());
 		}
-		else if (funcName == "@cimagf")
+		else if (funcName == "cimagf")
 		{
 			if (argCount == 1) {
 				if (call->getCallReturnType(*context)->isRealFloatingType())
@@ -1562,7 +1565,7 @@ public:
 			}
 			Throw("cimagf must have signature \"extern __intrinsic float cimagf(float _Complex complexFloat);\"", rewriter, callee->getLocation());
 		}
-		else if (funcName == "@cconj")
+		else if (funcName == "cconj")
 		{
 			if (argCount == 1) {
 				if (call->getCallReturnType(*context)->isComplexIntegerType())
@@ -1577,7 +1580,7 @@ public:
 			}
 			Throw("cconj must have signature \"extern __intrinsic int _Complex cconj(int _Complex complexInteger);\"", rewriter, callee->getLocation());
 		}
-		else if (funcName == "@cconjf")
+		else if (funcName == "cconjf")
 		{
 			if (argCount == 1) {
 				if (call->getCallReturnType(*context)->isComplexType())
@@ -1592,7 +1595,7 @@ public:
 			}
 			Throw("cconjf must have signature \"extern __intrinsic float _Complex cconj(float _Complex complexFloat);\"", rewriter, callee->getLocation());
 		}
-		else if (funcName == "@reinterpretIntToFloat")
+		else if (funcName == "reinterpretIntToFloat")
 		{
 			if(argCount == 1) {
 				if(call->getCallReturnType(*context)->isRealFloatingType())
@@ -1607,7 +1610,7 @@ public:
 			}
 			Throw("reinterpretIntToFloat must have signature \"extern __intrinsic float reinterpretIntToFloat(int intValue);\"", rewriter, callee->getLocation());
 		}
-		else if (funcName == "@reinterpretFloatToInt")
+		else if (funcName == "reinterpretFloatToInt")
 		{
 			if(argCount == 1) {
 				if(call->getCallReturnType(*context)->isIntegerType())
@@ -1622,7 +1625,7 @@ public:
 			}
 			Throw("reinterpretFloatToInt must have signature \"extern __intrinsic int reinterpretFloatToInt(float floatValue);\"", rewriter, callee->getLocation());
 		}
-		else if (funcName == "@pushFloat")
+		else if (funcName == "pushFloat")
 		{
 			if(argCount == 1) {
 				if(call->getCallReturnType(*context)->isVoidType())
@@ -1636,7 +1639,7 @@ public:
 			}
 			Throw("pushFloat must have signature \"extern __intrinsic void pushFloat(float floatValue);\"", rewriter, callee->getLocation());
 		}
-		else if(funcName == "@pushInt")
+		else if (funcName == "pushInt")
 		{
 			if(argCount == 1) {
 				if(call->getCallReturnType(*context)->isVoidType())
@@ -1650,7 +1653,7 @@ public:
 			}
 			Throw("pushInt must have signature \"extern __intrinsic void pushInt(int intValue);\"", rewriter, callee->getLocation());
 		}
-		else if(funcName == "@dupStackTop")
+		else if (funcName == "dupStackTop")
 		{
 			if(argCount == 0) {
 				if(call->getCallReturnType(*context)->isVoidType())
@@ -1828,131 +1831,128 @@ public:
 			{
 				const Expr * const*argArray = call->getArgs();
 				std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
-				if (call->getDirectCallee() && !call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
-					Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", rewriter, call->getExprLoc());
-
 				for (uint32_t i = 0; i < call->getNumArgs(); i++)
 					parseExpression(argArray[i], false, true);
-				if (isa<PointerType>(callee->getType()) && !call->getDirectCallee())
+				if(call->getDirectCallee() && call->getDirectCallee()->hasAttr<NativeFuncAttr>())
+				{
+					if(call->getDirectCallee()->getStorageClass() != SC_Extern)
+					{
+						Throw("Natives should be defined with the 'extern' keyword", rewriter, call->getDirectCallee()->getLocation());
+					}
+					const QualType type = call->getDirectCallee()->getReturnType();
+					out << "CallNative " << (parseCast(cast<const CastExpr>(callee)).c_str() + 1) << " " << call->getNumArgs() << " " << getSizeFromBytes(getSizeOfQualType(&type)) << endl;
+				}
+				else if(call->getDirectCallee() && !call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
+					Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", rewriter, call->getExprLoc());
+				else if (isa<PointerType>(callee->getType()) && !call->getDirectCallee())
 				{
 					parseExpression(call->getCallee());
 					out << "PCall\r\n";
 				}
 				else
 				{
-					if (call->getDirectCallee()->hasAttr<NativeFuncAttr>())
+					bool inlined = false;
+					if(const FunctionDecl * cDecl = call->getDirectCallee())
 					{
-						const QualType type = call->getDirectCallee()->getReturnType();
-						out << "CallNative " << (parseCast(cast<const CastExpr>(callee)).c_str() + 1) << " " << call->getNumArgs() << " " << getSizeFromBytes(getSizeOfQualType(&type)) << endl;
-						if (call->getDirectCallee()->getStorageClass() != SC_Extern)
+						string name = dumpName(cast<NamedDecl>(cDecl));
+						string curName = dumpName(cast<NamedDecl>(currFunction));
+						if(cDecl->hasBody() && !isFunctionInInline(name) && curName != name)
 						{
-							Warn("Natives should be defined with the 'extern' keyword");
-						}
-					}
-					else
-					{
-						bool inlined = false;
-						if (const FunctionDecl * cDecl = call->getDirectCallee())
-						{
-							string name = dumpName(cast<NamedDecl>(cDecl));
-							string curName = dumpName(cast<NamedDecl>(currFunction));
-							if (cDecl->hasBody() && !isFunctionInInline(name) && curName != name)
+							Stmt *body = cDecl->getBody();
+							Stmt *subBody = body;
+							bool isEmpty = false;
+							if(isa<CompoundStmt>(body))
 							{
-								Stmt *body = cDecl->getBody();
-								Stmt *subBody = body;
-								bool isEmpty = false;
-								if (isa<CompoundStmt>(body))
+								if(cast<CompoundStmt>(body)->size() == 0)
 								{
-									if(cast<CompoundStmt>(body)->size() == 0)
+									isEmpty = true;
+								}
+								else if(cast<CompoundStmt>(body)->size() == 1)
+								{
+									subBody = cast<CompoundStmt>(body)->body_front();
+								}
+							}
+							if(isEmpty)
+							{
+								inlined = true;
+								for(uint32_t i = 0; i < cDecl->getNumParams(); i++)
+								{
+									for(int32_t paramSize = getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr())); paramSize--;)
 									{
-										isEmpty = true;
-									}
-									else if (cast<CompoundStmt>(body)->size() == 1)
-									{
-										subBody = cast<CompoundStmt>(body)->body_front();
+										out << "Drop\r\n";
 									}
 								}
-								if (isEmpty)
+							}
+							else
+							{
+								bool noInline = cDecl->hasAttr<NoInlineAttr>();
+								bool isRet = isa<ReturnStmt>(subBody);
+								bool isExpr = isa<Expr>(subBody);
+								bool inlineSpec = cDecl->isInlineSpecified();
+								if(!noInline && (isRet || isExpr || inlineSpec)) //inline it
 								{
 									inlined = true;
+									if(!addFunctionInline(name))
+									{
+										assert(false);
+									}
+									LocalVariables.addLevel();
+									int Index = LocalVariables.getCurrentSize();
+									int32_t paramSize = 0;
 									for(uint32_t i = 0; i < cDecl->getNumParams(); i++)
 									{
-										for (int32_t paramSize = getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr())); paramSize--;)
-										{
-											out << "Drop\r\n";
-										}
+										paramSize += getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr()));
+										handleParmVarDecl((ParmVarDecl*)(cDecl->getParamDecl(i)));
 									}
-								}
-								else
-								{
-									bool noInline = cDecl->hasAttr<NoInlineAttr>();
-									bool isRet = isa<ReturnStmt>(subBody);
-									bool isExpr = isa<Expr>(subBody);
-									bool inlineSpec = cDecl->isInlineSpecified();
-									if(!noInline && (isRet || isExpr || inlineSpec)) //inline it
+									if(paramSize == 1)
 									{
-										inlined = true;
-										if (!addFunctionInline(name))
-										{
-											assert(false);
-										}
-										LocalVariables.addLevel();
-										int Index = LocalVariables.getCurrentSize();
-										int32_t paramSize = 0;
-										for(uint32_t i = 0; i < cDecl->getNumParams(); i++)
-										{
-											paramSize += getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr()));
-											handleParmVarDecl((ParmVarDecl*)(cDecl->getParamDecl(i)));
-										}
-										if(paramSize == 1)
-										{
-											out << frameSet(Index) << endl;
-										}
-										else if(paramSize > 1)
-										{
-											out << iPush(paramSize) << endl << pFrame(Index) << "\r\nFromStack\r\n";
-										}
-										if(isRet){
-											if(Expr* retval = cast<ReturnStmt>(subBody)->getRetValue())
-												parseExpression(retval, false, true);
-										}
-										else if (isExpr)
-										{
-											parseExpression(cast<Expr>(subBody));
-										}
-										else
-										{
-											parseStatement(body, -1, -1, e->getLocEnd().getRawEncoding());
-											out << ":" << e->getLocEnd().getRawEncoding() << endl;
-										}
-										LocalVariables.removeLevel();
-										removeFunctionInline(name);
-									
+										out << frameSet(Index) << endl;
 									}
-								}
-								
-							}
-						}
-						if (!inlined)
-						{
-							string name = parseCast(cast<const CastExpr>(callee));
-							uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
-							uint32_t i = 0;
-							for(; i < functions.size(); i++)
-								if(functions[i].hash == hash)
-								{
-									if(functions[i].name == name)
+									else if(paramSize > 1)
 									{
-										functions[i].isused = true;
-										break;
+										out << iPush(paramSize) << endl << pFrame(Index) << "\r\nFromStack\r\n";
 									}
-								}
-							if(i >= functions.size())
-								Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
+									if(isRet){
+										if(Expr* retval = cast<ReturnStmt>(subBody)->getRetValue())
+											parseExpression(retval, false, true);
+									}
+									else if(isExpr)
+									{
+										parseExpression(cast<Expr>(subBody));
+									}
+									else
+									{
+										parseStatement(body, -1, -1, e->getLocEnd().getRawEncoding());
+										out << ":" << e->getLocEnd().getRawEncoding() << endl;
+									}
+									LocalVariables.removeLevel();
+									removeFunctionInline(name);
 
-							out << "Call " << name << " //NumArgs: " << call->getNumArgs() << " " << endl;
+								}
+							}
+
 						}
 					}
+					if(!inlined)
+					{
+						string name = parseCast(cast<const CastExpr>(callee));
+						uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
+						uint32_t i = 0;
+						for(; i < functions.size(); i++)
+							if(functions[i].hash == hash)
+							{
+								if(functions[i].name == name)
+								{
+									functions[i].isused = true;
+									break;
+								}
+							}
+						if(i >= functions.size())
+							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
+
+						out << "Call " << name << " //NumArgs: " << call->getNumArgs() << " " << endl;
+					}
+
 				}
 
 				if (call->getType()->isVoidType() == false) {
@@ -2965,9 +2965,10 @@ public:
 							out << iPush((int)Utils::Hashing::Joaat((char*)str.c_str())) << " //Joaat(\"" << str << "\")\r\n";
 							break;
 						}
+						Throw("Jenkins Method called with unsupported arg type, please use a StringLiteral argument", rewriter, arg->getLocStart());
 					}
 				}
-				Throw("Jenkins Method called with unsupported arg type, please use StringLiterals only", rewriter, ueTrait->getLocStart());
+				Throw("Jenkins Method called without any argument, please use a StringLiteral argument", rewriter, ueTrait->getLocStart());
 				default:
 				out << "!!Unsupported UnaryExprOrTypeTrait" << endl;
 				break;
@@ -3559,7 +3560,7 @@ public:
 					Throw("Static initialization of a char* is forbidden", rewriter, icast->getSubExpr()->getExprLoc());
 				}
 				else
-					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()));
+					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getExprLoc());
 				break;
 
 				case CK_IntegralCast://int x = 5.0;
@@ -3756,13 +3757,13 @@ public:
 			//
 			//string key = declref->getNameInfo().getAsString();
 			//printDeclWithKey(key, isAddr, isLtoRValue, getSizeFromBytes(getSizeOfType(declref->getType().getTypePtr())));
-			Throw("DeclRefExpr");
+			Throw("DeclRefExpr", rewriter, e->getExprLoc());
 			//int k;
 			//int x = &k;
 			return true;
 		}
 		else if (isa<ArraySubscriptExpr>(e)) {
-			Throw("parseArraySubscriptExpr");
+			Throw("parseArraySubscriptExpr", rewriter, e->getExprLoc());
 			//return parseArraySubscriptExpr(e, isAddr, isLtoRValue);
 		}
 		else if (isa<ParenExpr>(e)) {
@@ -3787,7 +3788,7 @@ public:
 						fltliteral = (float)literal->getValue().convertToDouble();
 					InitializationStack.push({ FloatToInt(-1.0f*fltliteral), FBWT_FLOAT });
 				}
-				else Throw("UO_Minus not caught");
+				else Throw("UO_Minus not caught", rewriter, op->getOperatorLoc());
 				return false;
 			}
 			else if (op->getOpcode() == UO_LNot) {
@@ -3811,7 +3812,7 @@ public:
 
 				}
 				else {
-					Throw("unimplmented UO_Not");
+					Throw("unimplmented UO_Not", rewriter, op->getOperatorLoc());
 				}
 				return true;
 
@@ -3819,10 +3820,10 @@ public:
 			else if (op->getOpcode() == UO_AddrOf) {
 				if (isa<ArraySubscriptExpr>(subE)) {
 					//parseArraySubscriptExpr(subE, true);
-					Throw("parseArraySubscriptExpr");
+					Throw("parseArraySubscriptExpr", rewriter, subE->getExprLoc());
 				}
 				else if (isa<DeclRefExpr>(subE)) {
-					Throw("DeclRefExpr");
+					Throw("DeclRefExpr", rewriter, subE->getExprLoc());
 					//parseExpression(subE, true, false);
 				}
 				else {
@@ -3906,7 +3907,7 @@ public:
 					case BO_Shr: { IS_PushFi(>> ); } break;
 
 					default:
-					Throw("flt operator " + to_string(bOp->getOpcode()) + " is unimplemented for a static define");
+					Throw("flt operator " + to_string(bOp->getOpcode()) + " is unimplemented for a static define", rewriter, bOp->getOperatorLoc());
 				}
 
 			}
@@ -3936,7 +3937,7 @@ public:
 					case BO_Shl: { IS_PushI(<< ); } break;
 					case BO_Shr: { IS_PushI(>> ); } break;
 					default:
-					Throw("operator " + to_string(bOp->getOpcode()) + " is unimplemented for a static define");
+					Throw("operator " + to_string(bOp->getOpcode()) + " is unimplemented for a static define", rewriter, bOp->getOperatorLoc());
 				}
 			}
 
@@ -4248,7 +4249,7 @@ public:
 
 				}
 				else
-					Throw("Var " + dumpName(cast<NamedDecl>(D)) + " is already defined");
+					Throw("Var " + dumpName(cast<NamedDecl>(D)) + " is already defined", rewriter, D->getLocStart());
 			}
 		}
 		return true;
