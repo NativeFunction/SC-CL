@@ -378,7 +378,7 @@ bool CheckExprForSizeOf(const Expr* expr, int *outSize)
 		const UnaryExprOrTypeTraitExpr *ueTrait = cast<UnaryExprOrTypeTraitExpr>(expr);
 		if (ueTrait->getKind() == UETT_SizeOf)
 		{
-			if(ueTrait->isArgumentType())
+			if (ueTrait->isArgumentType())
 				*outSize = getSizeOfType(ueTrait->getArgumentType().getTypePtr());
 			else//size = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
 				*outSize = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
@@ -1478,7 +1478,7 @@ public:
 			if (result.Val.isInt())
 			{
 				int val;
-				if(CheckExprForSizeOf(e->IgnoreParens(), &val))
+				if (CheckExprForSizeOf(e->IgnoreParens(), &val))
 					out << iPush(val) << endl;
 				else
 					out << iPush(result.Val.getInt().getSExtValue()) << endl;
@@ -2596,9 +2596,9 @@ public:
 				break;
 				case UnaryExprOrTypeTrait::UETT_JenkinsHash:
 				{
-					if(const Expr* arg = ueTrait->getArgumentExpr()->IgnoreParens())
+					if (const Expr* arg = ueTrait->getArgumentExpr()->IgnoreParens())
 					{
-						if(isa<StringLiteral>(arg))
+						if (isa<StringLiteral>(arg))
 						{
 							string str = cast<StringLiteral>(arg)->getString().str();
 							out << iPush((int)Utils::Hashing::Joaat((char*)str.c_str())) << " //Joaat(\"" << str << "\")\r\n";
@@ -2654,14 +2654,16 @@ public:
 
 			//out << "COND:" << endl;
 			parseExpression(bco->getCond(), false, true);
+			out << "dup\r\n";
 			out << "JumpFalse @" << bco->getFalseExpr()->getExprLoc().getRawEncoding() << endl;
 
 			//out << "//TRUE: " << endl;
-			parseExpression(bco->getTrueExpr(), false, true);
+			//parseExpression(bco->getTrueExpr(), false, true);
 			out << "Jump @" << bco->getLocStart().getRawEncoding() << endl;
 
 			//out << "//FALSE: " << endl;
 			out << ":" << bco->getFalseExpr()->getExprLoc().getRawEncoding() << endl;
+			out << "drop\r\n";
 			parseExpression(bco->getFalseExpr(), false, true);
 			out << ":" << bco->getLocStart().getRawEncoding() << endl;
 		}
@@ -3098,6 +3100,7 @@ public:
 	string outfile;
 	const FunctionDecl *currFunction;
 };
+
 
 
 class GlobalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
@@ -3580,7 +3583,7 @@ public:
 		else if (isa<ImplicitValueInitExpr>(e))
 		{
 			const ImplicitValueInitExpr *ivie = cast<const ImplicitValueInitExpr>(e);
-			
+
 			const Type* type = ivie->getType().getTypePtr();
 			uint32_t size = getSizeFromBytes(getSizeOfType(type));
 			InitializationStack.push({ 0, FBWT_ARRAY });
@@ -3600,7 +3603,13 @@ public:
 			int32_t itemType = 0;
 
 			//int32_t oldArrayOutSize = ArrayOut.size();
-			InitializationStack.push({ 0, FBWT_INIT_LIST });
+			if (!InitializationStack.empty())
+			{
+				if (InitializationStack.top().type != FBWT_INIT_LIST)
+					InitializationStack.push({ 0, FBWT_INIT_LIST });
+			}
+			else
+				InitializationStack.push({ 0, FBWT_INIT_LIST });
 
 			if (isa<ConstantArrayType>(type))//will fuck up with array of array of array
 				type = type->getArrayElementTypeNoTypeQual();
@@ -3658,7 +3667,7 @@ public:
 					if (type->isStructureType())
 					{
 						if (RecordDecl *rd = type->getAsStructureType()->getDecl()) {
-							
+
 							int j = 0;
 							for (const auto *CS : rd->fields())
 							{
@@ -3669,7 +3678,7 @@ public:
 										type = type->getArrayElementTypeNoTypeQual();
 									break;
 								}
-									
+
 							}
 						}
 
@@ -3844,6 +3853,8 @@ public:
 								//	staticInc += ArrayOut.size() - 1;
 								//}
 								InitializationStack.pop();
+								if (!InitializationStack.empty())
+									Warn("InitializationStack not empty after array type" + to_string(InitializationStack.top().type));
 								break;
 								default://FBWT_INT
 
@@ -3891,18 +3902,18 @@ public:
 		return "";
 	}
 
-	enum AOWT_Types : uint8_t
-	{
-		AOWT_4BYTE,
-		AOWT_2BYTE,
-		AOWT_1BYTE,
-		AOWT_STR_LITERAL
-	};
-	typedef struct {
-		AOWT_Types type;
-		vector<int32_t> out;
-	} AOWT;
-	vector<int32_t> ArrayOut;
+	//enum AOWT_Types : uint8_t
+	//{
+	//	AOWT_4BYTE,
+	//	AOWT_2BYTE,
+	//	AOWT_1BYTE,
+	//	AOWT_STR_LITERAL
+	//};
+	//typedef struct {
+	//	AOWT_Types type;
+	//	vector<int32_t> out;
+	//} AOWT;
+	//vector<int32_t> ArrayOut;
 
 	uint32_t oldStaticInc = 0;
 	map<uint32_t, string> DefaultStaticValues;//index, value
@@ -3911,7 +3922,6 @@ public:
 	{
 		FBWT_INT,
 		FBWT_CHAR,
-		FBWT_SHORT,
 		FBWT_FLOAT,
 		FBWT_ARRAY,
 		FBWT_INIT_LIST
@@ -3955,6 +3965,8 @@ private:
 	Rewriter &TheRewriter;
 	ASTContext *context;
 };
+
+
 
 
 
