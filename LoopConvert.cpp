@@ -1585,22 +1585,88 @@ public:
 					}
 					else
 					{
-						string name = parseCast(cast<const CastExpr>(callee));
-						uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
-						uint32_t i = 0;
-						for (; i < functions.size(); i++)
-							if (functions[i].hash == hash)
+						bool inlined = false;
+						if (const FunctionDecl * cDecl = call->getDirectCallee())
+						{
+							if (cDecl->hasBody())
 							{
-								if (functions[i].name == name)
+								Stmt *body = cDecl->getBody();
+								Stmt *subBody = body;
+								bool isEmpty = false;
+								if (isa<CompoundStmt>(body))
 								{
-									functions[i].isused = true;
-									break;
+									if(cast<CompoundStmt>(body)->size() == 0)
+									{
+										isEmpty = true;
+									}
+									else if (cast<CompoundStmt>(body)->size() == 1)
+									{
+										subBody = cast<CompoundStmt>(body)->body_front();
+									}
 								}
+								if (isEmpty)
+								{
+									inlined = true;
+									for(uint32_t i = 0; i < cDecl->getNumParams(); i++)
+									{
+										for (int32_t paramSize = getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr())); paramSize--;)
+										{
+											out << "Drop\r\n";
+										}
+									}
+								}
+								else
+								{
+									bool noInline = cDecl->hasAttr<NoInlineAttr>();
+									bool isRet = isa<ReturnStmt>(subBody);
+									bool isExpr = isa<Expr>(subBody);
+									bool inlineSpec = cDecl->isInlineSpecified();
+									if(!noInline && (isRet || isExpr || inlineSpec)) //inline it
+									{
+										inlined = true;
+										LocalVariables.addLevel();
+										int Index = LocalVariables.getCurrentSize();
+										int32_t paramSize = 0;
+										for(uint32_t i = 0; i < cDecl->getNumParams(); i++)
+										{
+											paramSize += getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr()));
+											handleParmVarDecl((ParmVarDecl*)(cDecl->getParamDecl(i)));
+										}
+										if(paramSize == 1)
+										{
+											out << frameSet(Index) << endl;
+										}
+										else if(paramSize > 1)
+										{
+											out << iPush(paramSize) << endl << pFrame(Index) << "\r\nFromStack\r\n";
+										}
+										parseStatement(body, -1, -1, callee->getLocEnd().getRawEncoding());
+										out << ":" << callee->getLocEnd().getRawEncoding() << endl;
+										LocalVariables.removeLevel();
+									}
+								}
+								
 							}
-						if (i >= functions.size())
-							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
+						}
+						if (!inlined)
+						{
+							string name = parseCast(cast<const CastExpr>(callee));
+							uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
+							uint32_t i = 0;
+							for(; i < functions.size(); i++)
+								if(functions[i].hash == hash)
+								{
+									if(functions[i].name == name)
+									{
+										functions[i].isused = true;
+										break;
+									}
+								}
+							if(i >= functions.size())
+								Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
 
-						out << "Call " << name << " //NumArgs: " << call->getNumArgs() << " " << endl;
+							out << "Call " << name << " //NumArgs: " << call->getNumArgs() << " " << endl;
+						}
 					}
 				}
 
@@ -1992,10 +2058,14 @@ public:
 				else {
 					parseExpression(subE, false, true);
 				}
-				if (isLtoRValue)
-					out << "pGet" << endl;
-				else
-					out << "pSet" << endl;
+				if (!isAddr)
+				{
+					if(isLtoRValue)
+						out << "pGet" << endl;
+					else
+						out << "pSet" << endl;
+				}
+				
 				return true;
 			}
 			else if (op->getOpcode() == UO_Real)
