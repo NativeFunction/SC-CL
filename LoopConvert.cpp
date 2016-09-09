@@ -604,6 +604,99 @@ public:
 		return "";
 	}
 
+	void parseJumpFalseCondition(Expr *condition, bool invert = false)
+	{
+		while (isa<BinaryOperator>(condition))
+		{
+			BinaryOperator* bCond = cast<BinaryOperator>(condition);
+			if (bCond->getOpcode() == BO_Comma)
+			{
+				parseExpression(bCond->getLHS());
+				condition = bCond->getRHS();
+				continue;
+			}
+			break;
+		}
+		if (isa<BinaryOperator>(condition))
+		{
+			BinaryOperator* bCond = cast<BinaryOperator>(condition);
+			if(bCond->getLHS()->getType()->isIntegerType() && bCond->getRHS()->getType()->isIntegerType())
+			{
+				switch(bCond->getOpcode())
+				{
+				case BO_EQ:
+				case BO_NE:
+				case BO_GT:
+				case BO_GE:
+				case BO_LT:
+				case BO_LE:
+					parseExpression(bCond->getLHS(), false, true);
+					parseExpression(bCond->getRHS(), false, true);
+					if(invert){
+						switch(bCond->getOpcode())
+						{
+						case BO_EQ:
+							out << "JumpEQ @";
+							return;
+						case BO_NE:
+							out << "JumpNE @";
+							return;
+						case BO_GT:
+							out << "JumpGT @";
+							return;
+						case BO_GE:
+							out << "JumpGE @";
+							return;
+						case BO_LT:
+							out << "JumpLT @";
+							return;
+						case BO_LE:
+							out << "JumpLE @";
+							return;
+						default:
+							assert(false);//this shouldnt happen
+						}
+					}
+					else
+					{
+						switch(bCond->getOpcode())
+						{
+						case BO_EQ:
+							out << "JumpNE @";
+							return;
+						case BO_NE:
+							out << "JumpEQ @";
+							return;
+						case BO_GT:
+							out << "JumpLE @";
+							return;
+						case BO_GE:
+							out << "JumpLT @";
+							return;
+						case BO_LT:
+							out << "JumpGE @";
+							return;
+						case BO_LE:
+							out << "JumpGT @";
+							return;
+						default:
+							assert(false);//this shouldnt happen
+						}
+					}
+					break;
+				default:
+					break;
+				}
+			}
+		}
+		parseExpression(condition, false, true);
+		if(invert)
+		{
+			out << "not //Invert the result\r\n";
+		}
+		out << "JumpFalse @";
+	}
+
 
 	void printDeclWithKey(string key, bool isAddr, bool isLtoRValue, int size = 1) {
 		int index = -1;
@@ -693,7 +786,7 @@ public:
 			DeclStmt *decl = cast<DeclStmt>(s);
 			handleDecl(decl);
 		}
-		else if (isa<IfStmt>(s)) {
+		else if(isa<IfStmt>(s)) {
 			IfStmt *IfStatement = cast<IfStmt>(s);
 			Expr *conditional = IfStatement->getCond();
 			Stmt *Then = IfStatement->getThen();
@@ -702,29 +795,66 @@ public:
 			string IfLocEnd =
 				to_string(Then->getLocEnd().getRawEncoding());
 
-			parseExpression(conditional, false, true);
-			out << "JumpFalse @" << (Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd) << endl;
-			LocalVariables.addLevel();
-			parseStatement(Then, breakLoc, continueLoc, returnLoc);
-			LocalVariables.removeLevel();
-
-			out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
-
-			if (Else) {
-				out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
-				LocalVariables.addLevel();
-				parseStatement(Else, breakLoc, continueLoc, returnLoc);
-				LocalVariables.removeLevel();
-				out << "//" << Else->getLocStart().getRawEncoding() << " " << Else->getLocEnd().getRawEncoding() << endl;
-			}
-			if (Then)
+			bool result;
+			if(conditional->EvaluateAsBooleanCondition(result, *context))
 			{
-				out << "//" << Then->getLocStart().getRawEncoding() << " " << Then->getLocEnd().getRawEncoding() << endl;
+				Warn("If condition always evaluates to " + (result ? string("true") : string("false")), rewriter, s->getLocStart());
+				if(result)
+				{
+					LocalVariables.addLevel();
+					parseStatement(Then, breakLoc, continueLoc, returnLoc);
+					LocalVariables.removeLevel();
+					if(Else)//still parse the else code just incase there are goto labels in there
+					{
+						out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
+						LocalVariables.addLevel();
+						parseStatement(Else, breakLoc, continueLoc, returnLoc);
+						LocalVariables.removeLevel();
+						out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
+					}
+				}
+				else
+				{
+					//still parse the then code just incase there are goto labels in there
+					out << "Jump @" << (Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd) << endl;
+					LocalVariables.addLevel();
+					parseStatement(Then, breakLoc, continueLoc, returnLoc);
+					LocalVariables.removeLevel();
+					if(Else)
+					{
+						out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
+						out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
+						LocalVariables.addLevel();
+						parseStatement(Else, breakLoc, continueLoc, returnLoc);
+						LocalVariables.removeLevel();
+					}
+					out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
+				}
 			}
+			else
+			{
+				parseJumpFalseCondition(conditional);
+				out << (Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd) << endl;
+				LocalVariables.addLevel();
+				parseStatement(Then, breakLoc, continueLoc, returnLoc);
+				LocalVariables.removeLevel();
 
-			out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
+				out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
 
+				if(Else) {
+					out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
+					LocalVariables.addLevel();
+					parseStatement(Else, breakLoc, continueLoc, returnLoc);
+					LocalVariables.removeLevel();
+					out << "//" << Else->getLocStart().getRawEncoding() << " " << Else->getLocEnd().getRawEncoding() << endl;
+				}
+				if(Then)
+				{
+					out << "//" << Then->getLocStart().getRawEncoding() << " " << Then->getLocEnd().getRawEncoding() << endl;
+				}
 
+				out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
+			}
 		}
 		else if (isa<WhileStmt>(s)) {
 			WhileStmt *whileStmt = cast<WhileStmt>(s);
@@ -733,14 +863,42 @@ public:
 			Stmt *body = whileStmt->getBody();
 			LocalVariables.addLevel();
 
-			out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
-			parseExpression(conditional, false, true);
-			out << "JumpFalse @" << whileStmt->getLocEnd().getRawEncoding() << endl;
+			bool result;
+			if(conditional->EvaluateAsBooleanCondition(result, *context))
+			{
+				if(!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
+					Warn("While condition always evaluates to " + (result ? string("true") : string("false")), rewriter, s->getLocStart());
+				if (result)
+				{
+					out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
+					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
 
-			parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
+					out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
+					out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
+				}
+				else
+				{
+					out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
+					out << "Jump @" << whileStmt->getLocEnd().getRawEncoding() << endl;
 
-			out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
-			out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
+					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
+
+					out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
+					out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
+				}
+
+			}
+			else{
+
+				out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
+				parseJumpFalseCondition(conditional);
+				out << whileStmt->getLocEnd().getRawEncoding() << endl;
+
+				parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
+
+				out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
+				out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
+			}
 			LocalVariables.removeLevel();
 		}
 		else if (isa<ForStmt>(s)) {
@@ -751,25 +909,24 @@ public:
 			Stmt *body = forStmt->getBody();
 			LocalVariables.addLevel();
 			if (decl) {
-				if (isa<DeclStmt>(decl)) {
-					handleDecl(cast<DeclStmt>(decl));
-				}
+				parseStatement(decl, -1, -1, returnLoc);
 			}
 
 			if (conditional) {
 				out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
 
-				parseExpression(conditional, false, true);
-				if (increment)
-					out << "JumpFalse @" << body->getLocEnd().getRawEncoding() << endl;
-				else
-					out << "JumpFalse @" << body->getLocEnd().getRawEncoding() << endl;
+				parseJumpFalseCondition(conditional);
+				out << body->getLocEnd().getRawEncoding() << endl;
 			}
-
+			else
+			{
+				out << endl << ":" << body->getLocStart().getRawEncoding() << endl;
+			}
+			 
 			parseStatement(
 				body,
 				forStmt->getLocEnd().getRawEncoding(),
-				increment->getLocStart().getRawEncoding(),
+				increment ? increment->getLocStart().getRawEncoding() : conditional ? conditional->getLocStart().getRawEncoding() : body->getLocStart().getRawEncoding(),
 				returnLoc);
 
 			if (increment)
@@ -806,9 +963,8 @@ public:
 
 
 			out << endl << ":" << conditional->getLocStart().getRawEncoding() << "" << endl;
-			parseExpression(conditional, false, true);
-			out << "not //Invert Result" << endl;
-			out << "JumpFalse @" << body->getLocStart().getRawEncoding() << endl;
+			parseJumpFalseCondition(conditional, true);
+			out << body->getLocStart().getRawEncoding() << endl;
 			out << endl << ":" << conditional->getLocEnd().getRawEncoding() << "" << endl;
 			LocalVariables.removeLevel();
 
@@ -1042,8 +1198,7 @@ public:
 								//for(int i=0; i<arr->getSize().getSExtValue(); i++) {
 								out << "dup //index" << endl;
 								out << "Push " << arr->getSize().getZExtValue() << endl;
-								out << "cmplt" << endl;
-								out << "JumpFalse @vTableEnd_" << vTableInitInc << endl;
+								out << "JumpGE @vTableEnd_" << vTableInitInc << endl;
 
 								out << "dup #index" << endl;
 								out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
@@ -2326,6 +2481,12 @@ public:
 
 				return true;
 			}
+			if (bOp->getOpcode() == BO_Comma)
+			{
+				parseExpression(bOp->getLHS());
+				parseExpression(bOp->getRHS(), false, true);
+				return true;
+			}
 
 
 			if (bOp->getLHS()->getType()->isAnyComplexType() || bOp->getRHS()->getType()->isAnyComplexType())
@@ -2630,7 +2791,7 @@ public:
 							case BO_Shl: out << "CallNative shift_left 2 1\r\n"; break;
 							case BO_Shr: out << "CallNative shift_right 2 1\r\n"; break;
 							default:
-							Throw("Unimplemented binary floating op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
+							Throw("Unimplemented binary floating op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
 						}
 
 					}
@@ -2655,7 +2816,7 @@ public:
 							case BO_Shl: out << "CallNative shift_left 2 1\r\n"; break;
 							case BO_Shr: out << "CallNative shift_right 2 1\r\n"; break;
 							default:
-							Throw("Unimplemented binary op " + bOp->getOpcode(), rewriter, bOp->getExprLoc());
+							Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
 						}
 					}
 
@@ -2802,8 +2963,8 @@ public:
 				Throw("Invalid Use Of Operator", rewriter, e->getExprLoc());
 			const ConditionalOperator *cond = cast<const ConditionalOperator>(e);
 
-			parseExpression(cond->getCond(), false, true);
-			out << "JumpFalse @" << cond->getRHS()->getLocStart().getRawEncoding() << endl;
+			parseJumpFalseCondition(cond->getCond());
+			out << cond->getRHS()->getLocStart().getRawEncoding() << endl;
 			parseExpression(cond->getLHS(), false, true);
 			out << "Jump @" << cond->getLHS()->getLocEnd().getRawEncoding() << endl;
 
