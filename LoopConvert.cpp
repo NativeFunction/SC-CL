@@ -1291,21 +1291,36 @@ public:
 		else if (funcName == "pop")
 		{
 			//	out << call->getExprLoc().
-			if (argCount == 1)
+			if (argCount == 0 && callee->getReturnType()->isVoidType())
 			{
-				if (isa<IntegerLiteral>(argArray[0]))
-				{
-					const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
-					int intValue = intVal->getValue().getSExtValue();
-					for (int i = 0; i < intValue; i++)
-						out << "Pop" << endl;
-				}
-				else
-					out << "!!Invalid " << funcName << " Parameters!";
-			}
-			else
 				out << "Pop" << endl;
-			return true;
+				return true;
+			}
+			Throw("pop must have signature \"extern __intrinsic void pop();\"", rewriter, callee->getLocation());
+		}
+		else if(funcName == "popMult")
+		{
+			//	out << call->getExprLoc().
+			if(argCount == 1 && callee->getReturnType()->isVoidType())
+			{
+				llvm::APSInt result;
+				if (argArray[0]->getType()->isIntegerType())
+				{
+					if(argArray[0]->EvaluateAsInt(result, *context))
+					{
+						int intValue = result.getSExtValue();
+						if (intValue <= 0)
+						{
+							Throw("Argument for popMult(int) must be a positive number", rewriter, argArray[0]->getExprLoc());
+						}
+						for(int i = 0; i < intValue; i++)
+							out << "Pop" << endl;
+						return true;;
+					}
+					Throw("Argument for popMult(int) must be known at compile time", rewriter, argArray[0]->getExprLoc());
+				}
+			}
+			Throw("popMult must have signature \"extern __intrinsic void popMult(const int amount);\"", rewriter, callee->getLocation());
 		}
 		else if (funcName == "pcall")
 		{
@@ -1468,9 +1483,9 @@ public:
 		}
 		else if (funcName == "stacktop")
 		{
-			if (argCount != 0)
+			if (argCount != 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) != 1)
 			{
-				Throw(funcName + " must be called with no parameters");
+				Throw("stacktop must have signature \"extern __intrinsic int stacktop();\"", rewriter, callee->getLocation());
 			}
 			return true;
 		}
@@ -1479,24 +1494,26 @@ public:
 
 			if (argCount == 3)
 			{
-				//to stack
-				//size
-				parseExpression(argArray[2], false, true);
-				//src
-				parseExpression(argArray[1], true, true);
-				out << "ToStack" << endl;
+				if (call->getCallReturnType(*context)->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
+				{
+					//to stack
+					//size
+					parseExpression(argArray[2], false, true);
+					//src
+					parseExpression(argArray[1], true, true);
+					out << "ToStack" << endl;
 
 
-				//from stack
-				//size
-				parseExpression(argArray[2], false, true);
-				//dest
-				parseExpression(argArray[0], true, true);
-				out << "FromStack" << endl;
-
+					//from stack
+					//size
+					parseExpression(argArray[2], false, true);
+					//dest
+					parseExpression(argArray[0], true, true);
+					out << "FromStack" << endl;
+				}
 			}
 			else
-				Throw("Invalid " + funcName + " parameters!", rewriter, call->getExprLoc());
+				Throw("memcpy must have signature \"extern __intrinsic void memcpy(void* dst, void* src, int len);\"", rewriter, callee->getLocation());
 			return true;
 		}
 		else if (funcName == "creal")
