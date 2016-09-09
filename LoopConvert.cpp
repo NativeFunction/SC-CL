@@ -867,7 +867,7 @@ public:
 			if(conditional->EvaluateAsBooleanCondition(result, *context))
 			{
 				if(!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
-					Warn("While condition always evaluates to " + (result ? string("true") : string("false")), rewriter, s->getLocStart());
+					Warn("While condition always evaluates to " + (result ? string("true") : string("false")), rewriter, whileStmt->getLocStart());
 				if (result)
 				{
 					out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
@@ -958,13 +958,29 @@ public:
 
 			out << endl << ":" << body->getLocStart().getRawEncoding() << endl;
 
-			parseStatement(body, conditional->getLocEnd().getRawEncoding(), body->getLocStart().getRawEncoding(), returnLoc);
+			parseStatement(body, conditional->getLocEnd().getRawEncoding(), body->getLocEnd().getRawEncoding(), returnLoc);
 
 
 
-			out << endl << ":" << conditional->getLocStart().getRawEncoding() << "" << endl;
-			parseJumpFalseCondition(conditional, true);
-			out << body->getLocStart().getRawEncoding() << endl;
+			out << endl << ":" << body->getLocEnd().getRawEncoding() << "" << endl;
+			bool result;
+			if(conditional->EvaluateAsBooleanCondition(result, *context))
+			{
+				if(!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
+					Warn("Do while condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getLocStart());
+				if (result)
+				{
+					out << "Jump @" << body->getLocStart().getRawEncoding() << endl;
+				}
+				//no need for else, just jump right out
+				
+			}
+			else
+			{
+				parseJumpFalseCondition(conditional, true);
+				out << body->getLocStart().getRawEncoding() << endl;
+			}
+			
 			out << endl << ":" << conditional->getLocEnd().getRawEncoding() << "" << endl;
 			LocalVariables.removeLevel();
 
