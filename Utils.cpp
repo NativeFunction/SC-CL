@@ -63,6 +63,7 @@ namespace Utils {
 		}
 		void Throw(string str, clang::Rewriter writer, clang::SourceLocation location)
 		{
+			location = writer.getSourceMgr().getExpansionLoc(location);
 			int col = ClangUtils::GetColumnFromLocation(writer, location);
 			cout << brightred << "Exception: " << white << str
 				<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, location)
@@ -85,6 +86,7 @@ namespace Utils {
 		}
 		void Warn(string str, clang::Rewriter writer, clang::SourceLocation location)
 		{
+			location = writer.getSourceMgr().getExpansionLoc(location);
 			int col = ClangUtils::GetColumnFromLocation(writer, location);
 			cout << brightyellow << "Warning: " << white << str
 				<< "\r\nFile: " << ClangUtils::GetFileFromLocation(writer, location)
