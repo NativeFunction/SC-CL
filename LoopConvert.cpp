@@ -2049,6 +2049,7 @@ public:
 				Throw("makeVector3 must have signature \"extern __intrinsic vector3 makeVector3(float x, float y, float z)\"", rewriter, callee->getSourceRange());
 				return false;
 			}
+			break;
 			case JoaatCasedConst("vector3Add"):
 			{
 				ChkHashCol("vector3Add");
@@ -2273,6 +2274,7 @@ public:
 				Throw("fneg must have signature \"extern __intrinsic float fneg();\"", rewriter, callee->getSourceRange());
 				return false;
 			}
+			break;
 			default:
 			Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
 		}
