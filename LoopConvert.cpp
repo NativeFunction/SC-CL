@@ -1058,7 +1058,7 @@ public:
 			SwitchStmt *switchStmt = cast<SwitchStmt>(s);
 			out << "//Switch Conditional" << endl;
 			FindBuffer.clear();
-			parseExpression(switchStmt->getCond());
+			parseExpression(switchStmt->getCond(), false, true);
 			out << "Switch ";
 
 			//Build case switch list first
