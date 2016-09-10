@@ -21,6 +21,8 @@
 
 #undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
 #define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4)
+#define STATIC_DEBUG 0
+
 using namespace Utils;
 using namespace Utils::System;
 using namespace Utils::DataConversion;
@@ -575,7 +577,7 @@ public:
 
 	string add(int value)
 	{
-		if(value == 0)
+		if (value == 0)
 			return "";
 		if (value < -32768 || value > 32767)
 			return iPush(value) + "\r\nAdd";
@@ -1763,29 +1765,29 @@ public:
 		Expr::EvalResult result;
 		if (e->EvaluateAsRValue(result, *context))
 		{
-			if(!result.HasSideEffects)
+			if (!result.HasSideEffects)
 			{
-				if(result.Val.isInt())
+				if (result.Val.isInt())
 				{
 					int val;
-					if(CheckExprForSizeOf(e->IgnoreParens(), &val))
+					if (CheckExprForSizeOf(e->IgnoreParens(), &val))
 						out << iPush(val) << endl;
 					else
 						out << iPush(result.Val.getInt().getSExtValue()) << endl;
 					return -1;
 				}
-				else if(result.Val.isFloat())
+				else if (result.Val.isFloat())
 				{
 					out << fPush(result.Val.getFloat()) << endl;
 					return -1;
 				}
-				else if(result.Val.isComplexFloat())
+				else if (result.Val.isComplexFloat())
 				{
 					out << fPush(result.Val.getComplexFloatReal()) << endl;
 					out << fPush(result.Val.getComplexFloatImag()) << endl;
 					return -1;
 				}
-				else if(result.Val.isComplexInt())
+				else if (result.Val.isComplexInt())
 				{
 					out << iPush(result.Val.getComplexIntReal().getSExtValue()) << endl;
 					out << iPush(result.Val.getComplexIntImag().getSExtValue()) << endl;
@@ -2020,7 +2022,7 @@ public:
 					parseExpression(icast->getSubExpr(), isAddr, true, printVTable);
 					if (!isLtoRValue)
 					{
-						for(int i = getSizeFromBytes(getSizeOfType(icast->getSubExpr()->getType().getTypePtr())); i--;)
+						for (int i = getSizeFromBytes(getSizeOfType(icast->getSubExpr()->getType().getTypePtr())); i--;)
 						{
 							out << "drop //unused result\r\n";
 						}
@@ -2355,13 +2357,13 @@ public:
 				}
 				else if (isa<DeclRefExpr>(subE)) {
 					parseExpression(subE, true, false);
-					if(!isLtoRValue){
+					if (!isLtoRValue) {
 						out << "Drop //unused result\r\n";
 					}
 				}
 				else {
 					parseExpression(subE, true, false);
-					if(!isLtoRValue){
+					if (!isLtoRValue) {
 						out << "Drop //unused result\r\n";
 					}
 				}
@@ -2514,7 +2516,7 @@ public:
 
 				parseExpression(bOp->getRHS(), isAddr, true, true);
 				int bSize = getSizeFromBytes(getSizeOfType(bOp->getRHS()->getType().getTypePtr()));
-				if(bSize > 1)
+				if (bSize > 1)
 				{
 					out << iPush(bSize) << endl;
 					parseExpression(bOp->getLHS(), true);
@@ -2525,7 +2527,7 @@ public:
 					}
 				}
 				else {
-					if(isLtoRValue)
+					if (isLtoRValue)
 					{
 						out << "dup //duplicate value for set\r\n";
 					}
@@ -3009,7 +3011,7 @@ public:
 				Throw("Jenkins Method called without any argument, please use a StringLiteral argument", rewriter, ueTrait->getLocStart());
 				break;
 				default:
-					Throw("Unsupported UnaryExprOrTypeTrait Type:" + to_string(ueTrait->getKind()), rewriter, ueTrait->getLocStart());
+				Throw("Unsupported UnaryExprOrTypeTrait Type:" + to_string(ueTrait->getKind()), rewriter, ueTrait->getLocStart());
 				break;
 			}
 		}
@@ -4030,8 +4032,9 @@ public:
 						if (isa<ConstantArrayType>(type))
 							type = type->getArrayElementTypeNoTypeQual();
 
+						#if STATIC_DEBUG == 1
 						cout << "\trecord type size: " << getSizeOfQualType(&qtype) << " is char: " << type->isCharType() << endl;
-
+						#endif
 						//size += max(temp, 4);
 					}
 					//cout << "struct: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
@@ -4039,11 +4042,15 @@ public:
 
 			}
 
+			#if STATIC_DEBUG == 1
 			cout << "init size: " << size << "\tType size: " << getSizeFromBytes(size) << "\tClass: " << type->getTypeClassName() << "\tis char: " << type->isCharType() << endl;
+			#endif
 
 			vector<uint8_t> initdata;
 			for (unsigned int i = 0; i < init->getNumInits(); i++) {
 				const Expr* expr = init->getInit(i);
+
+				#if STATIC_DEBUG == 1
 				if (isa<BuiltinType>(expr->getType().getTypePtr()))
 				{
 					const BuiltinType *bt = cast<const BuiltinType>(expr->getType().getTypePtr());
@@ -4055,12 +4062,16 @@ public:
 
 
 				}
+				#endif
 
 				ParseLiteral(expr);
 
 				if (InitializationStack.top().type != FBWT_ARRAY)
 				{
+
+					#if STATIC_DEBUG == 1
 					cout << "istype: " << InitializationStack.top().type << endl;
+					#endif
 
 					const Type* type = init->getType().getTypePtr();
 					const Type* exprtype = expr->getType().getTypePtr();
@@ -4087,7 +4098,9 @@ public:
 					}
 
 					size = getSizeOfType(type);
+					#if STATIC_DEBUG == 1
 					cout << "size: " << size << endl;
+					#endif
 
 					if (exprtype->isCharType())
 					{
@@ -4098,7 +4111,9 @@ public:
 						}
 						else
 						{
+							#if STATIC_DEBUG == 1
 							cout << "pushing 1\n";
+							#endif
 							initdata.push_back(IS_Pop().bytes % 256);
 						}
 					}
@@ -4111,7 +4126,9 @@ public:
 						}
 						else
 						{
+							#if STATIC_DEBUG == 1
 							cout << "pushing 2\n";
+							#endif
 							initdata.resize(initdata.size() + 2);
 							int16_t data = IS_Pop().bytes % 65536;
 							memcpy(initdata.data() + initdata.size() - 2, &data, 2);
@@ -4126,7 +4143,9 @@ public:
 						}
 						else
 						{
+							#if STATIC_DEBUG == 1
 							cout << "pushing 4\n";
+							#endif
 							initdata.resize(initdata.size() + 4);
 							int32_t data = IS_Pop().bytes;
 							memcpy(initdata.data() + initdata.size() - 4, &data, 4);
@@ -4136,8 +4155,10 @@ public:
 					//add padding at end of init list expression
 					if (i == init->getNumInits() - 1 && !isa<InitListExpr>(expr))
 					{
+						#if STATIC_DEBUG == 1
 						cout << "push size: " << size << endl;
 						cout << "pushing 0 ints times " << (size - initdata.size()) / 4 << endl;
+						#endif
 						while (initdata.size() < size)
 						{
 							initdata.push_back(0);
@@ -4169,7 +4190,9 @@ public:
 					else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 						buffer = Utils::Bitwise::Flip2BytesIn4(buffer);
 
+					#if STATIC_DEBUG == 1
 					cout << "read b: " << buffer << "\n";
+					#endif
 					DefaultStaticValues.insert({ oldStaticInc++, to_string(buffer) });
 				}
 				else
@@ -4182,7 +4205,9 @@ public:
 					else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 						value = Utils::Bitwise::Flip2BytesIn4(value);
 
+					#if STATIC_DEBUG == 1
 					cout << "read: " << to_string(value) << "\n";
+					#endif
 					DefaultStaticValues.insert({ oldStaticInc++, to_string(value) });
 				}
 			}
