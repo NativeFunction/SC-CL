@@ -575,6 +575,8 @@ public:
 
 	string add(int value)
 	{
+		if(value == 0)
+			return "";
 		if (value < -32768 || value > 32767)
 			return iPush(value) + "\r\nAdd";
 		else if (value > 0xFF || value < 0)
@@ -2495,21 +2497,19 @@ public:
 			if (bOp->getOpcode() == BO_Assign) {
 
 				parseExpression(bOp->getRHS(), isAddr, true, true);
-				if (bOp->getRHS()->getType()->isStructureOrClassType()) {
-					int size = getSizeOfType(bOp->getRHS()->getType().getTypePtr());
-					out << iPush(size) << " //size\r\n";
-					parseExpression(bOp->getLHS(), true);
-
-					out << "FromStack\r\n";
-				}
-				else if (bOp->getRHS()->getType()->isAnyComplexType())
+				int bSize = getSizeFromBytes(getSizeOfType(bOp->getRHS()->getType().getTypePtr()));
+				if(bSize > 1)
 				{
-					out << "Push_2\r\n";
+					out << iPush(bSize) << endl;
 					parseExpression(bOp->getLHS(), true);
 					out << "FromStack\r\n";
+					if (isLtoRValue)
+					{
+						parseExpression(bOp->getLHS(), false, true);
+					}
 				}
 				else {
-					if (isLtoRValue)
+					if(isLtoRValue)
 					{
 						out << "dup //duplicate value for set\r\n";
 					}
