@@ -1763,31 +1763,34 @@ public:
 		Expr::EvalResult result;
 		if (e->EvaluateAsRValue(result, *context))
 		{
-			if (result.Val.isInt())
+			if(!result.HasSideEffects)
 			{
-				int val;
-				if (CheckExprForSizeOf(e->IgnoreParens(), &val))
-					out << iPush(val) << endl;
-				else
-					out << iPush(result.Val.getInt().getSExtValue()) << endl;
-				return -1;
-			}
-			else if (result.Val.isFloat())
-			{
-				out << fPush(result.Val.getFloat()) << endl;
-				return -1;
-			}
-			else if (result.Val.isComplexFloat())
-			{
-				out << fPush(result.Val.getComplexFloatReal()) << endl;
-				out << fPush(result.Val.getComplexFloatImag()) << endl;
-				return -1;
-			}
-			else if (result.Val.isComplexInt())
-			{
-				out << iPush(result.Val.getComplexIntReal().getSExtValue()) << endl;
-				out << iPush(result.Val.getComplexIntImag().getSExtValue()) << endl;
-				return -1;
+				if(result.Val.isInt())
+				{
+					int val;
+					if(CheckExprForSizeOf(e->IgnoreParens(), &val))
+						out << iPush(val) << endl;
+					else
+						out << iPush(result.Val.getInt().getSExtValue()) << endl;
+					return -1;
+				}
+				else if(result.Val.isFloat())
+				{
+					out << fPush(result.Val.getFloat()) << endl;
+					return -1;
+				}
+				else if(result.Val.isComplexFloat())
+				{
+					out << fPush(result.Val.getComplexFloatReal()) << endl;
+					out << fPush(result.Val.getComplexFloatImag()) << endl;
+					return -1;
+				}
+				else if(result.Val.isComplexInt())
+				{
+					out << iPush(result.Val.getComplexIntReal().getSExtValue()) << endl;
+					out << iPush(result.Val.getComplexIntImag().getSExtValue()) << endl;
+					return -1;
+				}
 			}
 		}
 		if (isa<IntegerLiteral>(e)) {
