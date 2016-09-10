@@ -1277,125 +1277,160 @@ public:
 			case JoaatCasedConst("strcpy"):
 			{
 				ChkHashCol("strcpy");
-
-				if (argCount != 3)
-					Throw("Invalid " + funcName + " Parameters!", rewriter, call->getLocStart());
-				else
+				if(argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
 					parseExpression(argArray[0], false, true);
 
 					out << "StrCopy ";
-					if (isa<IntegerLiteral>(argArray[2])) {
-						const IntegerLiteral *literal = cast<const IntegerLiteral>(argArray[2]);
-						out << literal->getValue().getSExtValue() << endl;
-					}
-					else if (isa<CastExpr>(argArray[2])) {
-						out << parseCast(cast<const CastExpr>(argArray[2])) << endl;
+					llvm::APSInt result;
+					if(argArray[2]->EvaluateAsInt(result, *context))
+					{
+						int iValue = result.getSExtValue();
+						if(iValue > 0 && iValue < 256)
+						{
+							out << iValue << endl;
+							return true;
+						}
+						else
+						{
+							Throw("Integer constant for string max length argument in strcpy must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+							return false;
+						}
 					}
 					else
 					{
-						Throw("Expected Literal String Max Length in " + funcName, rewriter, call->getLocStart());
+						Throw("Expected integer constant for string max length argument in strcpy", rewriter, argArray[2]->getSourceRange());
 						return false;
 					}
 				}
-				return true;
+				else
+				{
+					Throw("strcpy must have signature \"extern __intrinsic void strcpy(char* dst, char* src, const byte len);\"", rewriter, callee->getSourceRange());
+					return false;
+				}
 			}
 			break;
 			case JoaatCasedConst("stradd"):
 			{
 				ChkHashCol("stradd");
-
-				if (argCount != 3)
-					Throw("Invalid " + funcName + " Parameters!", rewriter, call->getLocStart());
-				else
+				if(argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
 					parseExpression(argArray[0], false, true);
 
 					out << "StrAdd ";
-					if (isa<IntegerLiteral>(argArray[2])) {
-						const IntegerLiteral *literal = cast<const IntegerLiteral>(argArray[2]);
-						out << literal->getValue().getSExtValue() << endl;
-					}
-					else if (isa<CastExpr>(argArray[2])) {
-						out << parseCast(cast<const CastExpr>(argArray[2])) << endl;
+					llvm::APSInt result;
+					if(argArray[2]->EvaluateAsInt(result, *context))
+					{
+						int iValue = result.getSExtValue();
+						if(iValue > 0 && iValue < 256)
+						{
+							out << iValue << endl;
+							return true;
+						}
+						else
+						{
+							Throw("Integer constant for string max length argument in stradd must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+							return false;
+						}
 					}
 					else
 					{
-						Throw("Expected Literal String Max Length in " + funcName, rewriter, call->getLocStart());
+						Throw("Expected integer constant for string max length argument in stradd", rewriter, argArray[2]->getSourceRange());
 						return false;
 					}
 				}
-				return true;
+				else
+				{
+					Throw("stradd must have signature \"extern __intrinsic void stradd(char* dst, char* append, const byte len);\"", rewriter, callee->getSourceRange());
+					return false;
+				}
 			}
 			break;
 			case JoaatCasedConst("straddi"):
 			{
 				ChkHashCol("straddi");
-
-				if (argCount != 3)
-					Throw("Invalid " + funcName + " Parameters!", rewriter, call->getLocStart());
-				else
+				if(argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
 					parseExpression(argArray[0], false, true);
 
 					out << "StrAddi ";
-					if (isa<IntegerLiteral>(argArray[2])) {
-						const IntegerLiteral *literal = cast<const IntegerLiteral>(argArray[2]);
-						out << literal->getValue().getSExtValue() << endl;
-					}
-					else if (isa<CastExpr>(argArray[2])) {
-						out << parseCast(cast<const CastExpr>(argArray[2])) << endl;
+					llvm::APSInt result;
+					if(argArray[2]->EvaluateAsInt(result, *context))
+					{
+						int iValue = result.getSExtValue();
+						if(iValue > 0 && iValue < 256)
+						{
+							out << iValue << endl;
+							return true;
+						}
+						else
+						{
+							Throw("Integer constant for string max length argument in straddi must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+							return false;
+						}
 					}
 					else
 					{
-						Throw("Expected Literal String Max Length in " + funcName, rewriter, call->getLocStart());
+						Throw("Expected integer constant for string max length argument in straddi", rewriter, argArray[2]->getSourceRange());
 						return false;
 					}
 				}
-				return true;
+				else
+				{
+					Throw("straddi must have signature \"extern __intrinsic void straddi(char* dst, int append, const byte len);\"", rewriter, callee->getSourceRange());
+					return false;
+				}
 			}
 			break;
 			case JoaatCasedConst("itos"):
 			{
 				ChkHashCol("itos");
-
-				if (argCount != 3)
-					Throw("Invalid " + funcName + " Parameters!", rewriter, call->getLocStart());
-				else
+				if(argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
 					parseExpression(argArray[0], false, true);
 
 					out << "ItoS ";
-					if (isa<IntegerLiteral>(argArray[2])) {
-						const IntegerLiteral *literal = cast<const IntegerLiteral>(argArray[2]);
-						out << literal->getValue().getSExtValue() << endl;
-					}
-					else if (isa<CastExpr>(argArray[2])) {
-						out << parseCast(cast<const CastExpr>(argArray[2])) << endl;
+					llvm::APSInt result;
+					if(argArray[2]->EvaluateAsInt(result, *context))
+					{
+						int iValue = result.getSExtValue();
+						if(iValue > 0 && iValue < 256)
+						{
+							out << iValue << endl;
+							return true;
+						}
+						else
+						{
+							Throw("Integer constant for string max length argument in itos must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+							return false;
+						}
 					}
 					else
 					{
-						Throw("Expected Literal String Max Length in " + funcName, rewriter, call->getLocStart());
+						Throw("Expected integer constant for string max length argument in itos", rewriter, argArray[2]->getSourceRange());
 						return false;
 					}
 				}
-				return true;
+				else
+				{
+					Throw("itos must have signature \"extern __intrinsic void itos(char* dst, int value, const byte len);\"", rewriter, callee->getSourceRange());
+					return false;
+				}
 			}
 			break;
 			case JoaatCasedConst("pop"):
 			{
 				ChkHashCol("pop");
-				//	out << call->getExprLoc().
 				if (argCount == 0 && callee->getReturnType()->isVoidType())
 				{
 					out << "Drop\r\n";
 					return true;
 				}
-				Throw("pop must have signature \"extern __intrinsic void pop();\"", rewriter, callee->getLocation());
+				Throw("pop must have signature \"extern __intrinsic void pop();\"", rewriter, callee->getSourceRange());
 			}
 			break;
 			case JoaatCasedConst("popMult"):
@@ -1412,35 +1447,38 @@ public:
 							int intValue = result.getSExtValue();
 							if (intValue <= 0)
 							{
-								Throw("Argument for popMult(int) must be a positive number", rewriter, argArray[0]->getExprLoc());
+								Throw("Expected positive integer constant for pop amount argument in popMult, got " + to_string(intValue), rewriter, argArray[0]->getSourceRange());
+								return false;
 							}
 							for (int i = 0; i < intValue; i++)
 								out << "Drop\r\n";
 							return true;;
 						}
-						Throw("Argument for popMult(int) must be known at compile time", rewriter, argArray[0]->getExprLoc());
+						Throw("Expected positive integer constant for pop amount argument in popMult", rewriter, argArray[0]->getSourceRange());
+						return false;
 					}
 				}
-				Throw("popMult must have signature \"extern __intrinsic void popMult(const int amount);\"", rewriter, callee->getLocation());
+				Throw("popMult must have signature \"extern __intrinsic void popMult(const int amount);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("pcall"):
 			{
 				ChkHashCol("pcall");
-				if (argCount < 1)
-					Throw("Invalid " + funcName + " Parameters!", rewriter, call->getLocStart());
-				else
+				if(argCount >= 1 && !callee->getReturnType()->isVoidType())
 				{
-					if (argCount > 1)
-						for (int i = 1; i < argCount; i++)
+					if(argCount > 1)
+						for(int i = 1; i < argCount; i++)
 							parseExpression(argArray[i], false, true);
 
 					parseExpression(argArray[0], false, true);
 
-					Warn("PCall unused returns must be dropped handled by user!", rewriter, call->getLocStart());
+					Warn("PCall unused returns must be dropped handled by user!", rewriter, call->getSourceRange());
 					out << "pCall" << endl;
+					return true;
 				}
-				return true;
+				Throw("pCall must have signature \"extern __intrinsic void pcall(void* funcAddr, ... args);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("add"):
@@ -1681,7 +1719,7 @@ public:
 				ChkHashCol("stacktop");
 				if (argCount != 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) != 1)
 				{
-					Throw("stacktop must have signature \"extern __intrinsic int stacktop();\"", rewriter, callee->getLocation());
+					Throw("stacktop must have signature \"extern __intrinsic int stacktop();\"", rewriter, callee->getSourceRange());
 				}
 				return true;
 			}
@@ -1689,204 +1727,229 @@ public:
 			case JoaatCasedConst("memcpy"):
 			{
 				ChkHashCol("memcpy");
-				if (argCount == 3)
+				if(argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
-					if (call->getCallReturnType(*context)->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
-					{
-						//to stack
-						//size
-						parseExpression(argArray[2], false, true);
-						//src
-						parseExpression(argArray[1], true, true);
-						out << "ToStack" << endl;
+					//to stack
+					//size
+					parseExpression(argArray[2], false, true);
+					//src
+					parseExpression(argArray[1], true, true);
+					out << "ToStack" << endl;
 
 
-						//from stack
-						//size
-						parseExpression(argArray[2], false, true);
-						//dest
-						parseExpression(argArray[0], true, true);
-						out << "FromStack" << endl;
-					}
+					//from stack
+					//size
+					parseExpression(argArray[2], false, true);
+					//dest
+					parseExpression(argArray[0], true, true);
+					out << "FromStack" << endl;
 				}
 				else
-					Throw("memcpy must have signature \"extern __intrinsic void memcpy(void* dst, void* src, int len);\"", rewriter, callee->getLocation());
+					Throw("memcpy must have signature \"extern __intrinsic void memcpy(void* dst, void* src, int len);\"", rewriter, callee->getSourceRange());
 				return true;
 			}
 			break;
 			case JoaatCasedConst("creal"):
 			{
 				ChkHashCol("creal");
-				if (argCount == 1) {
-					if (call->getCallReturnType(*context)->isIntegerType())
-					{
-						parseExpression(argArray[0], false, true);
-						if (argArray[0]->getType()->isComplexType())
-						{
-							out << "drop //drop the Imag Part\r\n";
-							return true;
-						}
-					}
+				if(argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isComplexType())
+				{
+					parseExpression(argArray[0], false, true);
+					out << "drop //drop the Imag Part\r\n";
+					return true;
 				}
-				Throw("creal must have signature \"extern __intrinsic int creal(int _Complex complexInteger);\"", rewriter, callee->getLocation());
+				Throw("creal must have signature \"extern __intrinsic int creal(int _Complex complexInteger);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("cimag"):
 			{
 				ChkHashCol("cimag");
-				if (argCount == 1) {
-					if (call->getCallReturnType(*context)->isIntegerType())
-					{
-						if (argArray[0]->getType()->isComplexIntegerType())
-						{
-							parseExpression(argArray[0], false, true);
-							LocalVariables.addLevel();
-							int index = LocalVariables.addDecl("imag_part", 1);
-							out << frameSet(index) << " //Store Imag Part\r\ndrop\r\n" << frameGet(index) << " //Retrieve Imag Part\r\n";
-							LocalVariables.removeLevel();
-							return true;
-						}
-					}
+				if(argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isComplexIntegerType())
+				{
+					parseExpression(argArray[0], false, true);
+					LocalVariables.addLevel();
+					int index = LocalVariables.addDecl("imag_part", 1);
+					out << frameSet(index) << " //Store Imag Part\r\ndrop\r\n" << frameGet(index) << " //Retrieve Imag Part\r\n";
+					LocalVariables.removeLevel();
+					return true;
 				}
-				Throw("cimag must have signature \"extern __intrinsic int cimag(int _Complex complexInteger);\"", rewriter, callee->getLocation());
+				Throw("cimag must have signature \"extern __intrinsic int cimag(int _Complex complexInteger);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("crealf"):
 			{
 				ChkHashCol("crealf");
-				if (argCount == 1) {
-					if (call->getCallReturnType(*context)->isRealFloatingType())
-					{
-						parseExpression(argArray[0], false, true);
-						if (argArray[0]->getType()->isComplexType())
-						{
-							out << "drop //drop the Imag Part\r\n";
-							return true;
-						}
-					}
+				if(argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isComplexType())
+				{
+					parseExpression(argArray[0], false, true);
+
+					out << "drop //drop the Imag Part\r\n";
+					return true;
 				}
-				Throw("crealf must have signature \"extern __intrinsic float crealf(float _Complex complexFloat);\"", rewriter, callee->getLocation());
+				Throw("crealf must have signature \"extern __intrinsic float crealf(float _Complex complexFloat);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("cimagf"):
 			{
 				ChkHashCol("cimagf");
-				if (argCount == 1) {
-					if (call->getCallReturnType(*context)->isRealFloatingType())
-					{
-						if (argArray[0]->getType()->isComplexType())
-						{
-							parseExpression(argArray[0], false, true);
-							LocalVariables.addLevel();
-							int index = LocalVariables.addDecl("imag_part", 1);
-							out << frameSet(index) << " //Store Imag Part\r\ndrop\r\n" << frameGet(index) << " //Retrieve Imag Part\r\n";
-							LocalVariables.removeLevel();
-							return true;
-						}
-					}
+				if(argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isComplexType())
+				{
+					parseExpression(argArray[0], false, true);
+					LocalVariables.addLevel();
+					int index = LocalVariables.addDecl("imag_part", 1);
+					out << frameSet(index) << " //Store Imag Part\r\ndrop\r\n" << frameGet(index) << " //Retrieve Imag Part\r\n";
+					LocalVariables.removeLevel();
+					return true;
 				}
-				Throw("cimagf must have signature \"extern __intrinsic float cimagf(float _Complex complexFloat);\"", rewriter, callee->getLocation());
+				Throw("cimagf must have signature \"extern __intrinsic float cimagf(float _Complex complexFloat);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("cconj"):
 			{
 				ChkHashCol("cconj");
-				if (argCount == 1) {
-					if (call->getCallReturnType(*context)->isComplexIntegerType())
-					{
-						if (argArray[0]->getType()->isComplexIntegerType())
-						{
-							parseExpression(argArray[0], false, true);
-							out << "Neg //Negate the Imag Part\r\n";
-							return true;
-						}
-					}
+				if(argCount == 1 && callee->getReturnType()->isComplexIntegerType() && argArray[0]->getType()->isComplexIntegerType())
+				{
+					parseExpression(argArray[0], false, true);
+					out << "Neg //Negate the Imag Part\r\n";
+					return true;
 				}
-				Throw("cconj must have signature \"extern __intrinsic int _Complex cconj(int _Complex complexInteger);\"", rewriter, callee->getLocation());
+				Throw("cconj must have signature \"extern __intrinsic int _Complex cconj(int _Complex complexInteger);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("cconjf"):
 			{
 				ChkHashCol("cconjf");
-				if (argCount == 1) {
-					if (call->getCallReturnType(*context)->isComplexType())
-					{
-						if (argArray[0]->getType()->isComplexType())
-						{
-							parseExpression(argArray[0], false, true);
-							out << "Neg //Negate the Imag Part\r\n";
-							return true;
-						}
-					}
+				if(argCount == 1 && callee->getReturnType()->isComplexType() && argArray[0]->getType()->isComplexType())
+				{
+					parseExpression(argArray[0], false, true);
+					out << "Neg //Negate the Imag Part\r\n";
+					return true;
 				}
-				Throw("cconjf must have signature \"extern __intrinsic float _Complex cconj(float _Complex complexFloat);\"", rewriter, callee->getLocation());
+				Throw("cconjf must have signature \"extern __intrinsic float _Complex cconj(float _Complex complexFloat);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("reinterpretIntToFloat"):
 			{
 				ChkHashCol("reinterpretIntToFloat");
-				if (argCount == 1) {
-					if (call->getCallReturnType(*context)->isRealFloatingType())
-					{
-						if (argArray[0]->getType()->isIntegerType())
-						{
-							parseExpression(argArray[0], false, true);
-							out << "//reinterpretIntToFloat\r\n";
-							return true;
-						}
-					}
+				if(argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isIntegerType())
+				{
+					parseExpression(argArray[0], false, true);
+					return true;
 				}
-				Throw("reinterpretIntToFloat must have signature \"extern __intrinsic float reinterpretIntToFloat(int intValue);\"", rewriter, callee->getLocation());
+				Throw("reinterpretIntToFloat must have signature \"extern __intrinsic float reinterpretIntToFloat(int intValue);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("reinterpretFloatToInt"):
 			{
 				ChkHashCol("reinterpretFloatToInt");
-				if (argCount == 1) {
-					if (call->getCallReturnType(*context)->isIntegerType())
-					{
-						if (argArray[0]->getType()->isRealFloatingType())
-						{
-							parseExpression(argArray[0], false, true);
-							out << "//reinterpretFloatToInt\r\n";
-							return true;
-						}
-					}
+				if(argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					return true;
 				}
-				Throw("reinterpretFloatToInt must have signature \"extern __intrinsic int reinterpretFloatToInt(float floatValue);\"", rewriter, callee->getLocation());
+				Throw("reinterpretFloatToInt must have signature \"extern __intrinsic int reinterpretFloatToInt(float floatValue);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
-			case JoaatCasedConst("pushFloat"):
+			case JoaatCasedConst("pushFloat"):;
 			{
 				ChkHashCol("pushFloat");
-				if (argCount == 1) {
-					if (call->getCallReturnType(*context)->isVoidType())
-					{
-						if (argArray[0]->getType()->isRealFloatingType())
-						{
-							parseExpression(argArray[0], false, true);
-							return true;
-						}
-					}
+				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					return true;
 				}
-				Throw("pushFloat must have signature \"extern __intrinsic void pushFloat(float floatValue);\"", rewriter, callee->getLocation());
+				Throw("pushFloat must have signature \"extern __intrinsic void pushFloat(float floatValue);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("pushInt"):
 			{
 				ChkHashCol("pushInt");
 
-				if (argCount == 1) {
-					if (call->getCallReturnType(*context)->isVoidType())
+				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
+				{
+					parseExpression(argArray[0], false, true);
+					return true;
+				}
+				Throw("pushInt must have signature \"extern __intrinsic void pushInt(int intValue);\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
+			case JoaatCasedConst("pushStruct"):
+			{
+				ChkHashCol("pushStruct");
+				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
+				{
+					if(isa<CastExpr>(argArray[0]))
 					{
-						if (argArray[0]->getType()->isIntegerType())
+						const CastExpr *castee = cast<CastExpr>(argArray[0]);
+						if(castee->getCastKind() == CK_BitCast)
 						{
-							parseExpression(argArray[0], false, true);
+							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
+							if(size > 1)
+							{
+								out << iPush(size) << "//Struct Size\r\n";
+							}
+							parseExpression(argArray[0], true, true);
+							if(size > 1)
+							{
+								out << "ToStack\r\n";
+							}
+							else
+							{
+								out << "pGet\r\n";
+							}
 							return true;
 						}
 					}
+					Throw("Couldnt extract type information from the argument in pushStruct", rewriter, argArray[0]->getSourceRange());
+					return false;
 				}
-				Throw("pushInt must have signature \"extern __intrinsic void pushInt(int intValue);\"", rewriter, callee->getLocation());
+				Throw("pushStruct must have signature \"extern __intrinsic void pushStruct(void *Struct);\"", rewriter, callee->getSourceRange());
+				return false;;
+			}
+			break;
+			case JoaatCasedConst("popStruct"):
+			{
+				ChkHashCol("popStruct");
+
+				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
+				{
+					if(isa<CastExpr>(argArray[0]))
+					{
+						const CastExpr *castee = cast<CastExpr>(argArray[0]);
+						if(castee->getCastKind() == CK_BitCast)
+						{
+							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
+							if(size > 1)
+							{
+								out << iPush(size) << "//Struct Size\r\n";
+							}
+							parseExpression(argArray[0], true, true);
+							if(size > 1)
+							{
+								out << "FromStack\r\n";
+							}
+							else
+							{
+								out << "pSet\r\n";
+							}
+							return true;
+						}
+					}
+					Throw("Couldnt extract type information from the argument in popStruct", rewriter, argArray[0]->getSourceRange());
+					return false;
+				}
+				Throw("popStruct must have signature \"extern __intrinsic void popStruct(void *Struct);\"", rewriter, callee->getSourceRange());
+				return false;;
 			}
 			break;
 			case JoaatCasedConst("dupStackTop"):
@@ -1894,7 +1957,7 @@ public:
 				ChkHashCol("dupStackTop");
 
 				if (argCount == 0) {
-					if (call->getCallReturnType(*context)->isVoidType())
+					if (callee->getReturnType()->isVoidType())
 					{
 						out << "dup //dupStackTop\r\n";
 						return true;
@@ -2330,17 +2393,23 @@ public:
 				}
 				case clang::CK_FunctionToPointerDecay:
 				{
-					parseExpression(icast->getSubExpr());
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					break;
 				}
 				case clang::CK_BitCast:
 				{
-					parseExpression(icast->getSubExpr());
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					break;
 				}
 				case clang::CK_IntegralToBoolean:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					break;
+				}
+				case clang::CK_FloatingToBoolean:
+				{
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					out << fPush(0.0f) << "\r\nfCmpNe\r\n";
 					break;
 				}
 				case clang::CK_FloatingComplexToReal:
@@ -2763,6 +2832,22 @@ public:
 			{
 				parseExpression(bOp->getLHS());
 				parseExpression(bOp->getRHS(), false, true);
+				return true;
+			}
+			if (bOp->getOpcode() == BO_LAnd)
+			{
+				parseExpression(bOp->getLHS(), false, true);
+				out << "dup\r\nJumpFalse @" << bOp->getRHS()->getLocEnd().getRawEncoding() << "\r\n";
+				parseExpression(bOp->getRHS(), false, true);
+				out << "and\r\n\r\n:" << bOp->getRHS()->getLocEnd().getRawEncoding() << "\r\n";
+				return true;
+			}
+			if(bOp->getOpcode() == BO_LOr)
+			{
+				parseExpression(bOp->getLHS(), false, true);
+				out << "dup\r\nnot\r\nJumpFalse @" << bOp->getRHS()->getLocEnd().getRawEncoding() << "\r\n";
+				parseExpression(bOp->getRHS(), false, true);
+				out << "or\r\n\r\n:" << bOp->getRHS()->getLocEnd().getRawEncoding() << "\r\n";
 				return true;
 			}
 
@@ -4710,7 +4795,7 @@ public:
 
 		//this is not to be used by the high level compiler statics will still be indexed by integers for performance
 		for (map<string, int>::iterator iterator = statics.begin(); iterator != statics.end(); iterator++)
-			header << "SetStaticName " << iterator->second << " " << iterator->first << "\r\n";
+		header << "SetStaticName " << iterator->second << " " << iterator->first << "\r\n";
 
 		if (Visitor.MainRets != -1)
 		{
