@@ -363,6 +363,20 @@ namespace Utils {
 			hash += (hash << 15);
 			return hash;
 		}
+		uint32_t JoaatCased(char* key)
+		{
+			uint32_t hash, i;
+			for (hash = i = 0; key[i]; ++i)
+			{
+				hash += key[i];
+				hash += (hash << 10);
+				hash ^= (hash >> 6);
+			}
+			hash += (hash << 3);
+			hash ^= (hash >> 11);
+			hash += (hash << 15);
+			return hash;
+		}
 	}
 
 	namespace Bitwise

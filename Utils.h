@@ -37,7 +37,8 @@ namespace Utils {
 
 	namespace Hashing
 	{
-		unsigned int Joaat(char* key);
+		uint32_t Joaat(char* key);
+		uint32_t JoaatCased(char* key);
 	}
 	namespace DataConversion
 	{
