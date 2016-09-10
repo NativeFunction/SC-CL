@@ -5,7 +5,7 @@
 #define __intrinsic __attribute__((__intrinsic__))
 
 #define __intrinsic_advanced_user true
-#if __intrinsic_advanced_user == 0
+#if __intrinsic_advanced_user == false
 #define __asm_unsafe __attribute__((deprecated("This asm function is extremely unsafe. It should only be used if you know what you are doing.")))
 #else
 #define __asm_unsafe 
@@ -50,7 +50,7 @@ extern __intrinsic int cimag(int _Complex complexInteger);
 extern __intrinsic float crealf(float _Complex complexFloat);
 extern __intrinsic float cimagf(float _Complex complexFloat);
 extern __intrinsic int _Complex cconj(int _Complex complexInteger);
-extern __intrinsic float _Complex cconj(float _Complex complexFloat);
+extern __intrinsic float _Complex cconjf(float _Complex complexFloat);
 extern __intrinsic float reinterpretIntToFloat(int intValue);
 extern __intrinsic int reinterpretFloatToInt(float floatValue);
 extern __intrinsic vector3 tovector3(float value);
