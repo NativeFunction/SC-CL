@@ -1617,6 +1617,18 @@ public:
 				return false;
 			}
 			break;
+			case JoaatCasedConst("neg"):
+			{
+				ChkHashCol("neg");
+				if(argCount == 0 && callee->getReturnType()->isIntegerType())
+				{
+					out << "Neg\r\n";
+					return true;
+				}
+				Throw("neg must have signature \"extern __intrinsic int neg();\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
 			case JoaatCasedConst("getframe"):
 			ChkHashCol("getframe");
 			goto FrameReuse;
@@ -2250,6 +2262,17 @@ public:
 				return false;
 			}
 			break;
+			case JoaatCasedConst("fneg"):
+			{
+				ChkHashCol("fneg");
+				if(argCount == 0 && callee->getReturnType()->isRealFloatingType())
+				{
+					out << "fNeg\r\n";
+					return true;
+				}
+				Throw("fneg must have signature \"extern __intrinsic float fneg();\"", rewriter, callee->getSourceRange());
+				return false;
+			}
 			default:
 			Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
 		}
