@@ -2015,6 +2015,13 @@ public:
 				case clang::CK_LValueToRValue:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, true, printVTable);
+					if (!isLtoRValue)
+					{
+						for(int i = getSizeFromBytes(getSizeOfType(icast->getSubExpr()->getType().getTypePtr())); i--;)
+						{
+							out << "drop //unused result\r\n";
+						}
+					}
 					//const Expr *subE = icast->getSubExpr();
 
 					//handleRValueDeclRef(subE);
