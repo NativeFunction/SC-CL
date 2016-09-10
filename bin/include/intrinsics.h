@@ -39,6 +39,8 @@ extern __intrinsic __asm_unsafe void popMult(const uint count);
 extern __intrinsic __asm_unsafe void pushFloat(float floatValue);
 extern __intrinsic __asm_unsafe void pushInt(int intValue);
 extern __intrinsic __asm_unsafe void dupStackTop();
+extern __intrinsic __asm_unsafe void pushStruct(void* structure);
+extern __intrinsic __asm_unsafe void popStruct(void* structure);
 //}
 #pragma endregion
 
@@ -56,7 +58,13 @@ extern __intrinsic int _Complex cconj(int _Complex complexInteger);
 extern __intrinsic float _Complex cconjf(float _Complex complexFloat);
 extern __intrinsic float reinterpretIntToFloat(int intValue);
 extern __intrinsic int reinterpretFloatToInt(float floatValue);
-extern __intrinsic vector3 tovector3(float value);
+extern __intrinsic vector3 toVector3(float value);
+extern __intrinsic vector3 makeVector3(float x, float y, float z);
+extern __intrinsic vector3 vector3Add(vector3 left, vector3 right);
+extern __intrinsic vector3 vector3Sub(vector3 left, vector3 right);
+extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right);
+extern __intrinsic vector3 vector3Div(vector3 left, vector3 right);
+extern __intrinsic vector3 vector3Neg(vector3 vector);
 //}
 #pragma endregion
 

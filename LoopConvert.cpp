@@ -1956,14 +1956,119 @@ public:
 			{
 				ChkHashCol("dupStackTop");
 
-				if (argCount == 0) {
-					if (callee->getReturnType()->isVoidType())
-					{
-						out << "dup //dupStackTop\r\n";
-						return true;
-					}
+				if(argCount == 0 && callee->getReturnType()->isVoidType())
+				{
+					out << "dup //dupStackTop\r\n";
+					return true;
 				}
 				Throw("dupStackTop must have signature \"extern __intrinsic void dupStackTop();\"", rewriter, callee->getLocation());
+			}
+			break;
+			case JoaatCasedConst("toVector3"):
+			{
+				ChkHashCol("toVector3");
+
+				if(argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && argArray[0]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					out << "FToV\r\n";
+					return true;
+				}
+				Throw("tovector3 must have signature \"extern __intrinsic vector3 tovector3(float value);\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
+			case JoaatCasedConst("makeVector3"):
+			{
+				ChkHashCol("makeVector3");
+
+				if(argCount == 3 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && argArray[0]->getType()->isRealFloatingType() && argArray[1]->getType()->isRealFloatingType() && argArray[2]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					parseExpression(argArray[2], false, true);
+					return true;
+				}
+				Throw("makeVector3 must have signature \"extern __intrinsic vector3 makeVector3(float x, float y, float z)\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			case JoaatCasedConst("vector3Add"):
+			{
+				ChkHashCol("vector3Add");
+
+				if(argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				{
+
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					out << "vAdd\r\n";
+					return true;
+				}
+				Throw("vector3Add must have signature \"extern __intrinsic vector3 vector3Add(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
+			case JoaatCasedConst("vector3Sub"):
+			{
+				ChkHashCol("vector3Sub");
+
+				if(argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				{
+
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					out << "vSub\r\n";
+					return true;
+				}
+				Throw("vector3Sub must have signature \"extern __intrinsic vector3 vector3Sub(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
+			case JoaatCasedConst("vector3Mult"):
+			{
+				ChkHashCol("vector3Mult");
+
+				if(argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				{
+
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					out << "vMult\r\n";
+					return true;
+				}
+				Throw("vector3Mult must have signature \"extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
+			case JoaatCasedConst("vector3Div"):
+			{
+				ChkHashCol("vector3Div");
+
+				if(argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				{
+
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					out << "vDiv\r\n";
+					return true;
+				}
+				Throw("vector3Div must have signature \"extern __intrinsic vector3 vector3Div(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
+			case JoaatCasedConst("vector3Neg"):
+			{
+				ChkHashCol("vector3Neg");
+
+				if(argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+				{
+
+					parseExpression(argArray[0], false, true);
+					out << "vNeg\r\n";
+					return true;
+				}
+				Throw("vector3Neg must have signature \"extern __intrinsic vector3 vector3Neg(vector3 vector)\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			default:
