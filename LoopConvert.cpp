@@ -2352,9 +2352,15 @@ public:
 				}
 				else if (isa<DeclRefExpr>(subE)) {
 					parseExpression(subE, true, false);
+					if(!isLtoRValue){
+						out << "Drop //unused result\r\n";
+					}
 				}
 				else {
 					parseExpression(subE, true, false);
+					if(!isLtoRValue){
+						out << "Drop //unused result\r\n";
+					}
 				}
 				return  true;
 
