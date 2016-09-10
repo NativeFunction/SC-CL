@@ -35,7 +35,7 @@ extern __intrinsic __asm_unsafe void pcall(void* funcAddr, ...);//params with ty
 #pragma region Stack_Operations
 //{ Stack_Operations
 extern __intrinsic any stacktop();
-extern __intrinsic __asm_unsafe void pop(const uint count);
+extern __intrinsic __asm_unsafe void pop();
 extern __intrinsic __asm_unsafe void popMult(const uint count);
 extern __intrinsic __asm_unsafe void pushFloat(float floatValue);
 extern __intrinsic __asm_unsafe void pushInt(int intValue);

@@ -2739,7 +2739,7 @@ extern __native int unk_0x544BCE48(int pram0, int pram1);
 extern __native void unk_0x4D629653(int pram0, int pram1, int pram2);
 extern __native int unk_0x9B083FD2();
 extern __native int get_physinst_velocity(int pram0, int pram1);
-extern __native int sqrt(int pram0);
+extern __native float sqrt(float pram0);
 extern __native int get_actor_update_priority(int pram0);
 extern __native void hud_counter_set(int pram0);
 extern __native int exp(int pram0);

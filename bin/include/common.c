@@ -133,64 +133,48 @@ vector3 RotationLookAtPoint(vector3 pos, vector3 endpos)
 }
 float acos(float number)
 {
-	__asm__(
-		"SetFrameName 0 number\r\n"
-		"GetFrame1 number\r\n"
-		"Push 0x80000000\r\n"
-		"And\r\n"
-		"Push 0x80000000\r\n"
-		"JumpEQ @acos_negative\r\n"
-		"Pushf -0.0187293\r\n"
-		"GetFrame1 number\r\n"
-		"fMult\r\n"
-		"Pushf 0.0742610\r\n"
-		"fAdd\r\n"
-		"GetFrame1 number\r\n"
-		"fMult\r\n"
-		"Pushf -0.2121144\r\n"
-		"fAdd\r\n"
-		"GetFrame1 number\r\n"
-		"fMult\r\n"
-		"Pushf 1.5707288\r\n"
-		"fAdd\r\n"
-		"Pushf_1\r\n"
-		"GetFrame1 number\r\n"
-		"fSub\r\n"
-		"CallNative sqrt 1 1\r\n"
-		"fMult\r\n"
-		"Return 1 1\r\n"
-		":acos_negative\r\n"
-		"GetFrame1 number\r\n"
-		"Push 0x7FFFFFFF\r\n"
-		"And\r\n"
-		"SetFrame1 number\r\n"
-		"Pushf -0.0187293\r\n"
-		"GetFrame1 number\r\n"
-		"fMult\r\n"
-		"Pushf 0.0742610\r\n"
-		"fAdd\r\n"
-		"GetFrame1 number\r\n"
-		"fMult\r\n"
-		"Pushf -0.2121144\r\n"
-		"fAdd\r\n"
-		"GetFrame1 number\r\n"
-		"fMult\r\n"
-		"Pushf 1.5707288\r\n"
-		"fAdd\r\n"
-		"Pushf_1\r\n"
-		"GetFrame1 number\r\n"
-		"fSub\r\n"
-		"CallNative sqrt 1 1\r\n"
-		"fMult\r\n"
-		"Dup\r\n"
-		"Pushf -2.0\r\n"
-		"fMult\r\n"
-		"fAdd\r\n"
-		"Pushf 3.14159265358979\r\n"
-		"fAdd\r\n"
-		"SetFrame1 number\r\n"
-	);
-	return number;
+	if (reinterpretFloatToInt(number) < 0)//this works find for floats as -ive ints and floats both have msb set
+	{
+		number = -number;
+		pushFloat(-0.0187293f * number);
+		pushFloat(fadd(0.0742610f));
+		pushFloat(fmult(number));
+		pushFloat(fsub(0.2121144f));
+		pushFloat(fmult(number));
+		pushFloat(fadd(1.5707288f));
+		pushFloat(fmult(sqrt(1.0 - number)));
+		pushFloat(fneg());
+		return fadd(3.14159265358979f);
+	}
+	pushFloat(-0.0187293f * number);
+	pushFloat(fadd(0.0742610f));
+	pushFloat(fmult(number));
+	pushFloat(fsub(0.2121144f));
+	pushFloat(fmult(number));
+	pushFloat(fadd(1.5707288f));
+	return fmult(sqrt(1.0 - number));
 }
-
-
+float asin(float number)
+{
+	if (reinterpretFloatToInt(number) < 0)//this works find for floats as -ive ints and floats both have msb set
+	{
+		number = -number;
+		pushFloat(-0.0187293f * number);
+		pushFloat(fadd(0.0742610f));
+		pushFloat(fmult(number));
+		pushFloat(fsub(0.2121144f));
+		pushFloat(fmult(number));
+		pushFloat(fadd(1.5707288f));
+		pushFloat(fmult(sqrt(1.0 - number)));
+		return fsub(1.570796326794895f);
+	}
+	pushFloat(-0.0187293f * number);
+	pushFloat(fadd(0.0742610f));
+	pushFloat(fmult(number));
+	pushFloat(fsub(0.2121144f));
+	pushFloat(fmult(number));
+	pushFloat(fadd(1.5707288f));
+	pushFloat(fmult(sqrt(1.0 - number)));
+	pushFloat(fneg());
+	return fadd(1.570796326794895f);
+}
