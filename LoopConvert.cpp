@@ -157,19 +157,19 @@ struct local_scope
 // By implementing RecursiveASTVisitor, we can specify which AST nodes
 // we're interested in by overriding relevant methods.
 
-
+//Constexpr in visual studio is not fully implemented. When they are put in the hashing namespace in utils it errors.
 #pragma region constexpr_helpers
 constexpr char ToLowerConst(const char c) { return (c >= 'A' && c <= 'Z') ? c + ('a' - 'A') : c; }
 constexpr uint32_t sumSHL(uint32_t h, uint32_t shift) { return h + (h << shift); }
 constexpr uint32_t sumSHR(uint32_t h, uint32_t shift) { return h + (h >> shift); }
 constexpr uint32_t xorSHR(uint32_t h, uint32_t shift) { return h ^ (h >> shift); }
-constexpr uint32_t hashFinishImpl(uint32_t h){return sumSHL(xorSHR(sumSHL(h, 3), 11), 15);}
-constexpr uint32_t hashStepImpl(uint32_t h, uint32_t c){return xorSHR(sumSHL(h + c, 10), 6);}
-constexpr uint32_t casedHashImpl(const char * cstr, uint32_t h) { return (*cstr != 0) ? hashImpl(cstr + 1, hashStepImpl(h, *cstr)) : hashFinishImpl(h); }
+constexpr uint32_t hashFinishImpl(uint32_t h) { return sumSHL(xorSHR(sumSHL(h, 3), 11), 15); }
+constexpr uint32_t hashStepImpl(uint32_t h, uint32_t c) { return xorSHR(sumSHL(h + c, 10), 6); }
+constexpr uint32_t casedHashImpl(const char * cstr, uint32_t h) { return (*cstr != 0) ? casedHashImpl(cstr + 1, hashStepImpl(h, *cstr)) : hashFinishImpl(h); }
 constexpr uint32_t hashImpl(const char * cstr, uint32_t h) { return (*cstr != 0) ? hashImpl(cstr + 1, hashStepImpl(h, ToLowerConst(*cstr))) : hashFinishImpl(h); }
 #pragma endregion
 
-constexpr uint32_t JoaatCasedConst(const char * cstr){return casedHashImpl(cstr, 0);}
+constexpr uint32_t JoaatCasedConst(const char * cstr) { return casedHashImpl(cstr, 0); }
 constexpr uint32_t JoaatConst(const char * cstr) { return hashImpl(cstr, 0); }
 
 
@@ -813,7 +813,7 @@ public:
 			bool result;
 			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
-				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
 					Warn("If condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				if (result)
 				{
@@ -882,7 +882,7 @@ public:
 			bool result;
 			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
-				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
 					Warn("While condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				if (result)
 				{
@@ -982,7 +982,7 @@ public:
 			bool result;
 			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
-				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
 					Warn("Do while condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				if (result)
 				{
@@ -1418,7 +1418,7 @@ public:
 							parseExpression(argArray[i], false, true);
 
 					parseExpression(argArray[0], false, true);
-					
+
 					Warn("PCall unused returns must be dropped handled by user!", rewriter, call->getLocStart());
 					out << "pCall" << endl;
 				}
@@ -1490,7 +1490,7 @@ public:
 						Throw("Invalid " + funcName + " Parameters!", rewriter, call->getExprLoc());
 				}
 				return true;
-			}		
+			}
 			break;
 			case JoaatCasedConst("div"):
 			{
@@ -1502,7 +1502,7 @@ public:
 						const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
 						long longVal = intVal->getValue().getSExtValue();
 
-							out << "Push " << longVal << endl 
+						out << "Push " << longVal << endl
 							<< "Div\r\n";
 					}
 					else if (isa<Expr>(argArray[0]))
@@ -1646,8 +1646,8 @@ public:
 						int intValue = intVal->getValue().getSExtValue();
 
 						out << "getglobalp"
-						<< ((intValue & 0xFFFF) == intValue ? "2 " : "3 ")
-						<< intValue << endl;
+							<< ((intValue & 0xFFFF) == intValue ? "2 " : "3 ")
+							<< intValue << endl;
 						return true;
 					}
 					else
@@ -1659,7 +1659,7 @@ public:
 			break;
 			case JoaatCasedConst("stacktop"):
 			{
-				
+
 				ChkHashCol("stacktop");
 				if (argCount != 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) != 1)
 				{
@@ -1886,7 +1886,7 @@ public:
 			}
 			break;
 			default:
-				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+			Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
 		}
 
 		#undef ChkHashCol
@@ -3042,7 +3042,7 @@ public:
 							case BO_GE: out << "fCmpGE\r\n"; break;
 							case BO_LE: out << "fCmpLE\r\n"; break;
 							case BO_NE: out << "fCmpNE\r\n"; break;
-							case BO_LAnd: 
+							case BO_LAnd:
 							case BO_And: out << "And\r\n"; break;
 							case BO_Xor: out << "Xor\r\n"; break;
 							case BO_Add: out << "fAdd\r\n"; break;
