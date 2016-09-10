@@ -1,6 +1,6 @@
 #pragma once
 #include "types.h"
-
+#include "constants.h"
 
 #define __intrinsic __attribute__((__intrinsic__))
 
@@ -10,7 +10,10 @@
 #else
 #define __asm_unsafe 
 #endif
+#undef __intrinsic_advanced_user
+
 #define offsetof(st, m) ((uint)&(((st *)0)->m))
+#define count(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
 #pragma region String
 //{ String

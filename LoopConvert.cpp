@@ -4705,10 +4705,12 @@ public:
 		stringstream header;
 
 		header << "SetStaticsCount " << staticInc << "\r\n";
-		for (map<uint32_t, string>::iterator iterator = GlobalsVisitor.DefaultStaticValues.begin(); iterator != GlobalsVisitor.DefaultStaticValues.end(); iterator++) {
+		for (map<uint32_t, string>::iterator iterator = GlobalsVisitor.DefaultStaticValues.begin(); iterator != GlobalsVisitor.DefaultStaticValues.end(); iterator++)
 			header << "SetDefaultStatic " << iterator->first << " " << iterator->second << "\r\n";
 
-		}
+		//this is not to be used by the high level compiler statics will still be indexed by integers for performance
+		for (map<string, int>::iterator iterator = statics.begin(); iterator != statics.end(); iterator++)
+			header << "SetStaticName " << iterator->second << " " << iterator->first << "\r\n";
 
 		if (Visitor.MainRets != -1)
 		{

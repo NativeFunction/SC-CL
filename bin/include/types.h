@@ -1,44 +1,27 @@
 #pragma once
 
-#define __CreateSizedArray(name, size, type)\
-struct\
-{\
-	int size;\
-	type items[size];\
-} name; name.size = size
-
-#define __ArrayToSizedArray(arr, sizedarr)\
-if(sizeof(arr) == sizeof(sizedarr.items))\
-	__memcopy(sizedarr.items, arr, sizeof(arr));
-
-#define __SizedArrayToArray(sizedarr, arr)\
-if(sizeof(arr) == sizeof(sizedarr.items))\
-	__memcopy(arr, sizedarr.items, sizeof(sizedarr.items));
-	
-
 typedef unsigned int uint;
 typedef unsigned char byte;
 typedef unsigned short ushort;
-typedef int* sizedarray;
 typedef _Bool bool;
 
 typedef union vector3
 {
 	struct { float x, y, z; };
 	float v[3];
-} vector3, *vector3p;
+} vector3;
 
 typedef union quaternion
 {
 	struct { float x, y, z, w; };
 	float v[4];
-} quaternion, *quaternionp;
+} quaternion;
 
 typedef union any
 {
-	bool Bool;
 	int Int;
 	float Float;
+	bool Bool;
 	char* CharP;
 	int* IntP;
 	float* FloatP;
@@ -46,4 +29,26 @@ typedef union any
 	vector3* Vector3P;
 	quaternion* QuaternionP;
 	
-} any, *anyp;
+} any;
+
+
+typedef void* sizedarrayp;
+
+#include "intrinsics.h"
+
+#define CreateSizedArray(name, sizein)\
+struct\
+{\
+	int size;\
+	any items[sizein];\
+} name = {.size = sizein};
+
+#define ArrayToSizedArray(arr, sizedarr)\
+if(sizeof(arr) == sizeof(sizedarr.items))\
+	memcpy(sizedarr.items, arr, count(arr));
+
+#define SizedArrayToArray(sizedarr, arr)\
+if(sizeof(arr) == sizeof(sizedarr.items))\
+	memcpy(arr, sizedarr.items, count(sizedarr.items));
+	
+
