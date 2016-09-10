@@ -4,8 +4,9 @@
 
 #define __intrinsic __attribute__((__intrinsic__))
 
-#define __intrinsic_advanced_user true
-#if __intrinsic_advanced_user == false
+//#define __intrinsic_advanced_user
+
+#ifndef __intrinsic_advanced_user
 #define __asm_unsafe __attribute__((deprecated("This asm function is extremely unsafe. It should only be used if you know what you are doing.")))
 #else
 #define __asm_unsafe 
@@ -50,6 +51,10 @@ extern __intrinsic __asm_unsafe int add(int value);
 extern __intrinsic __asm_unsafe int sub(int value);
 extern __intrinsic __asm_unsafe int div(int value);
 extern __intrinsic __asm_unsafe int mult(int value);
+extern __intrinsic __asm_unsafe float fadd(float value);
+extern __intrinsic __asm_unsafe float fsub(float value);
+extern __intrinsic __asm_unsafe float fdiv(float value);
+extern __intrinsic __asm_unsafe float fmult(float value);
 extern __intrinsic int creal(int _Complex complexInteger);
 extern __intrinsic int cimag(int _Complex complexInteger);
 extern __intrinsic float crealf(float _Complex complexFloat);

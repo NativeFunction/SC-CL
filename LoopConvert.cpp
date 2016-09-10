@@ -1484,92 +1484,137 @@ public:
 			case JoaatCasedConst("add"):
 			{
 				ChkHashCol("add");
-				if (argCount == 1)
+				if(argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
 				{
-					if (isa<IntegerLiteral>(argArray[0]))
+					llvm::APSInt result;
+					if(argArray[0]->EvaluateAsInt(result, *context))
 					{
-						const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
-						long longVal = intVal->getValue().getSExtValue();
-						add(longVal);
+						int64_t iResult = result.getSExtValue();
+						if(iResult == 0)
+						{
+							//do nothing here
+						}
+						else
+						{
+							out << add(iResult) << "\r\n";
+						}
 					}
-					else if (isa<Expr>(argArray[0]))
+					else
 					{
 						parseExpression(argArray[0]);
 						out << "Add\r\n";
 					}
-					else
-						Throw("Invalid " + funcName + " Parameters!", rewriter, call->getExprLoc());
+					return true;
 				}
-				return true;
+				Throw("add must have signature \"extern __intrinsic int add(int value);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("sub"):
 			{
 				ChkHashCol("sub");
-				if (argCount == 1)
+				if(argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
 				{
-					if (isa<IntegerLiteral>(argArray[0]))
+					llvm::APSInt result;
+					if(argArray[0]->EvaluateAsInt(result, *context))
 					{
-						const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
-						long longVal = intVal->getValue().getSExtValue();
-
-						sub(longVal);
+						int64_t iResult = result.getSExtValue();
+						if(iResult == 0)
+						{
+							//do nothing here
+						}
+						else
+						{
+							out << sub(iResult) << "\r\n";
+						}
 					}
-					else if (isa<Expr>(argArray[0]))
+					else
 					{
 						parseExpression(argArray[0]);
 						out << "Sub\r\n";
 					}
-					else
-						Throw("Invalid " + funcName + " Parameters!", rewriter, call->getExprLoc());
+					return true;
 				}
-				return true;
+				Throw("sub must have signature \"extern __intrinsic int sub(int value);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("mult"):
 			{
 				ChkHashCol("mult");
-				if (argCount == 1)
+				if(argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
 				{
-					if (isa<IntegerLiteral>(argArray[0]))
+					llvm::APSInt result;
+					if(argArray[0]->EvaluateAsInt(result, *context))
 					{
-						const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
-						long longVal = intVal->getValue().getSExtValue();
-						mult(longVal);
+						int64_t iResult = result.getSExtValue();
+						if(iResult == 0)
+						{
+							out << "Drop\r\nPush_0\r\n";//replace top of stack with 0
+						}
+						else if(iResult == 1)
+						{
+							//do nothing here
+						}
+						else if(iResult == -1)
+						{
+							//negate
+							out << "Neg\r\n";
+						}
+						else
+						{
+							out << mult(iResult) << "\r\n";
+						}
+
 					}
-					else if (isa<Expr>(argArray[0]))
+					else
 					{
 						parseExpression(argArray[0]);
 						out << "Mult\r\n";
 					}
-					else
-						Throw("Invalid " + funcName + " Parameters!", rewriter, call->getExprLoc());
+					return true;
 				}
-				return true;
+				Throw("mult must have signature \"extern __intrinsic int mult(int value);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("div"):
 			{
 				ChkHashCol("div");
-				if (argCount == 1)
+				if(argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
 				{
-					if (isa<IntegerLiteral>(argArray[0]))
+					llvm::APSInt result;
+					if(argArray[0]->EvaluateAsInt(result, *context))
 					{
-						const IntegerLiteral* intVal = cast<IntegerLiteral>(argArray[0]);
-						long longVal = intVal->getValue().getSExtValue();
+						int64_t iResult = result.getSExtValue();
+						if(iResult == 0)
+						{
+							Warn("Zero division error detected", rewriter, argArray[0]->getSourceRange());//just warn the user of the undefined behaviour
+						}
+						else if(iResult == 1)
+						{
+							//do nothing here
+						}
+						else if(iResult == -1)
+						{
+							//negate
+							out << "Neg\r\n";
+						}
+						else
+						{
+							out << iPush(iResult) << "\r\nDiv\r\n";
+						}
 
-						out << "Push " << longVal << endl
-							<< "Div\r\n";
 					}
-					else if (isa<Expr>(argArray[0]))
+					else
 					{
 						parseExpression(argArray[0]);
 						out << "Div\r\n";
 					}
-					else
-						Throw("Invalid " + funcName + " Parameters!", rewriter, call->getExprLoc());
+					return true;
 				}
-				return true;
+				Throw("div must have signature \"extern __intrinsic int div(int value);\"", rewriter, callee->getSourceRange());
+				return false;
 			}
 			break;
 			case JoaatCasedConst("getframe"):
@@ -1961,7 +2006,7 @@ public:
 					out << "dup //dupStackTop\r\n";
 					return true;
 				}
-				Throw("dupStackTop must have signature \"extern __intrinsic void dupStackTop();\"", rewriter, callee->getLocation());
+				Throw("dupStackTop must have signature \"extern __intrinsic void dupStackTop();\"", rewriter, callee->getSourceRange());
 			}
 			break;
 			case JoaatCasedConst("toVector3"):
@@ -2068,6 +2113,140 @@ public:
 					return true;
 				}
 				Throw("vector3Neg must have signature \"extern __intrinsic vector3 vector3Neg(vector3 vector)\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
+			case JoaatCasedConst("fadd"):
+			{
+				ChkHashCol("fadd");
+				if(argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
+				{
+					Expr::EvalResult result;
+					if(argArray[0]->EvaluateAsRValue(result, *context) && !result.HasSideEffects && result.Val.isFloat())
+					{
+						double dResult = &result.Val.getFloat().getSemantics() == &llvm::APFloat::IEEEsingle ? (double)result.Val.getFloat().convertToFloat() : result.Val.getFloat().convertToDouble();
+						if(dResult == 0)
+						{
+							//do nothing here
+						}
+						else
+						{
+							out << fPush(dResult) << "\r\nfAdd\r\n";
+						}
+					}
+					else
+					{
+						parseExpression(argArray[0], false, true);
+						out << "fAdd\r\n";
+					}
+					return true;
+				}
+				Throw("fadd must have signature \"extern __intrinsic float fadd(float value);\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
+			case JoaatCasedConst("fsub"):
+			{
+				ChkHashCol("fsub");
+				if(argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
+				{
+					Expr::EvalResult result;
+					if(argArray[0]->EvaluateAsRValue(result, *context) && !result.HasSideEffects && result.Val.isFloat())
+					{
+						double dResult = &result.Val.getFloat().getSemantics() == &llvm::APFloat::IEEEsingle ? (double)result.Val.getFloat().convertToFloat() : result.Val.getFloat().convertToDouble();
+						if(dResult == 0)
+						{
+							//do nothing here
+						}
+						else
+						{
+							out << fPush(dResult) << "\r\nfSub\r\n";
+						}
+					}
+					else
+					{
+						parseExpression(argArray[0], false, true);
+						out << "fSub\r\n";
+					}
+					return true;
+				}
+				Throw("fsub must have signature \"extern __intrinsic float fsub(float value);\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
+			case JoaatCasedConst("fmult"):
+			{
+				ChkHashCol("fmult");
+				if(argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
+				{
+					Expr::EvalResult result;
+					if(argArray[0]->EvaluateAsRValue(result, *context) && !result.HasSideEffects && result.Val.isFloat())
+					{
+						double dResult = &result.Val.getFloat().getSemantics() == &llvm::APFloat::IEEEsingle ? (double)result.Val.getFloat().convertToFloat() : result.Val.getFloat().convertToDouble();
+						if(dResult == 0)
+						{
+							out << "Drop\r\nPushF_0\r\n";
+						}
+						else if(dResult == 1)
+						{
+							//do nothing here
+						}
+						else if(dResult == -1)
+						{
+							//negate
+							out << "fNeg\r\n";
+						}
+						else
+						{
+							out << fPush(dResult) << "\r\nfMult\r\n";
+						}
+					}
+					else
+					{
+						parseExpression(argArray[0], false, true);
+						out << "fMult\r\n";
+					}
+					return true;
+				}
+				Throw("fmult must have signature \"extern __intrinsic float fmult(float value);\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
+			case JoaatCasedConst("fdiv"):
+			{
+				ChkHashCol("fdiv");
+				if(argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
+				{
+					Expr::EvalResult result;
+					if(argArray[0]->EvaluateAsRValue(result, *context) && !result.HasSideEffects && result.Val.isFloat())
+					{
+						double dResult = &result.Val.getFloat().getSemantics() == &llvm::APFloat::IEEEsingle ? (double)result.Val.getFloat().convertToFloat() : result.Val.getFloat().convertToDouble();
+						if(dResult == 0)
+						{
+							Warn("Zero division error detected", rewriter, argArray[0]->getSourceRange());//just warn the user of the undefined behaviour
+						}
+						else if(dResult == 1)
+						{
+							//do nothing here
+						}
+						else if(dResult == -1)
+						{
+							//negate
+							out << "fNeg\r\n";
+						}
+						else
+						{
+							out << fPush(dResult) << "\r\nfDiv\r\n";
+						}
+					}
+					else
+					{
+						parseExpression(argArray[0], false, true);
+						out << "fDiv\r\n";
+					}
+					return true;
+				}
+				Throw("fdiv must have signature \"extern __intrinsic float fdiv(float value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
