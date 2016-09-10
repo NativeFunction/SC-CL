@@ -2466,7 +2466,7 @@ public:
 					Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", rewriter, call->getExprLoc());
 				else if (isa<PointerType>(callee->getType()) && !call->getDirectCallee())
 				{
-					parseExpression(call->getCallee());
+					parseExpression(call->getCallee(), false, true);
 					out << "PCall\r\n";
 				}
 				else
