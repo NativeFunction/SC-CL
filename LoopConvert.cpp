@@ -815,7 +815,8 @@ public:
 			bool result;
 			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
-				Warn("If condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
+				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+					Warn("If condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				if (result)
 				{
 					LocalVariables.addLevel();
@@ -883,7 +884,7 @@ public:
 			bool result;
 			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
-				if (!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
+				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
 					Warn("While condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				if (result)
 				{
@@ -983,7 +984,7 @@ public:
 			bool result;
 			if (conditional->EvaluateAsBooleanCondition(result, *context))
 			{
-				if (!result || (result && !isa<IntegerLiteral>(conditional->IgnoreParenCasts())))//this check prevents while(true) loops giving a warning
+				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
 					Warn("Do while condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				if (result)
 				{
