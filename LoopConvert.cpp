@@ -3285,7 +3285,8 @@ public:
 			}
 
 			//Throw(f->getNameAsString() + ": not all control paths return a value", rewriter, f->getLocEnd());
-			uint32_t FunctionStackCount = LocalVariables.maxIndex - (isa<CXXMethodDecl>(f) ? 1 : 0) - paramSize;
+			//uint32_t FunctionStackCount = LocalVariables.maxIndex - (isa<CXXMethodDecl>(f) ? 1 : 0) - paramSize;
+			uint32_t FunctionStackCount = LocalVariables.maxIndex;
 			string FunctionStackCountStr = to_string(FunctionStackCount);
 
 			if (FunctionStackCount > 65536)
