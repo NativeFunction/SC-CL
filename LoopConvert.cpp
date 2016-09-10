@@ -1270,7 +1270,7 @@ public:
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
 
-		#define ChkHashCol(str) if(strcmp(funcName.c_str(), str) != 0) return false;
+		#define ChkHashCol(str) if(strcmp(funcName.c_str(), str) != 0) goto _IntrinsicNotFound;
 
 		switch (JoaatCased(const_cast<char*>(funcName.c_str())))
 		{
@@ -2276,7 +2276,8 @@ public:
 			}
 			break;
 			default:
-			Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+			_IntrinsicNotFound:
+				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
 		}
 
 		#undef ChkHashCol
