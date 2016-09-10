@@ -13,12 +13,12 @@
 #undef __intrinsic_advanced_user
 
 #define offsetof(st, m) ((uint)&(((st *)0)->m))
-#define count(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
+#define countof(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
 #pragma region String
 //{ String
 extern __intrinsic void memcpy(void* dest, const void* src, size_t len);
-extern __intrinsic void strcpy(char* dest, char* src, const byte len);
+extern __intrinsic void strncpy(char* dest, char* src, const byte len);
 extern __intrinsic void stradd(char* dest, char* src, const byte len);
 extern __intrinsic void straddi(char* dest, int value, const byte len);
 extern __intrinsic void itos(char* dest, int value, const byte len);

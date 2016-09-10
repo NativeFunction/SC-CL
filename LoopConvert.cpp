@@ -812,14 +812,14 @@ public:
 
 			Expr::EvalResult eResult;
 			bool bValue = false, ignoreCondition = false;
-			if(conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
+			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
 			{
 				bValue = eResult.Val.getInt().getBoolValue();
-				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
 					Warn("if condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				ignoreCondition = !eResult.HasSideEffects;
 			}
-			if(ignoreCondition)
+			if (ignoreCondition)
 			{
 				if (bValue)
 				{
@@ -887,10 +887,10 @@ public:
 
 			Expr::EvalResult eResult;
 			bool bValue = false, ignoreCondition = false;
-			if(conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
+			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
 			{
 				bValue = eResult.Val.getInt().getBoolValue();
-				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
 					Warn("While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				ignoreCondition = !eResult.HasSideEffects;
 			}
@@ -993,14 +993,14 @@ public:
 			out << endl << ":" << body->getLocEnd().getRawEncoding() << "" << endl;
 			Expr::EvalResult eResult;
 			bool bValue = false, ignoreCondition = false;
-			if(conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
+			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
 			{
 				bValue = eResult.Val.getInt().getBoolValue();
-				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
 					Warn("do While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
 				ignoreCondition = !eResult.HasSideEffects;
 			}
-			if(ignoreCondition)
+			if (ignoreCondition)
 			{
 				if (bValue)
 				{
@@ -1274,20 +1274,20 @@ public:
 
 		switch (JoaatCased(const_cast<char*>(funcName.c_str())))
 		{
-			case JoaatCasedConst("strcpy"):
+			case JoaatCasedConst("strncpy"):
 			{
-				ChkHashCol("strcpy");
-				if(argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
+				ChkHashCol("strncpy");
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
 					parseExpression(argArray[0], false, true);
 
 					out << "StrCopy ";
 					llvm::APSInt result;
-					if(argArray[2]->EvaluateAsInt(result, *context))
+					if (argArray[2]->EvaluateAsInt(result, *context))
 					{
 						int iValue = result.getSExtValue();
-						if(iValue > 0 && iValue < 256)
+						if (iValue > 0 && iValue < 256)
 						{
 							out << iValue << endl;
 							return true;
@@ -1314,17 +1314,17 @@ public:
 			case JoaatCasedConst("stradd"):
 			{
 				ChkHashCol("stradd");
-				if(argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
 					parseExpression(argArray[0], false, true);
 
 					out << "StrAdd ";
 					llvm::APSInt result;
-					if(argArray[2]->EvaluateAsInt(result, *context))
+					if (argArray[2]->EvaluateAsInt(result, *context))
 					{
 						int iValue = result.getSExtValue();
-						if(iValue > 0 && iValue < 256)
+						if (iValue > 0 && iValue < 256)
 						{
 							out << iValue << endl;
 							return true;
@@ -1351,17 +1351,17 @@ public:
 			case JoaatCasedConst("straddi"):
 			{
 				ChkHashCol("straddi");
-				if(argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
 					parseExpression(argArray[0], false, true);
 
 					out << "StrAddi ";
 					llvm::APSInt result;
-					if(argArray[2]->EvaluateAsInt(result, *context))
+					if (argArray[2]->EvaluateAsInt(result, *context))
 					{
 						int iValue = result.getSExtValue();
-						if(iValue > 0 && iValue < 256)
+						if (iValue > 0 && iValue < 256)
 						{
 							out << iValue << endl;
 							return true;
@@ -1388,17 +1388,17 @@ public:
 			case JoaatCasedConst("itos"):
 			{
 				ChkHashCol("itos");
-				if(argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
 					parseExpression(argArray[0], false, true);
 
 					out << "ItoS ";
 					llvm::APSInt result;
-					if(argArray[2]->EvaluateAsInt(result, *context))
+					if (argArray[2]->EvaluateAsInt(result, *context))
 					{
 						int iValue = result.getSExtValue();
-						if(iValue > 0 && iValue < 256)
+						if (iValue > 0 && iValue < 256)
 						{
 							out << iValue << endl;
 							return true;
@@ -1465,10 +1465,10 @@ public:
 			case JoaatCasedConst("pcall"):
 			{
 				ChkHashCol("pcall");
-				if(argCount >= 1 && !callee->getReturnType()->isVoidType())
+				if (argCount >= 1 && !callee->getReturnType()->isVoidType())
 				{
-					if(argCount > 1)
-						for(int i = 1; i < argCount; i++)
+					if (argCount > 1)
+						for (int i = 1; i < argCount; i++)
 							parseExpression(argArray[i], false, true);
 
 					parseExpression(argArray[0], false, true);
@@ -1727,7 +1727,7 @@ public:
 			case JoaatCasedConst("memcpy"):
 			{
 				ChkHashCol("memcpy");
-				if(argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
 					//to stack
 					//size
@@ -1752,7 +1752,7 @@ public:
 			case JoaatCasedConst("creal"):
 			{
 				ChkHashCol("creal");
-				if(argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isComplexType())
+				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isComplexType())
 				{
 					parseExpression(argArray[0], false, true);
 					out << "drop //drop the Imag Part\r\n";
@@ -1765,7 +1765,7 @@ public:
 			case JoaatCasedConst("cimag"):
 			{
 				ChkHashCol("cimag");
-				if(argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isComplexIntegerType())
+				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isComplexIntegerType())
 				{
 					parseExpression(argArray[0], false, true);
 					LocalVariables.addLevel();
@@ -1781,7 +1781,7 @@ public:
 			case JoaatCasedConst("crealf"):
 			{
 				ChkHashCol("crealf");
-				if(argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isComplexType())
+				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isComplexType())
 				{
 					parseExpression(argArray[0], false, true);
 
@@ -1795,7 +1795,7 @@ public:
 			case JoaatCasedConst("cimagf"):
 			{
 				ChkHashCol("cimagf");
-				if(argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isComplexType())
+				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isComplexType())
 				{
 					parseExpression(argArray[0], false, true);
 					LocalVariables.addLevel();
@@ -1811,7 +1811,7 @@ public:
 			case JoaatCasedConst("cconj"):
 			{
 				ChkHashCol("cconj");
-				if(argCount == 1 && callee->getReturnType()->isComplexIntegerType() && argArray[0]->getType()->isComplexIntegerType())
+				if (argCount == 1 && callee->getReturnType()->isComplexIntegerType() && argArray[0]->getType()->isComplexIntegerType())
 				{
 					parseExpression(argArray[0], false, true);
 					out << "Neg //Negate the Imag Part\r\n";
@@ -1824,7 +1824,7 @@ public:
 			case JoaatCasedConst("cconjf"):
 			{
 				ChkHashCol("cconjf");
-				if(argCount == 1 && callee->getReturnType()->isComplexType() && argArray[0]->getType()->isComplexType())
+				if (argCount == 1 && callee->getReturnType()->isComplexType() && argArray[0]->getType()->isComplexType())
 				{
 					parseExpression(argArray[0], false, true);
 					out << "Neg //Negate the Imag Part\r\n";
@@ -1837,7 +1837,7 @@ public:
 			case JoaatCasedConst("reinterpretIntToFloat"):
 			{
 				ChkHashCol("reinterpretIntToFloat");
-				if(argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isIntegerType())
+				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[0], false, true);
 					return true;
@@ -1849,7 +1849,7 @@ public:
 			case JoaatCasedConst("reinterpretFloatToInt"):
 			{
 				ChkHashCol("reinterpretFloatToInt");
-				if(argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isRealFloatingType())
+				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isRealFloatingType())
 				{
 					parseExpression(argArray[0], false, true);
 					return true;
@@ -1861,7 +1861,7 @@ public:
 			case JoaatCasedConst("pushFloat"):;
 			{
 				ChkHashCol("pushFloat");
-				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isRealFloatingType())
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isRealFloatingType())
 				{
 					parseExpression(argArray[0], false, true);
 					return true;
@@ -1874,7 +1874,7 @@ public:
 			{
 				ChkHashCol("pushInt");
 
-				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[0], false, true);
 					return true;
@@ -1886,20 +1886,20 @@ public:
 			case JoaatCasedConst("pushStruct"):
 			{
 				ChkHashCol("pushStruct");
-				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
 				{
-					if(isa<CastExpr>(argArray[0]))
+					if (isa<CastExpr>(argArray[0]))
 					{
 						const CastExpr *castee = cast<CastExpr>(argArray[0]);
-						if(castee->getCastKind() == CK_BitCast)
+						if (castee->getCastKind() == CK_BitCast)
 						{
 							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
-							if(size > 1)
+							if (size > 1)
 							{
 								out << iPush(size) << "//Struct Size\r\n";
 							}
 							parseExpression(argArray[0], true, true);
-							if(size > 1)
+							if (size > 1)
 							{
 								out << "ToStack\r\n";
 							}
@@ -1921,20 +1921,20 @@ public:
 			{
 				ChkHashCol("popStruct");
 
-				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
 				{
-					if(isa<CastExpr>(argArray[0]))
+					if (isa<CastExpr>(argArray[0]))
 					{
 						const CastExpr *castee = cast<CastExpr>(argArray[0]);
-						if(castee->getCastKind() == CK_BitCast)
+						if (castee->getCastKind() == CK_BitCast)
 						{
 							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
-							if(size > 1)
+							if (size > 1)
 							{
 								out << iPush(size) << "//Struct Size\r\n";
 							}
 							parseExpression(argArray[0], true, true);
-							if(size > 1)
+							if (size > 1)
 							{
 								out << "FromStack\r\n";
 							}
@@ -1956,7 +1956,7 @@ public:
 			{
 				ChkHashCol("dupStackTop");
 
-				if(argCount == 0 && callee->getReturnType()->isVoidType())
+				if (argCount == 0 && callee->getReturnType()->isVoidType())
 				{
 					out << "dup //dupStackTop\r\n";
 					return true;
@@ -1968,7 +1968,7 @@ public:
 			{
 				ChkHashCol("toVector3");
 
-				if(argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && argArray[0]->getType()->isRealFloatingType())
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && argArray[0]->getType()->isRealFloatingType())
 				{
 					parseExpression(argArray[0], false, true);
 					out << "FToV\r\n";
@@ -1982,7 +1982,7 @@ public:
 			{
 				ChkHashCol("makeVector3");
 
-				if(argCount == 3 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && argArray[0]->getType()->isRealFloatingType() && argArray[1]->getType()->isRealFloatingType() && argArray[2]->getType()->isRealFloatingType())
+				if (argCount == 3 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && argArray[0]->getType()->isRealFloatingType() && argArray[1]->getType()->isRealFloatingType() && argArray[2]->getType()->isRealFloatingType())
 				{
 					parseExpression(argArray[0], false, true);
 					parseExpression(argArray[1], false, true);
@@ -1996,7 +1996,7 @@ public:
 			{
 				ChkHashCol("vector3Add");
 
-				if(argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
 				{
 
 					parseExpression(argArray[0], false, true);
@@ -2012,7 +2012,7 @@ public:
 			{
 				ChkHashCol("vector3Sub");
 
-				if(argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
 				{
 
 					parseExpression(argArray[0], false, true);
@@ -2028,7 +2028,7 @@ public:
 			{
 				ChkHashCol("vector3Mult");
 
-				if(argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
 				{
 
 					parseExpression(argArray[0], false, true);
@@ -2044,7 +2044,7 @@ public:
 			{
 				ChkHashCol("vector3Div");
 
-				if(argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
 				{
 
 					parseExpression(argArray[0], false, true);
@@ -2060,7 +2060,7 @@ public:
 			{
 				ChkHashCol("vector3Neg");
 
-				if(argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
 				{
 
 					parseExpression(argArray[0], false, true);
@@ -2947,7 +2947,7 @@ public:
 				out << "and\r\n\r\n:" << bOp->getRHS()->getLocEnd().getRawEncoding() << "\r\n";
 				return true;
 			}
-			if(bOp->getOpcode() == BO_LOr)
+			if (bOp->getOpcode() == BO_LOr)
 			{
 				parseExpression(bOp->getLHS(), false, true);
 				out << "dup\r\nnot\r\nJumpFalse @" << bOp->getRHS()->getLocEnd().getRawEncoding() << "\r\n";
@@ -4900,7 +4900,7 @@ public:
 
 		//this is not to be used by the high level compiler statics will still be indexed by integers for performance
 		for (map<string, int>::iterator iterator = statics.begin(); iterator != statics.end(); iterator++)
-		header << "SetStaticName " << iterator->second << " " << iterator->first << "\r\n";
+			header << "SetStaticName " << iterator->second << " " << iterator->first << "\r\n";
 
 		if (Visitor.MainRets != -1)
 		{

@@ -45,10 +45,10 @@ struct\
 
 #define ArrayToSizedArray(arr, sizedarr)\
 if(sizeof(arr) == sizeof(sizedarr.items))\
-	memcpy(sizedarr.items, arr, count(arr));
+	memcpy(sizedarr.items, arr, countof(arr));
 
 #define SizedArrayToArray(sizedarr, arr)\
 if(sizeof(arr) == sizeof(sizedarr.items))\
-	memcpy(arr, sizedarr.items, count(sizedarr.items));
+	memcpy(arr, sizedarr.items, countof(sizedarr.items));
 	
 
