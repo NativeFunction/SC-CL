@@ -810,12 +810,18 @@ public:
 
 			string IfLocEnd = to_string(Then->getLocEnd().getRawEncoding());
 
-			bool result;
-			if (conditional->EvaluateAsBooleanCondition(result, *context))
+			Expr::EvalResult eResult;
+			bool bValue = false, ignoreCondition = false;
+			if(conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
 			{
-				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
-					Warn("If condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				if (result)
+				bValue = eResult.Val.getInt().getBoolValue();
+				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+					Warn("if condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
+				ignoreCondition = !eResult.HasSideEffects;
+			}
+			if(ignoreCondition)
+			{
+				if (bValue)
 				{
 					LocalVariables.addLevel();
 					parseStatement(Then, breakLoc, continueLoc, returnLoc);
@@ -879,12 +885,18 @@ public:
 			Stmt *body = whileStmt->getBody();
 			LocalVariables.addLevel();
 
-			bool result;
-			if (conditional->EvaluateAsBooleanCondition(result, *context))
+			Expr::EvalResult eResult;
+			bool bValue = false, ignoreCondition = false;
+			if(conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
 			{
-				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
-					Warn("While condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				if (result)
+				bValue = eResult.Val.getInt().getBoolValue();
+				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+					Warn("While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
+				ignoreCondition = !eResult.HasSideEffects;
+			}
+			if (ignoreCondition)
+			{
+				if (bValue)
 				{
 					out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
 					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
@@ -979,12 +991,18 @@ public:
 
 
 			out << endl << ":" << body->getLocEnd().getRawEncoding() << "" << endl;
-			bool result;
-			if (conditional->EvaluateAsBooleanCondition(result, *context))
+			Expr::EvalResult eResult;
+			bool bValue = false, ignoreCondition = false;
+			if(conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
 			{
-				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
-					Warn("Do while condition always evaluates to " + (result ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				if (result)
+				bValue = eResult.Val.getInt().getBoolValue();
+				if(!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+					Warn("do While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
+				ignoreCondition = !eResult.HasSideEffects;
+			}
+			if(ignoreCondition)
+			{
+				if (bValue)
 				{
 					out << "Jump @" << body->getLocStart().getRawEncoding() << endl;
 				}
