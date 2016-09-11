@@ -34,7 +34,7 @@ extern __intrinsic __asm_unsafe void pcall(void* funcAddr, ...);//params with ty
 
 #pragma region Stack_Operations
 //{ Stack_Operations
-extern __intrinsic any stacktop();
+extern __intrinsic __asm_unsafe any stacktop();
 extern __intrinsic __asm_unsafe void pop();
 extern __intrinsic __asm_unsafe void popMult(const uint count);
 extern __intrinsic __asm_unsafe void pushFloat(float floatValue);
@@ -48,16 +48,6 @@ extern __intrinsic __asm_unsafe void popStruct(void* structure);
 
 #pragma region Math/Conversions
 //{ Math/Conversions
-extern __intrinsic __asm_unsafe int add(int value);
-extern __intrinsic __asm_unsafe int sub(int value);
-extern __intrinsic __asm_unsafe int div(int value);
-extern __intrinsic __asm_unsafe int mult(int value);
-extern __intrinsic __asm_unsafe int neg();
-extern __intrinsic __asm_unsafe float fadd(float value);
-extern __intrinsic __asm_unsafe float fsub(float value);
-extern __intrinsic __asm_unsafe float fdiv(float value);
-extern __intrinsic __asm_unsafe float fmult(float value);
-extern __intrinsic __asm_unsafe float fneg();
 extern __intrinsic int creal(int _Complex complexInteger);
 extern __intrinsic int cimag(int _Complex complexInteger);
 extern __intrinsic float crealf(float _Complex complexFloat);
@@ -73,13 +63,30 @@ extern __intrinsic vector3 vector3Sub(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Div(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Neg(vector3 vector);
+//}
+#pragma endregion
+
+#pragm region Unsafe_Math
+// {Unsafe Math
+// These perform the operation on the item(or vector) on top of the stack
+// This can lead to dangerous behaviour if you arent sure what is currently on the stack
+extern __intrinsic __asm_unsafe int add(int value);
+extern __intrinsic __asm_unsafe int sub(int value);
+extern __intrinsic __asm_unsafe int div(int value);
+extern __intrinsic __asm_unsafe int mult(int value);
+extern __intrinsic __asm_unsafe int neg();
+extern __intrinsic __asm_unsafe float fadd(float value);
+extern __intrinsic __asm_unsafe float fsub(float value);
+extern __intrinsic __asm_unsafe float fdiv(float value);
+extern __intrinsic __asm_unsafe float fmult(float value);
+extern __intrinsic __asm_unsafe float fneg();
 extern __intrinsic __asm_unsafe vector3 vadd(vector3 value);
 extern __intrinsic __asm_unsafe vector3 vsub(vector3 value);
 extern __intrinsic __asm_unsafe vector3 vdiv(vector3 value);
 extern __intrinsic __asm_unsafe vector3 vmult(vector3 value);
 extern __intrinsic __asm_unsafe vector3 vneg();
 //}
-#pragma endregion
+#pragme endregion
 
 #pragma region Variables
 //{ Variables
