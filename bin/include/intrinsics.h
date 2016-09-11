@@ -66,7 +66,7 @@ extern __intrinsic vector3 vector3Neg(vector3 vector);
 //}
 #pragma endregion
 
-#pragm region Unsafe_Math
+#pragma region Unsafe_Math
 // {Unsafe Math
 // These perform the operation on the item(or vector) on top of the stack
 // This can lead to dangerous behaviour if you arent sure what is currently on the stack
@@ -86,7 +86,7 @@ extern __intrinsic __asm_unsafe vector3 vdiv(vector3 value);
 extern __intrinsic __asm_unsafe vector3 vmult(vector3 value);
 extern __intrinsic __asm_unsafe vector3 vneg();
 //}
-#pragme endregion
+#pragma endregion
 
 #pragma region Variables
 //{ Variables

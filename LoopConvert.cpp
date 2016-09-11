@@ -2569,11 +2569,6 @@ public:
 					out << iPush(result.Val.getComplexIntImag().getSExtValue()) << endl;
 					return -1;
 				}
-				else if (result.Val.isStruct())//this needs some work and should probably be made a recursive function
-				{
-					int i = result.Val.getStructNumBases();
-					int j = result.Val.getStructNumFields();
-				}
 			}
 		}
 		if (isa<IntegerLiteral>(e)) {
@@ -2587,7 +2582,7 @@ public:
 			if (isa<InitListExpr>(cLit->getInitializer())) {
 				const InitListExpr *init = cast<const InitListExpr>(cLit->getInitializer());
 				for (unsigned int i = 0; i<init->getNumInits(); i++) {
-					parseExpression(init->getInit(i));
+					parseExpression(init->getInit(i), isAddr, isLtoRValue);
 				}
 				// if(!printVTable)
 				//     out << "iPush " << init->getNumInits() << " // numInitializers" << endl;
@@ -2800,7 +2795,7 @@ public:
 				parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 				break;
 				case clang::CK_ArrayToPointerDecay:
-				parseExpression(icast->getSubExpr(), true, false);
+				parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 				break;
 				case clang::CK_LValueToRValue:
 				{
