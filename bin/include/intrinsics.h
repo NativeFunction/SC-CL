@@ -4,9 +4,8 @@
 
 #define __intrinsic __attribute__((__intrinsic__))
 
-//#define __intrinsic_advanced_user
-
-#ifndef __intrinsic_advanced_user
+#define __intrinsic_advanced_user true
+#if __intrinsic_advanced_user == false
 #define __asm_unsafe __attribute__((deprecated("This asm function is extremely unsafe. It should only be used if you know what you are doing.")))
 #else
 #define __asm_unsafe 
@@ -18,8 +17,9 @@
 
 #pragma region String
 //{ String
-extern __intrinsic void memcpy(void* dest, const void* src, size_t len);
-extern __intrinsic void strncpy(char* dest, char* src, const byte len);
+extern __intrinsic void memset(void* dest, byte value, size_t len);
+extern __intrinsic void memcpy(void* dest, void* src, size_t len);
+extern __intrinsic void strcpy(char* dest, char* src, const byte bufferLen);
 extern __intrinsic void stradd(char* dest, char* src, const byte len);
 extern __intrinsic void straddi(char* dest, int value, const byte len);
 extern __intrinsic void itos(char* dest, int value, const byte len);
@@ -51,12 +51,6 @@ extern __intrinsic __asm_unsafe int add(int value);
 extern __intrinsic __asm_unsafe int sub(int value);
 extern __intrinsic __asm_unsafe int div(int value);
 extern __intrinsic __asm_unsafe int mult(int value);
-extern __intrinsic __asm_unsafe int neg();
-extern __intrinsic __asm_unsafe float fadd(float value);
-extern __intrinsic __asm_unsafe float fsub(float value);
-extern __intrinsic __asm_unsafe float fdiv(float value);
-extern __intrinsic __asm_unsafe float fmult(float value);
-extern __intrinsic __asm_unsafe float fneg();
 extern __intrinsic int creal(int _Complex complexInteger);
 extern __intrinsic int cimag(int _Complex complexInteger);
 extern __intrinsic float crealf(float _Complex complexFloat);

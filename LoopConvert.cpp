@@ -1465,7 +1465,7 @@ public:
 			case JoaatCasedConst("pcall"):
 			{
 				ChkHashCol("pcall");
-				if (argCount >= 1 && !callee->getReturnType()->isVoidType())
+				if (argCount >= 1 && callee->getReturnType()->isVoidType())
 				{
 					if (argCount > 1)
 						for (int i = 1; i < argCount; i++)
@@ -1786,37 +1786,99 @@ public:
 				ChkHashCol("memcpy");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
-					//to stack
-					//size
-					parseExpression(argArray[2], false, true);
-					//src
-					parseExpression(argArray[1], true, true);
-					out << "ToStack" << endl;
+					
+					uint32_t loopLblCount = __COUNTER__;
 
+					LocalVariables.addLevel();
 
-					//from stack
-					//size
-					parseExpression(argArray[2], false, true);
-					//dest
-					parseExpression(argArray[0], true, true);
-					out << "FromStack" << endl;
+					int destIndex = LocalVariables.addDecl("__memcpy-loop-dest", 1);
+					int srcIndex = LocalVariables.addDecl("__memcpy-loop-src", 1);
+					int sizeIndex = LocalVariables.addDecl("__memcpy-loop-size", 1);
+
+					parseExpression(argArray[0], true, true);//dest
+					out << frameSet(destIndex) << endl;
+					parseExpression(argArray[1], true, true);//src
+					out << frameSet(srcIndex) << endl;
+					parseExpression(argArray[2], false, true);//size
+					out << frameSet(sizeIndex) << endl
+						<< iPush(0) << endl//inc ini
+
+						<< ":__memcpy-loop-" << loopLblCount << endl
+						<< "Dup\r\n"
+						<< frameGet(sizeIndex) << endl
+						<< "JumpGE @__memcpy-loopend-" << loopLblCount << endl
+
+						<< frameGet(srcIndex) << endl
+						<< "pGet\r\nPushB 24\r\nCallNative shift_left 2 1\r\n"
+						<< frameGet(destIndex) << endl
+						<< "pGet\r\nPushI24 0xFFFFFF\r\nAnd\r\nOr\r\n"
+						<< frameGet(destIndex) << endl
+						<< "pSet\r\n"
+
+						<< frameGet(destIndex) << endl
+						<< "Add1 1\r\n"
+						<< frameSet(destIndex) << endl
+						<< frameGet(srcIndex) << endl
+						<< "Add1 1\r\n"
+						<< frameSet(srcIndex) << endl
+
+						<< "Add1 1\r\n"//inc add
+						<< "Jump @__memcpy-loop-" << loopLblCount << endl
+						<< ":__memcpy-loopend-" << loopLblCount << endl
+						<< "Drop\r\n";
+					LocalVariables.removeLevel();
+
 				}
 				else
 					Throw("memcpy must have signature \"extern __intrinsic void memcpy(void* dst, void* src, int len);\"", rewriter, callee->getSourceRange());
 				return true;
 			}
 			break;
-			case JoaatCasedConst("creal"):
+			case JoaatCasedConst("memset"):
 			{
-				ChkHashCol("creal");
-				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isComplexType())
+				ChkHashCol("memset");
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isCharType() && argArray[2]->getType()->isIntegerType())
 				{
-					parseExpression(argArray[0], false, true);
-					out << "drop //drop the Imag Part\r\n";
-					return true;
+					uint32_t loopLblCount = __COUNTER__;
+
+					LocalVariables.addLevel();
+					
+					int destIndex = LocalVariables.addDecl("__memset-loop-dest", 1);
+					int valIndex = LocalVariables.addDecl("__memset-loop-val", 1);
+					int sizeIndex = LocalVariables.addDecl("__memset-loop-size", 1);
+
+					parseExpression(argArray[0], true, true);//dest
+					out << frameSet(destIndex) << endl;
+					parseExpression(argArray[1], false, true);//value
+					out << "PushB 24\r\nCallNative shift_left 2 1\r\n";
+					out << frameSet(valIndex) << endl;
+					parseExpression(argArray[2], false, true);//size
+					out << frameSet(sizeIndex) << endl
+						<< iPush(0) << endl//inc
+						<< ":__memset-loop-" << loopLblCount << endl
+						<< "Dup" << endl
+						<< frameGet(sizeIndex) << endl
+						<< "JumpGE @__memset-loopend-" << loopLblCount << endl
+
+						<< frameGet(valIndex) << endl
+						<< frameGet(destIndex) << endl
+						<< "pGet\r\nPushI24 0xFFFFFF\r\nAnd\r\nOr\r\n"
+						<< frameGet(destIndex) << endl
+						<< "pSet\r\n"
+
+						<< frameGet(destIndex) << endl
+						<< "Add1 1\r\n"
+						<< frameSet(destIndex) << endl
+						<< "Add1 1\r\n"//add 1 to inc
+						<< "Jump @__memset-loop-" << loopLblCount << endl
+						<< ":__memset-loopend-" << loopLblCount << endl
+						<< "Drop\r\n";
+					LocalVariables.removeLevel();
+
 				}
-				Throw("creal must have signature \"extern __intrinsic int creal(int _Complex complexInteger);\"", rewriter, callee->getSourceRange());
-				return false;
+				else
+					Throw("memset must have signature \"extern __intrinsic void memset(void* dst, byte src, size_t len);\"", rewriter, callee->getSourceRange());
+				return true;
 			}
 			break;
 			case JoaatCasedConst("cimag"):
