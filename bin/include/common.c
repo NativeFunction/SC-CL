@@ -131,7 +131,8 @@ vector3 RotationLookAtPoint(vector3 pos, vector3 endpos)
 }
 float acos(float number)
 {
-	if (reinterpretFloatToInt(number) < 0)//this works find for floats as -ive ints and floats both have msb set
+	//this works find for floats as negitive ints and floats both have msb set
+	if (reinterpretFloatToInt(number) < 0)
 	{
 		number = -number;
 		pushFloat(-0.0187293f * number);
@@ -154,7 +155,8 @@ float acos(float number)
 }
 float asin(float number)
 {
-	if (reinterpretFloatToInt(number) < 0)//this works find for floats as -ive ints and floats both have msb set
+	//this works find for floats as negitive ints and floats both have msb set
+	if (reinterpretFloatToInt(number) < 0)
 	{
 		number = -number;
 		pushFloat(-0.0187293f * number);
@@ -176,3 +178,37 @@ float asin(float number)
 	pushFloat(fneg());
 	return fadd(1.570796326794895f);
 }
+float StringToFloat(char* str)
+{
+	float rez = 0, fact = 1;
+	bool point_seen = false;
+	int d = 0, read_char = shift_right(*str, 24);
+	
+	if(read_char == '-')
+	{
+		fact = -1;
+		read_char = shift_right(*++str, 24);
+	}
+	
+	while(read_char)
+	{
+		if(read_char == '.')
+		{
+			point_seen = true;
+		    read_char = shift_right(*++str, 24);
+			continue;
+		}
+		
+		d = read_char - '0';
+		
+		if(d >= 0 && d <= 9)
+		{
+			if(point_seen)
+				fact /= 10;
+			rez = rez * 10.0f + (float)d;
+		}
+		read_char = shift_right(*++str, 24);
+	}
+	return rez * fact;
+}
+
