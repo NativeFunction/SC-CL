@@ -39,6 +39,7 @@ extern __intrinsic __asm_unsafe void pop();
 extern __intrinsic __asm_unsafe void popMult(const uint count);
 extern __intrinsic __asm_unsafe void pushFloat(float floatValue);
 extern __intrinsic __asm_unsafe void pushInt(int intValue);
+extern __intrinsic __asm_unsafe void pushVector3(vector3 vec3Value);
 extern __intrinsic __asm_unsafe void dupStackTop();
 extern __intrinsic __asm_unsafe void pushStruct(void* structure);
 extern __intrinsic __asm_unsafe void popStruct(void* structure);
@@ -72,6 +73,11 @@ extern __intrinsic vector3 vector3Sub(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Div(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Neg(vector3 vector);
+extern __intrinsic __asm_unsafe vector3 vadd(vector3 value);
+extern __intrinsic __asm_unsafe vector3 vsub(vector3 value);
+extern __intrinsic __asm_unsafe vector3 vdiv(vector3 value);
+extern __intrinsic __asm_unsafe vector3 vmult(vector3 value);
+extern __intrinsic __asm_unsafe vector3 vneg();
 //}
 #pragma endregion
 
