@@ -2324,7 +2324,7 @@ public:
 						}
 						else
 						{
-							out << fPush(dResult) << "\r\nfDiv\r\n";
+							out << fPush(1.0f / dResult) << "\r\nfMult\r\n";//convert the / into a multiply and its reciprocal as fmult is faster than fdiv
 						}
 					}
 					else

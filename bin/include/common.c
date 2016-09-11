@@ -93,11 +93,11 @@ int ModNegitive(int value1, int value2)
 }
 float DegreesToRadians(float degrees)
 {
-	return (degrees * PI) / 180;
+	return degrees * (PI / 180);
 }
 float RadiansToDegrees(float radians)
 {
-	return (radians * 180) / PI;
+	return radians * (180 / PI);
 }
 quaternion EulerToQuaternion(vector3 euler)
 {
