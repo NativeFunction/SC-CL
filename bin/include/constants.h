@@ -8,6 +8,8 @@
 #define null 0
 #define nullptr 0
 
+#define PI 3.14159265
+
 enum eKey
 {
 	KEY_ESC = 1,

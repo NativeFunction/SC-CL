@@ -1,5 +1,6 @@
 #include "types.h"
 #include "natives.h"
+#include "constants.h"
 
 #define SwapEndian(x) _Generic((x),\
 short int: SwapEndian16(x), unsigned short int: SwapEndian16(x),\
@@ -17,9 +18,6 @@ long long int: "long long int", unsigned long long int: "unsigned long long int"
   long double: "long double",                   char *: "pointer to char",        \
        void *: "pointer to void",                int *: "pointer to int",         \
       default: "other")
-
-
-
 
 
 int SwapEndian32(int value)
@@ -95,11 +93,11 @@ int ModNegitive(int value1, int value2)
 }
 float DegreesToRadians(float degrees)
 {
-	return (degrees * 3.14159265359) / 180;
+	return (degrees * PI) / 180;
 }
 float RadiansToDegrees(float radians)
 {
-	return (radians * 180) / 3.14159265359;
+	return (radians * 180) / PI;
 }
 quaternion EulerToQuaternion(vector3 euler)
 {

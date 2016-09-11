@@ -19,10 +19,10 @@
 //{ String
 extern __intrinsic void memset(void* dest, byte value, size_t len);
 extern __intrinsic void memcpy(void* dest, void* src, size_t len);
-extern __intrinsic void strcpy(char* dest, char* src, const byte bufferLen);
-extern __intrinsic void stradd(char* dest, char* src, const byte len);
-extern __intrinsic void straddi(char* dest, int value, const byte len);
-extern __intrinsic void itos(char* dest, int value, const byte len);
+extern __intrinsic void strcpy(char* dest, char* src, const byte destBufferLen);
+extern __intrinsic void stradd(char* dest, char* src, const byte destBufferLen);
+extern __intrinsic void straddi(char* dest, int value, const byte destBufferLen);
+extern __intrinsic void itos(char* dest, int value, const byte destBufferLen);
 //}
 #pragma endregion
 
