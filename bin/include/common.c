@@ -131,7 +131,7 @@ vector3 RotationLookAtPoint(vector3 pos, vector3 endpos)
 }
 float acos(float number)
 {
-	//this works find for floats as negitive ints and floats both have msb set
+	//this works fine for floats as negitive ints and floats both have msb set
 	if (reinterpretFloatToInt(number) < 0)
 	{
 		number = -number;
@@ -155,7 +155,7 @@ float acos(float number)
 }
 float asin(float number)
 {
-	//this works find for floats as negitive ints and floats both have msb set
+	//this works fine for floats as negitive ints and floats both have msb set
 	if (reinterpretFloatToInt(number) < 0)
 	{
 		number = -number;
@@ -182,12 +182,13 @@ float StringToFloat(char* str)
 {
 	float rez = 0, fact = 1;
 	bool point_seen = false;
-	int d = 0, read_char = shift_right(*str, 24);
+	str -= 3;
+	int d = 0, read_char = *str & 0xFF;
 	
 	if(read_char == '-')
 	{
 		fact = -1;
-		read_char = shift_right(*++str, 24);
+		read_char = *++str & 0xFF;
 	}
 	
 	while(read_char)
@@ -195,7 +196,7 @@ float StringToFloat(char* str)
 		if(read_char == '.')
 		{
 			point_seen = true;
-		    read_char = shift_right(*++str, 24);
+		    read_char = *++str & 0xFF;
 			continue;
 		}
 		
@@ -207,7 +208,7 @@ float StringToFloat(char* str)
 				fact /= 10;
 			rez = rez * 10.0f + (float)d;
 		}
-		read_char = shift_right(*++str, 24);
+		read_char = *++str & 0xFF;
 	}
 	return rez * fact;
 }
