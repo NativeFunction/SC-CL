@@ -2499,7 +2499,10 @@ public:
 			if (checkIntrinsic(call))
 				return 1;
 			const Expr* callee = call->getCallee();
-
+			if (isAddr)
+			{
+				Throw("cannot take the address of an rvalue of type '" + QualType::getAsString(call->getCallReturnType(*context).split()) + "'" , rewriter, call->getSourceRange());
+			}
 			if (isa<MemberExpr>(callee))
 			{
 				const MemberExpr *expr = cast<const MemberExpr>(call->getCallee());
@@ -3585,7 +3588,7 @@ public:
 
 
 			if (E->isArrow()) {
-				parseExpression(BaseExpr, false);
+				parseExpression(BaseExpr, false, true);
 			}
 			else
 				parseExpression(BaseExpr, true);
