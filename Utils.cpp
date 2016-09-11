@@ -81,12 +81,13 @@ namespace Utils {
 			}
 			else if(startExp.getRawEncoding() == endExp.getRawEncoding())
 			{
-				Warn(str, writer, start);//same position, just use default output
+				Throw(str, writer, start);//same position, just use default output
 				return;
 			}
 			if(writer.getSourceMgr().getFileID(startExp).getHashValue() != writer.getSourceMgr().getFileID(endExp).getHashValue())//different files(should never happen)
 			{
 				Throw(str, writer, start);
+				return;
 			}
 			else
 			{

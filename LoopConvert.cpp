@@ -2876,8 +2876,13 @@ public:
 					LocalVariables.removeLevel();
 					break;
 				}
+				case clang::CK_ToUnion:
+				{
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);//clang does check to make sure this is valid	
+					break;
+				}
 				default:
-				out << "Unhandled cast (CK) of type " << icast->getCastKindName() << endl;
+					Throw("Unhandled cast (CK) of type " + string(icast->getCastKindName()), rewriter, e->getSourceRange());
 
 			}
 		}
@@ -4464,6 +4469,11 @@ public:
 					break;
 				}
 				case clang::CK_PointerToIntegral:
+				{
+					ParseLiteral(icast->getSubExpr());
+					break;
+				}
+				case clang::CK_PointerToBoolean:
 				{
 					ParseLiteral(icast->getSubExpr());
 					break;
