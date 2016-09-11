@@ -363,21 +363,21 @@ uint32_t getLiteralSizeOfType(const Type* type) {
 }
 uint32_t getSizeOfType(const Type* type) {
 
-	if (isa<ConstantArrayType>(type)) {
+	if(isa<ConstantArrayType>(type)) {
 		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
 		return ((getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue()) + 4 - 1) & ~3;
 	}
-	else if (type->isRecordType() && type->getAsCXXRecordDecl()) {
+	else if(type->isRecordType() && type->getAsCXXRecordDecl()) {
 		CXXRecordDecl *recordDecl = type->getAsCXXRecordDecl();
 		return getSizeOfCXXDecl(recordDecl, true, false);
 	}
-	else if (type->isStructureType()) {
+	else if(type->isStructureType()) {
 		const RecordType *record = type->getAsStructureType();
 
-		if (RecordDecl *rd = record->getDecl()) {
+		if(RecordDecl *rd = record->getDecl()) {
 
 			uint32_t size = 0;
-			for (const auto *CS : rd->fields()) {
+			for(const auto *CS : rd->fields()) {
 				const Type* type = CS->getType().getTypePtr();
 
 				size += (getSizeOfType(type) + 4 - 1) & ~3;
@@ -388,18 +388,18 @@ uint32_t getSizeOfType(const Type* type) {
 		}
 
 	}
-	else if (type->isUnionType())
+	else if(type->isUnionType())
 	{
 		const RecordType *record = type->getAsUnionType();
 
-		if (RecordDecl *rd = record->getDecl()) {
+		if(RecordDecl *rd = record->getDecl()) {
 
 			uint32_t size = 0;
-			for (const auto *CS : rd->fields()) {
+			for(const auto *CS : rd->fields()) {
 				const Type* type = CS->getType().getTypePtr();
 
 				uint32_t sz = (getSizeOfType(type) + 4 - 1) & ~3;
-				if (sz > size)
+				if(sz > size)
 					size = sz;
 			}
 			//cout << "union: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
@@ -408,14 +408,16 @@ uint32_t getSizeOfType(const Type* type) {
 		}
 
 	}
-	else if (type->isCharType())
+	else if(type->isCharType())
 		return 1;
-	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+	else if(type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 		return 2;
-	else if (type->isIntegerType() || type->isBooleanType() || type->isFloatingType() || type->isPointerType())
+	else if(type->isIntegerType() || type->isBooleanType() || type->isRealFloatingType() || type->isPointerType())
 		return 4;
-	else if (type->isVoidType())
+	else if(type->isVoidType())
 		return 0;
+	else if(type->isAnyComplexType())
+		return 8;
 
 	return 0;
 }
@@ -2433,6 +2435,19 @@ public:
 		return NULL;
 	}
 
+	void ComplexToBoolean(bool floating)
+	{
+		LocalVariables.addLevel();
+		int index = LocalVariables.addDecl("imagPart", 1);
+		if(floating){
+			out << frameSet(index) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(index) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+		}else
+		{
+			out << frameSet(index) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(index) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+		}
+		LocalVariables.removeLevel();
+	}
+
 	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, const NamedDecl *lastDecl = NULL) {
 		Expr::EvalResult result;
 		if (e->EvaluateAsRValue(result, *context))
@@ -2861,19 +2876,13 @@ public:
 				case clang::CK_FloatingComplexToBoolean:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					LocalVariables.addLevel();
-					int index = LocalVariables.addDecl("imagPart", 1);
-					out << frameSet(index) << "\r\nPushF_0\r\nfCmpEq\r\n" << frameGet(index) << "r\nPushF_0\r\nfCmpEq\r\nAnd\r\n";
-					LocalVariables.removeLevel();
+					ComplexToBoolean(true);
 					break;
 				}
 				case clang::CK_IntegralComplexToBoolean:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					LocalVariables.addLevel();
-					int index = LocalVariables.addDecl("imagPart", 1);
-					out << frameSet(index) << "\r\nPush_0\r\nCmpEq\r\n" << frameGet(index) << "r\nPush_0\r\nCmpEq\r\nAnd\r\n";
-					LocalVariables.removeLevel();
+					ComplexToBoolean(false);
 					break;
 				}
 				case clang::CK_ToUnion:
@@ -3225,26 +3234,49 @@ public:
 			if (bOp->getOpcode() == BO_Comma)
 			{
 				parseExpression(bOp->getLHS());
-				parseExpression(bOp->getRHS(), false, true);
+				parseExpression(bOp->getRHS(), isAddr, isLtoRValue);
 				return true;
 			}
-			if (bOp->getOpcode() == BO_LAnd)
+			if(bOp->getOpcode() == BO_LAnd)
 			{
 				parseExpression(bOp->getLHS(), false, true);
+				if(bOp->getLHS()->getType()->isAnyComplexType())
+				{
+					ComplexToBoolean(bOp->getLHS()->getType()->isComplexType());
+				}
 				out << "dup\r\nJumpFalse @" << bOp->getRHS()->getLocEnd().getRawEncoding() << "\r\n";
 				parseExpression(bOp->getRHS(), false, true);
+				if(bOp->getRHS()->getType()->isAnyComplexType())
+				{
+					ComplexToBoolean(bOp->getRHS()->getType()->isComplexType());
+				}
 				out << "and\r\n\r\n:" << bOp->getRHS()->getLocEnd().getRawEncoding() << "\r\n";
+				if(!isLtoRValue)
+				{
+					out << "drop //unused value\r\n";
+				}
 				return true;
 			}
-			if (bOp->getOpcode() == BO_LOr)
+			if(bOp->getOpcode() == BO_LOr)
 			{
 				parseExpression(bOp->getLHS(), false, true);
+				if(bOp->getLHS()->getType()->isAnyComplexType())
+				{
+					ComplexToBoolean(bOp->getLHS()->getType()->isComplexType());
+				}
 				out << "dup\r\nnot\r\nJumpFalse @" << bOp->getRHS()->getLocEnd().getRawEncoding() << "\r\n";
 				parseExpression(bOp->getRHS(), false, true);
+				if(bOp->getRHS()->getType()->isAnyComplexType())
+				{
+					ComplexToBoolean(bOp->getRHS()->getType()->isComplexType());
+				}
 				out << "or\r\n\r\n:" << bOp->getRHS()->getLocEnd().getRawEncoding() << "\r\n";
+				if(!isLtoRValue)
+				{
+					out << "drop //unused value\r\n";
+				}
 				return true;
 			}
-
 
 			if (bOp->getLHS()->getType()->isAnyComplexType() || bOp->getRHS()->getType()->isAnyComplexType())
 			{
@@ -3303,111 +3335,160 @@ public:
 					switch (bOp->getOpcode())
 					{
 						case BO_Add:
-						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Add //Calc Real Part\r\n";
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Add //Calc Imag Part\r\n";
-						break;
+						{
+							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Add //Calc Real Part\r\n";
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Add //Calc Imag Part\r\n";
+						}
+						goto checkNonAssignL2R;
 						case BO_AddAssign:
-						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Add //Calc Real Part\r\n";
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Add //Calc Imag Part\r\n";
-						out << "Push_2 //Type Size\r\n";
-						parseExpression(bOp->getLHS(), true);
-						out << "FromStack\r\n";
+						{
+							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Add //Calc Real Part\r\n";
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Add //Calc Imag Part\r\n";
+							out << "Push_2 //Type Size\r\n";
+							parseExpression(bOp->getLHS(), true);
+							out << "FromStack\r\n";
+						}
+						goto CheckAssignL2R;
+
 						case BO_Sub:
-						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Sub //Calc Real Part\r\n";
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Sub //Calc Imag Part\r\n";
-						break;
+						{
+							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Sub //Calc Real Part\r\n";
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Sub //Calc Imag Part\r\n";
+						}
+						goto checkNonAssignL2R;
 						case BO_SubAssign:
-						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Sub //Calc Real Part\r\n";
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Sub //Calc Imag Part\r\n";
-						out << "Push_2 //Type Size\r\n";
-						parseExpression(bOp->getLHS(), true);
-						out << "FromStack\r\n";
-						break;
+						{
+							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Sub //Calc Real Part\r\n";
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Sub //Calc Imag Part\r\n";
+							out << "Push_2 //Type Size\r\n";
+							parseExpression(bOp->getLHS(), true);
+							out << "FromStack\r\n";
+						}
+						goto CheckAssignL2R;
+
 						case BO_Mul:
-						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
-						out << isFloat << "Sub //Calc Real Part\r\n";
+						{
+							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+							out << isFloat << "Sub //Calc Real Part\r\n";
 
-						out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
-						out << isFloat << "Add //Calc Imag Part\r\n";
-						break;
+							out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+							out << isFloat << "Add //Calc Imag Part\r\n";
+						}
+						goto checkNonAssignL2R;
 						case BO_MulAssign:
-						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
-						out << isFloat << "Sub //Calc Real Part\r\n";
+						{
+							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+							out << isFloat << "Sub //Calc Real Part\r\n";
 
-						out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
-						out << isFloat << "Add //Calc Imag Part\r\n";
-						out << "Push_2 //Type Size\r\n";
-						parseExpression(bOp->getLHS(), true);
-						out << "FromStack\r\n";
-						break;
+							out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+							out << isFloat << "Add //Calc Imag Part\r\n";
+							out << "Push_2 //Type Size\r\n";
+							parseExpression(bOp->getLHS(), true);
+							out << "FromStack\r\n";
+						}
+						goto CheckAssignL2R;
+
 						case BO_Div:
-						LocalVariables.addDecl("divide", 1);
-						out << frameGet(startindex + 2) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
-						out << frameGet(startindex + 3) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
-						out << isFloat << "Add //Calc Comp Denominator\r\n" << frameSet(startindex + 4) << endl;
+						{
+							LocalVariables.addDecl("divide", 1);
+							out << frameGet(startindex + 2) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
+							out << frameGet(startindex + 3) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
+							out << isFloat << "Add //Calc Comp Denominator\r\n" << frameSet(startindex + 4) << endl;
 
-						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
-						out << isFloat << "Add //Calc Real Part\r\n";
-						out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
+							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+							out << isFloat << "Add //Calc Real Part\r\n";
+							out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
 
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
-						out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
-						out << isFloat << "Sub //Calc Imag Part\r\n";
-						out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
-						break;
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+							out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+							out << isFloat << "Sub //Calc Imag Part\r\n";
+							out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
+						}
+						goto checkNonAssignL2R;
 						case BO_DivAssign:
-						LocalVariables.addDecl("divide", 1);
-						out << frameGet(startindex + 2) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
-						out << frameGet(startindex + 3) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
-						out << isFloat << "Add //Calc Comp Denominator\r\n" << frameSet(startindex + 4) << endl;
-
-						out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
-						out << isFloat << "Add //Calc Real Part\r\n";
-						out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
-
-						out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
-						out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
-						out << isFloat << "Sub //Calc Imag Part\r\n";
-						out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
-						out << "Push_2 //Type Size\r\n";
-						parseExpression(bOp->getLHS(), true);
-						out << "FromStack\r\n";
-						break;
-
-						case BO_LAnd:
-						if (!isFlt)
 						{
-							out << frameGet(startindex) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
-							out << frameGet(startindex + 2) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+							LocalVariables.addDecl("divide", 1);
+							out << frameGet(startindex + 2) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
+							out << frameGet(startindex + 3) << "\r\nDup\r\n" << isFloat << "Mul\r\n";
+							out << isFloat << "Add //Calc Comp Denominator\r\n" << frameSet(startindex + 4) << endl;
+
+							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+							out << isFloat << "Add //Calc Real Part\r\n";
+							out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
+
+							out << frameGet(startindex + 1) << endl << frameGet(startindex + 2) << endl << isFloat << "Mul\r\n";
+							out << frameGet(startindex) << endl << frameGet(startindex + 3) << endl << isFloat << "Mul\r\n";
+							out << isFloat << "Sub //Calc Imag Part\r\n";
+							out << frameGet(startindex + 4) << endl << isFloat << "Div\r\n";
+							out << "Push_2 //Type Size\r\n";
+							parseExpression(bOp->getLHS(), true);
+							out << "FromStack\r\n";
 						}
-						else
+						goto CheckAssignL2R;
+
+					/*	case BO_LAnd:
 						{
-							out << frameGet(startindex) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
-							out << frameGet(startindex + 2) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+							if(!isFlt)
+							{
+								out << frameGet(startindex) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+								out << frameGet(startindex + 2) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+							}
+							else
+							{
+								out << frameGet(startindex) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+								out << frameGet(startindex + 2) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+							}
+							out << "And\r\n";
 						}
-						out << "And\r\n";
-						break;
+						goto checkNonAssignL2RBool;
 						case BO_LOr:
-						if (!isFlt)
 						{
-							out << frameGet(startindex) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
-							out << frameGet(startindex + 2) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+							if(!isFlt)
+							{
+								out << frameGet(startindex) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+								out << frameGet(startindex + 2) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+							}
+							else
+							{
+								out << frameGet(startindex) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+								out << frameGet(startindex + 2) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+							}
+							out << "Or\r\n";
 						}
-						else
-						{
-							out << frameGet(startindex) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 1) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
-							out << frameGet(startindex + 2) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(startindex + 3) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
-						}
-						out << "Or\r\n";
-						break;
+						goto checkNonAssignL2RBool;*/
 						default:
 						Throw("Unsupported binary operator \"" + bOp->getOpcodeStr().str() + "\" for Complex data type", rewriter, bOp->getOperatorLoc());
+						break;
+					CheckAssignL2R:
+						if (isLtoRValue)
+						{
+							out << "Push_2 //Type Size\r\n";
+							parseExpression(bOp->getLHS(), true);
+							out << "ToStack\r\n";
+						}
+						break;
+
+					checkNonAssignL2R:
+						if (!isLtoRValue)
+						{
+							out << "Drop //Unused Complex Result\r\nDrop\r\n";
+							Warn("Unused operator '" + bOp->getOpcodeStr().str() + "'", rewriter, bOp->getSourceRange());
+						}
+						break;
+
+				/*	checkNonAssignL2RBool:
+						if(!isLtoRValue)
+						{
+							out << "Drop //Unused Result\r\n";
+							Warn("Unused operator '" + bOp->getOpcodeStr().str() + "'", rewriter, bOp->getSourceRange());
+						}
+						break;*/
 					}
 					LocalVariables.removeLevel();
 					return true;
@@ -3419,7 +3500,6 @@ public:
 
 			}
 
-
 			#define OpAssign(op, isfloat)\
 			parseExpression(bOp->getLHS(), true, false);\
 			out << "dup\r\npGet\r\n";\
@@ -3430,10 +3510,10 @@ public:
 				out << mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";\
 			}\
 			if (bOp->getLHS()->getType()->isFloatingType() && isfloat)\
-				out << "f" << op << "\r\npPeekSet\r\nDrop\r\n";\
+				out << "f" << op << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";\
 			else\
 			{\
-				out << op << "\r\npPeekSet\r\nDrop\r\n";\
+				out << op << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";\
 			}
 
 			switch (bOp->getOpcode()) {
@@ -3449,11 +3529,11 @@ public:
 						if (isa<PointerType>(bOp->getLHS()->getType()))
 						{
 							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-							out << sub(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << "\r\npPeekSet\r\nDrop\r\n";
+							out << sub(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 						}
 						else
 						{
-							out << sub(val) << "\r\npPeekSet\r\nDrop\r\n";
+							out << sub(val) << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 						}
 					}
 					else
@@ -3465,10 +3545,10 @@ public:
 							out << mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";
 						}
 						if (bOp->getLHS()->getType()->isFloatingType())
-							out << "fsub" << "\r\npPeekSet\r\nDrop\r\n";
+							out << "fsub" << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 						else
 						{
-							out << "Sub" << "\r\npPeekSet\r\nDrop\r\n";
+							out << "Sub" << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 						}
 					}
 				}
@@ -3484,11 +3564,11 @@ public:
 						if (isa<PointerType>(bOp->getLHS()->getType()))
 						{
 							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-							out << add(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << "\r\npPeekSet\r\nDrop\r\n";
+							out << add(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 						}
 						else
 						{
-							out << add(val) << "\r\npPeekSet\r\nDrop\r\n";
+							out << add(val) << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 						}
 					}
 					else
@@ -3499,11 +3579,11 @@ public:
 							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
 							out << mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";
 						}
-						if (bOp->getLHS()->getType()->isFloatingType())
-							out << "fadd" << "\r\npPeekSet\r\nDrop\r\n";
+						if(bOp->getLHS()->getType()->isFloatingType())
+							out << "fadd" << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 						else
 						{
-							out << "Add" << "\r\npPeekSet\r\nDrop\r\n";
+							out << "Add" << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 						}
 					}
 				}
