@@ -2537,6 +2537,8 @@ public:
 			{
 				if (result.Val.isInt())
 				{
+					if(!isLtoRValue)
+						return -1;
 					int val;
 					if (CheckExprForSizeOf(e->IgnoreParens(), &val))
 						out << iPush(val) << endl;
@@ -2546,17 +2548,23 @@ public:
 				}
 				else if (result.Val.isFloat())
 				{
+					if(!isLtoRValue)
+						return -1;
 					out << fPush(result.Val.getFloat()) << endl;
 					return -1;
 				}
 				else if (result.Val.isComplexFloat())
 				{
+					if(!isLtoRValue)
+						return -1;
 					out << fPush(result.Val.getComplexFloatReal()) << endl;
 					out << fPush(result.Val.getComplexFloatImag()) << endl;
 					return -1;
 				}
 				else if (result.Val.isComplexInt())
 				{
+					if(!isLtoRValue)
+						return -1;
 					out << iPush(result.Val.getComplexIntReal().getSExtValue()) << endl;
 					out << iPush(result.Val.getComplexIntImag().getSExtValue()) << endl;
 					return -1;
@@ -2772,12 +2780,13 @@ public:
 				{
 					if (isa<IntegerLiteral>(icast->getSubExpr())) {
 						const IntegerLiteral *literal = cast<const IntegerLiteral>(icast->getSubExpr());
-						out << "PushF " << literal->getValue().getSExtValue() << ".0" << endl;
+						if (isLtoRValue)
+							out << "PushF " << literal->getValue().getSExtValue() << ".0" << endl;
 						return true;
 					}
 					else {
 						parseExpression(icast->getSubExpr(), false, true);
-						out << "itof" << endl;
+						out << (isLtoRValue ? "itof\r\n" : "drop\r\n");
 						return true;
 					}
 				}
@@ -2854,6 +2863,10 @@ public:
 				{
 
 					parseExpression(icast->getSubExpr(), false, true);
+					if (!isLtoRValue)
+					{
+						out << "drop //unused result\r\n";
+					}
 					break;
 				}
 				case clang::CK_IntegralToPointer:
@@ -2862,18 +2875,22 @@ public:
 					//char* test = GET_STRING_PTR();
 					//and other pointers
 					parseExpression(icast->getSubExpr(), false, true);
+					if(!isLtoRValue)
+					{
+						out << "drop //unused result\r\n";
+					}
 					break;
 				}
 				case clang::CK_FloatingToIntegral:
 				{
 
-					parseExpression(icast->getSubExpr());
-					out << "ftoi" << endl;
+					parseExpression(icast->getSubExpr(), false, true);
+					out << (isLtoRValue ? "ftoi\r\n" : "drop\r\n");
 					break;
 				}
 				case clang::CK_NoOp:
 				{
-					parseExpression(icast->getSubExpr());
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					break;
 				}
 				case clang::CK_FunctionToPointerDecay:
@@ -2894,54 +2911,68 @@ public:
 				case clang::CK_FloatingToBoolean:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					out << fPush(0.0f) << "\r\nfCmpNe\r\n";
+					if(!isLtoRValue){
+						out << fPush(0.0f) << "\r\nfCmpNe\r\n";
+					}
 					break;
 				}
 				case clang::CK_FloatingComplexToReal:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					out << "Drop\r\n";
+					if(!isLtoRValue){
+						out << "Drop\r\n";//if its not l2r value both will be dropped in parse expression
+					}
 					break;
 				}
 				case clang::CK_IntegralComplexToReal:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					out << "Drop\r\n";
+					if(!isLtoRValue){
+						out << "Drop\r\n";//if its not l2r value both will be dropped in parse expression
+					}
 					break;
 				}
 				case clang::CK_NullToPointer:
 				{
-					parseExpression(icast->getSubExpr());
+					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					break;
 				}
 				case clang::CK_FloatingRealToComplex:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					out << "PushF_0\r\n"; //Push 0.0f for imag part
+					if(isLtoRValue){
+						out << "PushF_0\r\n"; //Push 0.0f for imag part
+					}
 					break;
 				}
 				case clang::CK_IntegralRealToComplex:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					out << "Push_0\r\n"; //Push 0 for imag part
+					if(isLtoRValue){
+						out << "Push_0\r\n"; //Push 0 for imag part
+					}
 					break;
 				}
 				case clang::CK_FloatingComplexToIntegralComplex:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					LocalVariables.addLevel();
-					int index = LocalVariables.addDecl("imagPart", 1);
-					out << frameSet(index) << "\r\nFtoI\r\n" << frameGet(index) << "\r\nFtoI\r\n";
-					LocalVariables.removeLevel();
+					if(isLtoRValue){
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("imagPart", 1);
+						out << frameSet(index) << "\r\nFtoI\r\n" << frameGet(index) << "\r\nFtoI\r\n";
+						LocalVariables.removeLevel();
+					}
 					break;
 				}
 				case clang::CK_IntegralComplexToFloatingComplex:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					LocalVariables.addLevel();
-					int index = LocalVariables.addDecl("imagPart", 1);
-					out << frameSet(index) << "\r\nItoF\r\n" << frameGet(index) << "\r\nItoF\r\n";
-					LocalVariables.removeLevel();
+					if(isLtoRValue){
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("imagPart", 1);
+						out << frameSet(index) << "\r\nItoF\r\n" << frameGet(index) << "\r\nItoF\r\n";
+						LocalVariables.removeLevel();
+					}
 					break;
 				}
 				case clang::CK_FloatingComplexCast:
@@ -2957,13 +2988,13 @@ public:
 				case clang::CK_FloatingComplexToBoolean:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					ComplexToBoolean(true);
+					if(isLtoRValue)ComplexToBoolean(true);
 					break;
 				}
 				case clang::CK_IntegralComplexToBoolean:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					ComplexToBoolean(false);
+					if(isLtoRValue)ComplexToBoolean(false);
 					break;
 				}
 				case clang::CK_ToUnion:
