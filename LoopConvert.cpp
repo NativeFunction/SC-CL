@@ -78,7 +78,7 @@ void removeFunctionInline(string fName)
 
 map<const FunctionDecl*, int> localCounts;
 static int globalInc = 0;
-static int staticInc = 0;
+static uint32_t staticInc = 0;
 
 
 struct local_scope
@@ -159,6 +159,7 @@ struct local_scope
 
 //Constexpr in visual studio is not fully implemented. When they are put in the hashing namespace in utils it errors.
 #pragma region constexpr_helpers
+#pragma warning( disable : 4307 )
 constexpr char ToLowerConst(const char c) { return (c >= 'A' && c <= 'Z') ? c + ('a' - 'A') : c; }
 constexpr uint32_t sumSHL(uint32_t h, uint32_t shift) { return h + (h << shift); }
 constexpr uint32_t sumSHR(uint32_t h, uint32_t shift) { return h + (h >> shift); }
@@ -2512,7 +2513,7 @@ public:
 						const CXXRecordDecl *classDecl = method->getParent();
 
 
-						int offset = 0;
+						//int offset = 0;
 						printVirtualCall(classDecl, method, expr->getBase());
 					}
 					else {
@@ -2843,7 +2844,7 @@ public:
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					LocalVariables.addLevel();
 					int index = LocalVariables.addDecl("imagPart", 1);
-					out << frameSet(index) << "\r\ItoF\r\n" << frameGet(index) << "\r\ItoF\r\n";
+					out << frameSet(index) << "\r\nItoF\r\n" << frameGet(index) << "\r\nItoF\r\n";
 					LocalVariables.removeLevel();
 					break;
 				}
@@ -2862,7 +2863,7 @@ public:
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					LocalVariables.addLevel();
 					int index = LocalVariables.addDecl("imagPart", 1);
-					out << frameSet(index) << "\r\PushF_0\r\nfCmpEq\r\n" << frameGet(index) << "r\PushF_0\r\nfCmpEq\r\nAnd\r\n";
+					out << frameSet(index) << "\r\nPushF_0\r\nfCmpEq\r\n" << frameGet(index) << "r\nPushF_0\r\nfCmpEq\r\nAnd\r\n";
 					LocalVariables.removeLevel();
 					break;
 				}
@@ -2871,7 +2872,7 @@ public:
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					LocalVariables.addLevel();
 					int index = LocalVariables.addDecl("imagPart", 1);
-					out << frameSet(index) << "\r\Push_0\r\nCmpEq\r\n" << frameGet(index) << "r\Push_0\r\nCmpEq\r\nAnd\r\n";
+					out << frameSet(index) << "\r\nPush_0\r\nCmpEq\r\n" << frameGet(index) << "r\nPush_0\r\nCmpEq\r\nAnd\r\n";
 					LocalVariables.removeLevel();
 					break;
 				}
@@ -3779,7 +3780,7 @@ public:
 
 	uint32_t getCXXOffsetOfNamedDecl(const CXXRecordDecl *classDecl, const NamedDecl *ND, const CXXRecordDecl *prevDecl = NULL) {
 		bool found = false;
-		bool foundVirt = false;
+		//bool foundVirt = false;
 		int offset = 0;
 
 		for (auto VBI : classDecl->bases()) {
@@ -3917,7 +3918,7 @@ public:
 
 	bool VisitFunctionDecl(FunctionDecl *f) {
 		// Only function definitions (with bodies), not declarations.
-		int funcNum = 0;
+		//int funcNum = 0;
 		if (f->hasBody()) {
 			out.seekg(0, ios::end);
 			functions.push_back({ Utils::Hashing::Joaat((char*)getNameForFunc(f).c_str()), getNameForFunc(f), false, out.tellg() });
@@ -4008,7 +4009,7 @@ public:
 
 
 	uint32_t printVirtualCall(const CXXRecordDecl *classDecl, const CXXMethodDecl *method, Expr *baseExpr, const CXXRecordDecl *superDecl = NULL) {
-		int offset = 0;
+		//int offset = 0;
 
 
 		if (superDecl == NULL)
@@ -4028,7 +4029,7 @@ public:
 
 			if (VFI->isVirtual()) {
 
-				const CXXMethodDecl *VFII = VFI->getCorrespondingMethodInClass(superDecl);
+				//const CXXMethodDecl *VFII = VFI->getCorrespondingMethodInClass(superDecl);
 				if (VFI->getName() == method->getName()) { //getLocStart(VFI) != getLocStart(VFII)) {
 
 														   //out << "push " << func << endl;
@@ -4051,7 +4052,7 @@ public:
 	}
 
 	uint32_t printVTableInit(const CXXRecordDecl *classDecl, const NamedDecl *classLoc) {
-		int offset = 0;
+		//int offset = 0;
 
 
 		//string key = classLoc->getDeclName().getAsString();
@@ -4090,7 +4091,7 @@ public:
 					const CXXMethodDecl *VFII = VFI->getCorrespondingMethodInClass(classDecl);
 
 					if (VFI != VFII) { //getLocStart(VFI) != getLocStart(VFII)) {
-						const Stmt *body = VFII->FunctionDecl::getBody();
+						//const Stmt *body = VFII->FunctionDecl::getBody();
 
 						out << "PushFunction " << getNameForFunc(VFII) << " // &" << VFII->getDeclName().getAsString() << endl;
 						out << "getFrame1 0" << endl;
@@ -4270,7 +4271,7 @@ public:
 						b = 0;
 						buffer = 0;
 					}
-					if (i >= strlit.length())
+					if (i >= (int32_t)strlit.length())
 						((uint8_t*)&buffer)[b] = 0;//add padding
 					else
 						((uint8_t*)&buffer)[b] = strlit[i];
@@ -4698,9 +4699,9 @@ public:
 			const InitListExpr *init = cast<const InitListExpr>(e);
 
 			const Type* type = init->getType().getTypePtr();
-			int32_t size = getSizeOfType(type);
+			//int32_t size = getSizeOfType(type);
 
-			int32_t itemType = 0;
+			//int32_t itemType = 0;
 
 			//int32_t oldArrayOutSize = ArrayOut.size();
 			if (!InitializationStack.empty())
@@ -4872,12 +4873,12 @@ public:
 			}
 
 			//read data into statics
-			for (int i = 0; i < initdata.size(); i += 4)
+			for (size_t i = 0; i < initdata.size(); i += 4)
 			{
 				if (i + 4 > initdata.size())
 				{
 					int32_t buffer = 0;
-					for (int j = 0; j < initdata.size() - i; j++)
+					for (size_t j = 0; j < initdata.size() - i; j++)
 						((uint8_t*)&buffer)[j] = initdata[i + j];
 
 					//swapping bytes
@@ -5117,7 +5118,7 @@ public:
 	bool VisitDecl(Decl *D) {
 
 		if (isa<FunctionDecl>(D)) {
-			const FunctionDecl *func = cast<const FunctionDecl>(D);
+			//const FunctionDecl *func = cast<const FunctionDecl>(D);
 			if (currentFunction) {
 				localCounts.insert(make_pair(currentFunction, LocalVariables.getCurrentSize() - currentFunction->getNumParams() - (isa<CXXMethodDecl>(currentFunction) ? 1 : 0)));
 			}
