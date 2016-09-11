@@ -1881,6 +1881,19 @@ public:
 				return true;
 			}
 			break;
+			case JoaatCasedConst("creal"):
+			{
+				ChkHashCol("creal");
+				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isComplexType())
+				{
+					parseExpression(argArray[0], false, true);
+					out << "drop //drop the Imag Part\r\n";
+					return true;
+				}
+				Throw("creal must have signature \"extern __intrinsic int creal(int _Complex complexInteger);\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
 			case JoaatCasedConst("cimag"):
 			{
 				ChkHashCol("cimag");
