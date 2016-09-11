@@ -2569,6 +2569,11 @@ public:
 					out << iPush(result.Val.getComplexIntImag().getSExtValue()) << endl;
 					return -1;
 				}
+				else if (result.Val.isStruct())//this needs some work and should probably be made a recursive function
+				{
+					int i = result.Val.getStructNumBases();
+					int j = result.Val.getStructNumFields();
+				}
 			}
 		}
 		if (isa<IntegerLiteral>(e)) {
@@ -3858,8 +3863,7 @@ public:
 		else if (isa<ImplicitValueInitExpr>(e))
 		{
 			const ImplicitValueInitExpr *im = cast<const ImplicitValueInitExpr>(e);
-			QualType qt = im->getType();
-			uint32_t size = getSizeFromBytes(getSizeOfQualType(&qt));
+			uint32_t size = getSizeFromBytes(getSizeOfType(im->getType().getTypePtr()));
 			for (uint32_t i = 0; i < size; i++)
 				out << "Push_0" << endl;
 		}
