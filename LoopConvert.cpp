@@ -3911,12 +3911,6 @@ public:
 				case BO_ShrAssign:  OpAssign("CallNative shift_right 2 1", false); break;
 				default:
 				{
-					if (isa<PointerType>(bOp->getLHS()->getType()) && isa<PointerType>(bOp->getRHS()->getType()))
-					{
-						//we need to parse both pointera with no mult indexing if it pointer to pointer addition
-						parseExpression(bOp->getLHS(), true, true);
-						parseExpression(bOp->getRHS(), true, true);
-					}
 					if (isa<PointerType>(bOp->getLHS()->getType()))
 					{
 						//we need to parse left as pointer if its a pointer
