@@ -46,7 +46,7 @@ namespace Utils {
 		inline int32_t FloatToInt(float x) { return *(int32_t*)&x; }
 		inline float UIntToFloat(uint32_t x) { return *(float*)&x; }
 		inline float IntToFloat(int32_t x) { return *(float*)&x; }
-		char* IntToHex(uint32_t val);
+		string IntToHex(uint32_t val);
 		inline int32_t IntToPointerInt(int32_t x) { return 0x50000000 | x; }
 		struct NamedUint32
 		{
@@ -75,6 +75,7 @@ namespace Utils {
 	{
 		void Pause(string str = "");
 		void Throw(string str);
+		void Throw(string str, int line, int col);
 		void Throw(string str, clang::Rewriter writer, clang::SourceLocation location);
 		void Throw(string str, clang::Rewriter writer, clang::SourceLocation start, clang::SourceLocation end);
 		void Throw(string str, clang::Rewriter writer, clang::SourceRange range);

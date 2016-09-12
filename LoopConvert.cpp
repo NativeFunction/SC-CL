@@ -1,29 +1,17 @@
-//------------------------------------------------------------------------------
-// Tooling sample. Demonstrates:
-//
-// * How to write a simple source tool using libTooling.
-// * How to use RecursiveASTVisitor to find interesting AST nodes.
-// * How to use the Rewriter API to rewrite the source code.
-//
-// Eli Bendersky (eliben@gmail.com)
-// This code is in the public domain
-//------------------------------------------------------------------------------
-
 #include <sstream>
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <utility>
 #include <map>
-#include <unordered_map>
 #include <cmath>
 #include "Utils.h"
 
+#pragma region Global_Defines
 #undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
 #define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4)
 #define STATIC_DEBUG 0
-
-//using namespace clang::driver;
+#pragma endregion
 
 using namespace Utils;
 using namespace Utils::System;
@@ -32,12 +20,13 @@ using namespace Utils::Hashing;
 using namespace clang;
 using namespace clang::tooling;
 using namespace std;
+
+#pragma region Global_Misc_Clang_Decls
 static llvm::cl::OptionCategory ToolingSampleCategory("Tooling Sample");
-
 static Rewriter rewriter;
+#pragma endregion
 
-map<string, int> globals;
-map<string, int> statics;
+#pragma region Global_Function_Data_Decls
 struct FData
 {
 	uint32_t hash;
@@ -48,38 +37,14 @@ struct FData
 vector<FData> functions;
 struct InlineData { uint32_t hash; string name; };
 vector<InlineData> InlineItems;
+#pragma endregion
 
-bool isFunctionInInline(string fName)
-{
-	uint32_t hash = Utils::Hashing::Joaat((char*)fName.c_str());
-	for (InlineData data : InlineItems)
-	{
-		if (data.hash == hash)
-		{
-			if (data.name == fName)
-				return true;
-		}
-	}
-	return false;
-}
-bool addFunctionInline(string fName)
-{
-	if (isFunctionInInline(fName))
-		return false;
-	InlineItems.push_back({ Utils::Hashing::Joaat((char*)fName.c_str()) , fName });
-	return true;
-}
-void removeFunctionInline(string fName)
-{
-	assert(InlineItems.back().name == fName);
-	InlineItems.pop_back();
-
-}
-
+#pragma region Global_Var_and_Scope_Decls
+map<string, int> globals;
+map<string, int> statics;
 map<const FunctionDecl*, int> localCounts;
 static int globalInc = 0;
 static uint32_t staticInc = 0;
-
 
 struct local_scope
 {
@@ -154,11 +119,10 @@ struct local_scope
 	}
 
 }LocalVariables;
-// By implementing RecursiveASTVisitor, we can specify which AST nodes
-// we're interested in by overriding relevant methods.
+#pragma endregion
 
 //Constexpr in visual studio is not fully implemented. When they are put in the hashing namespace in utils it errors.
-#pragma region constexpr_helpers
+#pragma region Constexpr_Helpers
 #pragma warning( disable : 4307 )
 constexpr char ToLowerConst(const char c) { return (c >= 'A' && c <= 'Z') ? c + ('a' - 'A') : c; }
 constexpr uint32_t sumSHL(uint32_t h, uint32_t shift) { return h + (h << shift); }
@@ -170,10 +134,41 @@ constexpr uint32_t casedHashImpl(const char * cstr, uint32_t h) { return (*cstr 
 constexpr uint32_t hashImpl(const char * cstr, uint32_t h) { return (*cstr != 0) ? hashImpl(cstr + 1, hashStepImpl(h, ToLowerConst(*cstr))) : hashFinishImpl(h); }
 #pragma endregion
 
+#pragma region Global_Constexpr_Functions
 constexpr uint32_t JoaatCasedConst(const char * cstr) { return casedHashImpl(cstr, 0); }
 constexpr uint32_t JoaatConst(const char * cstr) { return hashImpl(cstr, 0); }
+#pragma endregion
 
+#pragma region Global_Inline_Function_Functions
+bool isFunctionInInline(string fName)
+{
+	uint32_t hash = Utils::Hashing::Joaat((char*)fName.c_str());
+	for (InlineData data : InlineItems)
+	{
+		if (data.hash == hash)
+		{
+			if (data.name == fName)
+				return true;
+		}
+	}
+	return false;
+}
+bool addFunctionInline(string fName)
+{
+	if (isFunctionInInline(fName))
+		return false;
+	InlineItems.push_back({ Utils::Hashing::Joaat((char*)fName.c_str()) , fName });
+	return true;
+}
+void removeFunctionInline(string fName)
+{
+	assert(InlineItems.back().name == fName);
+	InlineItems.pop_back();
 
+}
+#pragma endregion
+
+#pragma region Global_Size_Functions
 uint32_t getSizeOfType(const Type* type);
 uint64_t getSizeOfQualType(const QualType *type) {
 	int mult = 1;
@@ -195,7 +190,149 @@ uint64_t getSizeOfQualType(const QualType *type) {
 	else
 		return getSizeOfType(canonical)*mult + (mult > 1 ? 4 : 0);
 }
+uint32_t getSizeFromBytes(uint64_t bytes) {
+	uint32_t size = (bytes / 4) + ((bytes % 4) ? 1 : 0);
+	return size;
+}
+uint32_t getLiteralSizeOfType(const Type* type) {
 
+	if (isa<ConstantArrayType>(type)) {
+		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
+		return getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue();
+	}
+	//else if (type->isRecordType() && type->getAsCXXRecordDecl()) {
+	//	CXXRecordDecl *recordDecl = type->getAsCXXRecordDecl();
+	//	return getSizeOfCXXDecl(recordDecl, true, false);
+	//}
+	else if (type->isStructureType()) {
+		const RecordType *record = type->getAsStructureType();
+
+		if (RecordDecl *rd = record->getDecl()) {
+
+			uint32_t size = 0;
+			for (const auto *CS : rd->fields()) {
+				const Type* type = CS->getType().getTypePtr();
+
+				size += getSizeOfType(type);
+			}
+			//cout << "struct: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
+
+			return size;
+		}
+
+	}
+	else if (type->isUnionType())
+	{
+		const RecordType *record = type->getAsUnionType();
+
+		if (RecordDecl *rd = record->getDecl()) {
+
+			uint32_t size = 0;
+			for (const auto *CS : rd->fields()) {
+				const Type* type = CS->getType().getTypePtr();
+
+				uint32_t sz = getSizeOfType(type);
+				if (sz > size)
+					size = sz;
+			}
+			//cout << "union: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
+
+			return size;
+		}
+
+	}
+	else if (type->isAnyComplexType())
+		return 8;
+	else if (type->isCharType())
+		return 1;
+	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+		return 2;
+	else if (type->isIntegerType() || type->isBooleanType() || type->isRealFloatingType() || type->isPointerType())
+		return 4;
+	else if (type->isVoidType())
+		return 0;
+
+	return 0;
+}
+uint32_t getSizeOfType(const Type* type) {
+
+	if (isa<ConstantArrayType>(type)) {
+		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
+		return ((getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue()) + 4 - 1) & ~3;
+	}
+	//else if (type->isRecordType() && type->getAsCXXRecordDecl()) {
+	//	CXXRecordDecl *recordDecl = type->getAsCXXRecordDecl();
+	//	return getSizeOfCXXDecl(recordDecl, true, false);
+	//}
+	else if (type->isStructureType()) {
+		const RecordType *record = type->getAsStructureType();
+
+		if (RecordDecl *rd = record->getDecl()) {
+
+			uint32_t size = 0;
+			for (const auto *CS : rd->fields()) {
+				const Type* type = CS->getType().getTypePtr();
+
+				size += (getSizeOfType(type) + 4 - 1) & ~3;
+			}
+			//cout << "struct: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
+
+			return size;
+		}
+
+	}
+	else if (type->isUnionType())
+	{
+		const RecordType *record = type->getAsUnionType();
+
+		if (RecordDecl *rd = record->getDecl()) {
+
+			uint32_t size = 0;
+			for (const auto *CS : rd->fields()) {
+				const Type* type = CS->getType().getTypePtr();
+
+				uint32_t sz = (getSizeOfType(type) + 4 - 1) & ~3;
+				if (sz > size)
+					size = sz;
+			}
+			//cout << "union: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
+
+			return size;
+		}
+
+	}
+	else if (type->isCharType())
+		return 1;
+	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+		return 2;
+	else if (type->isIntegerType() || type->isBooleanType() || type->isRealFloatingType() || type->isPointerType())
+		return 4;
+	else if (type->isVoidType())
+		return 0;
+	else if (type->isAnyComplexType())
+		return 8;
+
+	return 0;
+}
+bool CheckExprForSizeOf(const Expr* expr, int *outSize)
+{
+	if (isa<UnaryExprOrTypeTraitExpr>(expr))
+	{
+		const UnaryExprOrTypeTraitExpr *ueTrait = cast<UnaryExprOrTypeTraitExpr>(expr);
+		if (ueTrait->getKind() == UETT_SizeOf)
+		{
+			if (ueTrait->isArgumentType())
+				*outSize = getSizeOfType(ueTrait->getArgumentType().getTypePtr());
+			else//size = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
+				*outSize = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
+			return true;
+		}
+	}
+	return false;
+}
+#pragma endregion
+
+#pragma region Global_CXX_Functions
 uint32_t getSizeOfCXXDecl(const CXXRecordDecl *classDecl, bool incVTableDef = false, bool incOwnVTable = false, const CXXRecordDecl *stopAt = NULL, bool *bFound = NULL) {
 	incOwnVTable = true;
 	if (classDecl == stopAt)
@@ -287,12 +424,6 @@ uint32_t getSizeOfVTable(const CXXRecordDecl *classDecl) {
 	}
 	return size;
 }
-
-uint32_t getSizeFromBytes(uint64_t bytes) {
-	uint32_t size = (bytes / 4) + ((bytes % 4) ? 1 : 0);
-	return size;
-}
-
 uint32_t getNumVirtMethods(const CXXRecordDecl *classDecl) {
 	int numVirt = 0;
 	for (CXXMethodDecl *VFI : classDecl->methods())
@@ -301,189 +432,13 @@ uint32_t getNumVirtMethods(const CXXRecordDecl *classDecl) {
 
 	return numVirt;
 }
-uint32_t getLiteralSizeOfType(const Type* type) {
-
-	if (isa<ConstantArrayType>(type)) {
-		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
-		return getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue();
-	}
-	else if (type->isRecordType() && type->getAsCXXRecordDecl()) {
-		CXXRecordDecl *recordDecl = type->getAsCXXRecordDecl();
-		return getSizeOfCXXDecl(recordDecl, true, false);
-	}
-	else if (type->isStructureType()) {
-		const RecordType *record = type->getAsStructureType();
-
-		if (RecordDecl *rd = record->getDecl()) {
-
-			uint32_t size = 0;
-			for (const auto *CS : rd->fields()) {
-				const Type* type = CS->getType().getTypePtr();
-
-				size += getSizeOfType(type);
-			}
-			//cout << "struct: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
-
-			return size;
-		}
-
-	}
-	else if (type->isUnionType())
-	{
-		const RecordType *record = type->getAsUnionType();
-
-		if (RecordDecl *rd = record->getDecl()) {
-
-			uint32_t size = 0;
-			for (const auto *CS : rd->fields()) {
-				const Type* type = CS->getType().getTypePtr();
-
-				uint32_t sz = getSizeOfType(type);
-				if (sz > size)
-					size = sz;
-			}
-			//cout << "union: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
-
-			return size;
-		}
-
-	}
-	else if (type->isAnyComplexType())
-		return 8;
-	else if (type->isCharType())
-		return 1;
-	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
-		return 2;
-	else if (type->isIntegerType() || type->isBooleanType() || type->isRealFloatingType() || type->isPointerType())
-		return 4;
-	else if (type->isVoidType())
-		return 0;
-
-	return 0;
-}
-uint32_t getSizeOfType(const Type* type) {
-
-	if (isa<ConstantArrayType>(type)) {
-		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
-		return ((getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue()) + 4 - 1) & ~3;
-	}
-	else if (type->isRecordType() && type->getAsCXXRecordDecl()) {
-		CXXRecordDecl *recordDecl = type->getAsCXXRecordDecl();
-		return getSizeOfCXXDecl(recordDecl, true, false);
-	}
-	else if (type->isStructureType()) {
-		const RecordType *record = type->getAsStructureType();
-
-		if (RecordDecl *rd = record->getDecl()) {
-
-			uint32_t size = 0;
-			for (const auto *CS : rd->fields()) {
-				const Type* type = CS->getType().getTypePtr();
-
-				size += (getSizeOfType(type) + 4 - 1) & ~3;
-			}
-			//cout << "struct: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
-
-			return size;
-		}
-
-	}
-	else if (type->isUnionType())
-	{
-		const RecordType *record = type->getAsUnionType();
-
-		if (RecordDecl *rd = record->getDecl()) {
-
-			uint32_t size = 0;
-			for (const auto *CS : rd->fields()) {
-				const Type* type = CS->getType().getTypePtr();
-
-				uint32_t sz = (getSizeOfType(type) + 4 - 1) & ~3;
-				if (sz > size)
-					size = sz;
-			}
-			//cout << "union: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
-
-			return size;
-		}
-
-	}
-	else if (type->isCharType())
-		return 1;
-	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
-		return 2;
-	else if (type->isIntegerType() || type->isBooleanType() || type->isRealFloatingType() || type->isPointerType())
-		return 4;
-	else if (type->isVoidType())
-		return 0;
-	else if (type->isAnyComplexType())
-		return 8;
-
-	return 0;
-}
-bool CheckExprForSizeOf(const Expr* expr, int *outSize)
-{
-	if (isa<UnaryExprOrTypeTraitExpr>(expr))
-	{
-		const UnaryExprOrTypeTraitExpr *ueTrait = cast<UnaryExprOrTypeTraitExpr>(expr);
-		if (ueTrait->getKind() == UETT_SizeOf)
-		{
-			if (ueTrait->isArgumentType())
-				*outSize = getSizeOfType(ueTrait->getArgumentType().getTypePtr());
-			else//size = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
-				*outSize = getSizeOfType(ueTrait->getArgumentExpr()->getType().getTypePtr());
-			return true;
-		}
-	}
-	return false;
-}
+#pragma endregion
 
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
 public:
 	MyASTVisitor(Rewriter &R, ASTContext *context, string filename) : TheRewriter(R), context(context), outfile(filename) {}
 
-	//    bool VisitStmt(Stmt *s) {
-	//        // Only care about compound statements.
-	//
-	//
-	//        return true;
-	//    }
-	//
-
-	//handleParamVarDecl
-	bool handleParmVarDecl(ParmVarDecl *D) {
-		if (isa<ParmVarDecl>(D)) {
-			ParmVarDecl *decl = cast<ParmVarDecl>(D);
-			if (isa<VarDecl>(decl)) {
-
-				VarDecl *var = cast<VarDecl>(decl);
-				auto size = context->getTypeInfoDataSizeInChars(var->getType()).first.getQuantity();
-				uint32_t curIndex = LocalVariables.getCurrentSize();
-
-				int actsize = var->isCXXInstanceMember() ?
-					getSizeFromBytes(getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false))
-					: getSizeFromBytes(size);
-
-				const Expr *initializer = var->getAnyInitializer();
-
-				if (initializer) {
-					if (isa<CXXConstructExpr>(initializer)) {
-
-						out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
-						parseExpression(initializer);
-					}
-					else
-					{
-						parseExpression(initializer);
-						out << frameSet(curIndex) << "  //(parm)" << var->getName().str() << endl;
-					}
-				}
-				LocalVariables.addDecl(var->getName().str(), actsize);
-			}
-		}
-		return true;
-	}
-
+	#pragma region Opcodes_Var
 	string frameSet(int index) {
 		if ((index & 0xFF) == index) {
 			return "SetFrame1 " + to_string(index);
@@ -569,7 +524,8 @@ public:
 			Throw("GetStaticP Index \"" + to_string(index) + "\" is out of range 0 - 65535");
 		return "null";
 	}
-
+	#pragma endregion
+	#pragma region Opcodes_Immediate
 	string GetImm(int size)
 	{
 		return add(size * 4) + "\r\npGet";
@@ -592,6 +548,8 @@ public:
 		else
 			return iPush(aSize) + "\r\nAdd\r\npSet";
 	}
+	#pragma endregion
+	#pragma region Opcodes_Push
 	string iPush(int64_t val) {
 		if (val < -1)
 			return "Push " + to_string(val);
@@ -637,6 +595,8 @@ public:
 		else
 			return fPush(value.convertToDouble());
 	}
+	#pragma endregion
+	#pragma region Opcodes_Math
 	string mult(int value)
 	{
 		if (value < -32768 || value > 32767)
@@ -664,7 +624,25 @@ public:
 		else
 			return "Add2 " + to_string(-value);
 	}
+	#pragma endregion
+	
+	#pragma region Misc_Functions
+	void ComplexToBoolean(bool floating)
+	{
+		LocalVariables.addLevel();
+		int index = LocalVariables.addDecl("imagPart", 1);
+		if (floating) {
+			out << frameSet(index) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(index) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+		}
+		else
+		{
+			out << frameSet(index) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(index) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+		}
+		LocalVariables.removeLevel();
+	}
+	#pragma endregion
 
+	#pragma region Name_Resolution
 	string dumpName(const NamedDecl *ND) {
 		if (isa<CXXMethodDecl>(ND)) {
 			const CXXMethodDecl *method = cast<const CXXMethodDecl>(ND);
@@ -677,7 +655,19 @@ public:
 		}
 		return "";
 	}
+	string getNameForFunc(const FunctionDecl *decl) {
+		if (isa<CXXMethodDecl>(decl)) {
+			const CXXMethodDecl *methodDecl = cast<const CXXMethodDecl>(decl);
+			const CXXRecordDecl *record = methodDecl->getParent();
+			return "@" + record->getNameAsString() + "::" + methodDecl->getNameAsString();
+		}
+		else {
+			return "@" + decl->getNameAsString();
+		}
+	}
+	#pragma endregion
 
+	#pragma region Parsing
 	void parseJumpFalseCondition(Expr *condition, bool invert = false)
 	{
 		while (isa<BinaryOperator>(condition))
@@ -770,14 +760,62 @@ public:
 		}
 		out << "JumpFalse @";
 	}
+	string parseCast(const CastExpr *castExpr) {
+		switch (castExpr->getCastKind()) {
+			case clang::CK_LValueToRValue:
+			break;
+			case clang::CK_IntegralCast:
+			{
+				const Expr *e = castExpr->getSubExpr();
+				if (isa<IntegerLiteral>(e)) {
+					const IntegerLiteral *literal = cast<const IntegerLiteral>(e);
+					return to_string(literal->getValue().getSExtValue());
+				}
+				else if (isa<FloatingLiteral>(e)) {
+					const FloatingLiteral *literal = cast<const FloatingLiteral>(e);
+					if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
+						return to_string(literal->getValue().convertToFloat());
+					else
+						return to_string(literal->getValue().convertToDouble());
+				}
+				else {
+					out << "unhandled cast (IK)" << endl;
+				}
+			}
+			case clang::CK_FunctionToPointerDecay:
+			{
+				if (isa<DeclRefExpr>(castExpr->getSubExpr())) {
+					const DeclRefExpr *declRef = cast<const DeclRefExpr>(castExpr->getSubExpr());
+					if (isa<FunctionDecl>(declRef->getDecl())) {
+						const FunctionDecl *decl = cast<const FunctionDecl>(declRef->getDecl());
+						return getNameForFunc(decl);
+					}
+					else {
+						out << "Unimplemented cast" << endl;
+					}
 
+				}
+				else {
+					out << "Unimplemented cast" << endl;
+				}
+			}
+			break;
+			default:
+			out << "unimplemented cast" << endl;
+		}
+		return "";
+	}
+	#pragma endregion
+	
+	#pragma region Decl_Handling
+	//handleParamVarDecl
 	void printDeclWithKey(string key, bool isAddr, bool isLtoRValue, const DeclRefExpr* declref) {
 		int index = -1;
 		const Type* type = declref->getType().getTypePtr();
 		size_t size = getSizeOfType(type);
 		bool isStackCpy = size > 4 && isLtoRValue && !isAddr;//if greater then 4 bytes then a to stack is in order
 
-		
+
 
 		if (isStackCpy) {
 			out << iPush(getSizeFromBytes(size)) << "//Type Size" << endl;
@@ -885,400 +923,38 @@ public:
 		}
 
 	}
+	bool handleParmVarDecl(ParmVarDecl *D) {
+		if (isa<ParmVarDecl>(D)) {
+			ParmVarDecl *decl = cast<ParmVarDecl>(D);
+			if (isa<VarDecl>(decl)) {
 
-	bool parseStatement(Stmt *s, uint64_t breakLoc = -1, uint64_t continueLoc = -1, uint64_t returnLoc = -1) {
-		if (isa<CompoundStmt>(s)) {
-			CompoundStmt *cSt = cast<CompoundStmt>(s);
-			//            cSt->dump();
-			for (auto *CS : cSt->body()) {
-				if (isa<Stmt>(*CS))
-					parseStatement(cast<Stmt>(CS), breakLoc, continueLoc, returnLoc);
-				else if (isa<Expr>(CS))
-					parseExpression(cast<const Expr>(CS));
-			}
-		}
-		else if (isa<DeclStmt>(s)) {
-			DeclStmt *decl = cast<DeclStmt>(s);
-			handleDecl(decl);
-		}
-		else if (isa<IfStmt>(s)) {
-			IfStmt *IfStatement = cast<IfStmt>(s);
-			Expr *conditional = IfStatement->getCond();
-			Stmt *Then = IfStatement->getThen();
-			Stmt *Else = IfStatement->getElse();
+				VarDecl *var = cast<VarDecl>(decl);
+				auto size = context->getTypeInfoDataSizeInChars(var->getType()).first.getQuantity();
+				uint32_t curIndex = LocalVariables.getCurrentSize();
 
-			string IfLocEnd = to_string(Then->getLocEnd().getRawEncoding());
+				int actsize = var->isCXXInstanceMember() ?
+					getSizeFromBytes(getSizeOfCXXDecl(var->getType()->getAsCXXRecordDecl(), true, false))
+					: getSizeFromBytes(size);
 
-			Expr::EvalResult eResult;
-			bool bValue = false, ignoreCondition = false;
-			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
-			{
-				bValue = eResult.Val.getInt().getBoolValue();
-				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
-					Warn("if condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				ignoreCondition = !eResult.HasSideEffects;
-			}
-			if (ignoreCondition)
-			{
-				if (bValue)
-				{
-					LocalVariables.addLevel();
-					parseStatement(Then, breakLoc, continueLoc, returnLoc);
-					LocalVariables.removeLevel();
-					if (Else)//still parse the else code just incase there are goto labels in there
+				const Expr *initializer = var->getAnyInitializer();
+
+				if (initializer) {
+					if (isa<CXXConstructExpr>(initializer)) {
+
+						out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
+						parseExpression(initializer);
+					}
+					else
 					{
-						out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
-						LocalVariables.addLevel();
-						parseStatement(Else, breakLoc, continueLoc, returnLoc);
-						LocalVariables.removeLevel();
-						out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
+						parseExpression(initializer);
+						out << frameSet(curIndex) << "  //(parm)" << var->getName().str() << endl;
 					}
 				}
-				else
-				{
-					//still parse the then code just incase there are goto labels in there
-					out << "Jump @" << (Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd) << endl;
-					LocalVariables.addLevel();
-					parseStatement(Then, breakLoc, continueLoc, returnLoc);
-					LocalVariables.removeLevel();
-					if (Else)
-					{
-						out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
-						out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
-						LocalVariables.addLevel();
-						parseStatement(Else, breakLoc, continueLoc, returnLoc);
-						LocalVariables.removeLevel();
-					}
-					out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
-				}
-			}
-			else
-			{
-				parseJumpFalseCondition(conditional);
-				out << (Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd) << endl;
-				LocalVariables.addLevel();
-				parseStatement(Then, breakLoc, continueLoc, returnLoc);
-				LocalVariables.removeLevel();
-
-				out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
-
-				if (Else) {
-					out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
-					LocalVariables.addLevel();
-					parseStatement(Else, breakLoc, continueLoc, returnLoc);
-					LocalVariables.removeLevel();
-					out << "//" << Else->getLocStart().getRawEncoding() << " " << Else->getLocEnd().getRawEncoding() << endl;
-				}
-				if (Then)
-				{
-					out << "//" << Then->getLocStart().getRawEncoding() << " " << Then->getLocEnd().getRawEncoding() << endl;
-				}
-
-				out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
+				LocalVariables.addDecl(var->getName().str(), actsize);
 			}
 		}
-		else if (isa<WhileStmt>(s)) {
-			WhileStmt *whileStmt = cast<WhileStmt>(s);
-			Expr *conditional = whileStmt->getCond();
-
-			Stmt *body = whileStmt->getBody();
-			LocalVariables.addLevel();
-
-			Expr::EvalResult eResult;
-			bool bValue = false, ignoreCondition = false;
-			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
-			{
-				bValue = eResult.Val.getInt().getBoolValue();
-				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
-					Warn("While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				ignoreCondition = !eResult.HasSideEffects;
-			}
-			if (ignoreCondition)
-			{
-				if (bValue)
-				{
-					out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
-					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
-
-					out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
-					out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
-				}
-				else
-				{
-					out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
-					out << "Jump @" << whileStmt->getLocEnd().getRawEncoding() << endl;
-
-					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
-
-					out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
-					out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
-				}
-
-			}
-			else {
-
-				out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
-				parseJumpFalseCondition(conditional);
-				out << whileStmt->getLocEnd().getRawEncoding() << endl;
-
-				parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
-
-				out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
-				out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
-			}
-			LocalVariables.removeLevel();
-		}
-		else if (isa<ForStmt>(s)) {
-			ForStmt *forStmt = cast<ForStmt>(s);
-			Stmt *decl = forStmt->getInit();
-			Expr *conditional = forStmt->getCond();
-			Expr *increment = forStmt->getInc();
-			Stmt *body = forStmt->getBody();
-			LocalVariables.addLevel();
-			if (decl) {
-				parseStatement(decl, -1, -1, returnLoc);
-			}
-
-			if (conditional) {
-				out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
-
-				parseJumpFalseCondition(conditional);
-				out << body->getLocEnd().getRawEncoding() << endl;
-			}
-			else
-			{
-				out << endl << ":" << body->getLocStart().getRawEncoding() << endl;
-			}
-
-			parseStatement(
-				body,
-				forStmt->getLocEnd().getRawEncoding(),
-				increment ? increment->getLocStart().getRawEncoding() : conditional ? conditional->getLocStart().getRawEncoding() : body->getLocStart().getRawEncoding(),
-				returnLoc);
-
-			if (increment)
-				out << endl << ":" << increment->getLocStart().getRawEncoding() << "//forstmt inc lbl" << endl;
-
-			if (increment)
-				parseExpression(increment);
-
-			if (conditional)
-				out << "Jump @" << conditional->getLocStart().getRawEncoding() << "//forstmt cond jmp" << endl;
-			else
-				out << "Jump @" << body->getLocStart().getRawEncoding() << "//forstmt jmp" << endl;
-
-
-			out << endl << ":" << body->getLocEnd().getRawEncoding() << "//forend lbl" << endl;
-			LocalVariables.removeLevel();
-
-
-		}
-		else if (isa<UnaryOperator>(s)) {
-			parseExpression(cast<const Expr>(s));
-		}
-		else if (isa<DoStmt>(s)) {
-			DoStmt *doStmt = cast<DoStmt>(s);
-			Expr *conditional = doStmt->getCond();
-
-			Stmt *body = doStmt->getBody();
-			LocalVariables.addLevel();
-
-			out << endl << ":" << body->getLocStart().getRawEncoding() << endl;
-
-			parseStatement(body, conditional->getLocEnd().getRawEncoding(), body->getLocEnd().getRawEncoding(), returnLoc);
-
-
-
-			out << endl << ":" << body->getLocEnd().getRawEncoding() << "" << endl;
-			Expr::EvalResult eResult;
-			bool bValue = false, ignoreCondition = false;
-			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
-			{
-				bValue = eResult.Val.getInt().getBoolValue();
-				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
-					Warn("do While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				ignoreCondition = !eResult.HasSideEffects;
-			}
-			if (ignoreCondition)
-			{
-				if (bValue)
-				{
-					out << "Jump @" << body->getLocStart().getRawEncoding() << endl;
-				}
-				//no need for else, just jump right out
-
-			}
-			else
-			{
-				parseJumpFalseCondition(conditional, true);
-				out << body->getLocStart().getRawEncoding() << endl;
-			}
-
-			out << endl << ":" << conditional->getLocEnd().getRawEncoding() << "" << endl;
-			LocalVariables.removeLevel();
-
-		}
-		else if (isa<ReturnStmt>(s)) {
-			const ReturnStmt *ret = cast<const ReturnStmt>(s);
-			const Expr* retVal = ret->getRetValue();
-			if (retVal)
-				parseExpression(retVal, false, true);
-			if (returnLoc == -1)
-			{
-				int size = 0;
-				if (ret->getRetValue()) {
-					QualType type = ret->getRetValue()->getType();
-					size = context->getTypeInfoDataSizeInChars(type).first.getQuantity();
-				}
-
-				int32_t paramSize = 0;
-				for (uint32_t i = 0; i < currFunction->getNumParams(); i++) {
-					paramSize += getSizeFromBytes(getSizeOfType(currFunction->getParamDecl(i)->getType().getTypePtr()));
-				}
-				out << "Return " << paramSize + (isa<CXXMethodDecl>(currFunction) ? 1 : 0) << " " << getSizeFromBytes(size) << endl;
-			}
-			else
-			{
-				out << "Jump @" << returnLoc << endl;
-			}
-
-		}
-		else if (isa<Expr>(s)) {
-			parseExpression(cast<const Expr>(s));
-		}
-		else if (isa<BreakStmt>(s)) {
-			out << "Jump @" << breakLoc << "//brkstmt jmp" << endl;
-		}
-		else if (isa<NullStmt>(s)) {
-			// out << "nop " << breakLoc << endl;
-		}
-		else if (isa<ContinueStmt>(s)) {
-			out << "Jump @" << continueLoc << "//contstmt jmp" << endl;
-		}
-		else if (isa<DefaultStmt>(s)) {
-			DefaultStmt *caseD = cast<DefaultStmt>(s);
-			string labelName = ":" + to_string(caseD->getLocEnd().getRawEncoding());
-			if (FindBuffer.find(labelName) == FindBuffer.end())
-			{
-				FindBuffer.insert(labelName);
-				out << labelName << endl;
-			}
-			LocalVariables.addLevel();
-
-			if (caseD->getSubStmt())
-				parseStatement(caseD->getSubStmt(), breakLoc, continueLoc, returnLoc);
-			LocalVariables.removeLevel();
-		}
-		else if (isa<CaseStmt>(s)) {
-			CaseStmt *caseS = cast<CaseStmt>(s);
-
-			string labelName = ":" + to_string(caseS->getLocEnd().getRawEncoding());
-			if (FindBuffer.find(labelName) == FindBuffer.end())
-			{
-				FindBuffer.insert(labelName);
-				out << labelName << endl;
-			}
-			LocalVariables.addLevel();
-			if (caseS->getRHS())
-				parseExpression(caseS->getRHS());
-
-			if (caseS->getSubStmt())
-				parseStatement(caseS->getSubStmt(), breakLoc, continueLoc, returnLoc);
-			LocalVariables.removeLevel();
-		}
-		else if (isa<SwitchStmt>(s)) {
-			SwitchStmt *switchStmt = cast<SwitchStmt>(s);
-			out << "//Switch Conditional" << endl;
-			FindBuffer.clear();
-			parseExpression(switchStmt->getCond(), false, true);
-			out << "Switch ";
-
-			//Build case switch list first
-			SwitchCase *switchCaseList = switchStmt->getSwitchCaseList();
-			DefaultStmt *defaultCase = NULL;
-			stack<string> caseLabels;
-			while (switchCaseList != NULL)
-			{
-				if (isa<CaseStmt>(switchCaseList))
-				{
-					CaseStmt *caseS = cast<CaseStmt>(switchCaseList);
-					Expr::EvalResult result;
-					if (caseS->getLHS()->EvaluateAsRValue(result, *context)) {
-						if (result.Val.isInt())
-						{
-							int val;
-							if (CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
-								caseLabels.push("[" + to_string(val) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
-							else
-								caseLabels.push("[" + to_string(result.Val.getInt().getSExtValue()) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
-						}
-						else if (result.Val.isFloat())
-						{
-							caseLabels.push("[" + to_string(result.Val.getFloat().convertToFloat()) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
-						}
-						else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getSourceRange());
-					}
-					else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getSourceRange());
-
-				}
-				else if (isa<DefaultStmt>(switchCaseList))
-				{
-					if (defaultCase) {
-						Throw("Multiple default statements found in switch", rewriter, defaultCase->getLocStart(), switchCaseList->getLocEnd());
-					}
-					defaultCase = cast<DefaultStmt>(switchCaseList);
-				}
-				else
-					llvm::errs() << "Unexpected Statement: " << switchCaseList->getStmtClassName();
-				switchCaseList = switchCaseList->getNextSwitchCase();
-			}
-			while (caseLabels.size() > 1)
-			{
-				out << caseLabels.top() << ":";
-				caseLabels.pop();
-			}
-			out << caseLabels.top() << endl;
-
-			if (defaultCase)
-			{
-				out << "Jump @" << defaultCase->getLocEnd().getRawEncoding() << endl;
-			}
-			else
-			{
-				out << "Jump @" << switchStmt->getLocEnd().getRawEncoding() << endl;
-			}
-
-			//parse all
-			parseStatement(switchStmt->getBody(), switchStmt->getLocEnd().getRawEncoding(), continueLoc, returnLoc);
-			out << "//SwitchEnd" << endl << endl;
-			out << ":" << switchStmt->getLocEnd().getRawEncoding() << endl;
-			FindBuffer.clear();
-		}
-		else if (isa<GotoStmt>(s))
-		{
-			GotoStmt *gotoStmt = cast<GotoStmt>(s);
-			out << "Jump @" << gotoStmt->getLabel()->getNameAsString() << endl;
-		}
-		else if (isa<LabelStmt>(s))
-		{
-			LabelStmt *labelStmt = cast<LabelStmt>(s);
-			out << ":" << labelStmt->getName() << endl;
-		}
-		else if (isa<GCCAsmStmt>(s))
-		{
-			GCCAsmStmt *asmstmt = cast<GCCAsmStmt>(s);
-			if (InlineItems.size())
-			{
-				Warn("Using a __asm__ statement in an inlined function may lead to undesireable effects\r\nConsider marking the function as __attribute__((__noinline__))", rewriter, asmstmt->getSourceRange());
-			}
-			out << asmstmt->getAsmString()->getString().str() << endl;
-		}
-		else
-			Throw("Undefined statement \"" + string(s->getStmtClassName()) + "\"", rewriter, s->getLocStart());
-
 		return true;
 	}
-
 	bool handleDecl(DeclStmt* decl) {
 		for (DeclStmt::decl_iterator I = decl->decl_begin(), E = decl->decl_end(); I != E; ++I) {
 			if (isa<VarDecl>(*I)) {
@@ -1354,7 +1030,22 @@ public:
 		}
 		return true;
 	}
+	const DeclRefExpr *getDeclRefExpr(const Expr *e) {
+		if (isa<DeclRefExpr>(e)) {
+			return cast<const DeclRefExpr>(e);
+		}
+		else {
+			for (auto *CS : e->clang::Stmt::children()) {
+				if (isa<Expr>(CS)) {
+					return getDeclRefExpr(cast<const Expr>(CS));
+				}
+			}
+		}
+		return NULL;
+	}
+	#pragma endregion
 
+	#pragma region Parse/Visit_Functions
 	bool checkIntrinsic(const CallExpr *call) {
 		const FunctionDecl* callee = call->getDirectCallee();
 
@@ -2534,13 +2225,13 @@ public:
 			{
 				ChkHashCol("rev");
 
-				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
-					if(argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, *context))
 					{
 						int64_t value = result.getSExtValue();
-						if(value >= 2)
+						if (value >= 2)
 						{
 							LocalVariables.addLevel();
 							int startDeclIndex = LocalVariables.addDecl("__rev-container-var-decl", value);
@@ -2551,7 +2242,7 @@ public:
 							out << "FromStack" << endl;
 
 							//Put them back on stack in reverse
-							for(int i = startDeclIndex + value - 1; i >= startDeclIndex; i--)
+							for (int i = startDeclIndex + value - 1; i >= startDeclIndex; i--)
 								out << frameGet(i) << endl;
 
 							LocalVariables.removeLevel();
@@ -2574,18 +2265,18 @@ public:
 			{
 				ChkHashCol("exchange");
 
-				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
-					if(argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, *context))
 					{
 						const Expr* expr = argArray[0]->IgnoreParens()->IgnoreCasts();
-						if(isa<UnaryExprOrTypeTraitExpr>(expr) && cast<UnaryExprOrTypeTraitExpr>(expr)->getKind() == UETT_SizeOf)
+						if (isa<UnaryExprOrTypeTraitExpr>(expr) && cast<UnaryExprOrTypeTraitExpr>(expr)->getKind() == UETT_SizeOf)
 						{
 							Warn("Exchange called with a sizeof operation, did you mean to use stacksizeof", rewriter, argArray[0]->getSourceRange());
 						}
 						int64_t value = result.getSExtValue();
-						if(value > 0)
+						if (value > 0)
 						{
 							LocalVariables.addLevel();
 							int firstItemIndex = LocalVariables.addDecl("__exchangeItem1", value);
@@ -2614,7 +2305,7 @@ public:
 								out << frameSet(firstItemIndex) << endl << frameSet(secondItemIndex) << endl
 									<< frameGet(firstItemIndex) << endl << frameGet(secondItemIndex) << endl;
 							}
-							
+
 
 							LocalVariables.removeLevel();
 						}
@@ -2642,90 +2333,397 @@ public:
 		return false;
 	}
 
-	string parseCast(const CastExpr *castExpr) {
-		switch (castExpr->getCastKind()) {
-			case clang::CK_LValueToRValue:
-			break;
-			case clang::CK_IntegralCast:
+	bool parseStatement(Stmt *s, uint64_t breakLoc = -1, uint64_t continueLoc = -1, uint64_t returnLoc = -1) {
+		if (isa<CompoundStmt>(s)) {
+			CompoundStmt *cSt = cast<CompoundStmt>(s);
+			//            cSt->dump();
+			for (auto *CS : cSt->body()) {
+				if (isa<Stmt>(*CS))
+					parseStatement(cast<Stmt>(CS), breakLoc, continueLoc, returnLoc);
+				else if (isa<Expr>(CS))
+					parseExpression(cast<const Expr>(CS));
+			}
+		}
+		else if (isa<DeclStmt>(s)) {
+			DeclStmt *decl = cast<DeclStmt>(s);
+			handleDecl(decl);
+		}
+		else if (isa<IfStmt>(s)) {
+			IfStmt *IfStatement = cast<IfStmt>(s);
+			Expr *conditional = IfStatement->getCond();
+			Stmt *Then = IfStatement->getThen();
+			Stmt *Else = IfStatement->getElse();
+
+			string IfLocEnd = to_string(Then->getLocEnd().getRawEncoding());
+
+			Expr::EvalResult eResult;
+			bool bValue = false, ignoreCondition = false;
+			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
 			{
-				const Expr *e = castExpr->getSubExpr();
-				if (isa<IntegerLiteral>(e)) {
-					const IntegerLiteral *literal = cast<const IntegerLiteral>(e);
-					return to_string(literal->getValue().getSExtValue());
-				}
-				else if (isa<FloatingLiteral>(e)) {
-					const FloatingLiteral *literal = cast<const FloatingLiteral>(e);
-					if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
-						return to_string(literal->getValue().convertToFloat());
-					else
-						return to_string(literal->getValue().convertToDouble());
-				}
-				else {
-					out << "unhandled cast (IK)" << endl;
-				}
+				bValue = eResult.Val.getInt().getBoolValue();
+				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+					Warn("if condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
+				ignoreCondition = !eResult.HasSideEffects;
 			}
-			case clang::CK_FunctionToPointerDecay:
+			if (ignoreCondition)
 			{
-				if (isa<DeclRefExpr>(castExpr->getSubExpr())) {
-					const DeclRefExpr *declRef = cast<const DeclRefExpr>(castExpr->getSubExpr());
-					if (isa<FunctionDecl>(declRef->getDecl())) {
-						const FunctionDecl *decl = cast<const FunctionDecl>(declRef->getDecl());
-						return getNameForFunc(decl);
+				if (bValue)
+				{
+					LocalVariables.addLevel();
+					parseStatement(Then, breakLoc, continueLoc, returnLoc);
+					LocalVariables.removeLevel();
+					if (Else)//still parse the else code just incase there are goto labels in there
+					{
+						out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
+						LocalVariables.addLevel();
+						parseStatement(Else, breakLoc, continueLoc, returnLoc);
+						LocalVariables.removeLevel();
+						out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
 					}
-					else {
-						out << "Unimplemented cast" << endl;
-					}
-
 				}
-				else {
-					out << "Unimplemented cast" << endl;
+				else
+				{
+					//still parse the then code just incase there are goto labels in there
+					out << "Jump @" << (Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd) << endl;
+					LocalVariables.addLevel();
+					parseStatement(Then, breakLoc, continueLoc, returnLoc);
+					LocalVariables.removeLevel();
+					if (Else)
+					{
+						out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
+						out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
+						LocalVariables.addLevel();
+						parseStatement(Else, breakLoc, continueLoc, returnLoc);
+						LocalVariables.removeLevel();
+					}
+					out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
 				}
 			}
-			break;
-			default:
-			out << "unimplemented cast" << endl;
-		}
-		return "";
-	}
+			else
+			{
+				parseJumpFalseCondition(conditional);
+				out << (Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd) << endl;
+				LocalVariables.addLevel();
+				parseStatement(Then, breakLoc, continueLoc, returnLoc);
+				LocalVariables.removeLevel();
 
-	string getNameForFunc(const FunctionDecl *decl) {
-		if (isa<CXXMethodDecl>(decl)) {
-			const CXXMethodDecl *methodDecl = cast<const CXXMethodDecl>(decl);
-			const CXXRecordDecl *record = methodDecl->getParent();
-			return "@" + record->getNameAsString() + "::" + methodDecl->getNameAsString();
-		}
-		else {
-			return "@" + decl->getNameAsString();
-		}
-	}
+				out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
 
-
-	const DeclRefExpr *getDeclRefExpr(const Expr *e) {
-		if (isa<DeclRefExpr>(e)) {
-			return cast<const DeclRefExpr>(e);
-		}
-		else {
-			for (auto *CS : e->clang::Stmt::children()) {
-				if (isa<Expr>(CS)) {
-					return getDeclRefExpr(cast<const Expr>(CS));
+				if (Else) {
+					out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
+					LocalVariables.addLevel();
+					parseStatement(Else, breakLoc, continueLoc, returnLoc);
+					LocalVariables.removeLevel();
+					out << "//" << Else->getLocStart().getRawEncoding() << " " << Else->getLocEnd().getRawEncoding() << endl;
 				}
+				if (Then)
+				{
+					out << "//" << Then->getLocStart().getRawEncoding() << " " << Then->getLocEnd().getRawEncoding() << endl;
+				}
+
+				out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
 			}
 		}
-		return NULL;
-	}
+		else if (isa<WhileStmt>(s)) {
+			WhileStmt *whileStmt = cast<WhileStmt>(s);
+			Expr *conditional = whileStmt->getCond();
 
-	void ComplexToBoolean(bool floating)
-	{
-		LocalVariables.addLevel();
-		int index = LocalVariables.addDecl("imagPart", 1);
-		if (floating) {
-			out << frameSet(index) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(index) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+			Stmt *body = whileStmt->getBody();
+			LocalVariables.addLevel();
+
+			Expr::EvalResult eResult;
+			bool bValue = false, ignoreCondition = false;
+			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
+			{
+				bValue = eResult.Val.getInt().getBoolValue();
+				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+					Warn("While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
+				ignoreCondition = !eResult.HasSideEffects;
+			}
+			if (ignoreCondition)
+			{
+				if (bValue)
+				{
+					out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
+					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
+
+					out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
+					out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
+				}
+				else
+				{
+					out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
+					out << "Jump @" << whileStmt->getLocEnd().getRawEncoding() << endl;
+
+					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
+
+					out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
+					out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
+				}
+
+			}
+			else {
+
+				out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
+				parseJumpFalseCondition(conditional);
+				out << whileStmt->getLocEnd().getRawEncoding() << endl;
+
+				parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
+
+				out << "Jump @" << conditional->getLocStart().getRawEncoding() << endl;
+				out << endl << ":" << whileStmt->getLocEnd().getRawEncoding() << endl;
+			}
+			LocalVariables.removeLevel();
+		}
+		else if (isa<ForStmt>(s)) {
+			ForStmt *forStmt = cast<ForStmt>(s);
+			Stmt *decl = forStmt->getInit();
+			Expr *conditional = forStmt->getCond();
+			Expr *increment = forStmt->getInc();
+			Stmt *body = forStmt->getBody();
+			LocalVariables.addLevel();
+			if (decl) {
+				parseStatement(decl, -1, -1, returnLoc);
+			}
+
+			if (conditional) {
+				out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
+
+				parseJumpFalseCondition(conditional);
+				out << body->getLocEnd().getRawEncoding() << endl;
+			}
+			else
+			{
+				out << endl << ":" << body->getLocStart().getRawEncoding() << endl;
+			}
+
+			parseStatement(
+				body,
+				forStmt->getLocEnd().getRawEncoding(),
+				increment ? increment->getLocStart().getRawEncoding() : conditional ? conditional->getLocStart().getRawEncoding() : body->getLocStart().getRawEncoding(),
+				returnLoc);
+
+			if (increment)
+				out << endl << ":" << increment->getLocStart().getRawEncoding() << "//forstmt inc lbl" << endl;
+
+			if (increment)
+				parseExpression(increment);
+
+			if (conditional)
+				out << "Jump @" << conditional->getLocStart().getRawEncoding() << "//forstmt cond jmp" << endl;
+			else
+				out << "Jump @" << body->getLocStart().getRawEncoding() << "//forstmt jmp" << endl;
+
+
+			out << endl << ":" << body->getLocEnd().getRawEncoding() << "//forend lbl" << endl;
+			LocalVariables.removeLevel();
+
+
+		}
+		else if (isa<UnaryOperator>(s)) {
+			parseExpression(cast<const Expr>(s));
+		}
+		else if (isa<DoStmt>(s)) {
+			DoStmt *doStmt = cast<DoStmt>(s);
+			Expr *conditional = doStmt->getCond();
+
+			Stmt *body = doStmt->getBody();
+			LocalVariables.addLevel();
+
+			out << endl << ":" << body->getLocStart().getRawEncoding() << endl;
+
+			parseStatement(body, conditional->getLocEnd().getRawEncoding(), body->getLocEnd().getRawEncoding(), returnLoc);
+
+
+
+			out << endl << ":" << body->getLocEnd().getRawEncoding() << "" << endl;
+			Expr::EvalResult eResult;
+			bool bValue = false, ignoreCondition = false;
+			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
+			{
+				bValue = eResult.Val.getInt().getBoolValue();
+				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
+					Warn("do While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
+				ignoreCondition = !eResult.HasSideEffects;
+			}
+			if (ignoreCondition)
+			{
+				if (bValue)
+				{
+					out << "Jump @" << body->getLocStart().getRawEncoding() << endl;
+				}
+				//no need for else, just jump right out
+
+			}
+			else
+			{
+				parseJumpFalseCondition(conditional, true);
+				out << body->getLocStart().getRawEncoding() << endl;
+			}
+
+			out << endl << ":" << conditional->getLocEnd().getRawEncoding() << "" << endl;
+			LocalVariables.removeLevel();
+
+		}
+		else if (isa<ReturnStmt>(s)) {
+			const ReturnStmt *ret = cast<const ReturnStmt>(s);
+			const Expr* retVal = ret->getRetValue();
+			if (retVal)
+				parseExpression(retVal, false, true);
+			if (returnLoc == -1)
+			{
+				int size = 0;
+				if (ret->getRetValue()) {
+					QualType type = ret->getRetValue()->getType();
+					size = context->getTypeInfoDataSizeInChars(type).first.getQuantity();
+				}
+
+				int32_t paramSize = 0;
+				for (uint32_t i = 0; i < currFunction->getNumParams(); i++) {
+					paramSize += getSizeFromBytes(getSizeOfType(currFunction->getParamDecl(i)->getType().getTypePtr()));
+				}
+				out << "Return " << paramSize + (isa<CXXMethodDecl>(currFunction) ? 1 : 0) << " " << getSizeFromBytes(size) << endl;
+			}
+			else
+			{
+				out << "Jump @" << returnLoc << endl;
+			}
+
+		}
+		else if (isa<Expr>(s)) {
+			parseExpression(cast<const Expr>(s));
+		}
+		else if (isa<BreakStmt>(s)) {
+			out << "Jump @" << breakLoc << "//brkstmt jmp" << endl;
+		}
+		else if (isa<NullStmt>(s)) {
+			// out << "nop " << breakLoc << endl;
+		}
+		else if (isa<ContinueStmt>(s)) {
+			out << "Jump @" << continueLoc << "//contstmt jmp" << endl;
+		}
+		else if (isa<DefaultStmt>(s)) {
+			DefaultStmt *caseD = cast<DefaultStmt>(s);
+			string labelName = ":" + to_string(caseD->getLocEnd().getRawEncoding());
+			if (FindBuffer.find(labelName) == FindBuffer.end())
+			{
+				FindBuffer.insert(labelName);
+				out << labelName << endl;
+			}
+			LocalVariables.addLevel();
+
+			if (caseD->getSubStmt())
+				parseStatement(caseD->getSubStmt(), breakLoc, continueLoc, returnLoc);
+			LocalVariables.removeLevel();
+		}
+		else if (isa<CaseStmt>(s)) {
+			CaseStmt *caseS = cast<CaseStmt>(s);
+
+			string labelName = ":" + to_string(caseS->getLocEnd().getRawEncoding());
+			if (FindBuffer.find(labelName) == FindBuffer.end())
+			{
+				FindBuffer.insert(labelName);
+				out << labelName << endl;
+			}
+			LocalVariables.addLevel();
+			if (caseS->getRHS())
+				parseExpression(caseS->getRHS());
+
+			if (caseS->getSubStmt())
+				parseStatement(caseS->getSubStmt(), breakLoc, continueLoc, returnLoc);
+			LocalVariables.removeLevel();
+		}
+		else if (isa<SwitchStmt>(s)) {
+			SwitchStmt *switchStmt = cast<SwitchStmt>(s);
+			out << "//Switch Conditional" << endl;
+			FindBuffer.clear();
+			parseExpression(switchStmt->getCond(), false, true);
+			out << "Switch ";
+
+			//Build case switch list first
+			SwitchCase *switchCaseList = switchStmt->getSwitchCaseList();
+			DefaultStmt *defaultCase = NULL;
+			stack<string> caseLabels;
+			while (switchCaseList != NULL)
+			{
+				if (isa<CaseStmt>(switchCaseList))
+				{
+					CaseStmt *caseS = cast<CaseStmt>(switchCaseList);
+					Expr::EvalResult result;
+					if (caseS->getLHS()->EvaluateAsRValue(result, *context)) {
+						if (result.Val.isInt())
+						{
+							int val;
+							if (CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
+								caseLabels.push("[" + to_string(val) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
+							else
+								caseLabels.push("[" + to_string(result.Val.getInt().getSExtValue()) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
+						}
+						else if (result.Val.isFloat())
+						{
+							caseLabels.push("[" + to_string(result.Val.getFloat().convertToFloat()) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
+						}
+						else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getSourceRange());
+					}
+					else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getSourceRange());
+
+				}
+				else if (isa<DefaultStmt>(switchCaseList))
+				{
+					if (defaultCase) {
+						Throw("Multiple default statements found in switch", rewriter, defaultCase->getLocStart(), switchCaseList->getLocEnd());
+					}
+					defaultCase = cast<DefaultStmt>(switchCaseList);
+				}
+				else
+					llvm::errs() << "Unexpected Statement: " << switchCaseList->getStmtClassName();
+				switchCaseList = switchCaseList->getNextSwitchCase();
+			}
+			while (caseLabels.size() > 1)
+			{
+				out << caseLabels.top() << ":";
+				caseLabels.pop();
+			}
+			out << caseLabels.top() << endl;
+
+			if (defaultCase)
+			{
+				out << "Jump @" << defaultCase->getLocEnd().getRawEncoding() << endl;
+			}
+			else
+			{
+				out << "Jump @" << switchStmt->getLocEnd().getRawEncoding() << endl;
+			}
+
+			//parse all
+			parseStatement(switchStmt->getBody(), switchStmt->getLocEnd().getRawEncoding(), continueLoc, returnLoc);
+			out << "//SwitchEnd" << endl << endl;
+			out << ":" << switchStmt->getLocEnd().getRawEncoding() << endl;
+			FindBuffer.clear();
+		}
+		else if (isa<GotoStmt>(s))
+		{
+			GotoStmt *gotoStmt = cast<GotoStmt>(s);
+			out << "Jump @" << gotoStmt->getLabel()->getNameAsString() << endl;
+		}
+		else if (isa<LabelStmt>(s))
+		{
+			LabelStmt *labelStmt = cast<LabelStmt>(s);
+			out << ":" << labelStmt->getName() << endl;
+		}
+		else if (isa<GCCAsmStmt>(s))
+		{
+			GCCAsmStmt *asmstmt = cast<GCCAsmStmt>(s);
+			if (InlineItems.size())
+			{
+				Warn("Using a __asm__ statement in an inlined function may lead to undesireable effects\r\nConsider marking the function as __attribute__((__noinline__))", rewriter, asmstmt->getSourceRange());
+			}
+			out << asmstmt->getAsmString()->getString().str() << endl;
 		}
 		else
-		{
-			out << frameSet(index) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(index) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
-		}
-		LocalVariables.removeLevel();
+			Throw("Undefined statement \"" + string(s->getStmtClassName()) + "\"", rewriter, s->getLocStart());
+
+		return true;
 	}
 
 	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, const NamedDecl *lastDecl = NULL) {
@@ -4198,70 +4196,6 @@ public:
 		return -1;
 	}
 
-	uint32_t getCXXOffsetOfNamedDecl(const CXXRecordDecl *classDecl, const NamedDecl *ND, const CXXRecordDecl *prevDecl = NULL) {
-		bool found = false;
-		//bool foundVirt = false;
-		int offset = 0;
-
-		for (auto VBI : classDecl->bases()) {
-
-			const CXXBaseSpecifier baseSpec = VBI;
-			const CXXRecordDecl *baseDecl = baseSpec.getType()->getAsCXXRecordDecl();
-
-
-			offset += getCXXOffsetOfNamedDecl(baseDecl, ND, classDecl);
-			//            for(CXXMethodDecl *VFI : baseDecl->methods()) {
-			//                if(VFI->isVirtual()) {
-			//                    offset+=4;
-			//                    break;
-			//                }
-			//            }
-			//            for(const FieldDecl *CS : baseDecl->fields()) {
-			//                
-			//                if(CS->Decl::isFirstDecl() == false)
-			//                    continue;
-			//                if(CS == ND) {
-			//                    found = true;
-			//                }
-			//                
-			//                const  QualType type = CS->getType();
-			//                int temp = getSizeOfQualType(&type);
-			//                offset += max(temp, 4);
-			//            }
-		}
-
-		for (CXXMethodDecl *VFI : classDecl->methods()) {
-			if (VFI->isVirtualAsWritten()) {
-				offset += 4;
-				break;
-			}
-		}
-		if (classDecl->isUnion()) {
-			return 0;
-
-		}
-		else {
-			for (const FieldDecl *CS : classDecl->fields()) {
-				if (CS->Decl::isFirstDecl() == false)
-					continue;
-				if (CS == ND) {
-					found = true;
-
-					break;
-				}
-
-
-
-				const  QualType type = CS->getType();
-				int temp = getSizeOfQualType(&type);
-				offset += max(temp, 4);
-			}
-		}
-		return offset;
-
-	}
-
-
 	bool parseArraySubscriptExpr(const Expr *e, bool addrOf, bool LValueToRValue = false) {
 		const ArraySubscriptExpr *arr = cast<const ArraySubscriptExpr>(e);
 		const Expr *base = arr->getBase();
@@ -4426,7 +4360,71 @@ public:
 
 		return true;
 	}
+	#pragma endregion
 
+	#pragma region CXX_Functions
+	uint32_t getCXXOffsetOfNamedDecl(const CXXRecordDecl *classDecl, const NamedDecl *ND, const CXXRecordDecl *prevDecl = NULL) {
+		bool found = false;
+		//bool foundVirt = false;
+		int offset = 0;
+
+		for (auto VBI : classDecl->bases()) {
+
+			const CXXBaseSpecifier baseSpec = VBI;
+			const CXXRecordDecl *baseDecl = baseSpec.getType()->getAsCXXRecordDecl();
+
+
+			offset += getCXXOffsetOfNamedDecl(baseDecl, ND, classDecl);
+			//            for(CXXMethodDecl *VFI : baseDecl->methods()) {
+			//                if(VFI->isVirtual()) {
+			//                    offset+=4;
+			//                    break;
+			//                }
+			//            }
+			//            for(const FieldDecl *CS : baseDecl->fields()) {
+			//                
+			//                if(CS->Decl::isFirstDecl() == false)
+			//                    continue;
+			//                if(CS == ND) {
+			//                    found = true;
+			//                }
+			//                
+			//                const  QualType type = CS->getType();
+			//                int temp = getSizeOfQualType(&type);
+			//                offset += max(temp, 4);
+			//            }
+		}
+
+		for (CXXMethodDecl *VFI : classDecl->methods()) {
+			if (VFI->isVirtualAsWritten()) {
+				offset += 4;
+				break;
+			}
+		}
+		if (classDecl->isUnion()) {
+			return 0;
+
+		}
+		else {
+			for (const FieldDecl *CS : classDecl->fields()) {
+				if (CS->Decl::isFirstDecl() == false)
+					continue;
+				if (CS == ND) {
+					found = true;
+
+					break;
+				}
+
+
+
+				const  QualType type = CS->getType();
+				int temp = getSizeOfQualType(&type);
+				offset += max(temp, 4);
+			}
+		}
+		return offset;
+
+	}
 
 	uint32_t printVirtualCall(const CXXRecordDecl *classDecl, const CXXMethodDecl *method, Expr *baseExpr, const CXXRecordDecl *superDecl = NULL) {
 		//int offset = 0;
@@ -4540,8 +4538,6 @@ public:
 		return 0;
 	}
 
-
-
 	uint64_t getLocStart(const CXXMethodDecl *VFFI) {
 		Stmt *body = VFFI->getBody();
 		if (body == NULL) {
@@ -4549,6 +4545,7 @@ public:
 		}
 		return body->getLocStart().getRawEncoding();
 	}
+	
 	bool VisitCXXRecordDecl(CXXRecordDecl *d) {
 
 		//if(!d->hasBody())
@@ -4610,6 +4607,7 @@ public:
 		}
 		return true;
 	}
+	#pragma endregion
 
 public:
 	int32_t MainRets = -1;
@@ -4622,8 +4620,7 @@ public:
 	const FunctionDecl *currFunction;
 };
 
-
-
+#pragma region GlobalsVisitor
 class GlobalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
 public:
 	GlobalsVisitor(Rewriter &R, ASTContext *context) : TheRewriter(R), context(context) {}
@@ -5450,7 +5447,6 @@ public:
 		return true;
 	}
 
-
 	string dumpName(const NamedDecl *ND) {
 		if (ND->getDeclName()) {
 
@@ -5459,22 +5455,10 @@ public:
 		return "";
 	}
 
-	//enum AOWT_Types : uint8_t
-	//{
-	//	AOWT_4BYTE,
-	//	AOWT_2BYTE,
-	//	AOWT_1BYTE,
-	//	AOWT_STR_LITERAL
-	//};
-	//typedef struct {
-	//	AOWT_Types type;
-	//	vector<int32_t> out;
-	//} AOWT;
-	//vector<int32_t> ArrayOut;
-
 	uint32_t oldStaticInc = 0;
 	map<uint32_t, string> DefaultStaticValues;//index, value
 
+	#pragma region InitializationStack
 	enum FBWT_Types : uint8_t
 	{
 		FBWT_INT,
@@ -5518,29 +5502,18 @@ public:
 		}
 		else Throw("InitializationStack not big enough to exch");
 	}
-
+	#pragma endregion
 
 private:
 	Rewriter &TheRewriter;
 	ASTContext *context;
 };
+#pragma endregion
 
-
-
-
-
-
+#pragma region LocalsVisitor
 class LocalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
 public:
 	LocalsVisitor(Rewriter &R, ASTContext *context) : TheRewriter(R), context(context) { currentFunction = NULL; }
-
-	//    bool VisitStmt(Stmt *s) {
-	//        // Only care about compound statements.
-	//
-	//
-	//        return true;
-	//    }
-	//
 
 	bool VisitDecl(Decl *D) {
 
@@ -5571,20 +5544,18 @@ public:
 		return true;
 	}
 
-	
-
 private:
 	Rewriter &TheRewriter;
 	ASTContext *context;
 	const FunctionDecl *currentFunction;
 
 };
+#pragma endregion
 
-// Implementation of the ASTConsumer interface for reading an AST produced
-// by the Clang parser.
+#pragma region HandleASTConsumer
 class MyASTConsumer : public ASTConsumer {
 public:
-	MyASTConsumer(Rewriter &R, ASTContext *context, DiagnosticsEngine *diagnostics, string filename) : Visitor(R, context, filename), GlobalsVisitor(R, context), diagnostics(diagnostics) {}
+	MyASTConsumer(Rewriter &R, ASTContext *context, string filename) : Visitor(R, context, filename), GlobalsVisitor(R, context) {}
 
 	// Override the method that gets called for each parsed top-level
 	// declaration.
@@ -5604,10 +5575,7 @@ public:
 		return true;
 	}
 	~MyASTConsumer() {
-		if (diagnostics->getClient()->getNumErrors())
-		{
-			return;
-		}
+
 		stringstream header;
 
 		
@@ -5656,12 +5624,11 @@ public:
 private:
 	MyASTVisitor Visitor;
 	GlobalsVisitor GlobalsVisitor;
-	DiagnosticsEngine *diagnostics;
+
 };
+#pragma endregion
 
-
-
-// For each source file provided to the tool, a new FrontendAction is created.
+#pragma region CreateASTConsumer
 class MyFrontendAction : public ASTFrontendAction {
 public:
 	MyFrontendAction() {}
@@ -5684,12 +5651,13 @@ public:
 		string fileName(string(SM.getFileEntryForID(SM.getMainFileID())->getName()));
 		fileName.erase(fileName.find_last_of(".c"));
 
-		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), fileName + "asm");
+		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), fileName + "asm");
 	}
 
 private:
 	Rewriter TheRewriter;
 };
+#pragma endregion
 
 int main(int argc, const char **argv) {
 	cout << "Starting Clang 3.8.1\r\n";
