@@ -2530,6 +2530,8 @@ public:
 			break;
 			case JoaatCasedConst("rev"):
 			{
+				ChkHashCol("rev");
+
 				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
@@ -2553,16 +2555,78 @@ public:
 							LocalVariables.removeLevel();
 						}
 						else
-							Warn("Reverse called with " + to_string(value) + " exchange num.  Expected >= 2", rewriter, callee->getSourceRange());
+							Warn("Reverse called with " + to_string(value) + " exchange num.  Expected >= 2", rewriter, argArray[0]->getSourceRange());
 					}
 					else
 					{
-						Throw("rev must have signature \"extern __intrinsic void rev(const int numItems);\"", rewriter, callee->getSourceRange());
+						Throw("Reverse count must be called with a compile time constant", rewriter, argArray[0]->getSourceRange());
 						return false;
 					}
 					return true;
 				}
 				Throw("rev must have signature \"extern __intrinsic void rev(const int numItems);\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
+			case JoaatCasedConst("exchange"):
+			{
+				ChkHashCol("exchange");
+
+				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
+				{
+					llvm::APSInt result;
+					if(argArray[0]->EvaluateAsInt(result, *context))
+					{
+						const Expr* expr = argArray[0]->IgnoreParens()->IgnoreCasts();
+						if(isa<UnaryExprOrTypeTraitExpr>(expr) && cast<UnaryExprOrTypeTraitExpr>(expr)->getKind() == UETT_SizeOf)
+						{
+							Warn("Exchange called with a sizeof operation, did you mean to use stacksizeof", rewriter, argArray[0]->getSourceRange());
+						}
+						int64_t value = result.getSExtValue();
+						if(value > 0)
+						{
+							LocalVariables.addLevel();
+							int firstItemIndex = LocalVariables.addDecl("__exchangeItem1", value);
+							int secondItemIndex = LocalVariables.addDecl("__exchangeItem2", value);
+
+							if (value > 1)
+							{
+								//FromStack into it
+								out << iPush(value) << endl;
+								out << pFrame(firstItemIndex) << endl;
+								out << "FromStack" << endl;
+								out << iPush(value) << endl;
+								out << pFrame(secondItemIndex) << endl;
+								out << "FromStack" << endl;
+
+								//Put them back on stack in reverse
+								out << iPush(value) << endl;
+								out << pFrame(firstItemIndex) << endl;
+								out << "ToStack" << endl;
+								out << iPush(value) << endl;
+								out << pFrame(secondItemIndex) << endl;
+								out << "ToStack" << endl;
+							}
+							else
+							{
+								out << frameSet(firstItemIndex) << endl << frameSet(secondItemIndex) << endl
+									<< frameGet(firstItemIndex) << endl << frameGet(secondItemIndex) << endl;
+							}
+							
+
+							LocalVariables.removeLevel();
+						}
+						else
+							Warn("Exchange called with " + to_string(value) + " item size num.  Expected a positive value", rewriter, argArray[0]->getSourceRange());
+					}
+					else
+					{
+						Throw("Exchange structSize must be called with a compile time constant", rewriter, argArray[0]->getSourceRange());
+						return false;
+					}
+					return true;
+				}
+				Throw("exchange must have signature \"extern __intrinsic void exchange(const int structStackSize);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;

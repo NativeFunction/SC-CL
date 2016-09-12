@@ -14,6 +14,7 @@
 
 #define offsetof(st, m) ((uint)&(((st *)0)->m))
 #define countof(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
+#define stacksizeof(x) (sizeof(x) + 3) >> 2
 
 #pragma region String
 //{ String
@@ -44,6 +45,7 @@ extern __intrinsic __asm_unsafe void dupStackTop();
 extern __intrinsic __asm_unsafe void pushStruct(void* structure);
 extern __intrinsic __asm_unsafe void popStruct(void* structure);
 extern __intrinsic __asm_unsafe void rev(const int numItems);
+extern __intrinsic __asm_unsafe void exchange(const int structStackSize);
 //}
 #pragma endregion
 
