@@ -775,11 +775,13 @@ public:
 		int index = -1;
 		const Type* type = declref->getType().getTypePtr();
 		size_t size = getSizeOfType(type);
-		bool isStackCpy = size > 4 && isLtoRValue && isAddr;//if greater then 4 bytes then a to stack is in order
+		bool isStackCpy = size > 4 && isLtoRValue && !isAddr;//if greater then 4 bytes then a to stack is in order
 
+		
 
 		if (isStackCpy) {
 			out << iPush(getSizeFromBytes(size)) << "//Type Size" << endl;
+			isAddr = true;
 		}
 
 		if (LocalVariables.find(key, &index))
@@ -3215,7 +3217,7 @@ public:
 			}
 
 			string key = declref->getNameInfo().getAsString();
-
+			
 			printDeclWithKey(key, isAddr, isLtoRValue, declref);
 			return true;
 		}
@@ -3379,9 +3381,11 @@ public:
 					parseArraySubscriptExpr(subE, false);
 				}
 				else if (isa<DeclRefExpr>(subE)) {
+					
 					parseExpression(subE, false, false);
 				}
 				else {
+					
 					parseExpression(subE, false, true);
 				}
 				if (!isAddr)
@@ -3907,17 +3911,44 @@ public:
 				case BO_ShrAssign:  OpAssign("CallNative shift_right 2 1", false); break;
 				default:
 				{
+					if (isa<PointerType>(bOp->getLHS()->getType()) && isa<PointerType>(bOp->getRHS()->getType()))
+					{
+						//we need to parse both pointera with no mult indexing if it pointer to pointer addition
+						parseExpression(bOp->getLHS(), true, true);
+						parseExpression(bOp->getRHS(), true, true);
+					}
 					if (isa<PointerType>(bOp->getLHS()->getType()))
 					{
+						//we need to parse left as pointer if its a pointer
 						parseExpression(bOp->getLHS(), true, true);
+						parseExpression(bOp->getRHS(), false, true);
 						const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
 						int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
 						int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
-						out << mult(pSize) + "\r\n";
+						if (pSize > 1)
+							out << mult(pSize) + "\r\n";
+						
+					}
+					if (isa<PointerType>(bOp->getRHS()->getType()))
+					{
+						//we need to parse right as pointer if its a pointer
+						parseExpression(bOp->getLHS(), false, true);
+						const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
+						int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+						int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+						if(pSize > 1)
+							out << mult(pSize) + "\r\n";
+						parseExpression(bOp->getRHS(), true, true);
 					}
 					else
+					{
+						//no pointer addition
 						parseExpression(bOp->getLHS(), false, true);
-					parseExpression(bOp->getRHS(), false, true);
+						parseExpression(bOp->getRHS(), false, true);
+					}
+
+
+
 					if (bOp->getLHS()->getType()->isFloatingType()) {
 						switch (bOp->getOpcode()) {
 							case BO_EQ: out << "fCmpEQ\r\n"; break;
@@ -5537,6 +5568,7 @@ public:
 	}
 
 	bool TraverseDecl(Decl *D) {
+		
 		RecursiveASTVisitor::TraverseDecl(D);
 		if (currentFunction)
 		{
@@ -5545,7 +5577,7 @@ public:
 		return true;
 	}
 
-
+	
 
 private:
 	Rewriter &TheRewriter;
@@ -5578,7 +5610,11 @@ public:
 		return true;
 	}
 	~MyASTConsumer() {
+
 		stringstream header;
+
+		
+
 
 		header << "SetStaticsCount " << staticInc << "\r\n";
 		for (map<uint32_t, string>::iterator iterator = GlobalsVisitor.DefaultStaticValues.begin(); iterator != GlobalsVisitor.DefaultStaticValues.end(); iterator++)
@@ -5643,7 +5679,7 @@ public:
 	}
 
 	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
-
+		
 		llvm::errs() << "Compiling: " << file << "\n";
 		TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
 		rewriter = TheRewriter;
