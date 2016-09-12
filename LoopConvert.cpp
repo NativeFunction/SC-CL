@@ -2530,42 +2530,35 @@ public:
 			break;
 			case JoaatCasedConst("rev"):
 			{
-				if (argCount == 1)
+				if(argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
 				{
-					if (argArray[0]->getType()->isIntegerType())
+					llvm::APSInt result;
+					if(argArray[0]->EvaluateAsInt(result, *context))
 					{
-						llvm::APSInt result;
-						if (argArray[0]->EvaluateAsInt(result, *context))
+						int64_t value = result.getSExtValue();
+						if(value >= 2)
 						{
-							int64_t value = result.getSExtValue();
-							if (value >= 2)
-							{
-								LocalVariables.addLevel();
-								int startDeclIndex = LocalVariables.getCurrentSize();
+							LocalVariables.addLevel();
+							int startDeclIndex = LocalVariables.addDecl("__rev-container-var-decl", value);
 
-								//Add the vars
-								for (int i = 0; i < value; i++)
-									LocalVariables.addDecl("__rev-container-var-decl--" + to_string(i), 1);
+							//FromStack into it
+							out << iPush(value) << endl;
+							out << pFrame(startDeclIndex) << endl;
+							out << "FromStack" << endl;
 
-								//FromStack into it
-								out << iPush(value) << endl;
-								out << pFrame(startDeclIndex) << endl;
-								out << "FromStack" << endl;
+							//Put them back on stack in reverse
+							for(int i = startDeclIndex + value - 1; i >= startDeclIndex; i--)
+								out << frameGet(i) << endl;
 
-								//Put them back on stack in reverse
-								for (int i = startDeclIndex + value - 1; i >= startDeclIndex; i--)
-									out << frameGet(i) << endl;
-
-								LocalVariables.removeLevel();
-							}
-							else
-								Warn("Reverse called with " + to_string(value) + " exchange num.  Expected >= 2", rewriter, callee->getSourceRange());
+							LocalVariables.removeLevel();
 						}
 						else
-						{
-							Throw("rev must have signature \"extern __intrinsic void rev(const int numItems);\"", rewriter, callee->getSourceRange());
-							return false;
-						}
+							Warn("Reverse called with " + to_string(value) + " exchange num.  Expected >= 2", rewriter, callee->getSourceRange());
+					}
+					else
+					{
+						Throw("rev must have signature \"extern __intrinsic void rev(const int numItems);\"", rewriter, callee->getSourceRange());
+						return false;
 					}
 					return true;
 				}

@@ -43,6 +43,7 @@ extern __intrinsic __asm_unsafe void pushVector3(vector3 vec3Value);
 extern __intrinsic __asm_unsafe void dupStackTop();
 extern __intrinsic __asm_unsafe void pushStruct(void* structure);
 extern __intrinsic __asm_unsafe void popStruct(void* structure);
+extern __intrinsic __asm_unsafe void rev(const int numItems);
 //}
 #pragma endregion
 
