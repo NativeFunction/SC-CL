@@ -5555,7 +5555,7 @@ private:
 #pragma region HandleASTConsumer
 class MyASTConsumer : public ASTConsumer {
 public:
-	MyASTConsumer(Rewriter &R, ASTContext *context, string filename) : Visitor(R, context, filename), GlobalsVisitor(R, context) {}
+	MyASTConsumer(Rewriter &R, ASTContext *context, DiagnosticsEngine *diagnostics, string filename) : Visitor(R, context, filename), GlobalsVisitor(R, context), diagnostics(diagnostics) {}
 
 	// Override the method that gets called for each parsed top-level
 	// declaration.
@@ -5575,11 +5575,9 @@ public:
 		return true;
 	}
 	~MyASTConsumer() {
-
+		if (diagnostics->getClient()->getNumErrors())
+			return;
 		stringstream header;
-
-		
-
 
 		header << "SetStaticsCount " << staticInc << "\r\n";
 		for (map<uint32_t, string>::iterator iterator = GlobalsVisitor.DefaultStaticValues.begin(); iterator != GlobalsVisitor.DefaultStaticValues.end(); iterator++)
@@ -5624,7 +5622,7 @@ public:
 private:
 	MyASTVisitor Visitor;
 	GlobalsVisitor GlobalsVisitor;
-
+	DiagnosticsEngine *diagnostics;
 };
 #pragma endregion
 
@@ -5651,7 +5649,7 @@ public:
 		string fileName(string(SM.getFileEntryForID(SM.getMainFileID())->getName()));
 		fileName.erase(fileName.find_last_of(".c"));
 
-		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), fileName + "asm");
+		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), fileName + "asm");
 	}
 
 private:
