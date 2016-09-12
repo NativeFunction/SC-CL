@@ -247,12 +247,12 @@ namespace Utils {
 
 	namespace DataConversion
 	{
-		char* IntToHex(uint32_t val)
+		string IntToHex(uint32_t val)
 		{
 			const char hex_str[] = "0123456789ABCDEF";
 			uint8_t* bin = (uint8_t*)&val;
 
-			char str[9];
+			string str("\0", 9);
 
 			for (uint32_t i = 0; i < 4; i++)
 			{
