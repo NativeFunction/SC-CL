@@ -3921,7 +3921,7 @@ public:
 							out << mult(pSize) + "\r\n";
 						
 					}
-					if (isa<PointerType>(bOp->getRHS()->getType()))
+					else if (isa<PointerType>(bOp->getRHS()->getType()))
 					{
 						//we need to parse right as pointer if its a pointer
 						parseExpression(bOp->getLHS(), false, true);
