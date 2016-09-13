@@ -3449,34 +3449,36 @@ public:
 				}
 			}
 
-
-			string pMult = "";
+			int pMult = 0;
 			if ((op->isPrefix() || op->isPostfix()) && isa<PointerType>(subE->getType()))
 			{
 				const Type* pTypePtr = subE->getType().getTypePtr()->getPointeeType().getTypePtr();
 				int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
-				int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
-				pMult = "\r\n" + mult(pSize) + "\r\n";
+				pMult = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 			}
 
 			if (op->isPrefix()) {
 
 				if (op->isIncrementOp()) {
 					parseExpression(subE, false, true);
-					out << "Push 1" << pMult << endl;
-					out << "Add" << endl;
+
+					if(pMult != 0)
+						out << add(pMult) << endl;
+					else out << "Add1 1\r\n";
+
 					if (isLtoRValue)
 						out << "Dup" << endl;
-					parseExpression(subE);
+					parseExpression(subE, false, false, true, true);
 					return 1;
 				}
 				else if (op->isDecrementOp()) {
 					parseExpression(subE, false, true);
-					out << "Push 1" << pMult << endl;
-					out << "Sub" << endl;
+					out << "Push 1\r\n" 
+						<< mult(pMult)
+						<< "\r\nSub\r\n";
 					if (isLtoRValue)
 						out << "Dup" << endl;
-					parseExpression(subE);
+					parseExpression(subE, false, false, true, true);
 					return 1;
 				}
 			}
@@ -3484,20 +3486,24 @@ public:
 				if (op->isIncrementOp()) {
 					parseExpression(subE, false, true);
 					if (isLtoRValue)
-						out << "Dup" << endl;
-					out << "Push 1" << pMult << endl;
-					out << "Add" << endl;
-					parseExpression(subE, false, false);
+						out << "Dup\r\n";
+
+					if (pMult != 0)
+						out << add(pMult) << endl;
+					else out << "Add1 1\r\n";
+
+					parseExpression(subE, false, false, true, true);
 					return 1;
 				}
 				else if (op->isDecrementOp()) {
 					parseExpression(subE, false, true);
 
-					out << "Push 1" << pMult << endl;
+					out << "Push 1\r\n"
+						<< mult(pMult) << "\r\n";
 					if (isLtoRValue)
-						out << "Dup" << endl;
-					out << "Sub" << endl;
-					parseExpression(subE, false, false);
+						out << "Dup\r\n";
+					out << "Sub\r\n";
+					parseExpression(subE, false, false, true, true);
 					return 1;
 				}
 			}
@@ -3824,94 +3830,51 @@ public:
 
 			}
 
-			#define OpAssign(op, isfloat)\
-			parseExpression(bOp->getLHS(), true, false);\
-			out << "dup\r\npGet\r\n";\
-			parseExpression(bOp->getRHS(), false, true);\
-			if (isa<PointerType>(bOp->getLHS()->getType()))\
-			{\
-				const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();\
-				out << mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";\
-			}\
-			if (bOp->getLHS()->getType()->isFloatingType() && isfloat)\
-				out << "f" << op << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";\
-			else\
-			{\
-				out << op << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";\
-			}
+
+			auto OpAssign = [&](string opStr, bool canValueBeFloat)
+			{
+				parseExpression(bOp->getLHS(), true, false);
+				out << "dup\r\npGet\r\n";
+				llvm::APSInt intRes;
+				if (bOp->getRHS()->EvaluateAsInt(intRes, *context))
+				{
+					int64_t val = intRes.getSExtValue();
+					if (isa<PointerType>(bOp->getLHS()->getType()))
+					{
+						const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
+						out << iPush(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << endl;
+						if (bOp->getLHS()->getType()->isFloatingType() && canValueBeFloat)
+							out << "f";
+						out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
+					}
+					else
+					{
+						out << iPush(val) << endl;
+						if (bOp->getLHS()->getType()->isFloatingType() && canValueBeFloat)
+							out << "f";
+						out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
+					}
+				}
+				else
+				{
+					parseExpression(bOp->getRHS(), false, true);
+					if (isa<PointerType>(bOp->getLHS()->getType()))
+					{
+						const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
+						out << mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";
+					}
+
+					if (bOp->getLHS()->getType()->isFloatingType() && canValueBeFloat)
+						out << "f";
+
+					out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
+				}
+
+			};
 
 			switch (bOp->getOpcode()) {
-
-				case BO_SubAssign:
-				{
-					parseExpression(bOp->getLHS(), true, false);
-					out << "dup\r\npGet\r\n";
-					llvm::APSInt intRes;
-					if (bOp->getRHS()->EvaluateAsInt(intRes, *context))
-					{
-						int64_t val = intRes.getSExtValue();
-						if (isa<PointerType>(bOp->getLHS()->getType()))
-						{
-							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-							out << sub(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
-						}
-						else
-						{
-							out << sub(val) << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
-						}
-					}
-					else
-					{
-						parseExpression(bOp->getRHS(), false, true);
-						if (isa<PointerType>(bOp->getLHS()->getType()))
-						{
-							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-							out << mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";
-						}
-						if (bOp->getLHS()->getType()->isFloatingType())
-							out << "fsub" << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
-						else
-						{
-							out << "Sub" << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
-						}
-					}
-				}
-				break;
-				case BO_AddAssign:
-				{
-					parseExpression(bOp->getLHS(), true, false);
-					out << "dup\r\npGet\r\n";
-					llvm::APSInt intRes;
-					if (bOp->getRHS()->EvaluateAsInt(intRes, *context))
-					{
-						int64_t val = intRes.getSExtValue();
-						if (isa<PointerType>(bOp->getLHS()->getType()))
-						{
-							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-							out << add(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
-						}
-						else
-						{
-							out << add(val) << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
-						}
-					}
-					else
-					{
-						parseExpression(bOp->getRHS(), false, true);
-						if (isa<PointerType>(bOp->getLHS()->getType()))
-						{
-							const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-							out << mult(getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) + "\r\n";
-						}
-						if (bOp->getLHS()->getType()->isFloatingType())
-							out << "fadd" << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
-						else
-						{
-							out << "Add" << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
-						}
-					}
-				}
-				break;
+				case BO_SubAssign: OpAssign("Add", true); break;
+				case BO_AddAssign: OpAssign("Sub", true); break;
 				case BO_DivAssign:  OpAssign("Div", true); break;
 				case BO_MulAssign:  OpAssign("Mult", true); break;
 				case BO_OrAssign:  OpAssign("Or", false); break;
