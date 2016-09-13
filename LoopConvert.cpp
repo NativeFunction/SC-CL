@@ -846,7 +846,7 @@ public:
 			}
 			else
 			{
-				out << "//Var " << key << " was droped because there were no vaild paths.\r\n";
+				out << "//Var " << key << " was dropped because there were no vaild paths.\r\n";
 			}
 		}
 		else if (globals.find(key) != globals.end()) {
@@ -872,7 +872,7 @@ public:
 			}
 			else
 			{
-				out << "//Global Var " << key << " was droped because there were no vaild paths.";
+				out << "//Global Var " << key << " was dropped because there were no vaild paths.";
 			}
 		}
 		else if (statics.find(key) != statics.end()) {
@@ -898,7 +898,7 @@ public:
 			}
 			else
 			{
-				out << "//Static Var " << key << " was droped because there were no vaild paths.";
+				out << "//Static Var " << key << " was dropped because there were no vaild paths.";
 			}
 		}
 		else
@@ -1033,7 +1033,6 @@ public:
 					}
 					LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
 				}
-
 
 			}
 		}
@@ -2600,6 +2599,8 @@ public:
 
 		}
 		else if (isa<Expr>(s)) {
+			
+
 			parseExpression(cast<const Expr>(s));
 		}
 		else if (isa<BreakStmt>(s)) {
@@ -3385,15 +3386,13 @@ public:
 			}
 			else if (op->getOpcode() == UO_Deref) {
 				if (isa<ArraySubscriptExpr>(subE)) {
-					parseArraySubscriptExpr(subE, false);
+					parseArraySubscriptExpr(subE, true);
 				}
 				else if (isa<DeclRefExpr>(subE)) {
-					
-					parseExpression(subE, false, false);
+					parseExpression(subE, true, false);
 				}
 				else {
-					
-					parseExpression(subE, false, true);
+					parseExpression(subE, true, true);
 				}
 				if (!isAddr)
 				{
