@@ -624,6 +624,10 @@ public:
 		else
 			return "Add2 " + to_string(-value);
 	}
+	string div(int value)
+	{
+		return iPush(value) + "\r\nDiv";
+	}
 	#pragma endregion
 	
 	#pragma region Misc_Functions
@@ -3238,7 +3242,7 @@ public:
 		}
 		else if (isa<UnaryOperator>(e)) {
 			const UnaryOperator *op = cast<const UnaryOperator>(e);
-
+			
 			Expr *subE = op->getSubExpr();
 			if (op->getOpcode() == UO_Minus) {
 				if (isa<IntegerLiteral>(subE)) {
@@ -3525,6 +3529,7 @@ public:
 		}
 		else if (isa<BinaryOperator>(e)) {
 			const BinaryOperator *bOp = cast<const BinaryOperator>(e);
+			BinaryOperatorKind op = bOp->getOpcode();
 
 			if (bOp->getOpcode() == BO_Assign) {
 
@@ -3917,40 +3922,76 @@ public:
 				case BO_ShrAssign:  OpAssign("CallNative shift_right 2 1", false); break;
 				default:
 				{
-					if (isa<PointerType>(bOp->getLHS()->getType()))
+					
+					//c allows same type pointer to pointer subtraction to obtain the logical difference. 
+					if (isa<PointerType>(bOp->getLHS()->getType()) && isa<PointerType>(bOp->getRHS()->getType()))
+					{
+						parseExpression(bOp->getLHS(), true, true);
+						parseExpression(bOp->getRHS(), true, true);
+
+						if (op == BO_Sub)
+						{
+							const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+							int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+							int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+
+							if (bOp->getLHS()->getType()->isFloatingType())
+								out << "fSub\r\n";
+							else
+								out << "Sub\r\n";
+
+							if (pSize > 1)
+								out << div(pSize) << "\r\n";
+
+							if (!isLtoRValue) {
+								Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
+								out << "Drop" << endl;
+							}
+							return -1;
+						}
+					}
+					else if (isa<PointerType>(bOp->getLHS()->getType()))
 					{
 						//we need to parse left as pointer if its a pointer
 						parseExpression(bOp->getLHS(), true, true);
 						parseExpression(bOp->getRHS(), false, true);
-						const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-						int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
-						int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
-						if (pSize > 1)
-							out << mult(pSize) + "\r\n";
-						
+
+						if(op == BO_Add || op == BO_Sub)
+						{
+							const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+							int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+							int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+
+							if (pSize > 1)
+								out << mult(pSize) << endl;
+						}
 					}
 					else if (isa<PointerType>(bOp->getRHS()->getType()))
 					{
 						//we need to parse right as pointer if its a pointer
 						parseExpression(bOp->getLHS(), false, true);
-						const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-						int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
-						int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
-						if(pSize > 1)
-							out << mult(pSize) + "\r\n";
+
+						if (op == BO_Add || op == BO_Sub)
+						{
+							const Type* pTypePtr = bOp->getRHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+							int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+							int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+
+							if (pSize > 1)
+								out << mult(pSize) << endl;
+						}
+
 						parseExpression(bOp->getRHS(), true, true);
 					}
 					else
 					{
-						//no pointer addition
+						//no pointer operations
 						parseExpression(bOp->getLHS(), false, true);
 						parseExpression(bOp->getRHS(), false, true);
 					}
 
-
-
 					if (bOp->getLHS()->getType()->isFloatingType()) {
-						switch (bOp->getOpcode()) {
+						switch (op) {
 							case BO_EQ: out << "fCmpEQ\r\n"; break;
 							case BO_Mul: out << "fMult\r\n"; break;
 							case BO_Div: out << "fDiv\r\n"; break;
@@ -3972,10 +4013,9 @@ public:
 							default:
 							Throw("Unimplemented binary floating op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
 						}
-
 					}
 					else {
-						switch (bOp->getOpcode()) {
+						switch (op) {
 							case BO_EQ: out << "CmpEQ\r\n"; break;
 							case BO_Mul: out << "Mult\r\n"; break;
 							case BO_Div: out << "Div\r\n"; break;
@@ -4004,8 +4044,6 @@ public:
 						Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
 						out << "Drop" << endl;
 					}
-
-
 				}
 
 			}
