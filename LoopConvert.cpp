@@ -809,13 +809,11 @@ public:
 	
 	#pragma region Decl_Handling
 	//handleParamVarDecl
-	void printDeclWithKey(string key, bool isAddr, bool isLtoRValue, const DeclRefExpr* declref) {
+	void printDeclWithKey(string key, bool isAddr, bool isLtoRValue, bool isAssign, const DeclRefExpr* declref) {
 		int index = -1;
 		const Type* type = declref->getType().getTypePtr();
 		size_t size = getSizeOfType(type);
 		bool isStackCpy = size > 4 && isLtoRValue && !isAddr;//if greater then 4 bytes then a to stack is in order
-
-
 
 		if (isStackCpy) {
 			out << iPush(getSizeFromBytes(size)) << "//Type Size" << endl;
@@ -837,7 +835,7 @@ public:
 			{
 				out << pFrame(index) << " //(pdecl)&" << key << endl;
 			}
-			else
+			else if(isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
 				if (size == 1)//char
@@ -845,6 +843,10 @@ public:
 				else if (size == 2)//short
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
 				out << frameSet(index) << " //(pdecl)" << key << endl;
+			}
+			else
+			{
+				out << "//Var " << key << " was droped because there were no vaild paths.\r\n";
 			}
 		}
 		else if (globals.find(key) != globals.end()) {
@@ -859,7 +861,7 @@ public:
 			}
 			else if (isAddr)
 				out << getGlobalp(index) << "  //" << key << endl;
-			else
+			else if(isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
 				if (size == 1)//char
@@ -867,6 +869,10 @@ public:
 				else if (size == 2)//short
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
 				out << setGlobal(index) << "  //" << key << endl;
+			}
+			else
+			{
+				out << "//Global Var " << key << " was droped because there were no vaild paths.";
 			}
 		}
 		else if (statics.find(key) != statics.end()) {
@@ -881,7 +887,7 @@ public:
 			}
 			else if (isAddr)
 				out << getStaticp(index) << "  //" << key << endl;
-			else
+			else if(isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
 				if (size == 1)//char
@@ -889,6 +895,10 @@ public:
 				else if (size == 2)//short
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
 				out << setStatic(index) << "  //" << key << endl;
+			}
+			else
+			{
+				out << "//Static Var " << key << " was droped because there were no vaild paths.";
 			}
 		}
 		else
@@ -916,7 +926,6 @@ public:
 			//out << key << endl;
 			//out << "DeclRefExpr not implemented" << endl;
 		}
-		// out << "DeclRefExpr not implemented" << endl;
 
 		if (isStackCpy) {//if greater then 4 bytes then a to stack is in order
 			out << "ToStack" << endl;
@@ -984,33 +993,33 @@ public:
 
 					const Expr *initializer = var->getAnyInitializer();
 					if (initializer) {
-						if (isa<CXXConstructExpr>(initializer)) {
-							if (isa<ConstantArrayType>(var->getType())) {
-								const ConstantArrayType *arr = cast<ConstantArrayType>(var->getType());
-								static int vTableInitInc = 0;
-
-								out << "Push 0" << endl;
-								out << ":vTableConditional_" << vTableInitInc << endl;
-								//for(int i=0; i<arr->getSize().getSExtValue(); i++) {
-								out << "dup //index" << endl;
-								out << "Push " << arr->getSize().getZExtValue() << endl;
-								out << "JumpGE @vTableEnd_" << vTableInitInc << endl;
-
-								out << "dup #index" << endl;
-								out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
-								out << "ArrayGetP " << getSizeFromBytes(getSizeOfCXXDecl(arr->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl(), true, true)) << "//index Array" << endl;
-								parseExpression(initializer, true, false, true, var);
-								out << "Add1 1" << endl;
-								out << "Jump @vTableConditional_" << vTableInitInc << endl;
-								out << ":vTableEnd_" << vTableInitInc << endl << endl;
-								//}
-								vTableInitInc++;
-								return true;
-							}
-							out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
-							parseExpression(initializer, true, false, true, var);
-							return true;
-						}
+						//if (isa<CXXConstructExpr>(initializer)) {
+						//	if (isa<ConstantArrayType>(var->getType())) {
+						//		const ConstantArrayType *arr = cast<ConstantArrayType>(var->getType());
+						//		static int vTableInitInc = 0;
+						//
+						//		out << "Push 0" << endl;
+						//		out << ":vTableConditional_" << vTableInitInc << endl;
+						//		//for(int i=0; i<arr->getSize().getSExtValue(); i++) {
+						//		out << "dup //index" << endl;
+						//		out << "Push " << arr->getSize().getZExtValue() << endl;
+						//		out << "JumpGE @vTableEnd_" << vTableInitInc << endl;
+						//
+						//		out << "dup #index" << endl;
+						//		out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
+						//		out << "ArrayGetP " << getSizeFromBytes(getSizeOfCXXDecl(arr->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl(), true, true)) << "//index Array" << endl;
+						//		parseExpression(initializer, true, false, true, var);
+						//		out << "Add1 1" << endl;
+						//		out << "Jump @vTableConditional_" << vTableInitInc << endl;
+						//		out << ":vTableEnd_" << vTableInitInc << endl << endl;
+						//		//}
+						//		vTableInitInc++;
+						//		return true;
+						//	}
+						//	out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
+						//	parseExpression(initializer, true, false, true, var);
+						//	return true;
+						//}
 
 						parseExpression(initializer, false, true);
 						if (size > 4) {
@@ -2726,7 +2735,7 @@ public:
 		return true;
 	}
 
-	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, const NamedDecl *lastDecl = NULL) {
+	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, bool isAssign = false) {
 		Expr::EvalResult result;
 		if (e->EvaluateAsRValue(result, *context))
 		{
@@ -3001,7 +3010,7 @@ public:
 					{
 						for (int i = getSizeFromBytes(getSizeOfType(icast->getSubExpr()->getType().getTypePtr())); i--;)
 						{
-							out << "drop //unused result\r\n";
+							out << "drop //unused result (CK_LValueToRValue)\r\n";
 						}
 					}
 					//const Expr *subE = icast->getSubExpr();
@@ -3216,7 +3225,7 @@ public:
 
 			string key = declref->getNameInfo().getAsString();
 			
-			printDeclWithKey(key, isAddr, isLtoRValue, declref);
+			printDeclWithKey(key, isAddr, isLtoRValue, isAssign, declref);
 			return true;
 		}
 		else if (isa<ArraySubscriptExpr>(e)) {
@@ -3361,14 +3370,14 @@ public:
 				}
 				else if (isa<DeclRefExpr>(subE)) {
 					parseExpression(subE, true, false);
-					if (!isLtoRValue) {
-						out << "Drop //unused result\r\n";
+					if (!isLtoRValue && !isAddr) {
+						out << "Drop //unused result (UO_AddrOf - DeclRefExpr)\r\n";
 					}
 				}
 				else {
 					parseExpression(subE, true, false);
 					if (!isLtoRValue) {
-						out << "Drop //unused result\r\n";
+						out << "Drop //unused result (UO_AddrOf - else)\r\n";
 					}
 				}
 				return  true;
@@ -3525,11 +3534,11 @@ public:
 				if (bSize > 1)
 				{
 					out << iPush(bSize) << endl;
-					parseExpression(bOp->getLHS(), true);
+					parseExpression(bOp->getLHS(), true, false, true, true);
 					out << "FromStack\r\n";
 					if (isLtoRValue)
 					{
-						parseExpression(bOp->getLHS(), false, true);
+						parseExpression(bOp->getLHS(), false, true, true, true);
 					}
 				}
 				else {
@@ -3537,7 +3546,7 @@ public:
 					{
 						out << "dup //duplicate value for set\r\n";
 					}
-					parseExpression(bOp->getLHS());
+					parseExpression(bOp->getLHS(),false,false,true,true);
 				}
 
 				return true;
