@@ -3833,8 +3833,21 @@ public:
 
 			auto OpAssign = [&](string opStr, bool canValueBeFloat)
 			{
-				parseExpression(bOp->getLHS(), true, false);
-				out << "dup\r\npGet\r\n";
+				bool pointerSet = true;
+				if (isa<DeclRefExpr>(bOp->getLHS()))
+				{
+					const DeclRefExpr *dRef = cast<DeclRefExpr>(bOp->getLHS());
+					if (isa<VarDecl>(dRef->getFoundDecl()))
+					{
+						pointerSet = false;
+						parseExpression(bOp->getLHS(), false, true);
+					}
+				}
+				if (pointerSet)
+				{
+					parseExpression(bOp->getLHS(), true, false);
+					out << "dup\r\npGet\r\n";
+				}
 				llvm::APSInt intRes;
 				if (bOp->getRHS()->EvaluateAsInt(intRes, *context))
 				{
@@ -3845,14 +3858,38 @@ public:
 						out << iPush(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << endl;
 						if (bOp->getLHS()->getType()->isFloatingType() && canValueBeFloat)
 							out << "f";
-						out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
+						if(pointerSet)
+						{
+							out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
+						}
+						else
+						{
+							out << opStr << "\r\n";
+							if (isLtoRValue)
+							{
+								out << "dup\r\n";
+							}
+							parseExpression(bOp->getLHS(), false, false, false, true);
+						}
 					}
 					else
 					{
 						out << iPush(val) << endl;
 						if (bOp->getLHS()->getType()->isFloatingType() && canValueBeFloat)
 							out << "f";
-						out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
+						if(pointerSet)
+						{
+							out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
+						}
+						else
+						{
+							out << opStr << "\r\n";
+							if(isLtoRValue)
+							{
+								out << "dup\r\n";
+							}
+							parseExpression(bOp->getLHS(), false, false, false, true);
+						}
 					}
 				}
 				else
@@ -3867,7 +3904,19 @@ public:
 					if (bOp->getLHS()->getType()->isFloatingType() && canValueBeFloat)
 						out << "f";
 
-					out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
+					if(pointerSet)
+					{
+						out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
+					}
+					else
+					{
+						out << opStr << "\r\n";
+						if(isLtoRValue)
+						{
+							out << "dup\r\n";
+						}
+						parseExpression(bOp->getLHS(), false, false, false, true);
+					}
 				}
 
 			};
