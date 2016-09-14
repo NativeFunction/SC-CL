@@ -3872,9 +3872,9 @@ public:
 
 			};
 
-			switch (bOp->getOpcode()) {
-				case BO_SubAssign: OpAssign("Add", true); break;
-				case BO_AddAssign: OpAssign("Sub", true); break;
+			switch (op) {
+				case BO_SubAssign: OpAssign("Sub", true); break;
+				case BO_AddAssign: OpAssign("Add", true); break;
 				case BO_DivAssign:  OpAssign("Div", true); break;
 				case BO_MulAssign:  OpAssign("Mult", true); break;
 				case BO_OrAssign:  OpAssign("Or", false); break;
