@@ -820,6 +820,7 @@ public:
 		bool isStackCpy = size > 4 && isLtoRValue && !isAddr;//if greater then 4 bytes then a to stack is in order
 
 		if (isStackCpy) {
+			
 			out << iPush(getSizeFromBytes(size)) << "//Type Size" << endl;
 			isAddr = true;
 		}
@@ -3230,7 +3231,11 @@ public:
 
 			string key = declref->getNameInfo().getAsString();
 			
-			printDeclWithKey(key, isAddr, isLtoRValue, isAssign, declref);
+			if (declref->getDecl()->getType().getTypePtr()->isArrayType())
+				printDeclWithKey(key, true, isLtoRValue, isAssign, declref);
+			else
+				printDeclWithKey(key, isAddr, isLtoRValue, isAssign, declref);
+
 			return true;
 		}
 		else if (isa<ArraySubscriptExpr>(e)) {
@@ -3390,13 +3395,15 @@ public:
 			}
 			else if (op->getOpcode() == UO_Deref) {
 				if (isa<ArraySubscriptExpr>(subE)) {
-					parseArraySubscriptExpr(subE, true);
+					out << "//deref ArraySubscriptExpr" << endl;
+					parseArraySubscriptExpr(subE, false);
 				}
 				else if (isa<DeclRefExpr>(subE)) {
-					parseExpression(subE, true, false);
+					out << "//deref DeclRefExpr" << endl;
+						parseExpression(subE, false, false);
 				}
 				else {
-					parseExpression(subE, true, true);
+					parseExpression(subE, false, true);
 				}
 				if (!isAddr)
 				{
@@ -3858,7 +3865,7 @@ public:
 						out << iPush(val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr)) << endl;
 						if (bOp->getLHS()->getType()->isFloatingType() && canValueBeFloat)
 							out << "f";
-						if(pointerSet)
+						if (pointerSet)
 						{
 							out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 						}
@@ -3877,14 +3884,14 @@ public:
 						out << iPush(val) << endl;
 						if (bOp->getLHS()->getType()->isFloatingType() && canValueBeFloat)
 							out << "f";
-						if(pointerSet)
+						if (pointerSet)
 						{
 							out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 						}
 						else
 						{
 							out << opStr << "\r\n";
-							if(isLtoRValue)
+							if (isLtoRValue)
 							{
 								out << "dup\r\n";
 							}
@@ -3904,14 +3911,14 @@ public:
 					if (bOp->getLHS()->getType()->isFloatingType() && canValueBeFloat)
 						out << "f";
 
-					if(pointerSet)
+					if (pointerSet)
 					{
 						out << opStr << "\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 					}
 					else
 					{
 						out << opStr << "\r\n";
-						if(isLtoRValue)
+						if (isLtoRValue)
 						{
 							out << "dup\r\n";
 						}
