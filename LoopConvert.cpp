@@ -6,6 +6,7 @@
 #include <map>
 #include <cmath>
 #include "Utils.h"
+#include "FunctionOpcode.h"
 
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
@@ -35,6 +36,9 @@ struct FData
 	streampos FuncDataPos;
 };
 vector<FData> functions;
+
+vector<FunctionData*> functionsNew;
+FunctionData* CurrentFunction;
 struct InlineData { uint32_t hash; string name; };
 vector<InlineData> InlineItems;
 #pragma endregion
@@ -637,10 +641,24 @@ public:
 		int index = LocalVariables.addDecl("imagPart", 1);
 		if (floating) {
 			out << frameSet(index) << "\r\nPushF_0\r\nfCmpNe\r\n" << frameGet(index) << "\r\nPushF_0\r\nfCmpNe\r\nOr\r\n";
+			CurrentFunction->AddOpcode(Opcode::SetFrame(index));
+			CurrentFunction->AddOpcode(Opcode::PushFloat(0.0f));
+			CurrentFunction->AddOpcode(Opcode::FCmpNe());
+			CurrentFunction->AddOpcode(Opcode::GetFrame(index));
+			CurrentFunction->AddOpcode(Opcode::PushFloat(0.0f));
+			CurrentFunction->AddOpcode(Opcode::FCmpNe());
+			CurrentFunction->AddOpcode(Opcode::Or());
 		}
 		else
 		{
 			out << frameSet(index) << "\r\nPush_0\r\nCmpNe\r\n" << frameGet(index) << "\r\nPush_0\r\nCmpNe\r\nOr\r\n";
+			CurrentFunction->AddOpcode(Opcode::SetFrame(index));
+			CurrentFunction->AddOpcode(Opcode::PushInt(0));
+			CurrentFunction->AddOpcode(Opcode::CmpNe());
+			CurrentFunction->AddOpcode(Opcode::GetFrame(index));
+			CurrentFunction->AddOpcode(Opcode::PushInt(0));
+			CurrentFunction->AddOpcode(Opcode::CmpNe());
+			CurrentFunction->AddOpcode(Opcode::Or());
 		}
 		LocalVariables.removeLevel();
 	}
@@ -705,21 +723,27 @@ public:
 						{
 							case BO_EQ:
 							out << "JumpEQ @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpEQ(location));
 							return;
 							case BO_NE:
 							out << "JumpNE @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpNE(location));
 							return;
 							case BO_GT:
 							out << "JumpGT @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpGT(location));
 							return;
 							case BO_GE:
 							out << "JumpGE @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpGE(location));
 							return;
 							case BO_LT:
 							out << "JumpLT @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpLT(location));
 							return;
 							case BO_LE:
 							out << "JumpLE @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpLE(location));
 							return;
 							default:
 							assert(false);//this shouldnt happen
@@ -731,21 +755,27 @@ public:
 						{
 							case BO_EQ:
 							out << "JumpNE @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpNE(location));
 							return;
 							case BO_NE:
 							out << "JumpEQ @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpEQ(location));
 							return;
 							case BO_GT:
 							out << "JumpLE @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpLE(location));
 							return;
 							case BO_GE:
 							out << "JumpLT @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpLE(location));
 							return;
 							case BO_LT:
 							out << "JumpGE @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpGE(location));
 							return;
 							case BO_LE:
 							out << "JumpGT @" << location;
+							CurrentFunction->AddOpcode(Opcode::JumpGT(location));
 							return;
 							default:
 							assert(false);//this shouldnt happen
@@ -761,8 +791,15 @@ public:
 		if (invert)
 		{
 			out << "not //Invert the result\r\n";
+			out << "JumpFalse @" << location;
+			CurrentFunction->AddOpcode(Opcode::JumpTrue(location));
+		}else
+		{
+			out << "JumpFalse @" << location;
+			CurrentFunction->AddOpcode(Opcode::JumpFalse(location));
 		}
-		out << "JumpFalse @" << location;
+		
+	
 	}
 	string parseCast(const CastExpr *castExpr) {
 		switch (castExpr->getCastKind()) {
@@ -783,7 +820,7 @@ public:
 						return to_string(literal->getValue().convertToDouble());
 				}
 				else {
-					out << "unhandled cast (IK)" << endl;
+					Throw("Unhandled Integral Cast", rewriter, castExpr->getSourceRange());
 				}
 			}
 			case clang::CK_FunctionToPointerDecay:
@@ -795,17 +832,17 @@ public:
 						return getNameForFunc(decl);
 					}
 					else {
-						out << "Unimplemented cast" << endl;
+						Throw("Unimplemented Cast", rewriter, castExpr->getSourceRange());
 					}
 
 				}
 				else {
-					out << "Unimplemented cast" << endl;
+					Throw("Unimplemented Cast", rewriter, castExpr->getSourceRange());
 				}
 			}
 			break;
 			default:
-			out << "unimplemented cast" << endl;
+				Throw("Unimplemented Cast", rewriter, castExpr->getSourceRange());
 		}
 		return "";
 	}
@@ -821,6 +858,7 @@ public:
 
 		if (isStackCpy) {
 			out << iPush(getSizeFromBytes(size)) << "//Type Size" << endl;
+			CurrentFunction->AddOpcodeWithComment(Opcode::PushInt(getSizeFromBytes(size)), "Type Size");
 			isAddr = true;
 		}
 
@@ -830,23 +868,47 @@ public:
 			{
 
 				out << frameGet(index) << " //(pdecl)" << key << endl;
+				CurrentFunction->AddOpcode(Opcode::GetFrame(index));
 				if (size == 1)//char
+				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
-				else if (size == 2)//short
+					CurrentFunction->AddOpcode(Opcode::PushInt(24));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_right", 2, 1), "char type");
+				}
+				else if(size == 2)//short
+				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
+					CurrentFunction->AddOpcode(Opcode::PushInt(16));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_right", 2, 1), "short type");
+				}
 			}
 			else if (isAddr)
 			{
 				out << pFrame(index) << " //(pdecl)&" << key << endl;
+				CurrentFunction->AddOpcodeWithComment(Opcode::GetFrameP(index), "(pdecl)&");
 			}
 			else if(isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if (size == 1)//char
+				if(size == 1)//char
+				{
 					out << "PushS 256\r\nMod\r\nPushB 24\r\nCallNative shift_left 2 1//char type\r\n";
-				else if (size == 2)//short
+					CurrentFunction->AddOpcode(Opcode::PushInt(255));
+					CurrentFunction->AddOpcode(Opcode::And());
+					CurrentFunction->AddOpcode(Opcode::PushInt(24));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_left", 2, 1), "char type");
+					
+				}
+				else if(size == 2)//short
+				{
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
+					CurrentFunction->AddOpcode(Opcode::PushInt(65535));
+					CurrentFunction->AddOpcode(Opcode::And());
+					CurrentFunction->AddOpcode(Opcode::PushInt(16));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_left", 2, 1), "short type");
+				}
 				out << frameSet(index) << " //(pdecl)" << key << endl;
+				CurrentFunction->AddOpcodeWithComment(Opcode::SetFrame(index), "(pdecl)");
 			}
 			else
 			{
@@ -858,21 +920,47 @@ public:
 			if (isLtoRValue && !isAddr)
 			{
 				out << getGlobal(index) << "  //" << key << endl;
-				if (size == 1)//char
+				CurrentFunction->AddOpcode(Opcode::GetGlobal(index));
+				if(size == 1)//char
+				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
-				else if (size == 2)//short
+					CurrentFunction->AddOpcode(Opcode::PushInt(24));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_right", 2, 1), "char type");
+				}
+				else if(size == 2)//short
+				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
+					CurrentFunction->AddOpcode(Opcode::PushInt(16));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_right", 2, 1), "short type");
+				}
 			}
 			else if (isAddr)
+			{
 				out << getGlobalp(index) << "  //" << key << endl;
+				CurrentFunction->AddOpcodeWithComment(Opcode::GetGlobalP(index), key);
+			}	
 			else if(isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if (size == 1)//char
+				if(size == 1)//char
+				{
 					out << "PushS 256\r\nMod\r\nPushB 24\r\nCallNative shift_left 2 1//char type\r\n";
-				else if (size == 2)//short
+					CurrentFunction->AddOpcode(Opcode::PushInt(255));
+					CurrentFunction->AddOpcode(Opcode::And());
+					CurrentFunction->AddOpcode(Opcode::PushInt(24));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_left", 2, 1), "char type");
+
+				}
+				else if(size == 2)//short
+				{
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
+					CurrentFunction->AddOpcode(Opcode::PushInt(65535));
+					CurrentFunction->AddOpcode(Opcode::And());
+					CurrentFunction->AddOpcode(Opcode::PushInt(16));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_left", 2, 1), "short type");
+				}
 				out << setGlobal(index) << "  //" << key << endl;
+				CurrentFunction->AddOpcodeWithComment(Opcode::SetGlobal(index), key);
 			}
 			else
 			{
@@ -884,21 +972,47 @@ public:
 			if (isLtoRValue && !isAddr)
 			{
 				out << getStatic(index) << "  //" << key << endl;
-				if (size == 1)//char
+				CurrentFunction->AddOpcode(Opcode::GetStatic(index));
+				if(size == 1)//char
+				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
-				else if (size == 2)//short
+					CurrentFunction->AddOpcode(Opcode::PushInt(24));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_right", 2, 1), "char type");
+				}
+				else if(size == 2)//short
+				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
+					CurrentFunction->AddOpcode(Opcode::PushInt(16));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_right", 2, 1), "short type");
+				}
 			}
-			else if (isAddr)
+			else if(isAddr)
+			{
 				out << getStaticp(index) << "  //" << key << endl;
+				CurrentFunction->AddOpcodeWithComment(Opcode::GetStaticP(index), key);
+			}
 			else if(isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if (size == 1)//char
+				if(size == 1)//char
+				{
 					out << "PushS 256\r\nMod\r\nPushB 24\r\nCallNative shift_left 2 1//char type\r\n";
-				else if (size == 2)//short
+					CurrentFunction->AddOpcode(Opcode::PushInt(255));
+					CurrentFunction->AddOpcode(Opcode::And());
+					CurrentFunction->AddOpcode(Opcode::PushInt(24));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_left", 2, 1), "char type");
+
+				}
+				else if(size == 2)//short
+				{
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
+					CurrentFunction->AddOpcode(Opcode::PushInt(65535));
+					CurrentFunction->AddOpcode(Opcode::And());
+					CurrentFunction->AddOpcode(Opcode::PushInt(16));
+					CurrentFunction->AddOpcodeWithComment(Opcode::Native("shift_left", 2, 1), "short type");
+				}
 				out << setStatic(index) << "  //" << key << endl;
+				CurrentFunction->AddOpcodeWithComment(Opcode::SetStatic(index), key);
 			}
 			else
 			{
@@ -908,7 +1022,7 @@ public:
 		else
 		{
 			string name = "@" + key;
-			uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
+			uint32_t hash = Utils::Hashing::JoaatCased((char*)name.c_str());
 			uint32_t i = 0;
 			for (; i < functions.size(); i++)
 			{
@@ -921,18 +1035,31 @@ public:
 					}
 				}
 			}
+			for(int j = 0; j < functionsNew.size(); j++)
+			{
+				if(functionsNew[j]->Hash() == hash)
+				{
+					if(functionsNew[j]->Name() == name)
+					{
+						functionsNew[j]->setUsed();
+						break;
+					}
+				}
+			}
 
 			if (i >= functions.size())
 				Throw("Function pointer \"" + key + "\" not found");
 
 			out << "//DeclRefExpr, nothing else, so func it" << endl;
 			out << "Push GetLoc(\"" << key << "\")" << endl;
+			CurrentFunction->AddOpcodeWithComment(Opcode::LabelLoc(key), "DeclRefExpr, nothing else, so func it");
 			//out << key << endl;
 			//out << "DeclRefExpr not implemented" << endl;
 		}
 
 		if (isStackCpy) {//if greater then 4 bytes then a to stack is in order
 			out << "ToStack" << endl;
+			CurrentFunction->AddOpcode(Opcode::ToStack());
 		}
 
 	}
@@ -955,12 +1082,14 @@ public:
 					if (isa<CXXConstructExpr>(initializer)) {
 
 						out << pFrame(curIndex) << " //" << var->getNameAsString() << endl;
+						CurrentFunction->AddOpcodeWithComment(Opcode::GetFrameP(curIndex), var->getNameAsString());
 						parseExpression(initializer);
 					}
 					else
 					{
 						parseExpression(initializer);
 						out << frameSet(curIndex) << "  //(parm)" << var->getName().str() << endl;
+						CurrentFunction->AddOpcodeWithComment(Opcode::SetFrame(curIndex), "(parm)" + var->getName().str());
 					}
 				}
 				LocalVariables.addDecl(var->getName().str(), actsize);
@@ -1030,9 +1159,13 @@ public:
 							out << iPush(getSizeFromBytes(size)) << " //Type Size" << endl;
 							out << pFrame(curIndex) << " //&" << var->getNameAsString() << endl;
 							out << "FromStack" << endl;
+							CurrentFunction->AddOpcodeWithComment(Opcode::PushInt(getSizeFromBytes(size)), "Type Size");
+							CurrentFunction->AddOpcodeWithComment(Opcode::GetFrameP(curIndex), "&" + var->getNameAsString());
+							CurrentFunction->AddOpcode(Opcode::FromStack());
 						}
 						else {
 							out << frameSet(curIndex) << "  //" << var->getName().str() << endl;
+							CurrentFunction->AddOpcodeWithComment(Opcode::SetFrame(curIndex), var->getName().str());
 						}
 					}
 					LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
@@ -2950,7 +3083,7 @@ public:
 					if (!inlined)
 					{
 						string name = parseCast(cast<const CastExpr>(callee));
-						uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
+						uint32_t hash = Utils::Hashing::JoaatCased((char*)name.c_str());
 						uint32_t i = 0;
 						for (; i < functions.size(); i++)
 							if (functions[i].hash == hash)
@@ -2958,6 +3091,15 @@ public:
 								if (functions[i].name == name)
 								{
 									functions[i].isused = true;
+									break;
+								}
+							}
+						for(int j = 0; j < functionsNew.size(); j++)
+							if(functionsNew[j]->Hash() == hash)
+							{
+								if(functionsNew[j]->Name() == name)
+								{
+									functionsNew[j]->setUsed();
 									break;
 								}
 							}
@@ -4339,7 +4481,8 @@ public:
 		//int funcNum = 0;
 		if (f->hasBody()) {
 			out.seekg(0, ios::end);
-			functions.push_back({ Utils::Hashing::Joaat((char*)getNameForFunc(f).c_str()), getNameForFunc(f), false, out.tellg() });
+			functions.push_back({ Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str()), getNameForFunc(f), false, out.tellg() });
+			
 
 			if (isa<CXXConstructorDecl>(f))
 				return true;
@@ -4349,8 +4492,8 @@ public:
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i<f->getNumParams(); i++)
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-
-
+			functionsNew.push_back(new FunctionData(getNameForFunc(f), (paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0))));
+			CurrentFunction = functionsNew.back();
 			out << endl << "//Loc: " << f->getBody()->getLocStart().getRawEncoding() << endl;
 			string name = dumpName(cast<NamedDecl>(f));
 			out << ":" << name << endl;
@@ -4358,6 +4501,7 @@ public:
 			if (f->isMain())
 			{
 				functions.back().isused = true;
+				functionsNew.back()->setUsed();
 				QualType type = f->getReturnType();
 				MainRets = Utils::Math::DivInt(getSizeOfQualType(&type), 4);
 			}
@@ -4413,13 +4557,14 @@ public:
 				out.seekp(FunctionStackCountLocation);
 				out << FunctionStackCountStr;
 				out.seekp(0, ios::end);
+				functionsNew.back()->setStackSize(FunctionStackCount);
 			}
 			//out << dumpName(cast<NamedDecl>(f)) << endl;
 
 			//outfile << out.str();
 			//out.str(string(""));
 			//out.clear();
-
+			CurrentFunction = NULL;
 		}
 
 		return true;
@@ -4826,7 +4971,7 @@ public:
 						InitializationStack.push({ 0, FBWT_ARRAY });
 
 						string name = "@" + decl->getNameAsString();
-						uint32_t hash = Utils::Hashing::Joaat((char*)name.c_str());
+						uint32_t hash = Utils::Hashing::JoaatCased((char*)name.c_str());
 						uint32_t i = 0;
 						for (; i < functions.size(); i++)
 						{
@@ -4835,6 +4980,17 @@ public:
 								if (functions[i].name == name)
 								{
 									functions[i].isused = true;
+									break;
+								}
+							}
+						}
+						for(int j = 0; j < functionsNew.size();j++)
+						{
+							if(functionsNew[j]->Hash() == hash)
+							{
+								if(functionsNew[j]->Name() == name)
+								{
+									functionsNew[j]->setUsed();
 									break;
 								}
 							}
@@ -5639,6 +5795,10 @@ public:
 		return true;
 	}
 	~MyASTConsumer() {
+		for (int i = 0; i < functionsNew.size();i++)
+		{
+			delete functionsNew[i];
+		}
 		if (diagnostics->getClient()->getNumErrors())
 			return;
 		stringstream header;
