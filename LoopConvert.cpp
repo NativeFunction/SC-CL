@@ -672,7 +672,7 @@ public:
 	#pragma endregion
 
 	#pragma region Parsing
-	void parseJumpFalseCondition(Expr *condition, bool invert = false)
+	void parseJumpFalseCondition(Expr *condition, string location, bool invert = false)
 	{
 		while (isa<BinaryOperator>(condition))
 		{
@@ -704,22 +704,22 @@ public:
 						switch (bCond->getOpcode())
 						{
 							case BO_EQ:
-							out << "JumpEQ @";
+							out << "JumpEQ @" << location;
 							return;
 							case BO_NE:
-							out << "JumpNE @";
+							out << "JumpNE @" << location;
 							return;
 							case BO_GT:
-							out << "JumpGT @";
+							out << "JumpGT @" << location;
 							return;
 							case BO_GE:
-							out << "JumpGE @";
+							out << "JumpGE @" << location;
 							return;
 							case BO_LT:
-							out << "JumpLT @";
+							out << "JumpLT @" << location;
 							return;
 							case BO_LE:
-							out << "JumpLE @";
+							out << "JumpLE @" << location;
 							return;
 							default:
 							assert(false);//this shouldnt happen
@@ -730,22 +730,22 @@ public:
 						switch (bCond->getOpcode())
 						{
 							case BO_EQ:
-							out << "JumpNE @";
+							out << "JumpNE @" << location;
 							return;
 							case BO_NE:
-							out << "JumpEQ @";
+							out << "JumpEQ @" << location;
 							return;
 							case BO_GT:
-							out << "JumpLE @";
+							out << "JumpLE @" << location;
 							return;
 							case BO_GE:
-							out << "JumpLT @";
+							out << "JumpLT @" << location;
 							return;
 							case BO_LT:
-							out << "JumpGE @";
+							out << "JumpGE @" << location;
 							return;
 							case BO_LE:
-							out << "JumpGT @";
+							out << "JumpGT @" << location;
 							return;
 							default:
 							assert(false);//this shouldnt happen
@@ -762,7 +762,7 @@ public:
 		{
 			out << "not //Invert the result\r\n";
 		}
-		out << "JumpFalse @";
+		out << "JumpFalse @" << location;
 	}
 	string parseCast(const CastExpr *castExpr) {
 		switch (castExpr->getCastKind()) {
@@ -820,7 +820,6 @@ public:
 		bool isStackCpy = size > 4 && isLtoRValue && !isAddr;//if greater then 4 bytes then a to stack is in order
 
 		if (isStackCpy) {
-			
 			out << iPush(getSizeFromBytes(size)) << "//Type Size" << endl;
 			isAddr = true;
 		}
@@ -2414,8 +2413,8 @@ public:
 			}
 			else
 			{
-				parseJumpFalseCondition(conditional);
-				out << (Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd) << endl;
+				parseJumpFalseCondition(conditional, Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd);
+				out << endl;
 				LocalVariables.addLevel();
 				parseStatement(Then, breakLoc, continueLoc, returnLoc);
 				LocalVariables.removeLevel();
@@ -2478,8 +2477,8 @@ public:
 			else {
 
 				out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
-				parseJumpFalseCondition(conditional);
-				out << whileStmt->getLocEnd().getRawEncoding() << endl;
+				parseJumpFalseCondition(conditional, to_string(whileStmt->getLocEnd().getRawEncoding()));
+				out << endl;
 
 				parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
 
@@ -2502,8 +2501,8 @@ public:
 			if (conditional) {
 				out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
 
-				parseJumpFalseCondition(conditional);
-				out << body->getLocEnd().getRawEncoding() << endl;
+				parseJumpFalseCondition(conditional, to_string(body->getLocEnd().getRawEncoding()));
+				out << endl;
 			}
 			else
 			{
@@ -2570,8 +2569,8 @@ public:
 			}
 			else
 			{
-				parseJumpFalseCondition(conditional, true);
-				out << body->getLocStart().getRawEncoding() << endl;
+				parseJumpFalseCondition(conditional, to_string(body->getLocStart().getRawEncoding()), true);
+				out << endl;
 			}
 
 			out << endl << ":" << conditional->getLocEnd().getRawEncoding() << "" << endl;
@@ -4201,8 +4200,8 @@ public:
 				Throw("Invalid Use Of Operator", rewriter, e->getExprLoc());
 			const ConditionalOperator *cond = cast<const ConditionalOperator>(e);
 
-			parseJumpFalseCondition(cond->getCond());
-			out << cond->getRHS()->getLocStart().getRawEncoding() << endl;
+			parseJumpFalseCondition(cond->getCond(), to_string(cond->getRHS()->getLocStart().getRawEncoding()));
+			out << endl;
 			parseExpression(cond->getLHS(), false, true);
 			out << "Jump @" << cond->getLHS()->getLocEnd().getRawEncoding() << endl;
 
