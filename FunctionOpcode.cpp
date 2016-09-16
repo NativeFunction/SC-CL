@@ -265,7 +265,7 @@ string Opcode::toString() const
 /*	case OK_Func:
 		current = ":" + getString() + "\r\nFunction " + to_string(getUShort(4)) + " " + to_string(getUShort(6));
 		break;*/
-	case OK_Ret:
+	case OK_Return:
 		current = "Return " + to_string(getUShort(0)) + " " + to_string(getUShort(2));
 		break;
 	case OK_PGet: current = "pGet"; break;
@@ -359,7 +359,7 @@ string Opcode::toString() const
 		current = "StrAddI " + to_string(getUShort(0)); break;
 	case OK_MemCpy: current = "MemCpy"; break;
 	case OK_PCall: current = "PCall"; break;
-	case OK_Label: current = ":" + getString(); break;
+	case OK_Label: current = "\r\n:" + getString(); break; //make labels have a line break
 	case OK_LabelLoc: current = "GetLoc(\"" + getString() + "\")"; break;
 	}
 	if (hasComment())
@@ -372,7 +372,7 @@ string Opcode::toString() const
 #undef PrintJump
 }
 
-void Opcode::AddSwitchCase(int caseVal, string jumpLoc)
+void Opcode::addSwitchCase(int caseVal, string jumpLoc)
 {
 	assert(opcodeKind == OK_Switch && "AddSwitchCase must be called on switches");
 	SwitchCaseIns** curCasePtr = (SwitchCaseIns**)&storage;
@@ -419,4 +419,10 @@ ostream & FunctionData::operator<<(ostream & stream)
 	}
 	stream << endl;
 	return stream;
+}
+
+void FunctionData::addSwitchCase(int caseVal, string jumpLoc) const
+{
+	assert(Instructions.size() && "Instruction stakck empty, cant add switch case");
+	Instructions.back()->addSwitchCase(caseVal, jumpLoc);
 }

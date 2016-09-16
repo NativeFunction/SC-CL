@@ -47,7 +47,7 @@ enum OpcodeKind{
 	OK_Drop,
 	OK_Native,
 	//OK_Func,
-	OK_Ret,
+	OK_Return,
 	OK_PGet,
 	OK_PSet,
 	OK_PeekSet,
@@ -127,10 +127,10 @@ public:
 		stream << toString();
 		return stream;
 	}
-	void AddSwitchCase(int caseVal, string jumpLoc);
+	void addSwitchCase(int caseVal, string jumpLoc);
 
 #pragma region CreateOpcodes
-	static Opcode *Nop(){	return new Opcode(OK_Nop);}
+	static Opcode *Nop(){ return new Opcode(OK_Nop);}
 	#pragma region MathOpcodes
 	static Opcode *Add(){ return new Opcode(OK_Add);}
 	static Opcode *Sub(){ return new Opcode(OK_Sub);}
@@ -201,9 +201,9 @@ public:
 		op->setUShort(frameSize, 6);
 		return op;
 	}*/
-	static Opcode *Ret(uint16_t pCount, uint16_t rCount)
+	static Opcode *Return(uint16_t pCount, uint16_t rCount)
 	{
-		Opcode* op = new Opcode(OK_Ret);
+		Opcode* op = new Opcode(OK_Return);
 		op->setUShort(pCount, 0);
 		op->setUShort(rCount, 2);
 		return op;
@@ -384,6 +384,60 @@ public:
 		op->setString(loc, 0);
 		return op;
 	}
+	static Opcode *Jump(unsigned int rawEncoding)
+	{
+		Opcode* op = new Opcode(OK_Jump);
+		op->setString(to_string(rawEncoding), 0);
+		return op;
+	}
+	static Opcode *JumpTrue(unsigned int rawEncoding)
+	{
+		Opcode* op = new Opcode(OK_JumpTrue);
+		op->setString(to_string(rawEncoding), 0);
+		return op;
+	}
+	static Opcode *JumpFalse(unsigned int rawEncoding)
+	{
+		Opcode* op = new Opcode(OK_JumpFalse);
+		op->setString(to_string(rawEncoding), 0);
+		return op;
+	}
+	static Opcode *JumpEQ(unsigned int rawEncoding)
+	{
+		Opcode* op = new Opcode(OK_JumpEQ);
+		op->setString(to_string(rawEncoding), 0);
+		return op;
+	}
+	static Opcode *JumpNE(unsigned int rawEncoding)
+	{
+		Opcode* op = new Opcode(OK_JumpNE);
+		op->setString(to_string(rawEncoding), 0);
+		return op;
+	}
+	static Opcode *JumpGT(unsigned int rawEncoding)
+	{
+		Opcode* op = new Opcode(OK_JumpGT);
+		op->setString(to_string(rawEncoding), 0);
+		return op;
+	}
+	static Opcode *JumpGE(unsigned int rawEncoding)
+	{
+		Opcode* op = new Opcode(OK_JumpGE);
+		op->setString(to_string(rawEncoding), 0);
+		return op;
+	}
+	static Opcode *JumpLT(unsigned int rawEncoding)
+	{
+		Opcode* op = new Opcode(OK_JumpLT);
+		op->setString(to_string(rawEncoding), 0);
+		return op;
+	}
+	static Opcode *JumpLE(unsigned int rawEncoding)
+	{
+		Opcode* op = new Opcode(OK_JumpLE);
+		op->setString(to_string(rawEncoding), 0);
+		return op;
+	}
 #pragma endregion
 	static Opcode *Switch(){ return new Opcode(OK_Switch); }//handle adding the cases later
 	static Opcode *PushString(string str)
@@ -422,6 +476,12 @@ public:
 	{
 		Opcode* op = new Opcode(OK_Label);
 		op->setString(loc, 0);
+		return op;
+	}
+	static Opcode *Label(unsigned int rawEncoding)
+	{
+		Opcode* op = new Opcode(OK_Label);
+		op->setString(to_string(rawEncoding), 0);
 		return op;
 	}
 	static Opcode *LabelLoc(string loc)
@@ -465,5 +525,5 @@ public:
 	void setUsed(bool isUsed = true){ used = isUsed; }
 	bool IsUsed()const{ return used; }
 	ostream& operator << (ostream& stream);
-
+	void addSwitchCase(int caseVal, string jumpLoc)const;
 };

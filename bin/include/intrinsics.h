@@ -51,12 +51,6 @@ extern __intrinsic __asm_unsafe void exchange(const int structStackSize);
 
 #pragma region Math/Conversions
 //{ Math/Conversions
-extern __intrinsic int creal(int _Complex complexInteger);
-extern __intrinsic int cimag(int _Complex complexInteger);
-extern __intrinsic float crealf(float _Complex complexFloat);
-extern __intrinsic float cimagf(float _Complex complexFloat);
-extern __intrinsic int _Complex cconj(int _Complex complexInteger);
-extern __intrinsic float _Complex cconjf(float _Complex complexFloat);
 extern __intrinsic float reinterpretIntToFloat(int intValue);
 extern __intrinsic int reinterpretFloatToInt(float floatValue);
 extern __intrinsic vector3 toVector3(float value);
