@@ -977,7 +977,7 @@ public:
 			}
 			else
 			{
-				out << "//Global Var " << key << " was dropped because there were no vaild paths.";
+				out << "//Global Var " << key << " was dropped because there were no vaild paths.\r\n";
 			}
 		}
 		else if (statics.find(key) != statics.end()) {
@@ -1029,7 +1029,7 @@ public:
 			}
 			else
 			{
-				out << "//Static Var " << key << " was dropped because there were no vaild paths.";
+				out << "//Static Var " << key << " was dropped because there were no vaild paths.\r\n";
 			}
 		}
 		else
@@ -1073,6 +1073,7 @@ public:
 		if (isStackCpy) {//if greater then 4 bytes then a to stack is in order
 			out << "ToStack" << endl;
 			AddInstruction(ToStack);
+
 		}
 
 	}
@@ -3607,9 +3608,9 @@ public:
 			string key = declref->getNameInfo().getAsString();
 			
 			if (declref->getDecl()->getType().getTypePtr()->isArrayType())
+			{
 				printDeclWithKey(key, true, isLtoRValue, isAssign, declref);
-			else if (declref->getDecl()->getType().getTypePtr()->isPointerType())
-				printDeclWithKey(key, false, isLtoRValue, isAssign, declref);
+			}
 			else
 				printDeclWithKey(key, isAddr, isLtoRValue, isAssign, declref);
 
@@ -5093,8 +5094,8 @@ public:
 			}
 		}
 
-
-		parseExpression(base, true, true);
+		
+		parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
 		parseExpression(index, false, true);
 
 
