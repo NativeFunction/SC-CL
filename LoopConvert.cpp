@@ -4690,15 +4690,15 @@ public:
 						}
 					}
 				}
-								   break;
+				break;
 				default:
 				{
 					
 					//c allows same type pointer to pointer subtraction to obtain the logical difference. 
 					if (isa<PointerType>(bOp->getLHS()->getType()) && isa<PointerType>(bOp->getRHS()->getType()))
 					{
-						parseExpression(bOp->getLHS(), true, true);
-						parseExpression(bOp->getRHS(), true, true);
+						parseExpression(bOp->getLHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
+						parseExpression(bOp->getRHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
 
 						if (op == BO_Sub)
 						{
@@ -4730,8 +4730,8 @@ public:
 					}
 					else if (isa<PointerType>(bOp->getLHS()->getType()))
 					{
-						//we need to parse left as pointer if its a pointer
-						parseExpression(bOp->getLHS(), true, true);
+						//we need to parse left as an addr if its an array else its a pointer val
+						parseExpression(bOp->getLHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
 						parseExpression(bOp->getRHS(), false, true);
 
 						if(op == BO_Add || op == BO_Sub)
@@ -4747,7 +4747,7 @@ public:
 					}
 					else if (isa<PointerType>(bOp->getRHS()->getType()))
 					{
-						//we need to parse right as pointer if its a pointer
+						//we need to parse right as an addr if its an array else its a pointer val
 						parseExpression(bOp->getLHS(), false, true);
 
 						if (op == BO_Add || op == BO_Sub)
@@ -4761,7 +4761,7 @@ public:
 							AddInstructionConditionally(pSize > 1, MultImm, pSize);
 						}
 
-						parseExpression(bOp->getRHS(), true, true);
+						parseExpression(bOp->getRHS(), bOp->getRHS()->getType().getTypePtr()->isArrayType(), true);
 					}
 					else
 					{
