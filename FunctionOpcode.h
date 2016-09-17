@@ -115,56 +115,57 @@ public:
 	{
 		switch(operation)
 		{
-		case OK_Nop:
-		case OK_Add:
-		case OK_Sub:
-		case OK_Mult:
-		case OK_Div:
-		case OK_Mod:
-		case OK_Not:
-		case OK_Neg:
-		case OK_CmpEq:
-		case OK_CmpNe:
-		case OK_CmpGt:
-		case OK_CmpGe:
-		case OK_CmpLt:
-		case OK_CmpLe:
-		case OK_FAdd:
-		case OK_FSub:
-		case OK_FMult:
-		case OK_FDiv:
-		case OK_FMod:
-		case OK_FNeg:
-		case OK_FCmpEq:
-		case OK_FCmpNe:
-		case OK_FCmpGt:
-		case OK_FCmpGe:
-		case OK_FCmpLt:
-		case OK_FCmpLe:
-		case OK_VAdd:
-		case OK_VSub:
-		case OK_VMult:
-		case OK_VDiv:
-		case OK_VNeg:
-		case OK_And:
-		case OK_Or:
-		case OK_Xor:
-		case OK_FtoI:
-		case OK_ItoF:
-		case OK_FtoV:
-		case OK_Dup:
-		case OK_Drop:
-		case OK_PGet:
-		case OK_PSet:
-		case OK_PeekSet:
-		case OK_ToStack:
-		case OK_FromStack:
-		case OK_MemCpy:
-		case OK_PCall:
-			return new Opcode(operation);
-		default:
-			assert(false && "Not a simple operation passed");
+			case OK_Nop:
+			case OK_Add:
+			case OK_Sub:
+			case OK_Mult:
+			case OK_Div:
+			case OK_Mod:
+			case OK_Not:
+			case OK_Neg:
+			case OK_CmpEq:
+			case OK_CmpNe:
+			case OK_CmpGt:
+			case OK_CmpGe:
+			case OK_CmpLt:
+			case OK_CmpLe:
+			case OK_FAdd:
+			case OK_FSub:
+			case OK_FMult:
+			case OK_FDiv:
+			case OK_FMod:
+			case OK_FNeg:
+			case OK_FCmpEq:
+			case OK_FCmpNe:
+			case OK_FCmpGt:
+			case OK_FCmpGe:
+			case OK_FCmpLt:
+			case OK_FCmpLe:
+			case OK_VAdd:
+			case OK_VSub:
+			case OK_VMult:
+			case OK_VDiv:
+			case OK_VNeg:
+			case OK_And:
+			case OK_Or:
+			case OK_Xor:
+			case OK_FtoI:
+			case OK_ItoF:
+			case OK_FtoV:
+			case OK_Dup:
+			case OK_Drop:
+			case OK_PGet:
+			case OK_PSet:
+			case OK_PeekSet:
+			case OK_ToStack:
+			case OK_FromStack:
+			case OK_MemCpy:
+			case OK_PCall:
+				return new Opcode(operation);
+			default:
+				assert(false && "Not a simple operation passed");
 		}
+		return new Opcode(OK_Nop);
 	}
 	void setComment(string comment);
 	string getComment() const;

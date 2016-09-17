@@ -1,4 +1,4 @@
-#include <sstream>
+﻿#include <sstream>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -3608,6 +3608,8 @@ public:
 			
 			if (declref->getDecl()->getType().getTypePtr()->isArrayType())
 				printDeclWithKey(key, true, isLtoRValue, isAssign, declref);
+			else if (declref->getDecl()->getType().getTypePtr()->isPointerType())
+				printDeclWithKey(key, false, isLtoRValue, isAssign, declref);
 			else
 				printDeclWithKey(key, isAddr, isLtoRValue, isAssign, declref);
 
@@ -5660,7 +5662,7 @@ public:
 								}
 							}
 						}
-						for(int j = 0; j < functionsNew.size();j++)
+						for(uint32_t j = 0; j < functionsNew.size();j++)
 						{
 							if(functionsNew[j]->Hash() == hash)
 							{
@@ -6474,7 +6476,7 @@ public:
 
 		if (diagnostics->getClient()->getNumErrors())
 		{
-			for(int i = 0; i < functionsNew.size(); i++)
+			for(uint32_t i = 0; i < functionsNew.size(); i++)
 			{
 				delete functionsNew[i];
 			}
@@ -6535,7 +6537,7 @@ public:
 			}
 			fclose(ftemp);
 		}
-		for(int i = 0; i < functionsNew.size(); i++)
+		for(uint32_t i = 0; i < functionsNew.size(); i++)
 		{
 			delete functionsNew[i];
 		}
