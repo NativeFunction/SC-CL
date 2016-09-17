@@ -111,7 +111,61 @@ class Opcode
 public:
 	~Opcode();
 	OpcodeKind GetKind(){ return opcodeKind; }
-
+	static Opcode *AddSimpleOp(OpcodeKind operation)
+	{
+		switch(operation)
+		{
+		case OK_Nop:
+		case OK_Add:
+		case OK_Sub:
+		case OK_Mult:
+		case OK_Div:
+		case OK_Mod:
+		case OK_Not:
+		case OK_Neg:
+		case OK_CmpEq:
+		case OK_CmpNe:
+		case OK_CmpGt:
+		case OK_CmpGe:
+		case OK_CmpLt:
+		case OK_CmpLe:
+		case OK_FAdd:
+		case OK_FSub:
+		case OK_FMult:
+		case OK_FDiv:
+		case OK_FMod:
+		case OK_FNeg:
+		case OK_FCmpEq:
+		case OK_FCmpNe:
+		case OK_FCmpGt:
+		case OK_FCmpGe:
+		case OK_FCmpLt:
+		case OK_FCmpLe:
+		case OK_VAdd:
+		case OK_VSub:
+		case OK_VMult:
+		case OK_VDiv:
+		case OK_VNeg:
+		case OK_And:
+		case OK_Or:
+		case OK_Xor:
+		case OK_FtoI:
+		case OK_ItoF:
+		case OK_FtoV:
+		case OK_Dup:
+		case OK_Drop:
+		case OK_PGet:
+		case OK_PSet:
+		case OK_PeekSet:
+		case OK_ToStack:
+		case OK_FromStack:
+		case OK_MemCpy:
+		case OK_PCall:
+			return new Opcode(operation);
+		default:
+			assert(false && "Not a simple operation passed");
+		}
+	}
 	void setComment(string comment);
 	string getComment() const;
 	bool hasComment() const;
@@ -123,8 +177,8 @@ public:
 	
 
 	string toString() const;
-	ostream& operator << (ostream& stream) const{
-		stream << toString();
+	friend std::ostream& operator << (std::ostream& stream, const Opcode& opcode) {
+		stream << opcode.toString();
 		return stream;
 	}
 	void addSwitchCase(int caseVal, string jumpLoc);
@@ -506,7 +560,6 @@ private:
 public:
 	FunctionData(string name, int pcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount)
 	{
-		Instructions.push_back(Opcode::Label(name));
 	}
 	~FunctionData();
 	void AddOpcode(Opcode *op);
@@ -524,6 +577,7 @@ public:
 	string Name()const{ return name; }
 	void setUsed(bool isUsed = true){ used = isUsed; }
 	bool IsUsed()const{ return used; }
-	ostream& operator << (ostream& stream);
+	friend std::ostream& operator << (std::ostream& stream, const FunctionData& fdata);
+	string toString() const;
 	void addSwitchCase(int caseVal, string jumpLoc)const;
 };

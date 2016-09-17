@@ -1,5 +1,6 @@
 #include "FunctionOpcode.h"
 #include <cassert>
+#include <sstream>
 
 struct SwitchCaseIns
 {
@@ -275,19 +276,19 @@ string Opcode::toString() const
 	case OK_FromStack: current = "FromStack"; break;
 	case OK_GetArrayP:Check12Op(GetArrayP); break;
 	case OK_GetArray:Check12Op(GetArray); break;
-	case OK_SetArray:Check12Op(GetArray); break;
+	case OK_SetArray:Check12Op(SetArray); break;
 	case OK_GetFrameP:Check12Op(GetFrameP); break;
 	case OK_GetFrame:Check12Op(GetFrame); break;
-	case OK_SetFrame:Check12Op(GetFrame); break;
+	case OK_SetFrame:Check12Op(SetFrame); break;
 	case OK_GetStaticP:Check12Op(GetStaticP); break;
 	case OK_GetStatic:Check12Op(GetStatic); break;
-	case OK_SetStatic:Check12Op(GetStatic); break;
+	case OK_SetStatic:Check12Op(SetStatic); break;
 	case OK_GetImmP:Check12Op(GetImmP); break;
 	case OK_GetImm:Check12Op(GetImm); break;
-	case OK_SetImm:Check12Op(GetImm); break;
+	case OK_SetImm:Check12Op(SetImm); break;
 	case OK_GetGlobalP:Check23Op(GetGlobalP); break;
 	case OK_GetGlobal:Check23Op(GetGlobal); break;
-	case OK_SetGlobal:Check23Op(GetGlobal); break;
+	case OK_SetGlobal:Check23Op(SetGlobal); break;
 	case OK_AddImm:
 	{
 		int value = getInt(0);
@@ -325,7 +326,7 @@ string Opcode::toString() const
 		break;
 	}
 	case OK_Call:current = "Call @" + getString(); break;
-	case OK_Jump: "Jump @" + getString(); break;
+	case OK_Jump: current = "Jump @" + getString(); break;
 	case OK_JumpTrue: current = "Not\r\nJumpFalse @" + getString(); break;
 	case OK_JumpFalse: PrintJump(False); break;
 	case OK_JumpEQ: PrintJump(EQ); break;
@@ -410,19 +411,31 @@ void FunctionData::AddOpcodeWithComment(Opcode * op, string comment)
 	Instructions.push_back(op);
 }
 
-ostream & FunctionData::operator<<(ostream & stream)
+string FunctionData::toString() const
 {
-	stream << ":" << name << "\r\nFunction " << pcount << " " << stackSize << endl;
-	for (size_t i = 0; i < Instructions.size();i++)
+	stringstream stream;
+	stream << "\r\n:" << name.substr(1) << "\r\nFunction " << pcount << " " << stackSize << endl;
+	for(size_t i = 0; i < Instructions.size(); i++)
 	{
-		stream << Instructions[i] << endl;
+		stream << *Instructions[i] << endl;
 	}
 	stream << endl;
-	return stream;
+	return stream.str();
 }
 
 void FunctionData::addSwitchCase(int caseVal, string jumpLoc) const
 {
 	assert(Instructions.size() && "Instruction stakck empty, cant add switch case");
 	Instructions.back()->addSwitchCase(caseVal, jumpLoc);
+}
+
+ostream & operator<<(ostream & stream, const FunctionData & fdata)
+{
+	stream << "\r\n:" << fdata.name.substr(1) << "\r\nFunction " << fdata.pcount << " " << fdata.stackSize << endl;
+	for(size_t i = 0; i < fdata.Instructions.size(); i++)
+	{
+		stream << *fdata.Instructions[i] << endl;
+	}
+	stream << endl;
+	return stream;
 }
