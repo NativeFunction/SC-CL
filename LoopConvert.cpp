@@ -5094,7 +5094,7 @@ public:
 		}
 
 
-		parseExpression(base, true);
+		parseExpression(base, true, true);
 		parseExpression(index, false, true);
 
 
