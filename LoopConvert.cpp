@@ -1,4 +1,4 @@
-#include <sstream>
+﻿#include <sstream>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -335,6 +335,10 @@ bool CheckExprForSizeOf(const Expr* expr, int *outSize)
 		}
 	}
 	return false;
+}
+inline bool doesInt64FitIntoInt32(int64_t value)
+{
+	return (int32_t)value != value;
 }
 #pragma endregion
 
@@ -1041,7 +1045,7 @@ public:
 					}
 				}
 			}
-			for(int j = 0; j < functionsNew.size(); j++)
+			for(uint32_t j = 0; j < functionsNew.size(); j++)
 			{
 				if(functionsNew[j]->Hash() == hash)
 				{
@@ -3048,8 +3052,16 @@ public:
 					}
 					else
 					{
-						out << iPush(result.Val.getInt().getSExtValue()) << endl;
-						AddInstruction(PushInt, result.Val.getInt().getSExtValue());
+						int64_t resValue = result.Val.getInt().getSExtValue();
+
+						if (doesInt64FitIntoInt32(resValue))
+						{
+							string value = to_string(resValue);
+							Warn("Integer overflow. Value: " + value + " is out of bounds of (-2,147,483,648 to 2,147,483,647). Changed value to " + to_string((int32_t)resValue), rewriter, e->getExprLoc(), e->getExprLoc().getLocWithOffset(value.length() - 1));
+
+						}
+						out << iPush((int32_t)resValue) << endl;
+						AddInstruction(PushInt, (int32_t)resValue);
 					}
 					return -1;
 				}
@@ -3275,7 +3287,7 @@ public:
 									break;
 								}
 							}
-						for(int j = 0; j < functionsNew.size(); j++)
+						for(uint32_t j = 0; j < functionsNew.size(); j++)
 							if(functionsNew[j]->Hash() == hash)
 							{
 								if(functionsNew[j]->Name() == name)
@@ -5265,7 +5277,7 @@ public:
 								}
 							}
 						}
-						for(int j = 0; j < functionsNew.size();j++)
+						for(uint32_t j = 0; j < functionsNew.size();j++)
 						{
 							if(functionsNew[j]->Hash() == hash)
 							{
@@ -6076,7 +6088,7 @@ public:
 		return true;
 	}
 	~MyASTConsumer() {
-		for (int i = 0; i < functionsNew.size();i++)
+		for (uint32_t i = 0; i < functionsNew.size();i++)
 		{
 			delete functionsNew[i];
 		}

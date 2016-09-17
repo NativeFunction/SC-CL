@@ -1,5 +1,7 @@
 #pragma once
 
+//calculation range is -2,147,483,648 to 2,147,483,647
+//any value above or below that will be automatically cast to a signed int
 typedef unsigned int uint;
 typedef unsigned char byte;
 typedef unsigned short ushort;
@@ -23,12 +25,15 @@ typedef union any
 	float Float;
 	bool Bool;
 	char* CharP;
+	byte* ByteP;
 	int* IntP;
 	float* FloatP;
 	short* ShortP;
 	vector3* Vector3P;
 	quaternion* QuaternionP;
-	
+	byte ByteArray[4];
+	char CharArray[4];
+	short ShortArray[2];
 } any;
 
 

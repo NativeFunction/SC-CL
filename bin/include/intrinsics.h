@@ -64,7 +64,7 @@ extern __intrinsic vector3 vector3Neg(vector3 vector);
 #pragma endregion
 
 #pragma region Unsafe_Math
-// {Unsafe Math
+//{ Unsafe_Math
 // These perform the operation on the item(or vector) on top of the stack
 // This can lead to dangerous behaviour if you arent sure what is currently on the stack
 extern __intrinsic __asm_unsafe int add(int value);
@@ -87,12 +87,12 @@ extern __intrinsic __asm_unsafe vector3 vneg();
 
 #pragma region Variables
 //{ Variables
-extern __intrinsic __asm_unsafe void setframe(int index);
-extern __intrinsic int getframe(int index);
-extern __intrinsic int getframep(int index);
-extern __intrinsic void setglobal(int index, int value);
-extern __intrinsic int getglobal(int index);
-extern __intrinsic int getglobalp(int index);
+extern __intrinsic __asm_unsafe void setframe(const uint index);
+extern __intrinsic int getframe(const uint index);
+extern __intrinsic int getframep(const uint index);
+extern __intrinsic void setglobal(const uint index, int value);
+extern __intrinsic int getglobal(const uint index);
+extern __intrinsic int getglobalp(const uint index);
 //}
 #pragma endregion
 
