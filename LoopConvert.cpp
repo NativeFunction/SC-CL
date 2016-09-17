@@ -339,6 +339,10 @@ bool CheckExprForSizeOf(const Expr* expr, int *outSize)
 	}
 	return false;
 }
+inline bool doesInt64FitIntoInt32(int64_t value)
+{
+	return (int32_t)value != value;
+}
 #pragma endregion
 
 #pragma region Global_CXX_Functions
