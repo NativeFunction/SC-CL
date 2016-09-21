@@ -3156,7 +3156,7 @@ public:
 
 						parseExpression(expr->getBase(), true);
 						out << "call " << getNameForFunc(method) << " //NumArgs: " << call->getNumArgs() + 1 << " " << endl;
-						AddInstruction(Call, getNameForFunc(method));
+						AddInstruction(Call, getNameForFunc(method).substr(1));
 					}
 				}
 				else {
@@ -3304,7 +3304,7 @@ public:
 							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
 
 						out << "Call " << name << " //NumArgs: " << call->getNumArgs() << " " << endl;
-						AddInstruction(Call, name);
+						AddInstruction(Call, name.substr(1));
 					}
 
 				}
@@ -3975,14 +3975,14 @@ public:
 					out << "dup" << endl;
 					AddInstruction(Dup);
 					out << "call " << expr->getBestDynamicClassType()->getNameAsString() << "::VTableInit" << endl;//printVTableInit(expr->getBestDynamicClassType(), lastDecl);
-					AddInstruction(Call, expr->getBestDynamicClassType()->getNameAsString() + "::VTableInit");
+					AddInstruction(Call, expr->getBestDynamicClassType()->getNameAsString().substr(1) + "::VTableInit");
 				}
 				//  out << " //End_VtableInit\n" << endl;
 			}
 			if (expr->getConstructor()->hasBody())
 			{
 				out << "call " << getNameForFunc(expr->getConstructor()) << " // ctor" << endl;
-				AddInstruction(Call, getNameForFunc(expr->getConstructor()));
+				AddInstruction(Call, getNameForFunc(expr->getConstructor()).substr(1));
 			}
 		}
 		else if (isa<BinaryOperator>(e)) {
