@@ -2609,15 +2609,23 @@ public:
 					LocalVariables.addLevel();
 					parseStatement(Then, breakLoc, continueLoc, returnLoc);
 					LocalVariables.removeLevel();
+					bool ifEndRet = CurrentFunction->endsWithReturn();
 					if (Else)//still parse the else code just incase there are goto labels in there
 					{
-						out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
-						AddInstruction(Jump, IfLocEnd);
+						if (!ifEndRet)
+						{
+							out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
+							AddInstruction(Jump, IfLocEnd);
+						}
 						LocalVariables.addLevel();
 						parseStatement(Else, breakLoc, continueLoc, returnLoc);
 						LocalVariables.removeLevel();
-						out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
-						AddInstruction(Label, IfLocEnd);
+						if (!ifEndRet)
+						{
+							out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
+							AddInstruction(Label, IfLocEnd);
+						}
+						
 					}
 				}
 				else
@@ -2628,18 +2636,26 @@ public:
 					LocalVariables.addLevel();
 					parseStatement(Then, breakLoc, continueLoc, returnLoc);
 					LocalVariables.removeLevel();
+					bool ifEndRet = CurrentFunction->endsWithReturn();
 					if (Else)
 					{
-						out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
-						AddInstruction(Jump, IfLocEnd);
+						if (!ifEndRet)
+						{
+							out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
+							AddInstruction(Jump, IfLocEnd);
+						}
+						
 						out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
 						AddInstruction(Label, Else->getLocStart().getRawEncoding());
 						LocalVariables.addLevel();
 						parseStatement(Else, breakLoc, continueLoc, returnLoc);
 						LocalVariables.removeLevel();
 					}
-					out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
-					AddInstruction(Label, IfLocEnd);
+					if(!ifEndRet || !Else)
+					{
+						out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
+						AddInstruction(Label, IfLocEnd);
+					}
 				}
 			}
 			else
@@ -3021,6 +3037,7 @@ public:
 			LabelStmt *labelStmt = cast<LabelStmt>(s);
 			out << ":" << labelStmt->getName() << endl;
 			AddInstruction(Label, string(labelStmt->getName()));
+			parseStatement(labelStmt->getSubStmt(), breakLoc, continueLoc, returnLoc);
 		}
 		else if (isa<GCCAsmStmt>(s))
 		{
