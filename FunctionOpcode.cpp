@@ -261,7 +261,7 @@ string Opcode::toString() const
 			current = "PushF_7";
 		}
 		else{
-			current = "Push " + to_string(value);
+			current = "PushF " + to_string(value);
 		}
 		break;
 	}
