@@ -44,6 +44,8 @@ vector<FData> functions;
 
 vector<FunctionData*> functionsNew;
 FunctionData* CurrentFunction;
+FunctionData* MainFunction = NULL;
+vector<FunctionData*> staticReferences;
 struct InlineData { uint32_t hash; string name; };
 vector<InlineData> InlineItems;
 #pragma endregion
@@ -1054,7 +1056,7 @@ public:
 				{
 					if(functionsNew[j]->Name() == name)
 					{
-						functionsNew[j]->setUsed();
+						CurrentFunction->addUsedFunc(functionsNew[j]);
 						break;
 					}
 				}
@@ -3306,7 +3308,7 @@ public:
 							{
 								if(functionsNew[j]->Name() == name)
 								{
-									functionsNew[j]->setUsed();
+									CurrentFunction->addUsedFunc(functionsNew[j]);
 									break;
 								}
 							}
@@ -5234,7 +5236,8 @@ public:
 			if (f->isMain())
 			{
 				functions.back().isused = true;
-				functionsNew.back()->setUsed();
+				assert(!MainFunction && "Two main functions found");
+				MainFunction = CurrentFunction;
 				QualType type = f->getReturnType();
 				MainRets = Utils::Math::DivInt(getSizeOfQualType(&type), 4);
 			}
@@ -5749,7 +5752,7 @@ public:
 							{
 								if(functionsNew[j]->Name() == name)
 								{
-									functionsNew[j]->setUsed();
+									staticReferences.push_back(functionsNew[j]);
 									break;
 								}
 							}
@@ -6564,7 +6567,11 @@ public:
 			return;
 		}
 		stringstream header;
-
+		MainFunction->setUsed();
+		for (auto staticref : staticReferences)
+		{
+			staticref->setUsed();
+		}
 		header << "SetStaticsCount " << staticInc << "\r\n";
 		for (map<uint32_t, string>::iterator iterator = GlobalsVisitor.DefaultStaticValues.begin(); iterator != GlobalsVisitor.DefaultStaticValues.end(); iterator++)
 			header << "SetDefaultStatic " << iterator->first << " " << iterator->second << "\r\n";

@@ -422,6 +422,19 @@ void FunctionData::AddOpcodeWithComment(Opcode * op, string comment)
 	Instructions.push_back(op);
 }
 
+void FunctionData::setUsed()
+{
+	if (!used)
+	{
+		used = true;
+		for(auto fdata : usedFuncs)
+		{
+			fdata->setUsed();
+		}
+	}
+	
+}
+
 string FunctionData::toString() const
 {
 	stringstream stream;
@@ -438,6 +451,14 @@ void FunctionData::addSwitchCase(int caseVal, string jumpLoc) const
 {
 	assert(Instructions.size() && "Instruction stakck empty, cant add switch case");
 	Instructions.back()->addSwitchCase(caseVal, jumpLoc);
+}
+
+void FunctionData::addUsedFunc(FunctionData * func)
+{
+	if(find(usedFuncs.begin(), usedFuncs.end(), func) == usedFuncs.end())
+	{
+		usedFuncs.push_back(func);
+	}
 }
 
 ostream & operator<<(ostream & stream, const FunctionData & fdata)

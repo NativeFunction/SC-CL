@@ -557,8 +557,14 @@ public:
 	}
 	static Opcode *LabelLoc(string loc)
 	{
-		Opcode* op = new Opcode(OK_Label);
+		Opcode* op = new Opcode(OK_LabelLoc);
 		op->setString(loc);
+		return op;
+	}
+	static Opcode *LabelLoc(unsigned int rawEncoding)
+	{
+		Opcode* op = new Opcode(OK_LabelLoc);
+		op->setString(to_string(rawEncoding));
 		return op;
 	}
 #pragma endregion
@@ -573,8 +579,7 @@ private:
 	uint16_t pcount;
 	uint16_t stackSize = 2;
 	bool used = false;
-	struct usedfunc{ string name; uint32_t hash; };
-	vector<usedfunc> usedFunctions;
+	vector<FunctionData *> usedFuncs;
 
 public:
 	FunctionData(string name, int pcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount)
@@ -594,9 +599,10 @@ public:
 	}
 	uint32_t Hash()const{ return hash; }
 	string Name()const{ return name; }
-	void setUsed(bool isUsed = true){ used = isUsed; }
+	void setUsed();
 	bool IsUsed()const{ return used; }
 	friend std::ostream& operator << (std::ostream& stream, const FunctionData& fdata);
 	string toString() const;
 	void addSwitchCase(int caseVal, string jumpLoc)const;
+	void addUsedFunc(FunctionData *func);
 };
