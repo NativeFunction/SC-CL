@@ -46,6 +46,9 @@ extern __intrinsic __asm_unsafe void pushStruct(void* structure);
 extern __intrinsic __asm_unsafe void popStruct(void* structure);
 extern __intrinsic __asm_unsafe void rev(const int numItems);
 extern __intrinsic __asm_unsafe void exchange(const int structStackSize);
+extern __intrinsic __asm_unsafe int popInt();
+extern __intrinsic __asm_unsafe float popFloat();
+extern __intrinsic __asm_unsafe vector3 popVector3();
 //}
 #pragma endregion
 

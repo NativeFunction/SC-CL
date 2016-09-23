@@ -1992,6 +1992,38 @@ public:
 				Throw("pushVector3 must have signature \"extern __intrinsic void pushVector3(vector3 vec3Value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
+			case JoaatCasedConst("popFloat"):;
+			{
+				ChkHashCol("popFloat");
+				if(argCount == 0 && callee->getReturnType()->isRealFloatingType())
+				{
+					return true;
+				}
+				Throw("popFloat must have signature \"extern __intrinsic float pushFloat();\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			case JoaatCasedConst("popInt"):;
+			{
+				ChkHashCol("popInt");
+				if(argCount == 0 && callee->getReturnType()->isIntegerType())
+				{
+					return true;
+				}
+				Throw("popInt must have signature \"extern __intrinsic int pushInt();\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			case JoaatCasedConst("popVector3"):
+			{
+				ChkHashCol("popVector3");
+
+				if(argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
+				{
+					return true;
+				}
+				Throw("popVector3 must have signature \"extern __intrinsic vector3 popVector3();\"", rewriter, callee->getSourceRange());
+				return false;
+			}
+			break;
 			case JoaatCasedConst("pushStruct"):
 			{
 				ChkHashCol("pushStruct");
