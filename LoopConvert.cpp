@@ -737,27 +737,27 @@ public:
 						switch (bCond->getOpcode())
 						{
 							case BO_EQ:
-							out << "JumpEQ @" << location;
+								out << "JumpEQ @" << location << endl;
 							AddInstruction(JumpEQ, location);
 							return;
 							case BO_NE:
-							out << "JumpNE @" << location;
+							out << "JumpNE @" << location << endl;
 							AddInstruction(JumpNE, location);
 							return;
 							case BO_GT:
-							out << "JumpGT @" << location;
+							out << "JumpGT @" << location << endl;
 							AddInstruction(JumpGT, location);
 							return;
 							case BO_GE:
-							out << "JumpGE @" << location;
+							out << "JumpGE @" << location << endl;
 							AddInstruction(JumpGE, location);
 							return;
 							case BO_LT:
-							out << "JumpLT @" << location;
+							out << "JumpLT @" << location << endl;
 							AddInstruction(JumpLT, location);
 							return;
 							case BO_LE:
-							out << "JumpLE @" << location;
+							out << "JumpLE @" << location << endl;
 							AddInstruction(JumpLE, location);
 							return;
 							default:
@@ -769,27 +769,27 @@ public:
 						switch (bCond->getOpcode())
 						{
 							case BO_EQ:
-							out << "JumpNE @" << location;
+							out << "JumpNE @" << location << endl;
 							AddInstruction(JumpNE, location);
 							return;
 							case BO_NE:
-							out << "JumpEQ @" << location;
+							out << "JumpEQ @" << location << endl;
 							AddInstruction(JumpEQ, location);
 							return;
 							case BO_GT:
-							out << "JumpLE @" << location;
+							out << "JumpLE @" << location << endl;
 							AddInstruction(JumpLE, location);
 							return;
 							case BO_GE:
-							out << "JumpLT @" << location;
+							out << "JumpLT @" << location << endl;
 							AddInstruction(JumpLT, location);
 							return;
 							case BO_LT:
-							out << "JumpGE @" << location;
+							out << "JumpGE @" << location << endl;
 							AddInstruction(JumpGE, location);
 							return;
 							case BO_LE:
-							out << "JumpGT @" << location;
+							out << "JumpGT @" << location << endl;
 							AddInstruction(JumpGT, location);
 							return;
 							default:
@@ -806,11 +806,11 @@ public:
 		if (invert)
 		{
 			out << "not //Invert the result\r\n";
-			out << "JumpFalse @" << location;
+			out << "JumpFalse @" << location << endl;
 			AddInstruction(JumpTrue, location);
 		}else
 		{
-			out << "JumpFalse @" << location;
+			out << "JumpFalse @" << location << endl;
 			AddInstruction(JumpFalse, location);
 		}
 		
@@ -2648,9 +2648,12 @@ public:
 				LocalVariables.addLevel();
 				parseStatement(Then, breakLoc, continueLoc, returnLoc);
 				LocalVariables.removeLevel();
-
-				out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
-				AddInstruction(Jump, IfLocEnd);
+				bool ifEndRet = CurrentFunction->endsWithReturn();
+				if(!ifEndRet)//if the last instruction is a return, no point adding a jump
+				{
+					out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
+					AddInstruction(Jump, IfLocEnd);
+				}
 
 				if (Else) {
 					out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
@@ -2665,8 +2668,12 @@ public:
 					out << "//" << Then->getLocStart().getRawEncoding() << " " << Then->getLocEnd().getRawEncoding() << endl;
 				}
 
-				out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
-				AddInstruction(Label, IfLocEnd);
+				if (!ifEndRet || !Else)
+				{
+					out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
+					AddInstruction(Label, IfLocEnd);
+				}
+				
 			}
 		}
 		else if (isa<WhileStmt>(s)) {
@@ -5270,7 +5277,8 @@ public:
 				}
 
 				out << "Return " << paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0) << " 0\r\n";
-				AddInstruction(Return, paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), 0);
+				if(!CurrentFunction->endsWithReturn())
+					AddInstruction(Return, paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), 0);
 			}
 			else if (f->hasImplicitReturnZero())
 			{
