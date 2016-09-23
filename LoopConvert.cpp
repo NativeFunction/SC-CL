@@ -2609,8 +2609,8 @@ public:
 					LocalVariables.addLevel();
 					parseStatement(Then, breakLoc, continueLoc, returnLoc);
 					LocalVariables.removeLevel();
-					bool ifEndRet = CurrentFunction->endsWithReturn();
-					if (Else)//still parse the else code just incase there are goto labels in there
+					bool ifEndRet = CurrentFunction->endsWithReturn() || CurrentFunction->endsWithInlineReturn(returnLoc);
+					if (Else)//still parse the else code just incase there are goto labeils in there
 					{
 						if (!ifEndRet)
 						{
@@ -2636,7 +2636,7 @@ public:
 					LocalVariables.addLevel();
 					parseStatement(Then, breakLoc, continueLoc, returnLoc);
 					LocalVariables.removeLevel();
-					bool ifEndRet = CurrentFunction->endsWithReturn();
+					bool ifEndRet = CurrentFunction->endsWithReturn() || CurrentFunction->endsWithInlineReturn(returnLoc);
 					if (Else)
 					{
 						if (!ifEndRet)
@@ -2664,7 +2664,7 @@ public:
 				LocalVariables.addLevel();
 				parseStatement(Then, breakLoc, continueLoc, returnLoc);
 				LocalVariables.removeLevel();
-				bool ifEndRet = CurrentFunction->endsWithReturn();
+				bool ifEndRet = CurrentFunction->endsWithReturn() || CurrentFunction->endsWithInlineReturn(returnLoc);
 				if(!ifEndRet)//if the last instruction is a return, no point adding a jump
 				{
 					out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
@@ -3302,6 +3302,11 @@ public:
 									else
 									{
 										parseStatement(body, -1, -1, e->getLocEnd().getRawEncoding());
+										if (CurrentFunction->endsWithInlineReturn(e->getLocEnd().getRawEncoding()))
+										{
+											CurrentFunction->RemoveLast();
+											//remove the last jump, but keep the label, just incase other places in the function have returns
+										}
 										out << ":" << e->getLocEnd().getRawEncoding() << endl;
 										AddInstruction(Label, e->getLocEnd().getRawEncoding());
 									}

@@ -422,6 +422,11 @@ void FunctionData::AddOpcodeWithComment(Opcode * op, string comment)
 	Instructions.push_back(op);
 }
 
+bool FunctionData::endsWithInlineReturn(unsigned position) const
+{
+	return Instructions.size() && Instructions.back()->GetKind() == OK_Jump && Instructions.back()->getString() == to_string(position);
+}
+
 void FunctionData::setUsed()
 {
 	if (!used)

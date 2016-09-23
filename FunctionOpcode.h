@@ -589,7 +589,8 @@ public:
 	void AddOpcode(Opcode *op);
 	void AddOpcodeWithComment(Opcode *op, string comment);
 	bool endsWithReturn() const{ return Instructions.size() && Instructions.back()->GetKind() == OK_Return; }//this will get confused by if else having a return, but it will just return false when there actually is a return so no harm
-
+	bool endsWithInlineReturn(unsigned position) const;
+	void RemoveLast(){ Instructions.pop_back(); }
 	uint16_t getPCount()const { return pcount; }
 	uint16_t getStackSize()const { return stackSize; }
 	void setPCount(uint16_t newSize){
