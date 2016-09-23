@@ -9,35 +9,39 @@ struct SwitchCaseIns
 	SwitchCaseIns* next;
 };
 
-void Opcode::setString(string str, int offset)
+void Opcode::setULong(uint64_t value)
 {
-	assert(offset >= 0 && offset <= 4 && "String offset must be between 0 and 4");
+	*(uint64_t*)storage = value;
+}
+
+void Opcode::setString(string str)
+{
 	char* temp = new char[str.length() + 1];
 	memcpy(temp, str.c_str(), str.length() + 1);
-	*(char**)(storage + offset) = temp;
+	*(char**)storage = temp;
 }
 
 void Opcode::setInt(int value, int offset)
 {
-	assert(offset >= 0 && offset <= 4 && "int offset must be between 0 and 4");
+	assert(offset >= 0 && offset <= 8 && "int offset must be between 0 and 8");
 	*(int*)(storage + offset) = value;
 }
 
 void Opcode::setFloat(float value, int offset)
 {
-	assert(offset >= 0 && offset <= 4 && "float offset must be between 0 and 4");
+	assert(offset >= 0 && offset <= 8 && "float offset must be between 0 and 8");
 	*(float*)(storage + offset) = value;
 }
 
 void Opcode::setShort(int16_t value, int offset)
 {
-	assert(offset >= 0 && offset <= 6 && "short offset must be between 0 and 6");
+	assert(offset >= 0 && offset <= 10 && "short offset must be between 0 and 10");
 	*(int16_t*)(storage + offset) = value;
 }
 
 void Opcode::setUShort(uint16_t value, int offset)
 {
-	assert(offset >= 0 && offset <= 6 && "ushort offset must be between 0 and 6");
+	assert(offset >= 0 && offset <= 10 && "ushort offset must be between 0 and 10");
 	*(uint16_t*)(storage + offset) = value;
 }
 
@@ -49,7 +53,6 @@ Opcode::~Opcode()
 	}
 	switch(opcodeKind)
 	{
-	case OK_Native:
 	case OK_Call:
 	case OK_PushString:
 	case OK_Jump:
@@ -113,7 +116,6 @@ string Opcode::getString() const
 {
 	switch(opcodeKind)
 	{
-	case OK_Native:
 	case OK_Call:
 	case OK_PushString:
 	case OK_Jump:
@@ -136,26 +138,31 @@ string Opcode::getString() const
 
 int Opcode::getInt(int offset) const
 {
-	assert(offset >= 0 && offset <= 4 && "int offset must be between 0 and 4");
+	assert(offset >= 0 && offset <= 8 && "int offset must be between 0 and 8");
 	return *(int*)(storage + offset);
 }
 
 float Opcode::getFloat(int offset) const
 {
-	assert(offset >= 0 && offset <= 4 && "float offset must be between 0 and 4");
+	assert(offset >= 0 && offset <= 8 && "float offset must be between 0 and 8");
 	return *(float*)(storage + offset);
 }
 
 int16_t Opcode::getShort(int offset) const
 {
-	assert(offset >= 0 && offset <= 6 && "short offset must be between 0 and 6");
+	assert(offset >= 0 && offset <= 10 && "short offset must be between 0 and 10");
 	return *(int16_t*)(storage + offset);
 }
 
 uint16_t Opcode::getUShort(int offset) const
 {
-	assert(offset >= 0 && offset <= 6 && "short offset must be between 0 and 6");
+	assert(offset >= 0 && offset <= 10 && "short offset must be between 0 and 10");
 	return *(uint16_t*)(storage + offset);
+}
+
+uint64_t Opcode::getULong() const
+{
+	return *(uint64_t*)storage;
 }
 
 string Opcode::toString() const
@@ -261,8 +268,12 @@ string Opcode::toString() const
 	case OK_Dup: current = "Dup"; break;
 	case OK_Drop: current = "Drop"; break;
 	case OK_Native:
-		current = "CallNative " + getString() + " " + to_string(getUShort(4)) + " " + to_string(getUShort(6));
+	{
+		char buff[17];
+		sprintf(buff, "%llX", getULong());
+		current = "CallNative 0x" + string(buff) + " " + to_string(getUShort(8)) + " " + to_string(getUShort(10));
 		break;
+	}
 /*	case OK_Func:
 		current = ":" + getString() + "\r\nFunction " + to_string(getUShort(4)) + " " + to_string(getUShort(6));
 		break;*/

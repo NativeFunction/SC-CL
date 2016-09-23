@@ -100,10 +100,11 @@ enum OpcodeKind{
 class Opcode
 {
 	OpcodeKind opcodeKind;
-	char storage[8] = {0,0,0,0,0,0,0,0};
+	char storage[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
 	char *_comment = NULL;
 	Opcode(OpcodeKind kind) : opcodeKind(kind){ }
-	void setString(string str, int offset);
+	void setULong(uint64_t value);//can only really be at offset 0
+	void setString(string str);
 	void setInt(int value, int offset);
 	void setFloat(float value, int offset);
 	void setShort(int16_t value, int offset);
@@ -175,6 +176,7 @@ public:
 	float getFloat(int offset) const;
 	int16_t getShort(int offset) const;
 	uint16_t getUShort(int offset) const;
+	uint64_t getULong() const;
 	
 
 	string toString() const;
@@ -243,9 +245,23 @@ public:
 	static Opcode *Native(string name, uint16_t pCount, uint16_t rCount)
 	{
 		Opcode* op = new Opcode(OK_Native);
-		op->setString(name, 0);
-		op->setUShort(pCount, 4);
-		op->setUShort(rCount, 6);
+		if (!strnicmp(name.c_str(), "unk_0x", 6))
+		{
+			op->setULong(strtoull(name.c_str() + 6, NULL, 16));
+		}else
+		{
+			op->setULong(Utils::Hashing::Joaat((char*)name.c_str()));
+		}
+		op->setUShort(pCount, 8);
+		op->setUShort(rCount, 10);
+		return op;
+	}
+	static Opcode *Native(uint64_t hash, uint16_t pCount, uint16_t rCount)
+	{
+		Opcode* op = new Opcode(OK_Native);
+		op->setULong(hash);
+		op->setUShort(pCount, 8);
+		op->setUShort(rCount, 10);
 		return op;
 	}
 /*	static Opcode *Function(string name, uint16_t pCount, uint16_t frameSize)
@@ -381,116 +397,116 @@ public:
 	static Opcode *Call(string fName)
 	{
 		Opcode* op = new Opcode(OK_Call);
-		op->setString(fName, 0);
+		op->setString(fName);
 		return op;
 	}
 #pragma region Jumps
 	static Opcode *Jump(string loc)
 	{
 		Opcode* op = new Opcode(OK_Jump);
-		op->setString(loc, 0);
+		op->setString(loc);
 		return op;
 	}
 	static Opcode *JumpTrue(string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpTrue);
-		op->setString(loc, 0);
+		op->setString(loc);
 		return op;
 	}
 	static Opcode *JumpFalse(string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpFalse);
-		op->setString(loc, 0);
+		op->setString(loc);
 		return op;
 	}
 	static Opcode *JumpEQ(string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpEQ);
-		op->setString(loc, 0);
+		op->setString(loc);
 		return op;
 	}
 	static Opcode *JumpNE(string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpNE);
-		op->setString(loc, 0);
+		op->setString(loc);
 		return op;
 	}
 	static Opcode *JumpGT(string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpGT);
-		op->setString(loc, 0);
+		op->setString(loc);
 		return op;
 	}
 	static Opcode *JumpGE(string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpGE);
-		op->setString(loc, 0);
+		op->setString(loc);
 		return op;
 	}
 	static Opcode *JumpLT(string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpLT);
-		op->setString(loc, 0);
+		op->setString(loc);
 		return op;
 	}
 	static Opcode *JumpLE(string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpLE);
-		op->setString(loc, 0);
+		op->setString(loc);
 		return op;
 	}
 	static Opcode *Jump(unsigned int rawEncoding)
 	{
 		Opcode* op = new Opcode(OK_Jump);
-		op->setString(to_string(rawEncoding), 0);
+		op->setString(to_string(rawEncoding));
 		return op;
 	}
 	static Opcode *JumpTrue(unsigned int rawEncoding)
 	{
 		Opcode* op = new Opcode(OK_JumpTrue);
-		op->setString(to_string(rawEncoding), 0);
+		op->setString(to_string(rawEncoding));
 		return op;
 	}
 	static Opcode *JumpFalse(unsigned int rawEncoding)
 	{
 		Opcode* op = new Opcode(OK_JumpFalse);
-		op->setString(to_string(rawEncoding), 0);
+		op->setString(to_string(rawEncoding));
 		return op;
 	}
 	static Opcode *JumpEQ(unsigned int rawEncoding)
 	{
 		Opcode* op = new Opcode(OK_JumpEQ);
-		op->setString(to_string(rawEncoding), 0);
+		op->setString(to_string(rawEncoding));
 		return op;
 	}
 	static Opcode *JumpNE(unsigned int rawEncoding)
 	{
 		Opcode* op = new Opcode(OK_JumpNE);
-		op->setString(to_string(rawEncoding), 0);
+		op->setString(to_string(rawEncoding));
 		return op;
 	}
 	static Opcode *JumpGT(unsigned int rawEncoding)
 	{
 		Opcode* op = new Opcode(OK_JumpGT);
-		op->setString(to_string(rawEncoding), 0);
+		op->setString(to_string(rawEncoding));
 		return op;
 	}
 	static Opcode *JumpGE(unsigned int rawEncoding)
 	{
 		Opcode* op = new Opcode(OK_JumpGE);
-		op->setString(to_string(rawEncoding), 0);
+		op->setString(to_string(rawEncoding));
 		return op;
 	}
 	static Opcode *JumpLT(unsigned int rawEncoding)
 	{
 		Opcode* op = new Opcode(OK_JumpLT);
-		op->setString(to_string(rawEncoding), 0);
+		op->setString(to_string(rawEncoding));
 		return op;
 	}
 	static Opcode *JumpLE(unsigned int rawEncoding)
 	{
 		Opcode* op = new Opcode(OK_JumpLE);
-		op->setString(to_string(rawEncoding), 0);
+		op->setString(to_string(rawEncoding));
 		return op;
 	}
 #pragma endregion
@@ -498,7 +514,7 @@ public:
 	static Opcode *PushString(string str)
 	{
 		Opcode* op = new Opcode(OK_PushString);
-		op->setString(str, 0);
+		op->setString(str);
 		return op;
 	}
 	static Opcode *StrCopy(uint16_t size)
@@ -530,19 +546,19 @@ public:
 	static Opcode *Label(string loc)
 	{
 		Opcode* op = new Opcode(OK_Label);
-		op->setString(loc, 0);
+		op->setString(loc);
 		return op;
 	}
 	static Opcode *Label(unsigned int rawEncoding)
 	{
 		Opcode* op = new Opcode(OK_Label);
-		op->setString(to_string(rawEncoding), 0);
+		op->setString(to_string(rawEncoding));
 		return op;
 	}
 	static Opcode *LabelLoc(string loc)
 	{
 		Opcode* op = new Opcode(OK_Label);
-		op->setString(loc, 0);
+		op->setString(loc);
 		return op;
 	}
 #pragma endregion
@@ -557,6 +573,8 @@ private:
 	uint16_t pcount;
 	uint16_t stackSize = 2;
 	bool used = false;
+	struct usedfunc{ string name; uint32_t hash; };
+	vector<usedfunc> usedFunctions;
 
 public:
 	FunctionData(string name, int pcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount)

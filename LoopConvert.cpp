@@ -3171,16 +3171,27 @@ public:
 					parseExpression(argArray[i], false, true);
 				if (call->getDirectCallee() && call->getDirectCallee()->hasAttr<NativeFuncAttr>())
 				{
+					NativeFuncAttr *attr = call->getDirectCallee()->getAttr<NativeFuncAttr>();
+
 					if (call->getDirectCallee()->getStorageClass() != SC_Extern)
 					{
 						Throw("Natives should be defined with the 'extern' keyword", rewriter, call->getDirectCallee()->getLocation());
 					}
 					const QualType type = call->getDirectCallee()->getReturnType();
 					out << "CallNative " << (parseCast(cast<const CastExpr>(callee)).c_str() + 1) << " " << call->getNumArgs() << " " << getSizeFromBytes(getSizeOfQualType(&type)) << endl;
-					AddInstruction(Native, parseCast(cast<const CastExpr>(callee)).substr(1), call->getNumArgs(), getSizeFromBytes(getSizeOfType(type.getTypePtr())));
+					if (attr->getX64HiDwordHash() || attr->getHash())
+					{
+						//clang attribute arguments cannot be 64bits wide, so using 2 32 bit args can manually joining them is the nicest way to support pc
+						//when using 32 bit(xbox/ps3) the hi dword would be 0 so can be neglected
+						AddInstruction(Native, ((uint64_t)attr->getX64HiDwordHash() << 32) | attr->getHash(), call->getNumArgs(), getSizeFromBytes(getSizeOfType(type.getTypePtr())));
+					}else
+					{
+						AddInstruction(Native, parseCast(cast<const CastExpr>(callee)).substr(1), call->getNumArgs(), getSizeFromBytes(getSizeOfType(type.getTypePtr())));
+					}
+					
 				}
-				else if (call->getDirectCallee() && !call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
-					Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", rewriter, call->getExprLoc());
+				//else if (call->getDirectCallee() && !call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
+				//	Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", rewriter, call->getExprLoc());
 				else if (isa<PointerType>(callee->getType()) && !call->getDirectCallee())
 				{
 					parseExpression(call->getCallee(), false, true);
@@ -3256,8 +3267,7 @@ public:
 										AddInstruction(FromStack);
 									}
 									if (isRet) {
-										if (Expr* retval = cast<ReturnStmt>(subBody)->getRetValue())
-											parseExpression(retval, false, true);
+										parseExpression(cast<ReturnStmt>(subBody)->getRetValue(), false, true);
 									}
 									else if (isExpr)
 									{
@@ -5147,8 +5157,41 @@ public:
 		// Only function definitions (with bodies), not declarations.
 		//int funcNum = 0;
 		if (f->hasBody()) {
+			if (f->hasAttr<NativeFuncAttr>())
+			{
+				Throw("Native function attribute cannot be used on functions which have a body declared", rewriter, f->getAttr<NativeFuncAttr>()->getRange());
+			}else if (f->hasAttr<IntrinsicFuncAttr>())
+			{
+				Throw("Intrinsic function attribute cannot be used on functions which have a body declared", rewriter, f->getAttr<IntrinsicFuncAttr>()->getRange());
+			}
 			out.seekg(0, ios::end);
-			functions.push_back({ Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str()), getNameForFunc(f), false, out.tellg() });
+			bool hasproto = !f->isFirstDecl();
+			if (hasproto)
+			{
+				uint32_t hash = Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str());
+				size_t i;
+				for (i = 0; i < functions.size();i++)
+				{
+					if (functions[i].hash == hash)
+					{
+						if (functions[i].name == getNameForFunc(f))
+						{
+							bool used = functions[i].isused;
+							functions.erase(functions.begin() + i);
+							functions.push_back({ Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str()) , getNameForFunc(f), used, out.tellg() });
+							break;
+						}
+					}
+				}
+				if (i == functions.size())
+				{
+					Throw("Couldnt find function prototype for '" + f->getNameAsString() + "'", rewriter, f->getSourceRange());
+				}
+			}else
+			{
+				functions.push_back({ Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str()) , getNameForFunc(f), false, out.tellg() });
+			}
+			
 			
 
 			if (isa<CXXConstructorDecl>(f))
@@ -5159,8 +5202,31 @@ public:
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i<f->getNumParams(); i++)
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-			functionsNew.push_back(new FunctionData(getNameForFunc(f), (paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0))));
-			CurrentFunction = functionsNew.back();
+			if (hasproto)
+			{
+				uint32_t hash = Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str());
+				size_t i;
+				for(i = 0; i < functionsNew.size();i++)
+				{
+					if (functionsNew[i]->Hash() == hash)
+					{
+						if (functionsNew[i]->Name() == getNameForFunc(f))
+						{
+							CurrentFunction = functionsNew[i];
+							break;
+						}
+					}
+				}
+				if(i == functions.size())
+				{
+					Throw("Couldnt find function prototype for '" + f->getNameAsString() + "'", rewriter, f->getSourceRange());
+				}
+			}
+			else
+			{
+				functionsNew.push_back(new FunctionData(getNameForFunc(f), (paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0))));
+				CurrentFunction = functionsNew.back();
+			}
 			out << endl << "//Loc: " << f->getBody()->getLocStart().getRawEncoding() << endl;
 			string name = dumpName(cast<NamedDecl>(f));
 			out << ":" << name << endl;//no need for addinstruction, FunctionData handles this
@@ -5235,6 +5301,20 @@ public:
 			//out.str(string(""));
 			//out.clear();
 			CurrentFunction = NULL;
+		}else
+		{
+			string name = f->getNameAsString();
+			if (f->getStorageClass() == SC_None)
+			{
+				//prototype detected, add it to the functions list(s), 
+				out.seekg(0, ios::end);
+				functions.push_back({ Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str()), getNameForFunc(f), false, out.tellg() });
+				
+				int32_t paramSize = 0;
+				for(uint32_t i = 0; i<f->getNumParams(); i++)
+					paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
+				functionsNew.push_back(new FunctionData(getNameForFunc(f), (paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0))));
+			}
 		}
 
 		return true;
