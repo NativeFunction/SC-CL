@@ -11,7 +11,7 @@
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
 #define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4)
-#define STATIC_DEBUG 0
+#define STATIC_PADDING_DEBUG 0
 #define AddInstruction(opName, ...) CurrentFunction->AddOpcode(Opcode::##opName(__VA_ARGS__))
 #define AddInstructionComment(opName, comment, ...) CurrentFunction->AddOpcodeWithComment(Opcode::##opName(__VA_ARGS__), comment)
 #define AddFloatingOpCheck(isFlt, opEnum, opEnumFlt) CurrentFunction->AddOpcode(Opcode::AddSimpleOp((isFlt) ? opEnumFlt : opEnum))
@@ -449,206 +449,210 @@ uint32_t getNumVirtMethods(const CXXRecordDecl *classDecl) {
 }
 #pragma endregion
 
+
+#pragma region Global_Opcode_Functions
+#pragma region Opcodes_Push
+string iPush(int64_t val) {
+	if (val < -1)
+		return "Push " + to_string(val);
+	else if (val >= -1 && val <= 7)
+		return "Push_" + to_string(val);
+	else if ((val & 0xFF) == val)
+		return "PushB " + to_string(val);
+	else if (val > -32768 && val < 32767)
+		return "PushS " + to_string(val);
+	else if ((val & 0xFFFFFF) == val)
+		return "PushI24 " + to_string(val);
+	else
+	{
+		return "Push " + to_string(val);
+	}
+}
+string fPush(double value)
+{
+	if (value == -1.0)
+		return "PushF_-1";
+	if (value == 0.0 || value == -0.0)//double has -ive 0 and +ive 0
+		return "PushF_0";
+	if (value == 1.0)
+		return "PushF_1";
+	if (value == 2.0)
+		return "PushF_2";
+	if (value == 3.0)
+		return "PushF_3";
+	if (value == 4.0)
+		return "PushF_4";
+	if (value == 5.0)
+		return "PushF_5";
+	if (value == 6.0)
+		return "PushF_6";
+	if (value == 7.0)
+		return "PushF_7";
+	return "PushF " + to_string(value);
+}
+string fPush(llvm::APFloat value)
+{
+	if (&value.getSemantics() == &llvm::APFloat::IEEEsingle)
+		return fPush((double)value.convertToFloat());
+	else
+		return fPush(value.convertToDouble());
+}
+double extractAPFloat(llvm::APFloat value)
+{
+	return &value.getSemantics() == &llvm::APFloat::IEEEsingle ? (double)value.convertToFloat() : value.convertToDouble();
+}
+#pragma endregion
+#pragma region Opcodes_Math
+string mult(int value)
+{
+	if (value < -32768 || value > 32767)
+		return iPush(value) + "\r\nMult";
+	else if (value > 0xFF || value < 0)
+		return "Mult2 " + to_string(value);
+	else
+		return "Mult1 " + to_string(value);
+}
+string add(int value)
+{
+	if (value == 0)
+		return "";
+	if (value < -32768 || value > 32767)
+		return iPush(value) + "\r\nAdd";
+	else if (value > 0xFF || value < 0)
+		return "Add2 " + to_string(value);
+	else
+		return "Add1 " + to_string(value);
+}
+string sub(int value)
+{
+	if (value < -32767 || value > 32768)
+		return iPush(value) + "\r\nSub";
+	else
+		return "Add2 " + to_string(-value);
+}
+string div(int value)
+{
+	return iPush(value) + "\r\nDiv";
+}
+#pragma endregion
+#pragma region Opcodes_Var
+string frameSet(int index) {
+	if ((index & 0xFF) == index) {
+		return "SetFrame1 " + to_string(index);
+	}
+	else if ((index & 0xFFFF) == index) {
+		return "SetFrame2 " + to_string(index);
+	}
+	else
+		Throw("SetFrame Index \"" + to_string(index) + "\" is out of range 0 - 65535");
+	return "null";
+}
+string frameGet(int index) {
+	if ((index & 0xFF) == index) {
+		return "GetFrame1 " + to_string(index);
+	}
+	else if ((index & 0xFFFF) == index) {
+		return "GetFrame2 " + to_string(index);
+	}
+	else
+		Throw("GetFrame Index \"" + to_string(index) + "\" is out of range 0 - 65535");
+	return "null";
+}
+string pFrame(const int index) {
+	if ((index & 0xFF) == index)
+		return "GetFrameP1 " + to_string(index);
+	else if ((index & 0xFFFF) == index)
+		return "GetFrameP2 " + to_string(index);
+	else
+		Throw("GetFrameP Index \"" + to_string(index) + "\" is out of range 0 - 65535");
+	return "null";
+}
+string setGlobal(int index) {
+	if ((index & 0xFFFF) == index)
+		return "SetGlobal2 " + to_string(index);
+	else if ((index & 0xFFFFFF) == index)
+		return "SetGlobal3 " + to_string(index);
+	else
+		Throw("SetGlobal Index \"" + to_string(index) + "\" is out of range 0 - 16777215");
+	return "null";
+}
+string getGlobal(int index) {
+	if ((index & 0xFFFF) == index)
+		return "GetGlobal2 " + to_string(index);
+	else if ((index & 0xFFFFFF) == index)
+		return "GetGlobal3 " + to_string(index);
+	else
+		Throw("GetGlobal Index \"" + to_string(index) + "\" is out of range 0 - 16777215");
+	return "null";
+}
+string getGlobalp(const int index) {
+	if ((index & 0xFFFF) == index)
+		return "GetGlobalP2 " + to_string(index);
+	else if ((index & 0xFFFFFF) == index)
+		return "GetGlobalP3 " + to_string(index);
+	else
+		Throw("GetGlobalP Index \"" + to_string(index) + "\" is out of range 0 - 16777215");
+	return "null";
+}
+string setStatic(int index) {
+	if ((index & 0xFF) == index)
+		return "SetStatic1 " + to_string(index);
+	else if ((index & 0xFFFF) == index)
+		return "SetStatic2 " + to_string(index);
+	else
+		Throw("SetStatic Index \"" + to_string(index) + "\" is out of range 0 - 65535");
+	return "null";
+}
+string getStatic(int index) {
+	if ((index & 0xFF) == index)
+		return "GetStatic1 " + to_string(index);
+	else if ((index & 0xFFFF) == index)
+		return "GetStatic2 " + to_string(index);
+	else
+		Throw("GetStatic Index \"" + to_string(index) + "\" is out of range 0 - 65535");
+	return "null";
+}
+string getStaticp(const int index) {
+	if ((index & 0xFF) == index)
+		return "GetStaticP1 " + to_string(index);
+	else if ((index & 0xFFFF) == index)
+		return "GetStaticP2 " + to_string(index);
+	else
+		Throw("GetStaticP Index \"" + to_string(index) + "\" is out of range 0 - 65535");
+	return "null";
+}
+#pragma endregion
+#pragma region Opcodes_Immediate
+string GetImm(int size)
+{
+	return add(size * 4) + "\r\npGet";
+	int aSize = size * 4;
+	if ((size & 0xFF) == size)
+		return "Add1 " + to_string(aSize) + "\r\npGet";
+	else if ((size & 0xFFFF) == size)
+		return "Add2 " + to_string(aSize) + "\r\npGet";
+	else
+		return iPush(aSize) + "\r\nAdd\r\npGet";
+}
+string SetImm(int size)
+{
+	return add(size * 4) + "\r\npSet";
+	int aSize = size * 4;
+	if ((size & 0xFF) == size)
+		return "Add1 " + to_string(aSize) + "\r\npSet";
+	else if ((size & 0xFFFF) == size)
+		return "Add2 " + to_string(aSize) + "\r\npSet";
+	else
+		return iPush(aSize) + "\r\nAdd\r\npSet";
+}
+#pragma endregion
+#pragma endregion
+
+
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
 public:
 	MyASTVisitor(Rewriter &R, ASTContext *context, string filename) : TheRewriter(R), context(context), outfile(filename) {}
 
-	#pragma region Opcodes_Var
-	string frameSet(int index) {
-		if ((index & 0xFF) == index) {
-			return "SetFrame1 " + to_string(index);
-		}
-		else if ((index & 0xFFFF) == index) {
-			return "SetFrame2 " + to_string(index);
-		}
-		else
-			Throw("SetFrame Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-		return "null";
-	}
-	string frameGet(int index) {
-		if ((index & 0xFF) == index) {
-			return "GetFrame1 " + to_string(index);
-		}
-		else if ((index & 0xFFFF) == index) {
-			return "GetFrame2 " + to_string(index);
-		}
-		else
-			Throw("GetFrame Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-		return "null";
-	}
-	string pFrame(const int index) {
-		if ((index & 0xFF) == index)
-			return "GetFrameP1 " + to_string(index);
-		else if ((index & 0xFFFF) == index)
-			return "GetFrameP2 " + to_string(index);
-		else
-			Throw("GetFrameP Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-		return "null";
-	}
-	string setGlobal(int index) {
-		if ((index & 0xFFFF) == index)
-			return "SetGlobal2 " + to_string(index);
-		else if ((index & 0xFFFFFF) == index)
-			return "SetGlobal3 " + to_string(index);
-		else
-			Throw("SetGlobal Index \"" + to_string(index) + "\" is out of range 0 - 16777215");
-		return "null";
-	}
-	string getGlobal(int index) {
-		if ((index & 0xFFFF) == index)
-			return "GetGlobal2 " + to_string(index);
-		else if ((index & 0xFFFFFF) == index)
-			return "GetGlobal3 " + to_string(index);
-		else
-			Throw("GetGlobal Index \"" + to_string(index) + "\" is out of range 0 - 16777215");
-		return "null";
-	}
-	string getGlobalp(const int index) {
-		if ((index & 0xFFFF) == index)
-			return "GetGlobalP2 " + to_string(index);
-		else if ((index & 0xFFFFFF) == index)
-			return "GetGlobalP3 " + to_string(index);
-		else
-			Throw("GetGlobalP Index \"" + to_string(index) + "\" is out of range 0 - 16777215");
-		return "null";
-	}
-	string setStatic(int index) {
-		if ((index & 0xFF) == index)
-			return "SetStatic1 " + to_string(index);
-		else if ((index & 0xFFFF) == index)
-			return "SetStatic2 " + to_string(index);
-		else
-			Throw("SetStatic Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-		return "null";
-	}
-	string getStatic(int index) {
-		if ((index & 0xFF) == index)
-			return "GetStatic1 " + to_string(index);
-		else if ((index & 0xFFFF) == index)
-			return "GetStatic2 " + to_string(index);
-		else
-			Throw("GetStatic Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-		return "null";
-	}
-	string getStaticp(const int index) {
-		if ((index & 0xFF) == index)
-			return "GetStaticP1 " + to_string(index);
-		else if ((index & 0xFFFF) == index)
-			return "GetStaticP2 " + to_string(index);
-		else
-			Throw("GetStaticP Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-		return "null";
-	}
-	#pragma endregion
-	#pragma region Opcodes_Immediate
-	string GetImm(int size)
-	{
-		return add(size * 4) + "\r\npGet";
-		int aSize = size * 4;
-		if ((size & 0xFF) == size)
-			return "Add1 " + to_string(aSize) + "\r\npGet";
-		else if ((size & 0xFFFF) == size)
-			return "Add2 " + to_string(aSize) + "\r\npGet";
-		else
-			return iPush(aSize) + "\r\nAdd\r\npGet";
-	}
-	string SetImm(int size)
-	{
-		return add(size * 4) + "\r\npSet";
-		int aSize = size * 4;
-		if ((size & 0xFF) == size)
-			return "Add1 " + to_string(aSize) + "\r\npSet";
-		else if ((size & 0xFFFF) == size)
-			return "Add2 " + to_string(aSize) + "\r\npSet";
-		else
-			return iPush(aSize) + "\r\nAdd\r\npSet";
-	}
-	#pragma endregion
-	#pragma region Opcodes_Push
-	string iPush(int64_t val) {
-		if (val < -1)
-			return "Push " + to_string(val);
-		else if (val >= -1 && val <= 7)
-			return "Push_" + to_string(val);
-		else if ((val & 0xFF) == val)
-			return "PushB " + to_string(val);
-		else if (val > -32768 && val < 32767)
-			return "PushS " + to_string(val);
-		else if ((val & 0xFFFFFF) == val)
-			return "PushI24 " + to_string(val);
-		else
-		{
-			return "Push " + to_string(val);
-		}
-	}
-	string fPush(double value)
-	{
-		if (value == -1.0)
-			return "PushF_-1";
-		if (value == 0.0 || value == -0.0)//double has -ive 0 and +ive 0
-			return "PushF_0";
-		if (value == 1.0)
-			return "PushF_1";
-		if (value == 2.0)
-			return "PushF_2";
-		if (value == 3.0)
-			return "PushF_3";
-		if (value == 4.0)
-			return "PushF_4";
-		if (value == 5.0)
-			return "PushF_5";
-		if (value == 6.0)
-			return "PushF_6";
-		if (value == 7.0)
-			return "PushF_7";
-		return "PushF " + to_string(value);
-	}
-	string fPush(llvm::APFloat value)
-	{
-		if (&value.getSemantics() == &llvm::APFloat::IEEEsingle)
-			return fPush((double)value.convertToFloat());
-		else
-			return fPush(value.convertToDouble());
-	}
-	double extractAPFloat(llvm::APFloat value)
-	{
-		return &value.getSemantics() == &llvm::APFloat::IEEEsingle ? (double)value.convertToFloat() : value.convertToDouble();
-	}
-	#pragma endregion
-	#pragma region Opcodes_Math
-	string mult(int value)
-	{
-		if (value < -32768 || value > 32767)
-			return iPush(value) + "\r\nMult";
-		else if (value > 0xFF || value < 0)
-			return "Mult2 " + to_string(value);
-		else
-			return "Mult1 " + to_string(value);
-	}
-	string add(int value)
-	{
-		if (value == 0)
-			return "";
-		if (value < -32768 || value > 32767)
-			return iPush(value) + "\r\nAdd";
-		else if (value > 0xFF || value < 0)
-			return "Add2 " + to_string(value);
-		else
-			return "Add1 " + to_string(value);
-	}
-	string sub(int value)
-	{
-		if (value < -32767 || value > 32768)
-			return iPush(value) + "\r\nSub";
-		else
-			return "Add2 " + to_string(-value);
-	}
-	string div(int value)
-	{
-		return iPush(value) + "\r\nDiv";
-	}
-	#pragma endregion
-	
 	#pragma region Misc_Functions
 	void ComplexToBoolean(bool floating)
 	{
@@ -737,7 +741,7 @@ public:
 						switch (bCond->getOpcode())
 						{
 							case BO_EQ:
-								out << "JumpEQ @" << location << endl;
+							out << "JumpEQ @" << location << endl;
 							AddInstruction(JumpEQ, location);
 							return;
 							case BO_NE:
@@ -808,13 +812,14 @@ public:
 			out << "not //Invert the result\r\n";
 			out << "JumpFalse @" << location << endl;
 			AddInstruction(JumpTrue, location);
-		}else
+		}
+		else
 		{
 			out << "JumpFalse @" << location << endl;
 			AddInstruction(JumpFalse, location);
 		}
-		
-	
+
+
 	}
 	string parseCast(const CastExpr *castExpr) {
 		switch (castExpr->getCastKind()) {
@@ -857,12 +862,12 @@ public:
 			}
 			break;
 			default:
-				Throw("Unimplemented Cast", rewriter, castExpr->getSourceRange());
+			Throw("Unimplemented Cast", rewriter, castExpr->getSourceRange());
 		}
 		return "";
 	}
 	#pragma endregion
-	
+
 	#pragma region Decl_Handling
 	//handleParamVarDecl
 	void printDeclWithKey(string key, bool isAddr, bool isLtoRValue, bool isAssign, const DeclRefExpr* declref) {
@@ -890,7 +895,7 @@ public:
 					AddInstruction(PushInt, 24);
 					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
 				}
-				else if(size == 2)//short
+				else if (size == 2)//short
 				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
 					AddInstruction(PushInt, 16);
@@ -902,19 +907,19 @@ public:
 				out << pFrame(index) << " //(pdecl)&" << key << endl;
 				AddInstructionComment(GetFrameP, "(pdecl)&", index);
 			}
-			else if(isAssign)
+			else if (isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if(size == 1)//char
+				if (size == 1)//char
 				{
 					out << "PushS 256\r\nMod\r\nPushB 24\r\nCallNative shift_left 2 1//char type\r\n";
 					AddInstruction(PushInt, 255);
 					AddInstruction(And);
 					AddInstruction(PushInt, 24);
 					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
-					
+
 				}
-				else if(size == 2)//short
+				else if (size == 2)//short
 				{
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
 					AddInstruction(PushInt, 65535);
@@ -936,13 +941,13 @@ public:
 			{
 				out << getGlobal(index) << "  //" << key << endl;
 				AddInstruction(GetGlobal, index);
-				if(size == 1)//char
+				if (size == 1)//char
 				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
 					AddInstruction(PushInt, 24);
 					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
 				}
-				else if(size == 2)//short
+				else if (size == 2)//short
 				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
 					AddInstruction(PushInt, 16);
@@ -953,11 +958,11 @@ public:
 			{
 				out << getGlobalp(index) << "  //" << key << endl;
 				AddInstructionComment(GetGlobalP, key, index);
-			}	
-			else if(isAssign)
+			}
+			else if (isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if(size == 1)//char
+				if (size == 1)//char
 				{
 					out << "PushS 256\r\nMod\r\nPushB 24\r\nCallNative shift_left 2 1//char type\r\n";
 					AddInstruction(PushInt, 255);
@@ -966,7 +971,7 @@ public:
 					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
 
 				}
-				else if(size == 2)//short
+				else if (size == 2)//short
 				{
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
 					AddInstruction(PushInt, 65535);
@@ -988,28 +993,28 @@ public:
 			{
 				out << getStatic(index) << "  //" << key << endl;
 				AddInstruction(GetStatic, index);
-				if(size == 1)//char
+				if (size == 1)//char
 				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
 					AddInstruction(PushInt, 24);
 					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
 				}
-				else if(size == 2)//short
+				else if (size == 2)//short
 				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
 					AddInstruction(PushInt, 16);
 					AddInstructionComment(Native, "short type", "shift_right", 2, 1);
 				}
 			}
-			else if(isAddr)
+			else if (isAddr)
 			{
 				out << getStaticp(index) << "  //" << key << endl;
 				AddInstructionComment(GetStaticP, key, index);
 			}
-			else if(isAssign)
+			else if (isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if(size == 1)//char
+				if (size == 1)//char
 				{
 					out << "PushS 256\r\nMod\r\nPushB 24\r\nCallNative shift_left 2 1//char type\r\n";
 					AddInstruction(PushInt, 255);
@@ -1018,7 +1023,7 @@ public:
 					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
 
 				}
-				else if(size == 2)//short
+				else if (size == 2)//short
 				{
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
 					AddInstruction(PushInt, 65535);
@@ -1050,11 +1055,11 @@ public:
 					}
 				}
 			}
-			for(uint32_t j = 0; j < functionsNew.size(); j++)
+			for (uint32_t j = 0; j < functionsNew.size(); j++)
 			{
-				if(functionsNew[j]->Hash() == hash)
+				if (functionsNew[j]->Hash() == hash)
 				{
-					if(functionsNew[j]->Name() == name)
+					if (functionsNew[j]->Name() == name)
 					{
 						CurrentFunction->addUsedFunc(functionsNew[j]);
 						break;
@@ -1406,7 +1411,7 @@ public:
 								Throw("Expected positive integer constant for pop amount argument in popMult, got " + to_string(intValue), rewriter, argArray[0]->getSourceRange());
 								return false;
 							}
-							for(int i = 0; i < intValue; i++)
+							for (int i = 0; i < intValue; i++)
 							{
 								out << "Drop\r\n";
 								AddInstruction(Drop);
@@ -1604,10 +1609,10 @@ public:
 			break;
 			case JoaatCasedConst("getframe"):
 			ChkHashCol("getframe");
-			if(argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
+			if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 			{
 				llvm::APSInt result;
-				if(argArray[0]->EvaluateAsInt(result, *context))
+				if (argArray[0]->EvaluateAsInt(result, *context))
 				{
 					out << frameGet(result.getSExtValue()) << endl;
 					AddInstruction(GetFrame, result.getSExtValue());
@@ -1618,16 +1623,16 @@ public:
 					Throw("Argument got getframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
 				}
 			}
-			else{
+			else {
 				Throw("getframe must have signature \"extern __intrinsic int getframe(const int index);\"", rewriter, callee->getSourceRange());
 			}
 			break;
 			case JoaatCasedConst("getframep"):
 			ChkHashCol("getframep");
-			if(argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
+			if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 			{
 				llvm::APSInt result;
-				if(argArray[0]->EvaluateAsInt(result, *context))
+				if (argArray[0]->EvaluateAsInt(result, *context))
 				{
 					out << pFrame(result.getSExtValue()) << endl;
 					AddInstruction(GetFrameP, result.getSExtValue());
@@ -1638,53 +1643,53 @@ public:
 					Throw("Argument got getframep must be a constant integer", rewriter, argArray[0]->getSourceRange());
 				}
 			}
-			else{
+			else {
 				Throw("getframep must have signature \"extern __intrinsic int getframep(int index);\"", rewriter, callee->getSourceRange());
 			}
 			break;
 			case JoaatCasedConst("setframe"):
-				ChkHashCol("setframe");
+			ChkHashCol("setframe");
 
-				if(argCount == 1 && callee->getReturnType()->isVoidType())
+			if (argCount == 1 && callee->getReturnType()->isVoidType())
+			{
+				llvm::APSInt result;
+				if (argArray[0]->EvaluateAsInt(result, *context))
 				{
-					llvm::APSInt result;
-					if(argArray[0]->EvaluateAsInt(result, *context))
-					{
-						out << frameSet(result.getSExtValue()) << endl;
-						AddInstruction(SetFrame, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
+					out << frameSet(result.getSExtValue()) << endl;
+					AddInstruction(SetFrame, result.getSExtValue());
+					return true;
 				}
-				else if(argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
+				else
 				{
-					llvm::APSInt result;
-					if(argArray[0]->EvaluateAsInt(result, *context))
-					{
-						parseExpression(argArray[1], false, true);
-						out << frameSet(result.getSExtValue()) << endl;
-						AddInstruction(SetFrame, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
+					Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
 				}
-				else{
-					Throw("setframe must have signature \"extern __intrinsic void setframe(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
+			}
+			else if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
+			{
+				llvm::APSInt result;
+				if (argArray[0]->EvaluateAsInt(result, *context))
+				{
+					parseExpression(argArray[1], false, true);
+					out << frameSet(result.getSExtValue()) << endl;
+					AddInstruction(SetFrame, result.getSExtValue());
+					return true;
 				}
-				break;
+				else
+				{
+					Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
+				}
+			}
+			else {
+				Throw("setframe must have signature \"extern __intrinsic void setframe(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
+			}
+			break;
 			case JoaatCasedConst("getglobal"):
 			{
 				ChkHashCol("getglobal");
-				if(argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
-					if(argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, *context))
 					{
 						out << getGlobal(result.getSExtValue()) << endl;
 						AddInstruction(GetGlobal, result.getSExtValue());
@@ -1695,7 +1700,7 @@ public:
 						Throw("Argument got getglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
 					}
 				}
-				else{
+				else {
 					Throw("getglobal must have signature \"extern __intrinsic int getglobal(const int index);\"", rewriter, callee->getSourceRange());
 				}
 			}
@@ -1703,10 +1708,10 @@ public:
 			case JoaatCasedConst("setglobal"):
 			{
 				ChkHashCol("setglobal");
-				if(argCount == 1 && callee->getReturnType()->isVoidType())
+				if (argCount == 1 && callee->getReturnType()->isVoidType())
 				{
 					llvm::APSInt result;
-					if(argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, *context))
 					{
 						out << setGlobal(result.getSExtValue()) << endl;
 						AddInstruction(SetGlobal, result.getSExtValue());
@@ -1717,10 +1722,10 @@ public:
 						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
 					}
 				}
-				else if(argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
+				else if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
-					if(argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, *context))
 					{
 						parseExpression(argArray[1], false, true);
 						out << setGlobal(result.getSExtValue()) << endl;
@@ -1732,18 +1737,18 @@ public:
 						Throw("Argument got setglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
 					}
 				}
-				else{
+				else {
 					Throw("setglobal must have signature \"extern __intrinsic void setglobal(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
 				}
 			}
-				break;
+			break;
 			case JoaatCasedConst("getglobalp"):
 			{
 				ChkHashCol("getglobalp");
-				if(argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
-					if(argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, *context))
 					{
 						out << getGlobalp(result.getSExtValue()) << endl;
 						AddInstruction(GetGlobalP, result.getSExtValue());
@@ -1754,7 +1759,7 @@ public:
 						Throw("Argument got getglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
 					}
 				}
-				else{
+				else {
 					Throw("getglobal must have signature \"extern __intrinsic int getglobal(const int index);\"", rewriter, callee->getSourceRange());
 				}
 			}
@@ -1995,7 +2000,7 @@ public:
 			case JoaatCasedConst("popFloat"):;
 			{
 				ChkHashCol("popFloat");
-				if(argCount == 0 && callee->getReturnType()->isRealFloatingType())
+				if (argCount == 0 && callee->getReturnType()->isRealFloatingType())
 				{
 					return true;
 				}
@@ -2005,7 +2010,7 @@ public:
 			case JoaatCasedConst("popInt"):;
 			{
 				ChkHashCol("popInt");
-				if(argCount == 0 && callee->getReturnType()->isIntegerType())
+				if (argCount == 0 && callee->getReturnType()->isIntegerType())
 				{
 					return true;
 				}
@@ -2016,7 +2021,7 @@ public:
 			{
 				ChkHashCol("popVector3");
 
-				if(argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
+				if (argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
 				{
 					return true;
 				}
@@ -2487,7 +2492,7 @@ public:
 							AddInstruction(FromStack);
 
 							//Put them back on stack in reverse
-							for(int i = startDeclIndex + value - 1; i >= startDeclIndex; i--)
+							for (int i = startDeclIndex + value - 1; i >= startDeclIndex; i--)
 							{
 								out << frameGet(i) << endl;
 								AddInstruction(GetFrame, i);
@@ -2561,7 +2566,7 @@ public:
 								AddInstruction(PushInt, value);
 								AddInstruction(GetFrameP, secondItemIndex);
 								AddInstruction(ToStack);
-								
+
 							}
 							else
 							{
@@ -2657,7 +2662,7 @@ public:
 							out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
 							AddInstruction(Label, IfLocEnd);
 						}
-						
+
 					}
 				}
 				else
@@ -2676,14 +2681,14 @@ public:
 							out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
 							AddInstruction(Jump, IfLocEnd);
 						}
-						
+
 						out << endl << ":" << Else->getLocStart().getRawEncoding() << "//ifstmt else lbl" << endl;
 						AddInstruction(Label, Else->getLocStart().getRawEncoding());
 						LocalVariables.addLevel();
 						parseStatement(Else, breakLoc, continueLoc, returnLoc);
 						LocalVariables.removeLevel();
 					}
-					if(!ifEndRet || !Else)
+					if (!ifEndRet || !Else)
 					{
 						out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
 						AddInstruction(Label, IfLocEnd);
@@ -2697,7 +2702,7 @@ public:
 				parseStatement(Then, breakLoc, continueLoc, returnLoc);
 				LocalVariables.removeLevel();
 				bool ifEndRet = CurrentFunction->endsWithReturn() || CurrentFunction->endsWithInlineReturn(returnLoc);
-				if(!ifEndRet)//if the last instruction is a return, no point adding a jump
+				if (!ifEndRet)//if the last instruction is a return, no point adding a jump
 				{
 					out << "Jump @" << IfLocEnd << "//ifstmt jmp" << endl;
 					AddInstruction(Jump, IfLocEnd);
@@ -2721,7 +2726,7 @@ public:
 					out << endl << ":" << IfLocEnd << "//ifend lbl" << endl;
 					AddInstruction(Label, IfLocEnd);
 				}
-				
+
 			}
 		}
 		else if (isa<WhileStmt>(s)) {
@@ -2818,7 +2823,7 @@ public:
 				increment ? increment->getLocStart().getRawEncoding() : conditional ? conditional->getLocStart().getRawEncoding() : body->getLocStart().getRawEncoding(),
 				returnLoc);
 
-			if(increment)
+			if (increment)
 			{
 				out << endl << ":" << increment->getLocStart().getRawEncoding() << "//forstmt inc lbl" << endl;
 				AddInstruction(Label, increment->getLocStart().getRawEncoding());
@@ -2827,7 +2832,7 @@ public:
 			if (increment)
 				parseExpression(increment);
 
-			if(conditional)
+			if (conditional)
 			{
 				out << "Jump @" << conditional->getLocStart().getRawEncoding() << "//forstmt cond jmp" << endl;
 				AddInstruction(Jump, conditional->getLocStart().getRawEncoding());
@@ -2922,7 +2927,7 @@ public:
 
 		}
 		else if (isa<Expr>(s)) {
-			
+
 
 			parseExpression(cast<const Expr>(s));
 		}
@@ -2982,7 +2987,7 @@ public:
 			SwitchCase *switchCaseList = switchStmt->getSwitchCaseList();
 			DefaultStmt *defaultCase = NULL;
 			stack<string> caseLabels;
-			struct switchCase{ int val; string loc; };
+			struct switchCase { int val; string loc; };
 			stack<switchCase> caseLabelsNew;
 			while (switchCaseList != NULL)
 			{
@@ -2994,7 +2999,7 @@ public:
 						if (result.Val.isInt())
 						{
 							int val;
-							if(CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
+							if (CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
 							{
 								caseLabels.push("[" + to_string(val) + " @" + to_string(caseS->getLocEnd().getRawEncoding()) + "]");
 								caseLabelsNew.push({ val, to_string(caseS->getLocEnd().getRawEncoding()) });
@@ -3030,7 +3035,7 @@ public:
 			while (caseLabels.size() > 1)
 			{
 				out << caseLabels.top() << ":";
-				
+
 				caseLabels.pop();
 			}
 			out << caseLabels.top() << endl;
@@ -3107,7 +3112,7 @@ public:
 					if (!isLtoRValue)
 						return -1;
 					int val;
-					if(CheckExprForSizeOf(e->IgnoreParens(), &val))
+					if (CheckExprForSizeOf(e->IgnoreParens(), &val))
 					{
 						out << iPush(val) << endl;
 						AddInstruction(PushInt, val);
@@ -3242,11 +3247,12 @@ public:
 						//clang attribute arguments cannot be 64bits wide, so using 2 32 bit args can manually joining them is the nicest way to support pc
 						//when using 32 bit(xbox/ps3) the hi dword would be 0 so can be neglected
 						AddInstruction(Native, ((uint64_t)attr->getX64HiDwordHash() << 32) | attr->getHash(), call->getNumArgs(), getSizeFromBytes(getSizeOfType(type.getTypePtr())));
-					}else
+					}
+					else
 					{
 						AddInstruction(Native, parseCast(cast<const CastExpr>(callee)).substr(1), call->getNumArgs(), getSizeFromBytes(getSizeOfType(type.getTypePtr())));
 					}
-					
+
 				}
 				//else if (call->getDirectCallee() && !call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
 				//	Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", rewriter, call->getExprLoc());
@@ -3364,10 +3370,10 @@ public:
 									break;
 								}
 							}
-						for(uint32_t j = 0; j < functionsNew.size(); j++)
-							if(functionsNew[j]->Hash() == hash)
+						for (uint32_t j = 0; j < functionsNew.size(); j++)
+							if (functionsNew[j]->Hash() == hash)
 							{
-								if(functionsNew[j]->Name() == name)
+								if (functionsNew[j]->Name() == name)
 								{
 									CurrentFunction->addUsedFunc(functionsNew[j]);
 									break;
@@ -3387,7 +3393,7 @@ public:
 						out << "Drop//Function Result unused" << endl;
 						AddInstructionComment(Drop, "Function Result Unused");
 						int size = getSizeFromBytes(getSizeOfType(call->getType().getTypePtr()));
-						for(int i = 1; i < size; i++)
+						for (int i = 1; i < size; i++)
 						{
 							out << "Drop" << endl;
 							AddInstruction(Drop);
@@ -3408,7 +3414,7 @@ public:
 				{
 					if (isa<IntegerLiteral>(icast->getSubExpr())) {
 						const IntegerLiteral *literal = cast<const IntegerLiteral>(icast->getSubExpr());
-						if(isLtoRValue)
+						if (isLtoRValue)
 						{
 							out << "PushF " << literal->getValue().getSExtValue() << ".0" << endl;
 							AddInstruction(PushFloat, (float)(int)(literal->getValue().getSExtValue()));
@@ -3418,7 +3424,7 @@ public:
 					else {
 						parseExpression(icast->getSubExpr(), false, true);
 						out << (isLtoRValue ? "itof\r\n" : "drop\r\n");
-						if(isLtoRValue)
+						if (isLtoRValue)
 							AddInstruction(ItoF);
 						else
 							AddInstruction(Drop);
@@ -3456,7 +3462,7 @@ public:
 						int offset = getSizeOfCXXDecl(base, false, false, icast->getType()->getAsCXXRecordDecl());
 						if (offset != 0) {
 							out << endl << iPush(offset / 4) << " //Base+" << offset << endl;
-							AddInstructionComment(PushInt, "Base+" + to_string(offset), offset/4);
+							AddInstructionComment(PushInt, "Base+" + to_string(offset), offset / 4);
 							parseExpression(declRef, true);
 							out << "GetArrayP2 1  " << " //Cast : " << base->getDeclName().getAsString() << " to " << icast->getType()->getAsCXXRecordDecl()->getDeclName().getAsString() << endl;
 							AddInstructionComment(GetArrayP, "Cast : " + base->getDeclName().getAsString() + " to " + icast->getType()->getAsCXXRecordDecl()->getDeclName().getAsString(), 1);
@@ -3528,7 +3534,7 @@ public:
 
 					parseExpression(icast->getSubExpr(), false, true);
 					out << (isLtoRValue ? "ftoi\r\n" : "drop\r\n");
-					if(isLtoRValue)
+					if (isLtoRValue)
 						AddInstruction(FtoI);
 					else
 						AddInstruction(Drop);
@@ -3679,7 +3685,7 @@ public:
 			}
 
 			string key = declref->getNameInfo().getAsString();
-			
+
 			if (declref->getDecl()->getType().getTypePtr()->isArrayType())
 			{
 				printDeclWithKey(key, true, isLtoRValue, isAssign, declref);
@@ -3698,7 +3704,7 @@ public:
 		}
 		else if (isa<UnaryOperator>(e)) {
 			const UnaryOperator *op = cast<const UnaryOperator>(e);
-			
+
 			Expr *subE = op->getSubExpr();
 			if (op->getOpcode() == UO_Minus) {
 				if (isa<IntegerLiteral>(subE)) {
@@ -3882,14 +3888,14 @@ public:
 				}
 				else if (isa<DeclRefExpr>(subE)) {
 					out << "//deref DeclRefExpr" << endl;
-						parseExpression(subE, false, false);
+					parseExpression(subE, false, false);
 				}
 				else {
 					parseExpression(subE, false, true);
 				}
 				if (!isAddr)
 				{
-					if(isLtoRValue)
+					if (isLtoRValue)
 					{
 						out << "pGet" << endl;
 						AddInstruction(PGet);
@@ -3910,7 +3916,7 @@ public:
 					parseExpression(subE, isAddr, isLtoRValue);
 					if (subE->getType()->isAnyComplexType())
 					{
-						if(isLtoRValue)
+						if (isLtoRValue)
 						{
 							out << "Drop\r\n";
 							AddInstruction(Drop);
@@ -3933,7 +3939,7 @@ public:
 					parseExpression(subE, isAddr, isLtoRValue);
 					if (subE->getType()->isAnyComplexType())
 					{
-						if(isLtoRValue)
+						if (isLtoRValue)
 						{
 							LocalVariables.addLevel();
 							int index = LocalVariables.addDecl("imagPart", 1);
@@ -3965,13 +3971,13 @@ public:
 
 			if (op->isPrefix()) {
 
-				if(op->isIncrementOp()) {
+				if (op->isIncrementOp()) {
 					parseExpression(subE, false, true);
 
 					out << add(pMult) << endl;
 					AddInstruction(AddImm, pMult);
 
-					if(isLtoRValue)
+					if (isLtoRValue)
 					{
 						out << "Dup" << endl;
 						AddInstruction(Dup);
@@ -3981,11 +3987,11 @@ public:
 				}
 				else if (op->isDecrementOp()) {
 					parseExpression(subE, false, true);
-					out << "Push 1\r\n" 
+					out << "Push 1\r\n"
 						<< mult(pMult)
 						<< "\r\nSub\r\n";
 					AddInstruction(AddImm, -pMult);
-					if(isLtoRValue)
+					if (isLtoRValue)
 					{
 						out << "Dup" << endl;
 						AddInstruction(Dup);
@@ -3997,7 +4003,7 @@ public:
 			else if (op->isPostfix()) {
 				if (op->isIncrementOp()) {
 					parseExpression(subE, false, true);
-					if(isLtoRValue)
+					if (isLtoRValue)
 					{
 						out << "Dup" << endl;
 						AddInstruction(Dup);
@@ -4011,7 +4017,7 @@ public:
 				}
 				else if (op->isDecrementOp()) {
 					parseExpression(subE, false, true);
-					if(isLtoRValue)
+					if (isLtoRValue)
 					{
 						out << "Dup" << endl;
 						AddInstruction(Dup);
@@ -4019,7 +4025,7 @@ public:
 
 					out << "Push 1\r\n"
 						<< mult(pMult) << "\r\n";
-					
+
 					out << "Sub\r\n";
 					AddInstruction(AddImm, -pMult);
 					parseExpression(subE, false, false, true, true);
@@ -4084,7 +4090,7 @@ public:
 						out << "dup //duplicate value for set\r\n";
 						AddInstruction(Dup);
 					}
-					parseExpression(bOp->getLHS(),false,false,true,true);
+					parseExpression(bOp->getLHS(), false, false, true, true);
 				}
 
 				return true;
@@ -4187,7 +4193,7 @@ public:
 							LocalVariables.addLevel();
 							int index = LocalVariables.addDecl("imagPart", 1);
 							out << frameSet(index) << "\r\nFtoI\r\n" << frameGet(index) << "\r\nFtoI\r\n";
-							
+
 							LocalVariables.removeLevel();
 						}
 					}
@@ -4215,20 +4221,20 @@ public:
 					{
 						case BO_Add:
 						{
-							if(!isLtoRValue){
+							if (!isLtoRValue) {
 								break;//just skip the calculations if its not a l to r, dont need to worry about operands on the stack as they have already been removed
 							}
 							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Add //Calc Real Part\r\n";
 							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Add //Calc Imag Part\r\n";
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 2);
-							if(isFlt)
+							if (isFlt)
 								AddInstruction(FAdd);
 							else
 								AddInstruction(Add);
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt)
+							if (isFlt)
 								AddInstruction(FAdd);
 							else
 								AddInstruction(Add);
@@ -4241,13 +4247,13 @@ public:
 							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Add //Calc Imag Part\r\n";
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 2);
-							if(isFlt)
+							if (isFlt)
 								AddInstruction(FAdd);
 							else
 								AddInstruction(Add);
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt)
+							if (isFlt)
 								AddInstruction(FAdd);
 							else
 								AddInstruction(Add);
@@ -4263,20 +4269,20 @@ public:
 
 						case BO_Sub:
 						{
-							if(!isLtoRValue){
+							if (!isLtoRValue) {
 								break;//just skip the calculations if its not a l to r, dont need to worry about operands on the stack as they have already been removed
 							}
 							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Sub //Calc Real Part\r\n";
 							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Sub //Calc Imag Part\r\n";
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 2);
-							if(isFlt)
+							if (isFlt)
 								AddInstruction(FSub);
 							else
 								AddInstruction(Sub);
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt)
+							if (isFlt)
 								AddInstruction(FSub);
 							else
 								AddInstruction(Sub);
@@ -4287,18 +4293,18 @@ public:
 							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Sub //Calc Real Part\r\n";
 							out << frameGet(startindex + 1) << endl << frameGet(startindex + 3) << endl << isFloat << "Sub //Calc Imag Part\r\n";
 							AddInstruction(GetFrame, startindex);
-							AddInstruction(GetFrame, startindex + 2);							
-							if(isFlt)
+							AddInstruction(GetFrame, startindex + 2);
+							if (isFlt)
 								AddInstruction(FSub);
 							else
 								AddInstruction(Sub);
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt)
+							if (isFlt)
 								AddInstruction(FSub);
 							else
 								AddInstruction(Sub);
-							
+
 							out << "Push_2 //Type Size\r\n";
 							AddInstruction(PushInt, 2);
 							parseExpression(bOp->getLHS(), true);
@@ -4309,7 +4315,7 @@ public:
 
 						case BO_Mul:
 						{
-							if(!isLtoRValue){
+							if (!isLtoRValue) {
 								break;//just skip the calculations if its not a l to r, dont need to worry about operands on the stack as they have already been removed
 							}
 							out << frameGet(startindex) << endl << frameGet(startindex + 2) << endl << isFloat << "Mult\r\n";
@@ -4322,33 +4328,33 @@ public:
 
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 2);
-							if(isFlt)
+							if (isFlt)
 								AddInstruction(FMult);
 							else
 								AddInstruction(Mult);
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt){
+							if (isFlt) {
 								AddInstruction(FMult);
 								AddInstruction(FSub);
 							}
-							else{
+							else {
 								AddInstruction(Mult);
 								AddInstruction(Sub);
 							}
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt)
+							if (isFlt)
 								AddInstruction(FMult);
 							else
 								AddInstruction(Mult);
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 2);
-							if(isFlt){
+							if (isFlt) {
 								AddInstruction(FMult);
 								AddInstruction(FAdd);
 							}
-							else{
+							else {
 								AddInstruction(Mult);
 								AddInstruction(Add);
 							}
@@ -4366,33 +4372,33 @@ public:
 
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 2);
-							if(isFlt)
+							if (isFlt)
 								AddInstruction(FMult);
 							else
 								AddInstruction(Mult);
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt){
+							if (isFlt) {
 								AddInstruction(FMult);
 								AddInstruction(FSub);
 							}
-							else{
+							else {
 								AddInstruction(Mult);
 								AddInstruction(Sub);
 							}
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt)
+							if (isFlt)
 								AddInstruction(FMult);
 							else
 								AddInstruction(Mult);
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 2);
-							if(isFlt){
+							if (isFlt) {
 								AddInstruction(FMult);
 								AddInstruction(FAdd);
 							}
-							else{
+							else {
 								AddInstruction(Mult);
 								AddInstruction(Add);
 							}
@@ -4407,7 +4413,7 @@ public:
 
 						case BO_Div:
 						{
-							if(!isLtoRValue){
+							if (!isLtoRValue) {
 								break;//just skip the calculations if its not a l to r, dont need to worry about operands on the stack as they have already been removed
 							}
 							int divide = LocalVariables.addDecl("divide", 1);
@@ -4417,13 +4423,13 @@ public:
 
 							AddInstruction(GetFrame, startindex + 2);
 							AddInstruction(Dup);
-							if(isFlt) AddInstruction(FMult);
+							if (isFlt) AddInstruction(FMult);
 							else AddInstruction(Mult);
 							AddInstruction(GetFrame, startindex + 3);
 							AddInstruction(Dup);
-							if(isFlt) AddInstruction(FMult);
+							if (isFlt) AddInstruction(FMult);
 							else AddInstruction(Mult);
-							if(isFlt) AddInstruction(FAdd);
+							if (isFlt) AddInstruction(FAdd);
 							else AddInstruction(Add);
 							AddInstruction(SetFrame, divide);
 
@@ -4434,16 +4440,17 @@ public:
 
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 2);
-							if(isFlt) AddInstruction(FMult);
+							if (isFlt) AddInstruction(FMult);
 							else AddInstruction(Mult);
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt) {
+							if (isFlt) {
 								AddInstruction(FMult);
-								AddInstruction(FAdd); 
+								AddInstruction(FAdd);
 								AddInstruction(GetFrame, divide);
 								AddInstruction(FDiv);
-							}else{
+							}
+							else {
 								AddInstruction(Mult);
 								AddInstruction(Add);
 								AddInstruction(GetFrame, divide);
@@ -4456,16 +4463,17 @@ public:
 
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 2);
-							if(isFlt) AddInstruction(FMult);
+							if (isFlt) AddInstruction(FMult);
 							else AddInstruction(Mult);
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt) {
+							if (isFlt) {
 								AddInstruction(FMult);
 								AddInstruction(FSub);
 								AddInstruction(GetFrame, divide);
 								AddInstruction(FDiv);
-							}else{
+							}
+							else {
 								AddInstruction(Mult);
 								AddInstruction(Sub);
 								AddInstruction(GetFrame, divide);
@@ -4483,13 +4491,13 @@ public:
 
 							AddInstruction(GetFrame, startindex + 2);
 							AddInstruction(Dup);
-							if(isFlt) AddInstruction(FMult);
+							if (isFlt) AddInstruction(FMult);
 							else AddInstruction(Mult);
 							AddInstruction(GetFrame, startindex + 3);
 							AddInstruction(Dup);
-							if(isFlt) AddInstruction(FMult);
+							if (isFlt) AddInstruction(FMult);
 							else AddInstruction(Mult);
-							if(isFlt) AddInstruction(FAdd);
+							if (isFlt) AddInstruction(FAdd);
 							else AddInstruction(Add);
 							AddInstruction(SetFrame, divide);
 
@@ -4500,16 +4508,17 @@ public:
 
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 2);
-							if(isFlt) AddInstruction(FMult);
+							if (isFlt) AddInstruction(FMult);
 							else AddInstruction(Mult);
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt) {
+							if (isFlt) {
 								AddInstruction(FMult);
 								AddInstruction(FAdd);
 								AddInstruction(GetFrame, divide);
 								AddInstruction(FDiv);
-							}else{
+							}
+							else {
 								AddInstruction(Mult);
 								AddInstruction(Add);
 								AddInstruction(GetFrame, divide);
@@ -4522,16 +4531,17 @@ public:
 
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 2);
-							if(isFlt) AddInstruction(FMult);
+							if (isFlt) AddInstruction(FMult);
 							else AddInstruction(Mult);
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 3);
-							if(isFlt) {
+							if (isFlt) {
 								AddInstruction(FMult);
 								AddInstruction(FSub);
 								AddInstruction(GetFrame, divide);
 								AddInstruction(FDiv);
-							}else{
+							}
+							else {
 								AddInstruction(Mult);
 								AddInstruction(Sub);
 								AddInstruction(GetFrame, divide);
@@ -4667,7 +4677,7 @@ public:
 					{
 						out << opStr << "\r\n";
 						AddFloatingOpCheck(bOp->getLHS()->getType()->isFloatingType() && canValueBeFloat, opcode, floatVar);
-						if(isLtoRValue)
+						if (isLtoRValue)
 						{
 							out << "dup\r\n";
 							AddInstruction(Dup);
@@ -4691,16 +4701,16 @@ public:
 				case BO_ShrAssign: {
 					string natName = (op == BO_ShlAssign) ? "shift_left" : "shift_right";
 					bool pointerSet = true;
-					if(isa<DeclRefExpr>(bOp->getLHS()))
+					if (isa<DeclRefExpr>(bOp->getLHS()))
 					{
 						const DeclRefExpr *dRef = cast<DeclRefExpr>(bOp->getLHS());
-						if(isa<VarDecl>(dRef->getFoundDecl()))
+						if (isa<VarDecl>(dRef->getFoundDecl()))
 						{
 							pointerSet = false;
 							parseExpression(bOp->getLHS(), false, true);
 						}
 					}
-					if(pointerSet)
+					if (pointerSet)
 					{
 						parseExpression(bOp->getLHS(), true, false);
 						out << "dup\r\npGet\r\n";
@@ -4708,20 +4718,20 @@ public:
 						AddInstruction(PGet);
 					}
 					llvm::APSInt intRes;
-					if(isa<PointerType>(bOp->getLHS()->getType()))
+					if (isa<PointerType>(bOp->getLHS()->getType()))
 					{
 						Throw("Invalid operator, " + bOp->getOpcodeStr().str() + " on pointer data types", rewriter, e->getSourceRange());
 					}
-					else if(bOp->getLHS()->getType()->isFloatingType())
+					else if (bOp->getLHS()->getType()->isFloatingType())
 					{
 						Throw("Invalid operator, " + bOp->getOpcodeStr().str() + " on floating data types", rewriter, e->getSourceRange());
 					}
-					if(bOp->getRHS()->EvaluateAsInt(intRes, *context))
+					if (bOp->getRHS()->EvaluateAsInt(intRes, *context))
 					{
 						int64_t val = intRes.getSExtValue();
 						out << iPush(val) << endl;
 						AddInstruction(PushInt, val);
-						if(pointerSet)
+						if (pointerSet)
 						{
 							out << "callnative " << natName << "2 1\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 							AddInstruction(Native, natName, 2, 1);
@@ -4732,7 +4742,7 @@ public:
 						{
 							out << "callnative " << natName << "2 1\r\n";
 							AddInstruction(Native, natName, 2, 1);
-							if(isLtoRValue)
+							if (isLtoRValue)
 							{
 								out << "dup\r\n";
 								AddInstruction(Dup);
@@ -4743,7 +4753,7 @@ public:
 					else
 					{
 						parseExpression(bOp->getRHS(), false, true);
-						if(pointerSet)
+						if (pointerSet)
 						{
 							out << "callnative " << natName << "2 1\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
 							AddInstruction(Native, natName, 2, 1);
@@ -4754,7 +4764,7 @@ public:
 						{
 							out << "callnative " << natName << "2 1\r\n";
 							AddInstruction(Native, natName, 2, 1);
-							if(isLtoRValue)
+							if (isLtoRValue)
 							{
 								out << "dup\r\n";
 								AddInstruction(Dup);
@@ -4763,10 +4773,10 @@ public:
 						}
 					}
 				}
-				break;
+								   break;
 				default:
 				{
-					
+
 					//c allows same type pointer to pointer subtraction to obtain the logical difference. 
 					if (isa<PointerType>(bOp->getLHS()->getType()) && isa<PointerType>(bOp->getRHS()->getType()))
 					{
@@ -4785,13 +4795,13 @@ public:
 								out << "Sub\r\n";
 							AddInstructionCondition(bOp->getLHS()->getType()->isFloatingType(), FSub, Sub);
 
-							if(pSize > 1)
+							if (pSize > 1)
 							{
 								out << div(pSize) << "\r\n";
 								AddInstruction(PushInt, pSize);
 								AddInstruction(Div);
 							}
-							
+
 
 							if (!isLtoRValue) {
 								Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
@@ -4807,7 +4817,7 @@ public:
 						parseExpression(bOp->getLHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
 						parseExpression(bOp->getRHS(), false, true);
 
-						if(op == BO_Add || op == BO_Sub)
+						if (op == BO_Add || op == BO_Sub)
 						{
 							const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
 							int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
@@ -4845,45 +4855,45 @@ public:
 
 					if (bOp->getLHS()->getType()->isFloatingType()) {
 						switch (op) {
-						case BO_EQ: out << "fCmpEQ\r\n"; AddInstruction(FCmpEq); break;
-						case BO_Mul: out << "fMult\r\n"; AddInstruction(FMult); break;
-						case BO_Div: out << "fDiv\r\n"; AddInstruction(FDiv); break;
-						case BO_Rem: out << "fMod\r\n"; AddInstruction(FMod); break;
-						case BO_Sub: out << "fSub\r\n"; AddInstruction(FSub); break;
-						case BO_LT: out << "fCmpLT\r\n"; AddInstruction(FCmpLt); break;
-						case BO_GT: out << "fCmpGT\r\n"; AddInstruction(FCmpGt); break;
-						case BO_GE: out << "fCmpGE\r\n"; AddInstruction(FCmpGe); break;
-						case BO_LE: out << "fCmpLE\r\n"; AddInstruction(FCmpLe); break;
-						case BO_NE: out << "fCmpNE\r\n"; AddInstruction(FCmpNe); break;
-						case BO_LAnd: out << "And\r\n"; AddInstruction(And); break;//needs changing
-						case BO_Add: out << "fAdd\r\n"; AddInstruction(FAdd); break;
-						case BO_LOr: out << "Or\r\n"; AddInstruction(Or); break;//needs changing
+							case BO_EQ: out << "fCmpEQ\r\n"; AddInstruction(FCmpEq); break;
+							case BO_Mul: out << "fMult\r\n"; AddInstruction(FMult); break;
+							case BO_Div: out << "fDiv\r\n"; AddInstruction(FDiv); break;
+							case BO_Rem: out << "fMod\r\n"; AddInstruction(FMod); break;
+							case BO_Sub: out << "fSub\r\n"; AddInstruction(FSub); break;
+							case BO_LT: out << "fCmpLT\r\n"; AddInstruction(FCmpLt); break;
+							case BO_GT: out << "fCmpGT\r\n"; AddInstruction(FCmpGt); break;
+							case BO_GE: out << "fCmpGE\r\n"; AddInstruction(FCmpGe); break;
+							case BO_LE: out << "fCmpLE\r\n"; AddInstruction(FCmpLe); break;
+							case BO_NE: out << "fCmpNE\r\n"; AddInstruction(FCmpNe); break;
+							case BO_LAnd: out << "And\r\n"; AddInstruction(And); break;//needs changing
+							case BO_Add: out << "fAdd\r\n"; AddInstruction(FAdd); break;
+							case BO_LOr: out << "Or\r\n"; AddInstruction(Or); break;//needs changing
 
 							default:
 							Throw("Unimplemented binary floating op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
 						}
 					}
 					else {
-						switch(op) {
-						case BO_EQ: out << "CmpEQ\r\n"; AddInstruction(CmpEq); break;
-						case BO_Mul: out << "Mult\r\n"; AddInstruction(Mult); break;
-						case BO_Div: out << "Div\r\n"; AddInstruction(Div); break;
-						case BO_Rem: out << "Mod\r\n"; AddInstruction(Mod); break;
-						case BO_Sub: out << "Sub\r\n"; AddInstruction(Sub); break;
-						case BO_LT: out << "CmpLT\r\n"; AddInstruction(CmpLt); break;
-						case BO_GT: out << "CmpGT\r\n"; AddInstruction(CmpGt); break;
-						case BO_GE: out << "CmpGE\r\n"; AddInstruction(CmpGe); break;
-						case BO_LE: out << "CmpLE\r\n"; AddInstruction(CmpLe); break;
-						case BO_NE: out << "CmpNE\r\n"; AddInstruction(CmpNe); break;
-						case BO_LAnd://needs changing
-						case BO_And: out << "And\r\n"; AddInstruction(And); break;
-						case BO_Xor: out << "Xor\r\n"; AddInstruction(Xor); break;
-						case BO_Add: out << "Add\r\n"; AddInstruction(Add); break;
-						case BO_LOr://needs changing
-						case BO_Or: out << "Or\r\n"; AddInstruction(Or); break;
-						case BO_Shl: out << "CallNative shift_left 2 1\r\n"; AddInstruction(Native, "shift_left", 2, 1); break;
-						case BO_Shr: out << "CallNative shift_right 2 1\r\n"; AddInstruction(Native, "shift_right", 2, 1); break;
-						default:
+						switch (op) {
+							case BO_EQ: out << "CmpEQ\r\n"; AddInstruction(CmpEq); break;
+							case BO_Mul: out << "Mult\r\n"; AddInstruction(Mult); break;
+							case BO_Div: out << "Div\r\n"; AddInstruction(Div); break;
+							case BO_Rem: out << "Mod\r\n"; AddInstruction(Mod); break;
+							case BO_Sub: out << "Sub\r\n"; AddInstruction(Sub); break;
+							case BO_LT: out << "CmpLT\r\n"; AddInstruction(CmpLt); break;
+							case BO_GT: out << "CmpGT\r\n"; AddInstruction(CmpGt); break;
+							case BO_GE: out << "CmpGE\r\n"; AddInstruction(CmpGe); break;
+							case BO_LE: out << "CmpLE\r\n"; AddInstruction(CmpLe); break;
+							case BO_NE: out << "CmpNE\r\n"; AddInstruction(CmpNe); break;
+							case BO_LAnd://needs changing
+							case BO_And: out << "And\r\n"; AddInstruction(And); break;
+							case BO_Xor: out << "Xor\r\n"; AddInstruction(Xor); break;
+							case BO_Add: out << "Add\r\n"; AddInstruction(Add); break;
+							case BO_LOr://needs changing
+							case BO_Or: out << "Or\r\n"; AddInstruction(Or); break;
+							case BO_Shl: out << "CallNative shift_left 2 1\r\n"; AddInstruction(Native, "shift_left", 2, 1); break;
+							case BO_Shr: out << "CallNative shift_right 2 1\r\n"; AddInstruction(Native, "shift_right", 2, 1); break;
+							default:
 							Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
 						}
 					}
@@ -4956,7 +4966,7 @@ public:
 			}
 
 
-			if(isLtoRValue)
+			if (isLtoRValue)
 			{
 				out << "pGet\r\n";
 				AddInstruction(PGet);
@@ -4984,7 +4994,7 @@ public:
 		{
 			const ImplicitValueInitExpr *im = cast<const ImplicitValueInitExpr>(e);
 			uint32_t size = getSizeFromBytes(getSizeOfType(im->getType().getTypePtr()));
-			for(uint32_t i = 0; i < size; i++)
+			for (uint32_t i = 0; i < size; i++)
 			{
 				out << "Push_0" << endl;
 				AddInstruction(PushInt, 0);
@@ -5167,7 +5177,7 @@ public:
 			}
 		}
 
-		
+
 		parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
 		parseExpression(index, false, true);
 
@@ -5179,14 +5189,14 @@ public:
 			AddInstruction(Add);
 			AddInstruction(PGet);
 			//1 byte indexing
-			if(type->isCharType())
+			if (type->isCharType())
 			{
 				out << "PushB 24\r\nCallNative shift_right 2 1\r\n";
 				AddInstruction(PushInt, 24);
 				AddInstruction(Native, "shift_right", 2, 1);
 			}
 			//2 byte indexing
-			else if(type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+			else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 			{
 				out << "PushB 16\r\nCallNative shift_right 2 1\r\n";
 				AddInstruction(PushInt, 16);
@@ -5223,7 +5233,8 @@ public:
 			if (f->hasAttr<NativeFuncAttr>())
 			{
 				Throw("Native function attribute cannot be used on functions which have a body declared", rewriter, f->getAttr<NativeFuncAttr>()->getRange());
-			}else if (f->hasAttr<IntrinsicFuncAttr>())
+			}
+			else if (f->hasAttr<IntrinsicFuncAttr>())
 			{
 				Throw("Intrinsic function attribute cannot be used on functions which have a body declared", rewriter, f->getAttr<IntrinsicFuncAttr>()->getRange());
 			}
@@ -5233,7 +5244,7 @@ public:
 			{
 				uint32_t hash = Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str());
 				size_t i;
-				for (i = 0; i < functions.size();i++)
+				for (i = 0; i < functions.size(); i++)
 				{
 					if (functions[i].hash == hash)
 					{
@@ -5250,12 +5261,13 @@ public:
 				{
 					Throw("Couldnt find function prototype for '" + f->getNameAsString() + "'", rewriter, f->getSourceRange());
 				}
-			}else
+			}
+			else
 			{
 				functions.push_back({ Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str()) , getNameForFunc(f), false, out.tellg() });
 			}
-			
-			
+
+
 
 			if (isa<CXXConstructorDecl>(f))
 				return true;
@@ -5269,7 +5281,7 @@ public:
 			{
 				uint32_t hash = Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str());
 				size_t i;
-				for(i = 0; i < functionsNew.size();i++)
+				for (i = 0; i < functionsNew.size(); i++)
 				{
 					if (functionsNew[i]->Hash() == hash)
 					{
@@ -5280,7 +5292,7 @@ public:
 						}
 					}
 				}
-				if(i == functions.size())
+				if (i == functions.size())
 				{
 					Throw("Couldnt find function prototype for '" + f->getNameAsString() + "'", rewriter, f->getSourceRange());
 				}
@@ -5331,7 +5343,7 @@ public:
 				}
 
 				out << "Return " << paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0) << " 0\r\n";
-				if(!CurrentFunction->endsWithReturn())
+				if (!CurrentFunction->endsWithReturn())
 					AddInstruction(Return, paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), 0);
 			}
 			else if (f->hasImplicitReturnZero())
@@ -5366,7 +5378,8 @@ public:
 			//out.str(string(""));
 			//out.clear();
 			CurrentFunction = NULL;
-		}else
+		}
+		else
 		{
 			string name = f->getNameAsString();
 			if (f->getStorageClass() == SC_None)
@@ -5374,9 +5387,9 @@ public:
 				//prototype detected, add it to the functions list(s), 
 				out.seekg(0, ios::end);
 				functions.push_back({ Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str()), getNameForFunc(f), false, out.tellg() });
-				
+
 				int32_t paramSize = 0;
-				for(uint32_t i = 0; i<f->getNumParams(); i++)
+				for (uint32_t i = 0; i<f->getNumParams(); i++)
 					paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
 				functionsNew.push_back(new FunctionData(getNameForFunc(f), (paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0))));
 			}
@@ -5578,7 +5591,7 @@ public:
 		}
 		return body->getLocStart().getRawEncoding();
 	}
-	
+
 	bool VisitCXXRecordDecl(CXXRecordDecl *d) {
 
 		//if(!d->hasBody())
@@ -5658,58 +5671,129 @@ class GlobalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
 public:
 	GlobalsVisitor(Rewriter &R, ASTContext *context) : TheRewriter(R), context(context) {}
 
-	int32_t ParseLiteral(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, const NamedDecl *lastDecl = NULL)
+	int32_t ParseLiteral(const Expr *e, bool isAddr = false, bool isLtoRValue = false)
 	{
-		if (isa<IntegerLiteral>(e)) {
-			const IntegerLiteral *literal = cast<const IntegerLiteral>(e);
+		Expr::EvalResult result;
 
-			InitializationStack.push({ (int32_t)literal->getValue().getSExtValue(), FBWT_INT });
+		if (isa<ImplicitValueInitExpr>(e))
+		{
+			const ImplicitValueInitExpr *ivie = cast<const ImplicitValueInitExpr>(e);
+
+			const Type* type = ivie->getType().getTypePtr();
+			uint32_t size = getSizeFromBytes(getSizeOfType(type));
+
+			#if STATIC_PADDING_DEBUG == 0
+			oldStaticInc += size;
+			#else
+			for (uint32_t i = 0; i < size; i++)
+				DefaultStaticValues.insert({ oldStaticInc++, "0" });
+			#endif
+			return true;
 		}
-		else if (isa<FloatingLiteral>(e)) {
-			const FloatingLiteral *literal = cast<const FloatingLiteral>(e);
+		else if (e->EvaluateAsRValue(result, *context))
+		{
 
-			float fltliteral;
+			if (result.Val.isInt())
+			{
+				if (!isLtoRValue)
+					return -1;
 
-			if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
-				fltliteral = literal->getValue().convertToFloat();
-			else
-				fltliteral = (float)literal->getValue().convertToDouble();
+				int64_t resValue = result.Val.getInt().getSExtValue();
 
-			InitializationStack.push({ *(int32_t*)&fltliteral, FBWT_FLOAT });
-		}
-		else if (isa<CompoundLiteralExpr>(e)) {
-			const CompoundLiteralExpr *cLit = cast<const CompoundLiteralExpr>(e);
-			if (isa<InitListExpr>(cLit->getInitializer())) {
-				const InitListExpr *init = cast<const InitListExpr>(cLit->getInitializer());
-				for (unsigned int i = 0; i<init->getNumInits(); i++) {
-					ParseLiteral(init->getInit(i));
+				if (doesInt64FitIntoInt32(resValue))
+				{
+					string value = to_string(resValue);
+					Warn("Integer overflow. Value: " + value + " is out of bounds of (-2,147,483,648 to 2,147,483,647). Changed value to " + to_string((int32_t)resValue), rewriter, e->getExprLoc(), e->getExprLoc().getLocWithOffset(value.length() - 1));
 				}
-				// if(!printVTable)
-				//     out << "iPush " << init->getNumInits() << " // numInitializers" << endl;
+				const Type* typeE = e->getType().getTypePtr();
+				const Type* type = typeE;//globalVarDecl->getType().getTypePtr();
+
+				if (savedType == nullptr)
+					savedType = const_cast<Type*>(type);
+				else if (type != savedType)
+				{
+					resetIntIndex();
+					savedType = const_cast<Type*>(type);
+				}
+
+				if (type->isCharType())
+				{
+					if (intIndex == 0)
+						DefaultStaticValues.insert({ oldStaticInc, "0x00000000" });
+
+					char buffer[10] = { '0' };
+					itoa(static_cast<char>(resValue), buffer + 1, 16);
+
+					assert(intIndex < 4 && intIndex >= 0);
+					uint32_t len = strlen(buffer + 1);
+					assert(len > 0 && len <= 2);
+					memcpy(const_cast<void*>(static_cast<const void*>(DefaultStaticValues[oldStaticInc].data() + 2 + intIndex * 2)), buffer + len - 1, 2);
+
+					if (++intIndex >= 4)
+					{
+						intIndex = 0;
+						oldStaticInc++;
+					}
+				}
+				else if (type->isSpecificBuiltinType(BuiltinType::Kind::Short) || type->isSpecificBuiltinType(BuiltinType::Kind::UShort))
+				{
+					if (intIndex == 0)
+						DefaultStaticValues.insert({ oldStaticInc, "0x00000000" });
+
+					char buffer[12] = { '0','0','0' };
+					itoa(static_cast<short>(resValue), buffer + 3, 16);
+					assert(intIndex < 4 && intIndex >= 0);
+					uint32_t len = strlen(buffer + 3);
+					assert(len > 0 && len <= 4);
+					memcpy(const_cast<void*>(static_cast<const void*>(DefaultStaticValues[oldStaticInc].data() + 2 + intIndex * 2)), buffer + len - 1, 4);
+
+					intIndex += 2;
+					if (intIndex >= 4)
+					{
+						intIndex = 0;
+						oldStaticInc++;
+					}
+				}
+				else
+					DefaultStaticValues.insert({ oldStaticInc++, to_string((int32_t)resValue) });
+
+
+
+				return true;
 			}
-			else {
-				ParseLiteral(cLit->getInitializer());
-				//                out << "Unimplemented CompoundLiteralExpr" << endl;
+			else if (result.Val.isFloat())
+			{
+				if (!isLtoRValue)
+					return -1;
+				DefaultStaticValues.insert({ oldStaticInc++, to_string(FloatToInt((float)extractAPFloat(result.Val.getFloat()))) });
+				return true;
+			}
+			else if (result.Val.isComplexFloat())
+			{
+				if (!isLtoRValue)
+					return -1;
+				DefaultStaticValues.insert({ oldStaticInc++, to_string(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatReal()))) });
+				DefaultStaticValues.insert({ oldStaticInc++, to_string(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatImag()))) });
+				return true;
+			}
+			else if (result.Val.isComplexInt())
+			{
+				if (!isLtoRValue)
+					return -1;
+				DefaultStaticValues.insert({ oldStaticInc++, to_string(result.Val.getComplexIntReal().getSExtValue()) });
+				DefaultStaticValues.insert({ oldStaticInc++, to_string(result.Val.getComplexIntImag().getSExtValue()) });
+				return true;
 			}
 		}
-		else if (isa<StringLiteral>(e)) {
-			//first param is string size
 
+		if (isa<StringLiteral>(e)) {
 			const StringLiteral *literal = cast<const StringLiteral>(e);
 			if (literal->getString().str().length() > 0)
 			{
-				InitializationStack.push({ 0, FBWT_ARRAY });
-
 				string strlit = literal->getString().str();
 				e->getType().getTypePtr();
 
 				int32_t strsize = getLiteralSizeOfType(e->getType().getTypePtr());
-
-				//int32_t StrIntSize = (literal->getString().str().length() + 4 - 1) & ~3;
-				//int32_t StrRem = StrIntSize - literal->getString().str().length();
-				//
-				//int32_t LoopSize = StrIntSize / 4;
-
 
 				int32_t buffer = 0;
 				int32_t i = 0, b = 0;
@@ -5726,8 +5810,6 @@ public:
 					else
 						((uint8_t*)&buffer)[b] = strlit[i];
 
-
-
 				}
 				if (b != 0)
 					DefaultStaticValues.insert({ oldStaticInc++, to_string(Utils::Bitwise::SwapEndian(buffer)) });
@@ -5735,7 +5817,33 @@ public:
 			}
 
 			return true;
+		}
+		else if (isa<InitListExpr>(e))
+		{
+			const InitListExpr *I = cast<const InitListExpr>(e);
+			uint32_t size = getSizeFromBytes(getSizeOfType(I->getType().getTypePtr()));
+			uint32_t SavedStaticInc = oldStaticInc;
 
+			resetIntIndex();
+
+			for (uint32_t i = 0; i < I->getNumInits(); i++)
+				ParseLiteral(I->getInit(i), false, true);
+
+			resetIntIndex();
+
+			if (oldStaticInc - SavedStaticInc < size)
+			{
+				cout << "init list size is less adding " << size - (oldStaticInc - SavedStaticInc) << " size: " << size << endl;
+
+				#if STATIC_PADDING_DEBUG == 0
+				oldStaticInc += size - (oldStaticInc - SavedStaticInc);
+				#else
+				uint32_t temp = size - (oldStaticInc - SavedStaticInc);
+				for (uint32_t i = 0; i < temp; i++)
+					DefaultStaticValues.insert({ oldStaticInc++, "0ie added " + to_string(temp) });
+				#endif
+			}
+			return true;
 		}
 		else if (isa<ImplicitCastExpr>(e))
 		{
@@ -5743,59 +5851,39 @@ public:
 
 			switch (icast->getCastKind())
 			{
-				case CK_ArrayToPointerDecay://char* x = "hello"; is unsupported
+				case CK_ArrayToPointerDecay://char* x = "hello";
 				if (isa<StringLiteral>(icast->getSubExpr()))
 				{
-					Throw("Static initialization of a char* is forbidden", rewriter, icast->getSubExpr()->getExprLoc());
+					const StringLiteral *literal = cast<const StringLiteral>(icast->getSubExpr());
+					if (literal->getString().str().length() > 0)
+						RuntimeStatics << "PushString \"" << literal->getString().str() << "\"\r\n";
+					else
+						RuntimeStatics << "PushString \"\"\r\n";
+
+					RuntimeStatics << setStatic(oldStaticInc++) << endl;
 				}
-				else
+				else if (isa<DeclRefExpr>(icast->getSubExpr()))//int vstack[10] = {1,2,3,4,5,6,7,8,9,10}, *vstack_ptr = vstack;
+				{
+					const DeclRefExpr *DRE = cast<const DeclRefExpr>(icast->getSubExpr());
+
+					//we can index because the name has to be declared in clang to use the declare
+					//we will let clang handle errors
+					RuntimeStatics
+						<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl
+						<< setStatic(oldStaticInc++) << endl;
+				}
+				else// need to test byte* t = {1,2,3};
 					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getExprLoc());
 				break;
 
-				case CK_IntegralCast://int x = 5.0;
-				case CK_FloatingCast://float x = 6.9;
-				ParseLiteral(icast->getSubExpr(), isAddr, isLtoRValue);
-				break;
-				case CK_IntegralToFloating://float x = 5;
-				if (isa<IntegerLiteral>(icast->getSubExpr())) {
-					const IntegerLiteral *literal = cast<const IntegerLiteral>(icast->getSubExpr());
-					float fltliteral = literal->getValue().getSExtValue();
-					InitializationStack.push({ FloatToInt(fltliteral), FBWT_FLOAT });
-				}
-				else
-				{
-					ParseLiteral(icast->getSubExpr(), false, true);
-					InitializationStack.push({ FloatToInt((float)IS_Pop().bytes), FBWT_FLOAT });
-				}
-				break;
-				case CK_FloatingToIntegral:
-				if (isa<FloatingLiteral>(icast->getSubExpr())) {
-					const FloatingLiteral *literal = cast<const FloatingLiteral>(icast->getSubExpr());
-					float fltliteral;
-					if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
-						fltliteral = literal->getValue().convertToFloat();
-					else
-						fltliteral = (float)literal->getValue().convertToDouble();
-					InitializationStack.push({ (int32_t)fltliteral, FBWT_INT });
-				}
-				else
-				{
-					ParseLiteral(icast->getSubExpr(), false, true);
-					InitializationStack.push({ (int32_t)IntToFloat(IS_Pop().bytes), FBWT_INT });
-				}
-				break;
-
 				case CK_FunctionToPointerDecay://int (*ggg)(int, float) = test; // test is a function
-
 				if (isa<DeclRefExpr>(icast->getSubExpr())) {
 					const DeclRefExpr *declRef = cast<const DeclRefExpr>(icast->getSubExpr());
 					if (isa<FunctionDecl>(declRef->getDecl())) {
 						const FunctionDecl *decl = cast<const FunctionDecl>(declRef->getDecl());
 
-						InitializationStack.push({ 0, FBWT_ARRAY });
-
 						string name = "@" + decl->getNameAsString();
-						uint32_t hash = Utils::Hashing::JoaatCased((char*)name.c_str());
+						uint32_t hash = Utils::Hashing::JoaatCased(const_cast<char*>(name.c_str()));
 						uint32_t i = 0;
 						for (; i < functions.size(); i++)
 						{
@@ -5808,13 +5896,13 @@ public:
 								}
 							}
 						}
-						for(uint32_t j = 0; j < functionsNew.size();j++)
+						for (uint32_t j = 0; j < functionsNew.size(); j++)
 						{
-							if(functionsNew[j]->Hash() == hash)
+							if (functionsNew[j]->Hash() == hash)
 							{
-								if(functionsNew[j]->Name() == name)
+								if (functionsNew[j]->Name() == name)
 								{
-									staticReferences.push_back(functionsNew[j]);
+									functionsNew[j]->setUsed();
 									break;
 								}
 							}
@@ -5830,47 +5918,64 @@ public:
 					else Throw("Unimplemented CK_FunctionToPointerDecay DeclRefExpr for " + string(declRef->getStmtClassName()));
 
 				}
-				else Throw("Unimplemented CK_FunctionToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()));
-
-				break;
-				case CK_LValueToRValue://const int h = 5; int k = h;
-
-				if (isa<DeclRefExpr>(icast->getSubExpr())) {
-					const DeclRefExpr *declRef = cast<const DeclRefExpr>(icast->getSubExpr());
-					map<string, int>::iterator it = statics.find(declRef->getDecl()->getName());
-
-					if (it != statics.end())
-					{
-						map<uint32_t, string>::iterator dsit = DefaultStaticValues.find(it->second);
-						if (dsit != DefaultStaticValues.end())
-						{
-							char *endp;
-							int32_t value = strtol(dsit->second.c_str(), &endp, 10);
-
-							if (endp == dsit->second.c_str() || *endp != 0)
-								Throw("Unable to convert a const default static value to value", rewriter, declRef->getExprLoc());
-
-							if (declRef->getDecl()->getType()->isFloatingType())
-								InitializationStack.push({ value, FBWT_FLOAT });
-							else
-								InitializationStack.push({ value, FBWT_INT });
-						}
-						else Throw("Const value index " + string(declRef->getDecl()->getName()) + " was not found", rewriter, declRef->getExprLoc());
-					}
-					else Throw("Const value " + string(declRef->getDecl()->getName()) + " was not found", rewriter, declRef->getExprLoc());
-				}
-				else Throw("Unimplemented CK_LValueToRValue for " + string(icast->getSubExpr()->getStmtClassName()));
-
+				else
+					Throw("Unimplemented CK_FunctionToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()));
 				break;
 
 				default:
 				Throw("Unimplemented ImplicitCastExpr of type " + string(icast->getCastKindName()));
+			}
+
+
+		}
+
+		//need to add full pointer init support for 
+		//ex:  int vstack[10] = {1,2,3,4,5,6,7,8,9,10};
+		//int* vstack_ptr = vstack + 4; //or
+		//int* vstack_ptr2 = &vstack[1]; //ect
+		//this will require these function below and more for parseing unevaluable expressions
+
+		else if (isa<UnaryOperator>(e)) {
+			const UnaryOperator *op = cast<const UnaryOperator>(e);
+
+			Expr *subE = op->getSubExpr();
+			if (op->getOpcode() == UO_AddrOf) {
+				if (isa<ArraySubscriptExpr>(subE)) {
+					//parseArraySubscriptExpr(subE, true);
+					Throw("addrof parseArraySubscriptExpr", rewriter, subE->getExprLoc());
+
+				}
+				else if (isa<DeclRefExpr>(subE)) {
+					Throw("addrof DeclRefExpr", rewriter, subE->getExprLoc());
+					//parseExpression(subE, true, false);
+				}
+				else {
+					ParseLiteral(subE, true, false);
+				}
+				return  true;
 
 			}
 
 
 		}
+		else if (isa<CompoundLiteralExpr>(e)) {
+			Throw("COL", rewriter, e->getExprLoc());
+			const CompoundLiteralExpr *cLit = cast<const CompoundLiteralExpr>(e);
+			if (isa<InitListExpr>(cLit->getInitializer())) {
+				const InitListExpr *init = cast<const InitListExpr>(cLit->getInitializer());
+				for (unsigned int i = 0; i<init->getNumInits(); i++) {
+					ParseLiteral(init->getInit(i));
+				}
+				// if(!printVTable)
+				//     out << "iPush " << init->getNumInits() << " // numInitializers" << endl;
+			}
+			else {
+				ParseLiteral(cLit->getInitializer());
+				//                out << "Unimplemented CompoundLiteralExpr" << endl;
+			}
+		}
 		else if (isa<CastExpr>(e)) {
+			Throw("CE", rewriter, e->getExprLoc());
 			const CastExpr *icast = cast<const CastExpr>(e);
 			switch (icast->getCastKind()) {
 				case clang::CK_IntegralToFloating:
@@ -5913,7 +6018,7 @@ public:
 				break;
 				case clang::CK_LValueToRValue:
 				{
-					ParseLiteral(icast->getSubExpr(), isAddr, true, printVTable);
+					ParseLiteral(icast->getSubExpr(), isAddr, true);
 					//const Expr *subE = icast->getSubExpr();
 
 					//handleRValueDeclRef(subE);
@@ -5951,6 +6056,7 @@ public:
 			}
 		}
 		else if (isa<DeclRefExpr>(e)) {
+
 			//const DeclRefExpr *declref = cast<const DeclRefExpr>(e);
 			//
 			//if (isa<EnumConstantDecl>(declref->getDecl())) {
@@ -5968,516 +6074,72 @@ public:
 			return true;
 		}
 		else if (isa<ArraySubscriptExpr>(e)) {
+			Throw("ASE", rewriter, e->getExprLoc());
 			Throw("parseArraySubscriptExpr", rewriter, e->getExprLoc());
 			//return parseArraySubscriptExpr(e, isAddr, isLtoRValue);
 		}
 		else if (isa<ParenExpr>(e)) {
+			Throw("PE", rewriter, e->getExprLoc());
 			const ParenExpr *parenExpr = cast<const ParenExpr>(e);
 			ParseLiteral(parenExpr->getSubExpr(), isAddr, isLtoRValue);
 		}
-		else if (isa<UnaryOperator>(e)) {
-			const UnaryOperator *op = cast<const UnaryOperator>(e);
-
-			Expr *subE = op->getSubExpr();
-			if (op->getOpcode() == UO_Minus) {
-				if (isa<IntegerLiteral>(subE)) {
-					const IntegerLiteral *literal = cast<const IntegerLiteral>(subE);
-					InitializationStack.push({ (int32_t)-literal->getValue().getSExtValue(), FBWT_INT });
-				}
-				else if (isa<FloatingLiteral>(subE)) {
-					const FloatingLiteral *literal = cast<const FloatingLiteral>(subE);
-					float fltliteral;
-					if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
-						fltliteral = literal->getValue().convertToFloat();
-					else
-						fltliteral = (float)literal->getValue().convertToDouble();
-					InitializationStack.push({ FloatToInt(-1.0f*fltliteral), FBWT_FLOAT });
-				}
-				else Throw("UO_Minus not caught", rewriter, op->getOperatorLoc());
-				return false;
-			}
-			else if (op->getOpcode() == UO_LNot) {
-				if (isa<IntegerLiteral>(subE)) {
-					const IntegerLiteral *literal = cast<const IntegerLiteral>(subE);
-					InitializationStack.push({ !literal->getValue().getSExtValue(), FBWT_INT });
-
-				}
-				else if (isa<FloatingLiteral>(subE)) {
-					const FloatingLiteral *literal = cast<const FloatingLiteral>(subE);
-					float fltliteral;
-					if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
-						fltliteral = literal->getValue().convertToFloat();
-					else
-						fltliteral = (float)literal->getValue().convertToDouble();
-					InitializationStack.push({ FloatToInt(!fltliteral), FBWT_FLOAT });
-
-				}
-				else if (isa<Expr>(subE)) {
-					ParseLiteral(subE, isAddr, isLtoRValue);
-
-				}
-				else {
-					Throw("unimplmented UO_Not", rewriter, op->getOperatorLoc());
-				}
-				return true;
-
-			}
-			else if (op->getOpcode() == UO_AddrOf) {
-				if (isa<ArraySubscriptExpr>(subE)) {
-					//parseArraySubscriptExpr(subE, true);
-					Throw("parseArraySubscriptExpr", rewriter, subE->getExprLoc());
-				}
-				else if (isa<DeclRefExpr>(subE)) {
-					Throw("DeclRefExpr", rewriter, subE->getExprLoc());
-					//parseExpression(subE, true, false);
-				}
-				else {
-					ParseLiteral(subE, true, false);
-				}
-				return  true;
-
-			}
-
-
-		}
 		else if (isa<BinaryOperator>(e)) {
+			Throw("BO", rewriter, e->getExprLoc());
 			const BinaryOperator *bOp = cast<const BinaryOperator>(e);
-
-			if (bOp->getOpcode() == BO_Assign) {
-
-				//parseExpression(bOp->getRHS(), isAddr, true, false);
-				//if (bOp->getRHS()->getType()->isStructureOrClassType()) {
-				//	int size = getSizeFromBytes(getSizeOfType(bOp->getRHS()->getType().getTypePtr()));
-				//	out << "Push " << size << " //size " << endl;
-				//	parseExpression(bOp->getLHS(), true);
-				//
-				//	out << "ArrayFromStack" << endl;
-				//}
-				//else {
-				//	parseExpression(bOp->getLHS());
-				//}
-				//
-				//
-				Pause("BO_Assign");
-				return true;
-			}
-
 			ParseLiteral(bOp->getLHS(), false, true);
 			ParseLiteral(bOp->getRHS(), false, true);
-
-
-			IS_Exch();
-			bool islvaluefloat = InitializationStack.top().type == FBWT_FLOAT;
-			IS_Exch();
-
-
-			if (bOp->getLHS()->getType()->isFloatingType() || islvaluefloat) {
-				#define IS_PushF(op)\
-				float stk1 = IntToFloat(IS_Pop().bytes);\
-				float stk2 = IntToFloat(IS_Pop().bytes);\
-				InitializationStack.push({ stk2 op stk1, FBWT_FLOAT });
-				#define IS_PushFc(op)\
-				float stk1 = IntToFloat(IS_Pop().bytes);\
-				float stk2 = IntToFloat(IS_Pop().bytes);\
-				InitializationStack.push({ FloatToInt(stk2 op stk1), FBWT_FLOAT });
-				#define IS_PushFi(op)\
-				int32_t stk1 = IS_Pop().bytes;\
-				int32_t stk2 = IS_Pop().bytes;\
-				InitializationStack.push({ stk2 op stk1, FBWT_FLOAT });
-
-				switch (bOp->getOpcode()) {
-					case BO_EQ: { IS_PushF(== ); } break;
-					case BO_Mul: { IS_PushFc(*); } break;
-					case BO_Div: { IS_PushFc(/ ); } break;
-					case BO_Rem:
-					{
-						float stk1 = IntToFloat(IS_Pop().bytes);
-						float stk2 = IntToFloat(IS_Pop().bytes);
-						InitializationStack.push({ FloatToInt(fmod(stk2, stk1)), FBWT_FLOAT });
-					}
-					break;
-					case BO_Sub: { IS_PushFc(-); } break;
-					case BO_Add: { IS_PushFc(+); } break;
-					case BO_LT: { IS_PushF(<); } break;
-					case BO_GT: { IS_PushF(>); } break;
-					case BO_GE: { IS_PushF(>= ); } break;
-					case BO_LE: { IS_PushF(<= ); } break;
-					case BO_NE: { IS_PushF(!= ); } break;
-					case BO_LAnd: { IS_PushF(&&); } break;
-					case BO_And: { IS_PushFi(&); } break;
-					case BO_Xor: { IS_PushFi(^); } break;
-					case BO_LOr: { IS_PushF(|| ); } break;
-					case BO_Or: { IS_PushFi(| ); } break;
-					case BO_Shl: { IS_PushFi(<< ); } break;
-					case BO_Shr: { IS_PushFi(>> ); } break;
-
-					default:
-					Throw("flt operator " + to_string(bOp->getOpcode()) + " is unimplemented for a static define", rewriter, bOp->getOperatorLoc());
-				}
-
-			}
-			else {
-				#define IS_PushI(op)\
-				int32_t stk1 = IS_Pop().bytes;\
-				int32_t stk2 = IS_Pop().bytes;\
-				InitializationStack.push({ stk2 op stk1, FBWT_INT });
-
-				switch (bOp->getOpcode()) {
-					case BO_EQ: { IS_PushI(== ); } break;
-					case BO_Mul: { IS_PushI(*); } break;
-					case BO_Div: { IS_PushI(/ ); } break;
-					case BO_Rem: { IS_PushI(%); } break;
-					case BO_Sub: { IS_PushI(-); } break;
-					case BO_LT: { IS_PushI(<); } break;
-					case BO_GT: { IS_PushI(>); } break;
-					case BO_GE: { IS_PushI(>= ); } break;
-					case BO_LE: { IS_PushI(<= ); } break;
-					case BO_NE: { IS_PushI(!= ); } break;
-					case BO_LAnd: { IS_PushI(&&); } break;
-					case BO_And: { IS_PushI(&); } break;
-					case BO_Xor: { IS_PushI(^); } break;
-					case BO_Add: { IS_PushI(+); } break;
-					case BO_LOr: { IS_PushI(|| ); } break;
-					case BO_Or: { IS_PushI(| ); } break;
-					case BO_Shl: { IS_PushI(<< ); } break;
-					case BO_Shr: { IS_PushI(>> ); } break;
-					default:
-					Throw("operator " + to_string(bOp->getOpcode()) + " is unimplemented for a static define", rewriter, bOp->getOperatorLoc());
-				}
-			}
-
 		}
-		else if (isa<ImplicitValueInitExpr>(e))
-		{
-			const ImplicitValueInitExpr *ivie = cast<const ImplicitValueInitExpr>(e);
 
-			const Type* type = ivie->getType().getTypePtr();
-			uint32_t size = getSizeFromBytes(getSizeOfType(type));
-			InitializationStack.push({ 0, FBWT_ARRAY });
-
-			for (uint32_t i = 0; i < size; i++)
-				DefaultStaticValues.insert({ oldStaticInc++, "0" });
-
-		}
-		else if (isa<InitListExpr>(e))//kill on myself
-		{
-
-			const InitListExpr *init = cast<const InitListExpr>(e);
-
-			const Type* type = init->getType().getTypePtr();
-			//int32_t size = getSizeOfType(type);
-
-			//int32_t itemType = 0;
-
-			//int32_t oldArrayOutSize = ArrayOut.size();
-			if (!InitializationStack.empty())
-			{
-				if (InitializationStack.top().type != FBWT_INIT_LIST)
-					InitializationStack.push({ 0, FBWT_INIT_LIST });
-			}
-			else
-				InitializationStack.push({ 0, FBWT_INIT_LIST });
-
-			if (isa<ConstantArrayType>(type))//will fuck up with array of array of array
-				type = type->getArrayElementTypeNoTypeQual();
-			else if (type->isStructureType())
-			{
-				const RecordType *record = type->getAsStructureType();
-				type = record;
-
-				if (RecordDecl *rd = record->getDecl()) {
-
-					for (const auto *CS : rd->fields()) {
-						const QualType qtype = CS->getType();
-
-						const Type* type = qtype.getTypePtr();
-
-						if (isa<ConstantArrayType>(type))
-							type = type->getArrayElementTypeNoTypeQual();
-
-						#if STATIC_DEBUG == 1
-						cout << "\trecord type size: " << getSizeOfQualType(&qtype) << " is char: " << type->isCharType() << endl;
-						#endif
-						//size += max(temp, 4);
-					}
-					//cout << "struct: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
-				}
-
-			}
-
-			#if STATIC_DEBUG == 1
-			cout << "init size: " << size << "\tType size: " << getSizeFromBytes(size) << "\tClass: " << type->getTypeClassName() << "\tis char: " << type->isCharType() << endl;
-			#endif
-
-			vector<uint8_t> initdata;
-			for (unsigned int i = 0; i < init->getNumInits(); i++) {
-				const Expr* expr = init->getInit(i);
-
-				#if STATIC_DEBUG == 1
-				if (isa<BuiltinType>(expr->getType().getTypePtr()))
-				{
-					const BuiltinType *bt = cast<const BuiltinType>(expr->getType().getTypePtr());
-					cout << "BT:" << bt->getKind() << endl;
-					if (init->getType().getTypePtr()->isStructureType())
-						cout << "\tarr size:" << getSizeOfType(init->getType().getTypePtr()->getAsStructureType()->getDecl()->field_begin()->getType().getTypePtr()) << endl;
-					else
-						cout << "\tarr size:" << getSizeOfType(init->getType().getTypePtr()) << endl;
-
-
-				}
-				#endif
-
-				ParseLiteral(expr);
-
-				if (InitializationStack.top().type != FBWT_ARRAY)
-				{
-
-					#if STATIC_DEBUG == 1
-					cout << "istype: " << InitializationStack.top().type << endl;
-					#endif
-
-					const Type* type = init->getType().getTypePtr();
-					const Type* exprtype = expr->getType().getTypePtr();
-					size_t size = 0;
-
-					if (type->isStructureType())
-					{
-						if (RecordDecl *rd = type->getAsStructureType()->getDecl()) {
-
-							int j = 0;
-							for (const auto *CS : rd->fields())
-							{
-								if (j++ == i)
-								{
-									type = CS->getType().getTypePtr();
-									if (isa<ConstantArrayType>(type))
-										type = type->getArrayElementTypeNoTypeQual();
-									break;
-								}
-
-							}
-						}
-
-					}
-
-					size = getSizeOfType(type);
-					#if STATIC_DEBUG == 1
-					cout << "size: " << size << endl;
-					#endif
-
-					if (exprtype->isCharType())
-					{
-						if (size == 1)
-						{
-							DefaultStaticValues.insert({ oldStaticInc++, to_string((IS_Pop().bytes % 256) << 24) });
-							size--;
-						}
-						else
-						{
-							#if STATIC_DEBUG == 1
-							cout << "pushing 1\n";
-							#endif
-							initdata.push_back(IS_Pop().bytes % 256);
-						}
-					}
-					else if (exprtype->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || exprtype->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
-					{
-						if (size == 2)
-						{
-							DefaultStaticValues.insert({ oldStaticInc++, to_string((IS_Pop().bytes % 65536) << 16) });
-							size -= 2;
-						}
-						else
-						{
-							#if STATIC_DEBUG == 1
-							cout << "pushing 2\n";
-							#endif
-							initdata.resize(initdata.size() + 2);
-							int16_t data = IS_Pop().bytes % 65536;
-							memcpy(initdata.data() + initdata.size() - 2, &data, 2);
-						}
-					}
-					else if (InitializationStack.top().type != FBWT_INIT_LIST)
-					{
-						if (size == 4)
-						{
-							DefaultStaticValues.insert({ oldStaticInc++, to_string(IS_Pop().bytes) });
-							size -= 4;
-						}
-						else
-						{
-							#if STATIC_DEBUG == 1
-							cout << "pushing 4\n";
-							#endif
-							initdata.resize(initdata.size() + 4);
-							int32_t data = IS_Pop().bytes;
-							memcpy(initdata.data() + initdata.size() - 4, &data, 4);
-						}
-					}
-
-					//add padding at end of init list expression
-					if (i == init->getNumInits() - 1 && !isa<InitListExpr>(expr))
-					{
-						#if STATIC_DEBUG == 1
-						cout << "push size: " << size << endl;
-						cout << "pushing 0 ints times " << (size - initdata.size()) / 4 << endl;
-						#endif
-						while (initdata.size() < size)
-						{
-							initdata.push_back(0);
-						}
-					}
-				}
-				//else is array which is already padded and good to go
-				else
-				{
-					IS_Pop();
-					if (InitializationStack.top().type != FBWT_INIT_LIST)
-						Throw("Stack error on InitListExpr literal");
-				}
-
-			}
-
-			//read data into statics
-			for (size_t i = 0; i < initdata.size(); i += 4)
-			{
-				if (i + 4 > initdata.size())
-				{
-					int32_t buffer = 0;
-					for (size_t j = 0; j < initdata.size() - i; j++)
-						((uint8_t*)&buffer)[j] = initdata[i + j];
-
-					//swapping bytes
-					if (type->isCharType())
-						buffer = Utils::Bitwise::SwapEndian(buffer);
-					else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
-						buffer = Utils::Bitwise::Flip2BytesIn4(buffer);
-
-					#if STATIC_DEBUG == 1
-					cout << "read b: " << buffer << "\n";
-					#endif
-					DefaultStaticValues.insert({ oldStaticInc++, to_string(buffer) });
-				}
-				else
-				{
-					int32_t value = *(uint32_t*)(initdata.data() + i);
-
-					//swapping bytes
-					if (type->isCharType())
-						value = Utils::Bitwise::SwapEndian(value);
-					else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
-						value = Utils::Bitwise::Flip2BytesIn4(value);
-
-					#if STATIC_DEBUG == 1
-					cout << "read: " << to_string(value) << "\n";
-					#endif
-					DefaultStaticValues.insert({ oldStaticInc++, to_string(value) });
-				}
-			}
-
-			//if (oldArrayOutSize + itemSize < ArrayOut.size())
-			//	Throw("ArrayOut Overflow!!!");
-			//
-			//if (oldArrayOutSize + itemSize > ArrayOut.size())
-			//{
-			//	int count = ArrayOut.size() - (oldArrayOutSize + itemSize);
-			//
-			//	for(int i = 0; i < count; i++)
-			//		ArrayOut.push_back(0);
-			//
-			//}
-
-			if (InitializationStack.empty() || InitializationStack.top().type != FBWT_INIT_LIST)
-				Throw("Stack error on InitListExpr literal");
-		}
-		else if (isa<CharacterLiteral>(e))
-		{
-			const CharacterLiteral *charliteral = cast<const CharacterLiteral>(e);
-			InitializationStack.push({ (int32_t)charliteral->getValue(), FBWT_CHAR });
-		}
-		else {
+		else
 			Throw("Class " + string(e->getStmtClassName()) + " is unimplemented for a static define");
-		}
 		return -1;
 	}
 
 	bool VisitDecl(Decl *D) {
 		if (isa<VarDecl>(D)) {
-			VarDecl *varDecl = cast<VarDecl>(D);
-			if (varDecl->hasGlobalStorage()) {
+			globalVarDecl = cast<VarDecl>(D);
+			if (globalVarDecl->hasGlobalStorage()) {
 				if (statics.find(dumpName(cast<NamedDecl>(D))) == statics.end()) {
 
-					//QualType type = varDecl->getType();
-					//auto size = getSizeOfQualType(&type);
+					auto size = getSizeOfType(globalVarDecl->getType().getTypePtr());
 
-					auto size = getSizeOfType(varDecl->getType().getTypePtr());
-					//auto size = context->getTypeInfoDataSizeInChars(varDecl->getType()).first.getQuantity();
-
+					resetIntIndex();
+					savedType = nullptr;
 					oldStaticInc = staticInc;
 					statics.insert(make_pair(dumpName(cast<NamedDecl>(D)), staticInc));
 					staticInc += getSizeFromBytes(size);
 
-					const Expr *initializer = varDecl->getAnyInitializer();
+					const Expr *initializer = globalVarDecl->getAnyInitializer();
 
 
 					if (initializer) {
-						if (isa<CXXConstructExpr>(initializer)) {
-							//out << "GetStaticP2 " << oldStaticInc << " //" << varDecl->getName().str() << endl;
-							ParseLiteral(initializer, true, false, true, varDecl);
-						}
+						//if (isa<CXXConstructExpr>(initializer)) {
+						//	//out << "GetStaticP2 " << oldStaticInc << " //" << varDecl->getName().str() << endl;
+						//	ParseLiteral(initializer, true, false, true, varDecl);
+						//}
 
 						ParseLiteral(initializer, false, true);
-						//out << "SetStatic2 " << oldStaticInc << "  //" << varDecl->getName().str() << endl;
 
-						if (oldStaticInc > staticInc)//undefined length arrays
+
+						if (oldStaticInc > staticInc)//undefined length arrays (should check if it is an undefined length array)
 							staticInc = oldStaticInc;
 
-						uint32_t sizeb4 = 0;
-						if (!InitializationStack.empty())
-						{
-							sizeb4 = InitializationStack.size();
-
-							switch (InitializationStack.top().type)
-							{
-								case FBWT_ARRAY:
-								case FBWT_INIT_LIST:
-
-								//if (ArrayOut.size() != 0)
-								//{
-								//	staticInc += ArrayOut.size() - 1;
-								//}
-								InitializationStack.pop();
-								if (!InitializationStack.empty())
-									Warn("InitializationStack not empty after array type" + to_string(InitializationStack.top().type));
-								break;
-								default://FBWT_INT
-
-								if (varDecl->getType()->isCharType())
-									DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::SwapEndian(IS_Pop().bytes % 256)) });
-								else if (varDecl->getType()->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || varDecl->getType()->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
-									DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::Flip2BytesIn4(IS_Pop().bytes % 65536)) });
-								else
-									DefaultStaticValues.insert({ oldStaticInc, to_string(IS_Pop().bytes) });
 
 
-								//cout << "stack size: " << sizeb4 << endl
-								//<< "value: " << DefaultStaticValues[oldStaticInc] << endl;
-								break;
-							}
+						//if (varDecl->getType()->isCharType())
+						//	DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::SwapEndian(IS_Pop().bytes % 256)) });
+						//else if (varDecl->getType()->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || varDecl->getType()->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+						//	DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::Flip2BytesIn4(IS_Pop().bytes % 65536)) });
+						//else
+						//	DefaultStaticValues.insert({ oldStaticInc, to_string(IS_Pop().bytes) });
 
-						}
-						else Throw("stack empty");
 
 						//cout << "init Name: " << varDecl->getName().str() << " class: " << initializer->getStmtClassName() << '\n';
 						//Pause();
 
 
 					}
-					else
-					{
-						//cout << "!init Name: " << varDecl->getName().str() << '\n';
-						//Pause();
-					}
+
 
 					if (oldStaticInc > staticInc)
 						Warn("Static Overflow Old:" + to_string(oldStaticInc) + " New:" + to_string(staticInc));
@@ -6498,8 +6160,22 @@ public:
 		}
 		return "";
 	}
+	void resetIntIndex()
+	{
+		if (intIndex != 0)
+		{
+			intIndex = 0;
+			oldStaticInc++;
+		}
+	}
 
+
+	VarDecl* globalVarDecl;
 	uint32_t oldStaticInc = 0;
+	uint32_t intIndex = 0;
+	Type* savedType = nullptr;
+
+	stringstream RuntimeStatics;
 	map<uint32_t, string> DefaultStaticValues;//index, value
 
 	#pragma region InitializationStack
@@ -6524,9 +6200,9 @@ public:
 			InitializationStack.pop();
 			return ret;
 		}
-		else 
+		else
 			Throw("InitializationStack Empty");
-		return {0, FBWT_INT};
+		return{ 0, FBWT_INT };
 	}
 	void IS_Clear()
 	{
@@ -6579,7 +6255,7 @@ public:
 	}
 
 	bool TraverseDecl(Decl *D) {
-		
+
 		RecursiveASTVisitor::TraverseDecl(D);
 		if (currentFunction)
 		{
@@ -6622,18 +6298,15 @@ public:
 
 		if (diagnostics->getClient()->getNumErrors())
 		{
-			for(uint32_t i = 0; i < functionsNew.size(); i++)
+			for (uint32_t i = 0; i < functionsNew.size(); i++)
 			{
 				delete functionsNew[i];
 			}
 			return;
 		}
-		stringstream header;
-		MainFunction->setUsed();
-		for (auto staticref : staticReferences)
-		{
-			staticref->setUsed();
-		}
+
+		stringstream header, main;
+
 		header << "SetStaticsCount " << staticInc << "\r\n";
 		for (map<uint32_t, string>::iterator iterator = GlobalsVisitor.DefaultStaticValues.begin(); iterator != GlobalsVisitor.DefaultStaticValues.end(); iterator++)
 			header << "SetDefaultStatic " << iterator->first << " " << iterator->second << "\r\n";
@@ -6642,14 +6315,15 @@ public:
 		for (map<string, int>::iterator iterator = statics.begin(); iterator != statics.end(); iterator++)
 			header << "SetStaticName " << iterator->second << " " << iterator->first << "\r\n";
 
+
 		if (Visitor.MainRets != -1)
 		{
-			header << "\r\nFunction 0 2\r\nCall @main\r\n";
+			main << "\r\nFunction 0 2\r\nCall @main\r\n";
 			for (int32_t i = 0; i < Visitor.MainRets; i++)
 			{
-				header << "Drop\r\n";
+				main << "Drop\r\n";
 			}
-			header << "Return 0 0\r\n";
+			main << "Return 0 0\r\n";
 		}
 		else
 			Throw("Function \"main\" was not found");
@@ -6660,6 +6334,10 @@ public:
 
 			header.seekg(0, ios::end);
 			fwrite(header.str().c_str(), 1, header.tellg(), file);
+			GlobalsVisitor.RuntimeStatics.seekg(0, ios::end);
+			fwrite(GlobalsVisitor.RuntimeStatics.str().c_str(), 1, GlobalsVisitor.RuntimeStatics.tellg(), file);
+			main.seekg(0, ios::end);
+			fwrite(main.str().c_str(), 1, main.tellg(), file);
 
 			string outstr = Visitor.out.str();
 			for (uint32_t i = 0; i < functions.size(); i++)
@@ -6671,13 +6349,14 @@ public:
 			fclose(file);
 		}
 		else Throw("Output File Could Not Be Opened");
+
 		FILE* ftemp = fopen((Visitor.outfile + "2").c_str(), "wb");
 		if (ftemp != NULL)
 		{
 			header.seekg(0, ios::end);
 			fwrite(header.str().c_str(), 1, header.tellg(), file);
 
-			for (uint32_t i = 0; i <functionsNew.size ();i++)
+			for (uint32_t i = 0; i <functionsNew.size(); i++)
 			{
 				if (functionsNew[i]->IsUsed())
 				{
@@ -6687,7 +6366,8 @@ public:
 			}
 			fclose(ftemp);
 		}
-		for(uint32_t i = 0; i < functionsNew.size(); i++)
+
+		for (uint32_t i = 0; i < functionsNew.size(); i++)
 		{
 			delete functionsNew[i];
 		}
@@ -6716,7 +6396,7 @@ public:
 	}
 
 	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
-		
+
 		llvm::errs() << "Compiling: " << file << "\n";
 		TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
 		rewriter = TheRewriter;
