@@ -44,7 +44,7 @@ vector<FData> functions;
 
 vector<FunctionData*> functionsNew;
 FunctionData* CurrentFunction;
-FunctionData* MainFunction = NULL;
+FunctionData Entryfunction("@EntryPoint", 0);
 vector<FunctionData*> staticReferences;
 struct InlineData { uint32_t hash; string name; };
 vector<InlineData> InlineItems;
@@ -5553,8 +5553,7 @@ public:
 			if (f->isMain())
 			{
 				functions.back().isused = true;
-				assert(!MainFunction && "Two main functions found");
-				MainFunction = CurrentFunction;
+				Entryfunction.addUsedFunc(CurrentFunction);
 				QualType type = f->getReturnType();
 				MainRets = Utils::Math::DivInt(getSizeOfQualType(&type), 4);
 			}
@@ -6099,12 +6098,15 @@ public:
 				if (isa<StringLiteral>(icast->getSubExpr()))
 				{
 					const StringLiteral *literal = cast<const StringLiteral>(icast->getSubExpr());
+					Entryfunction.AddOpcode(Opcode::PushString(literal->getString().str()));
+					Entryfunction.AddOpcode(Opcode::SetStatic(oldStaticInc));
 					if (literal->getString().str().length() > 0)
 						RuntimeStatics << "PushString \"" << literal->getString().str() << "\"\r\n";
 					else
 						RuntimeStatics << "PushString \"\"\r\n";
 
 					RuntimeStatics << setStatic(oldStaticInc++) << endl;
+					
 				}
 				else if (isa<DeclRefExpr>(icast->getSubExpr()))//int vstack[10] = {1,2,3,4,5,6,7,8,9,10}, *vstack_ptr = vstack;
 				{
@@ -6112,6 +6114,8 @@ public:
 
 					//we can index because the name has to be declared in clang to use the declare
 					//we will let clang handle errors
+					Entryfunction.AddOpcode(Opcode::GetStaticP(statics[DRE->getDecl()->getNameAsString()]));
+					Entryfunction.AddOpcode(Opcode::SetStatic(oldStaticInc));
 					RuntimeStatics
 						<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl
 						<< setStatic(oldStaticInc++) << endl;
@@ -6146,7 +6150,7 @@ public:
 							{
 								if (functionsNew[j]->Name() == name)
 								{
-									functionsNew[j]->setUsed();
+									Entryfunction.addUsedFunc(functionsNew[i]);
 									break;
 								}
 							}
@@ -6548,11 +6552,8 @@ public:
 			}
 			return;
 		}
-		MainFunction->setUsed();
-		for (auto staticRef : staticReferences)
-		{
-			staticRef->setUsed();
-		}
+		Entryfunction.setUsed();
+
 
 		stringstream header, main;
 
@@ -6573,6 +6574,12 @@ public:
 				main << "Drop\r\n";
 			}
 			main << "Return 0 0\r\n";
+			Entryfunction.AddOpcode(Opcode::Call("main"));
+			for (int i = 0; i < Visitor.MainRets;i++)
+			{
+				Entryfunction.AddOpcode(Opcode::Drop());
+			}
+			Entryfunction.AddOpcode(Opcode::Return(0, 0));
 		}
 		else
 			Throw("Function \"main\" was not found");
@@ -6603,8 +6610,9 @@ public:
 		if (ftemp != NULL)
 		{
 			header.seekg(0, ios::end);
-			fwrite(header.str().c_str(), 1, header.tellg(), file);
-
+			fwrite(header.str().c_str(), 1, header.tellg(), ftemp);
+			string eStr = Entryfunction.toString();
+			fwrite(eStr.c_str(), 1, eStr.size(), ftemp);
 			for (uint32_t i = 0; i <functionsNew.size(); i++)
 			{
 				if (functionsNew[i]->IsUsed())
