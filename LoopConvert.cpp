@@ -5241,6 +5241,167 @@ public:
 		{
 			//{ 1, 3, 7 }; support
 			const InitListExpr *I = cast<const InitListExpr>(e);
+			if (I->getType()->isArrayType())
+			{
+				switch (getSizeOfType(I->getType()->getArrayElementTypeNoTypeQual()))
+				{
+				case 1:
+				{
+					int initCount = I->getNumInits();
+					for(int i = 0; i < initCount; i += 4)
+					{
+						llvm::APSInt res;
+						int evaluated[4];
+						const Expr* inits[4];
+						bool allconst = true;
+						bool succ[4];
+						for(int j = 0; j < 4; j++)
+						{
+							if(i + j < initCount)
+							{
+								inits[j] = I->getInit(i + j);
+								if((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+								{
+									evaluated[j] = res.getSExtValue() & 0xFF;
+								}
+								else
+								{
+									allconst = false;
+								}
+							}
+							else
+							{
+								succ[j] = true;
+								evaluated[j] = 0;
+							}
+
+						}
+						if(allconst)
+						{
+							int val = (evaluated[0]) | (evaluated[1] << 8) | (evaluated[2] << 16) | (evaluated[3] << 24);
+							out << iPush(val) << endl;
+							AddInstruction(PushInt, val);
+						}
+						else
+						{
+							if(succ[0])
+							{
+								out << iPush(evaluated[0]) << endl;
+								AddInstruction(PushInt, evaluated[0]);
+
+							}
+							else
+							{
+								parseExpression(I->getInit(i), false, true);
+								out << "PushB 255\r\nAnd\r\n";
+								AddInstruction(PushInt, 255);
+								AddInstruction(And);
+							}
+							for(int j = 1; j < 4; j++)
+							{
+								if(i + j >= initCount)
+									break;
+								if(succ[j])
+								{
+									out << iPush(evaluated[j] << (j << 3)) << "\r\nOr\r\n";
+									AddInstruction(PushInt, evaluated[j] << (j << 3));
+									AddInstruction(Or);
+								}
+								else
+								{
+									parseExpression(I->getInit(i + j), false, true);
+									out << "PushB 255\r\nAnd\r\nPushB " << (j << 3) << "\r\nCallNative shift_left 2 1\r\nOr\r\n";
+									AddInstruction(PushInt, 255);
+									AddInstruction(And);
+									AddInstruction(PushInt, j << 3);
+									AddInstruction(Native, "shift_left", 2, 1);
+									AddInstruction(Or);
+								}
+
+							}
+						}
+					}
+				}
+					return 1;
+				case 2:
+				{
+					int initCount = I->getNumInits();
+					for(int i = 0; i < initCount; i += 4)
+					{
+						llvm::APSInt res;
+						int evaluated[2];
+						const Expr* inits[2];
+						bool allconst = true;
+						bool succ[2];
+						for(int j = 0; j < 2; j++)
+						{
+							if(i + j < initCount)
+							{
+								inits[j] = I->getInit(i + j);
+								if((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+								{
+									evaluated[j] = res.getSExtValue() & 0xFFFF;
+								}
+								else
+								{
+									allconst = false;
+								}
+							}
+							else
+							{
+								succ[j] = true;
+								inits[j] = 0;
+							}
+
+						}
+						if(allconst)
+						{
+							int val = (evaluated[0]) | (evaluated[1] << 16);
+							out << iPush(val) << endl;
+							AddInstruction(PushInt, val);
+						}
+						else
+						{
+							if(succ[0])
+							{
+								out << iPush(evaluated[0]) << endl;
+								AddInstruction(PushInt, evaluated[0]);
+
+							}
+							else
+							{
+								parseExpression(I->getInit(i), false, true);
+								out << "PushI24 65535\r\nAnd\r\n";
+								AddInstruction(PushInt, 65535);
+								AddInstruction(And);
+							}
+							if(i + 1 < initCount)
+							{
+								if(succ[1])
+								{
+									out << iPush(evaluated[1] << 16) << "\r\nOr\r\n";
+									AddInstruction(PushInt, evaluated[1] << 16);
+									AddInstruction(Or);
+								}
+								else
+								{
+									parseExpression(I->getInit(i + 1), false, true);
+									out << "PushI24 65535\r\nAnd\r\nPushB 16\r\nCallNative shift_left 2 1\r\nOr\r\n";
+									AddInstruction(PushInt, 65535);
+									AddInstruction(And);
+									AddInstruction(PushInt, 16);
+									AddInstruction(Native, "shift_left", 2, 1);
+									AddInstruction(Or);
+								}
+							}
+
+
+						}
+					}
+				}
+				return 1;
+				}
+			}
 			for (unsigned int i = 0; i < I->getNumInits(); i++)
 				parseExpression(I->getInit(i), false, true);
 		}
