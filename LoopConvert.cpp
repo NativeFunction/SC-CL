@@ -927,8 +927,23 @@ public:
 					AddInstruction(PushInt, 16);
 					AddInstructionComment(Native, "short type", "shift_right", 2, 1);
 				}
-				out << frameSet(index) << " //(pdecl)" << key << endl;
-				AddInstructionComment(SetFrame, "(pdecl)", index);
+
+				if (size > 4)//fromStack
+				{
+					int bSize = getSizeFromBytes(size);
+					out << iPush(bSize) << " //Type Size\r\n";
+					out << pFrame(index) << " //(pdecl)&" << key << endl;
+					out << "FromStack\r\n";
+					AddInstructionComment(PushInt, "Type Size", bSize);
+					AddInstructionComment(GetFrameP, "(pdecl)&", index);
+					AddInstruction(FromStack);
+				}
+				else
+				{
+					out << frameSet(index) << " //(pdecl)" << key << endl;
+					AddInstructionComment(SetFrame, "(pdecl)", index);
+				}
+				
 			}
 			else
 			{
@@ -979,8 +994,21 @@ public:
 					AddInstruction(PushInt, 16);
 					AddInstructionComment(Native, "short type", "shift_right", 2, 1);
 				}
-				out << setGlobal(index) << "  //" << key << endl;
-				AddInstructionComment(SetGlobal, key, index);
+				if(size > 4)//fromStack
+				{
+					int bSize = getSizeFromBytes(size);
+					out << iPush(bSize) << " //Type Size\r\n";
+					out << getGlobalp(index) << " //&Global_" << key << endl;
+					out << "FromStack\r\n";
+					AddInstructionComment(PushInt, "Type Size", bSize);
+					AddInstructionComment(GetGlobalP, "&Global_" + key, index);
+					AddInstruction(FromStack);
+				}
+				else
+				{
+					out << setGlobal(index) << "  //" << key << endl;
+					AddInstructionComment(SetGlobal, key, index);
+				}
 			}
 			else
 			{
@@ -1031,8 +1059,22 @@ public:
 					AddInstruction(PushInt, 16);
 					AddInstructionComment(Native, "short type", "shift_right", 2, 1);
 				}
-				out << setStatic(index) << "  //" << key << endl;
-				AddInstructionComment(SetStatic, key, index);
+
+				if(size > 4)//fromStack
+				{
+					int bSize = getSizeFromBytes(size);
+					out << iPush(bSize) << " //Type Size\r\n";
+					out << getStaticp(index) << " //&" << key << endl;
+					out << "FromStack\r\n";
+					AddInstructionComment(PushInt, "Type Size", bSize);
+					AddInstructionComment(GetStaticP, "&" + key, index);
+					AddInstruction(FromStack);
+				}
+				else
+				{
+					out << setStatic(index) << "  //" << key << endl;
+					AddInstructionComment(SetStatic, key, index);
+				}
 			}
 			else
 			{
@@ -3931,6 +3973,7 @@ public:
 				{
 					Throw("unimplmented UO_Real", rewriter, e->getSourceRange());
 				}
+				return true;
 			}
 			else if (op->getOpcode() == UO_Imag)
 			{
@@ -3959,6 +4002,7 @@ public:
 				{
 					Throw("unimplmented UO_Imag", rewriter, e->getSourceRange());
 				}
+				return true;
 			}
 
 			int pMult = 1;
@@ -3974,27 +4018,133 @@ public:
 				if (op->isIncrementOp()) {
 					parseExpression(subE, false, true);
 
-					out << add(pMult) << endl;
-					AddInstruction(AddImm, pMult);
-
-					if (isLtoRValue)
+					if (subE->getType()->isRealFloatingType())
 					{
-						out << "Dup" << endl;
-						AddInstruction(Dup);
+						out << "PushF_1\r\nfAdd\r\n";
+						AddInstruction(PushFloat, 1.0);
+						AddInstruction(FAdd);
+					}
+					else if(subE->getType()->isComplexType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("complexTemp", 1);
+						out << frameSet(index) << endl;
+						AddInstruction(SetFrame, index);
+						out << "PushF_1\r\nfAdd\r\n";
+						AddInstruction(PushFloat, 1.0);
+						AddInstruction(FAdd);
+						out << frameGet(index) << endl;
+						AddInstruction(GetFrame, index);
+						LocalVariables.removeLevel();
+					}
+					else if(subE->getType()->isComplexIntegerType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("complexTemp", 1);
+						out << frameSet(index) << endl;
+						AddInstruction(SetFrame, index);
+						out << add(pMult) << endl;
+						AddInstruction(AddImm, pMult);
+						out << frameGet(index) << endl;
+						AddInstruction(GetFrame, index);
+						LocalVariables.removeLevel();
+					}
+					else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
+					{
+						Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
+					}
+					else
+					{
+						out << add(pMult) << endl;
+						AddInstruction(AddImm, pMult);
+					}
+					if(isLtoRValue)
+					{
+						if(subE->getType()->isAnyComplexType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("complex", 2);
+							out << frameSet(index + 1) << "\r\ndup\r\n" << frameSet(index) << endl << frameGet(index + 1) << endl << frameGet(index) << endl << frameGet(index + 1) << endl;
+							AddInstruction(SetFrame, index + 1);//store imag
+							AddInstruction(Dup);//dup real
+							AddInstruction(SetFrame, index);//store real
+							AddInstruction(GetFrame, index + 1);//restore imag
+							AddInstruction(GetFrame, index);//push real
+							AddInstruction(GetFrame, index + 1);//push imag
+							LocalVariables.removeLevel();
+						}
+						else
+						{
+							out << "Dup" << endl;
+							AddInstruction(Dup);
+						}
 					}
 					parseExpression(subE, false, false, true, true);
 					return 1;
 				}
 				else if (op->isDecrementOp()) {
 					parseExpression(subE, false, true);
-					out << "Push 1\r\n"
-						<< mult(pMult)
-						<< "\r\nSub\r\n";
-					AddInstruction(AddImm, -pMult);
-					if (isLtoRValue)
+
+					if(subE->getType()->isRealFloatingType())
 					{
-						out << "Dup" << endl;
-						AddInstruction(Dup);
+						out << "PushF_1\r\nfSub\r\n";
+						AddInstruction(PushFloat, 1.0);
+						AddInstruction(FSub);
+					}
+					else if(subE->getType()->isComplexType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("complexTemp", 1);
+						out << frameSet(index) << endl;
+						AddInstruction(SetFrame, index);
+						out << "PushF_1\r\nfSub\r\n";
+						AddInstruction(PushFloat, 1.0);
+						AddInstruction(FSub);
+						out << frameGet(index) << endl;
+						AddInstruction(GetFrame, index);
+						LocalVariables.removeLevel();
+					}
+					else if(subE->getType()->isComplexIntegerType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("complexTemp", 1);
+						out << frameSet(index) << endl;
+						AddInstruction(SetFrame, index);
+						out << sub(pMult) << endl;
+						AddInstruction(AddImm, -pMult);
+						out << frameGet(index) << endl;
+						AddInstruction(GetFrame, index);
+						LocalVariables.removeLevel();
+					}
+					else if(getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
+					{
+						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
+					}
+					else
+					{
+						out << sub(pMult) << endl;
+						AddInstruction(AddImm, -pMult);
+					}
+					if(isLtoRValue)
+					{
+						if(subE->getType()->isAnyComplexType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("complex", 2);
+							out << frameSet(index + 1) << "\r\ndup\r\n" << frameSet(index) << endl << frameGet(index + 1) << endl << frameGet(index) << endl << frameGet(index + 1) << endl;
+							AddInstruction(SetFrame, index + 1);//store imag
+							AddInstruction(Dup);//dup real
+							AddInstruction(SetFrame, index);//store real
+							AddInstruction(GetFrame, index + 1);//restore imag
+							AddInstruction(GetFrame, index);//push real
+							AddInstruction(GetFrame, index + 1);//push imag
+							LocalVariables.removeLevel();
+						}
+						else
+						{
+							out << "Dup" << endl;
+							AddInstruction(Dup);
+						}
 					}
 					parseExpression(subE, false, false, true, true);
 					return 1;
@@ -4003,31 +4153,135 @@ public:
 			else if (op->isPostfix()) {
 				if (op->isIncrementOp()) {
 					parseExpression(subE, false, true);
-					if (isLtoRValue)
+					if(isLtoRValue)
 					{
-						out << "Dup" << endl;
-						AddInstruction(Dup);
+						if(subE->getType()->isAnyComplexType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("complex", 2);
+							out << frameSet(index + 1) << "\r\ndup\r\n" << frameSet(index) << endl << frameGet(index + 1) << endl << frameGet(index) << endl << frameGet(index + 1) << endl;
+							AddInstruction(SetFrame, index + 1);//store imag
+							AddInstruction(Dup);//dup real
+							AddInstruction(SetFrame, index);//store real
+							AddInstruction(GetFrame, index + 1);//restore imag
+							AddInstruction(GetFrame, index);//push real
+							AddInstruction(GetFrame, index + 1);//push imag
+							LocalVariables.removeLevel();
+						}
+						else
+						{
+							out << "Dup" << endl;
+							AddInstruction(Dup);
+						}
 					}
-
-					out << add(pMult) << endl;
-					AddInstruction(AddImm, pMult);
+					if(subE->getType()->isRealFloatingType())
+					{
+						out << "PushF_1\r\nfAdd\r\n";
+						AddInstruction(PushFloat, 1.0);
+						AddInstruction(FAdd);
+					}
+					else if(subE->getType()->isComplexType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("complexTemp", 1);
+						out << frameSet(index) << endl;
+						AddInstruction(SetFrame, index);
+						out << "PushF_1\r\nfAdd\r\n";
+						AddInstruction(PushFloat, 1.0);
+						AddInstruction(FAdd);
+						out << frameGet(index) << endl;
+						AddInstruction(GetFrame, index);
+						LocalVariables.removeLevel();
+					}
+					else if(subE->getType()->isComplexIntegerType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("complexTemp", 1);
+						out << frameSet(index) << endl;
+						AddInstruction(SetFrame, index);
+						out << add(pMult) << endl;
+						AddInstruction(AddImm, pMult);
+						out << frameGet(index) << endl;
+						AddInstruction(GetFrame, index);
+						LocalVariables.removeLevel();
+					}
+					else if(getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
+					{
+						Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
+					}
+					else
+					{
+						out << add(pMult) << endl;
+						AddInstruction(AddImm, pMult);
+					}
 
 					parseExpression(subE, false, false, true, true);
 					return 1;
 				}
 				else if (op->isDecrementOp()) {
 					parseExpression(subE, false, true);
-					if (isLtoRValue)
+					if(isLtoRValue)
 					{
-						out << "Dup" << endl;
-						AddInstruction(Dup);
+						if(subE->getType()->isAnyComplexType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("complex", 2);
+							out << frameSet(index + 1) << "\r\ndup\r\n" << frameSet(index) << endl << frameGet(index + 1) << endl << frameGet(index) << endl << frameGet(index + 1) << endl;
+							AddInstruction(SetFrame, index + 1);//store imag
+							AddInstruction(Dup);//dup real
+							AddInstruction(SetFrame, index);//store real
+							AddInstruction(GetFrame, index + 1);//restore imag
+							AddInstruction(GetFrame, index);//push real
+							AddInstruction(GetFrame, index + 1);//push imag
+							LocalVariables.removeLevel();
+						}
+						else
+						{
+							out << "Dup" << endl;
+							AddInstruction(Dup);
+						}
 					}
 
-					out << "Push 1\r\n"
-						<< mult(pMult) << "\r\n";
-
-					out << "Sub\r\n";
-					AddInstruction(AddImm, -pMult);
+					if(subE->getType()->isRealFloatingType())
+					{
+						out << "PushF_1\r\nfSub\r\n";
+						AddInstruction(PushFloat, 1.0);
+						AddInstruction(FSub);
+					}
+					else if(subE->getType()->isComplexType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("complexTemp", 1);
+						out << frameSet(index) << endl;
+						AddInstruction(SetFrame, index);
+						out << "PushF_1\r\nfSub\r\n";
+						AddInstruction(PushFloat, 1.0);
+						AddInstruction(FSub);
+						out << frameGet(index) << endl;
+						AddInstruction(GetFrame, index);
+						LocalVariables.removeLevel();
+					}
+					else if(subE->getType()->isComplexIntegerType())
+					{
+						LocalVariables.addLevel();
+						int index = LocalVariables.addDecl("complexTemp", 1);
+						out << frameSet(index) << endl;
+						AddInstruction(SetFrame, index);
+						out << sub(pMult) << endl;
+						AddInstruction(AddImm, -pMult);
+						out << frameGet(index) << endl;
+						AddInstruction(GetFrame, index);
+						LocalVariables.removeLevel();
+					}
+					else if(getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
+					{
+						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
+					}
+					else
+					{
+						out << sub(pMult) << endl;
+						AddInstruction(AddImm, -pMult);
+					}
 					parseExpression(subE, false, false, true, true);
 					return 1;
 				}
