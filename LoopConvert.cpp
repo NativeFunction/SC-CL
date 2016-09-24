@@ -5239,8 +5239,7 @@ public:
 				Throw("Intrinsic function attribute cannot be used on functions which have a body declared", rewriter, f->getAttr<IntrinsicFuncAttr>()->getRange());
 			}
 			out.seekg(0, ios::end);
-			bool hasproto = !f->isFirstDecl();
-			if (hasproto)
+			string name2 = f->getNameAsString();
 			{
 				uint32_t hash = Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str());
 				size_t i;
@@ -5259,12 +5258,8 @@ public:
 				}
 				if (i == functions.size())
 				{
-					Throw("Couldnt find function prototype for '" + f->getNameAsString() + "'", rewriter, f->getSourceRange());
+					functions.push_back({ Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str()) , getNameForFunc(f), false, out.tellg() });
 				}
-			}
-			else
-			{
-				functions.push_back({ Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str()) , getNameForFunc(f), false, out.tellg() });
 			}
 
 
@@ -5277,30 +5272,25 @@ public:
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i<f->getNumParams(); i++)
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-			if (hasproto)
 			{
 				uint32_t hash = Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str());
 				size_t i;
-				for (i = 0; i < functionsNew.size(); i++)
+				for(i = 0; i < functionsNew.size(); i++)
 				{
-					if (functionsNew[i]->Hash() == hash)
+					if(functionsNew[i]->Hash() == hash)
 					{
-						if (functionsNew[i]->Name() == getNameForFunc(f))
+						if(functionsNew[i]->Name() == getNameForFunc(f))
 						{
 							CurrentFunction = functionsNew[i];
 							break;
 						}
 					}
 				}
-				if (i == functions.size())
+				if(i == functionsNew.size())
 				{
-					Throw("Couldnt find function prototype for '" + f->getNameAsString() + "'", rewriter, f->getSourceRange());
+					functionsNew.push_back(new FunctionData(getNameForFunc(f), (paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0))));
+					CurrentFunction = functionsNew.back();
 				}
-			}
-			else
-			{
-				functionsNew.push_back(new FunctionData(getNameForFunc(f), (paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0))));
-				CurrentFunction = functionsNew.back();
 			}
 			out << endl << "//Loc: " << f->getBody()->getLocStart().getRawEncoding() << endl;
 			string name = dumpName(cast<NamedDecl>(f));
@@ -6303,6 +6293,11 @@ public:
 				delete functionsNew[i];
 			}
 			return;
+		}
+		MainFunction->setUsed();
+		for (auto staticRef : staticReferences)
+		{
+			staticRef->setUsed();
 		}
 
 		stringstream header, main;
