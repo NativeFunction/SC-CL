@@ -5350,7 +5350,7 @@ public:
 							else
 							{
 								succ[j] = true;
-								inits[j] = 0;
+								evaluated[j] = 0;
 							}
 
 						}
