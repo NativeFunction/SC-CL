@@ -6355,8 +6355,15 @@ public:
 
 				}
 				else if (isa<DeclRefExpr>(subE)) {
-					Throw("addrof DeclRefExpr", rewriter, subE->getExprLoc());
-					//parseExpression(subE, true, false);
+					const DeclRefExpr *DRE = cast<const DeclRefExpr>(subE);
+
+					//we can index because the name has to be declared in clang to use the declare
+					//we will let clang handle errors
+					Entryfunction.AddOpcode(Opcode::GetStaticP(statics[DRE->getDecl()->getNameAsString()]));
+					Entryfunction.AddOpcode(Opcode::SetStatic(oldStaticInc));
+					RuntimeStatics
+						<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl
+						<< setStatic(oldStaticInc++) << endl;
 				}
 				else {
 					ParseLiteral(subE, true, false);

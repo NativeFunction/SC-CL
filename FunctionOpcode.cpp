@@ -362,7 +362,7 @@ string Opcode::toString() const
 	case OK_PushString:
 		current = "PushString \"" + getString() + "\""; break;
 	case OK_StrCopy:
-		current = "StrCpy " + to_string(getUShort(0)); break;
+		current = "StrCopy " + to_string(getUShort(0)); break;
 	case OK_ItoS:
 		current = "ItoS " + to_string(getUShort(0)); break;
 	case OK_StrAdd:
