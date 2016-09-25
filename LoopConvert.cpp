@@ -3145,73 +3145,70 @@ public:
 	/// <returns></returns>
 	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, bool isAssign = false) {
 		Expr::EvalResult result;
-		if (e->EvaluateAsRValue(result, *context))
+		if(e->EvaluateAsRValue(result, *context) && !result.HasSideEffects)
 		{
-			if (!result.HasSideEffects)
+			if(result.Val.isInt())
 			{
-				if (result.Val.isInt())
+				if(!isLtoRValue)
+					return -1;
+				int val;
+				if(CheckExprForSizeOf(e->IgnoreParens(), &val))
 				{
-					if (!isLtoRValue)
-						return -1;
-					int val;
-					if (CheckExprForSizeOf(e->IgnoreParens(), &val))
-					{
-						out << iPush(val) << endl;
-						AddInstruction(PushInt, val);
-					}
-					else
-					{
-						int64_t resValue = result.Val.getInt().getSExtValue();
+					out << iPush(val) << endl;
+					AddInstruction(PushInt, val);
+				}
+				else
+				{
+					int64_t resValue = result.Val.getInt().getSExtValue();
 
-						if (doesInt64FitIntoInt32(resValue))
-						{
-							string value = to_string(resValue);
-							Warn("Integer overflow. Value: " + value + " is out of bounds of (-2,147,483,648 to 2,147,483,647). Changed value to " + to_string((int32_t)resValue), rewriter, e->getExprLoc(), e->getExprLoc().getLocWithOffset(value.length() - 1));
+					if(doesInt64FitIntoInt32(resValue))
+					{
+						string value = to_string(resValue);
+						Warn("Integer overflow. Value: " + value + " is out of bounds of (-2,147,483,648 to 2,147,483,647). Changed value to " + to_string((int32_t)resValue), rewriter, e->getExprLoc(), e->getExprLoc().getLocWithOffset(value.length() - 1));
 
-						}
-						out << iPush((int32_t)resValue) << endl;
-						AddInstruction(PushInt, (int32_t)resValue);
 					}
-					return -1;
+					out << iPush((int32_t)resValue) << endl;
+					AddInstruction(PushInt, (int32_t)resValue);
 				}
-				else if (result.Val.isFloat())
-				{
-					if (!isLtoRValue)
-						return -1;
-					out << fPush(result.Val.getFloat()) << endl;
-					AddInstruction(PushFloat, extractAPFloat(result.Val.getFloat()));
+				return -1;
+			}
+			else if(result.Val.isFloat())
+			{
+				if(!isLtoRValue)
 					return -1;
-				}
-				else if (result.Val.isComplexFloat())
-				{
-					if (!isLtoRValue)
-						return -1;
-					out << fPush(result.Val.getComplexFloatReal()) << endl;
-					out << fPush(result.Val.getComplexFloatImag()) << endl;
-					AddInstruction(PushFloat, extractAPFloat(result.Val.getComplexFloatReal()));
-					AddInstruction(PushFloat, extractAPFloat(result.Val.getComplexFloatImag()));
+				out << fPush(result.Val.getFloat()) << endl;
+				AddInstruction(PushFloat, extractAPFloat(result.Val.getFloat()));
+				return -1;
+			}
+			else if(result.Val.isComplexFloat())
+			{
+				if(!isLtoRValue)
 					return -1;
-				}
-				else if (result.Val.isComplexInt())
-				{
-					if (!isLtoRValue)
-						return -1;
-					out << iPush(result.Val.getComplexIntReal().getSExtValue()) << endl;
-					out << iPush(result.Val.getComplexIntImag().getSExtValue()) << endl;
-					AddInstruction(PushInt, result.Val.getComplexIntReal().getSExtValue());
-					AddInstruction(PushInt, result.Val.getComplexIntImag().getSExtValue());
+				out << fPush(result.Val.getComplexFloatReal()) << endl;
+				out << fPush(result.Val.getComplexFloatImag()) << endl;
+				AddInstruction(PushFloat, extractAPFloat(result.Val.getComplexFloatReal()));
+				AddInstruction(PushFloat, extractAPFloat(result.Val.getComplexFloatImag()));
+				return -1;
+			}
+			else if(result.Val.isComplexInt())
+			{
+				if(!isLtoRValue)
 					return -1;
-				}
+				out << iPush(result.Val.getComplexIntReal().getSExtValue()) << endl;
+				out << iPush(result.Val.getComplexIntImag().getSExtValue()) << endl;
+				AddInstruction(PushInt, result.Val.getComplexIntReal().getSExtValue());
+				AddInstruction(PushInt, result.Val.getComplexIntImag().getSExtValue());
+				return -1;
 			}
 		}
-		if (isa<IntegerLiteral>(e)) {
+		/*if (isa<IntegerLiteral>(e)) {
 			out << iPush(cast<const IntegerLiteral>(e)->getValue().getSExtValue()) << endl;
 			AddInstruction(PushInt, cast<const IntegerLiteral>(e)->getValue().getSExtValue());
 		}
 		else if (isa<FloatingLiteral>(e)) {
 			out << fPush(cast<const FloatingLiteral>(e)->getValue()) << endl;
 			AddInstruction(PushFloat, extractAPFloat(cast<const FloatingLiteral>(e)->getValue()));
-		}
+		}*/
 		else if (isa<CompoundLiteralExpr>(e)) {
 			const CompoundLiteralExpr *cLit = cast<const CompoundLiteralExpr>(e);
 			if (isa<InitListExpr>(cLit->getInitializer())) {
@@ -5326,7 +5323,7 @@ public:
 				case 2:
 				{
 					int initCount = I->getNumInits();
-					for(int i = 0; i < initCount; i += 4)
+					for(int i = 0; i < initCount; i += 2)
 					{
 						llvm::APSInt res;
 						int evaluated[2];
