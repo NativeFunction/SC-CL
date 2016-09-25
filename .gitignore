@@ -11,3 +11,7 @@ loop-convert.VC.db
 loop-convert.VC.VC.opendb
 loop-convert.sln
 loop-convert.dir/
+compiler/XscCompilerRaw (RDR)/obj/
+compiler/XscCompilerRaw (RDR)/bin/
+compiler/XscCompilerRaw/bin/
+compiler/XscCompilerRaw/obj/New Text Document.txt
