@@ -6350,8 +6350,44 @@ public:
 			Expr *subE = op->getSubExpr();
 			if (op->getOpcode() == UO_AddrOf) {
 				if (isa<ArraySubscriptExpr>(subE)) {
-					//parseArraySubscriptExpr(subE, true);
-					Throw("addrof parseArraySubscriptExpr", rewriter, subE->getExprLoc());
+					const ArraySubscriptExpr* arr = cast<ArraySubscriptExpr>(subE);
+					const Expr* base = arr->getBase();
+					const Type* type = base->getType().getTypePtr();
+					if(isa<ImplicitCastExpr>(base) && cast<ImplicitCastExpr>(base)->getCastKind() == CK_ArrayToPointerDecay)
+					{
+						base = cast<ImplicitCastExpr>(base)->getSubExpr();
+						if(isa<DeclRefExpr>(base))
+						{
+							const DeclRefExpr* DRE = cast<DeclRefExpr>(base);
+							llvm::APSInt iResult;
+							if(arr->getIdx()->EvaluateAsInt(iResult, *context))
+							{
+								int size = getSizeOfType(type);
+								if(type->isArrayType())
+									size = getSizeFromBytes(size) * 4;
+								Entryfunction.AddOpcode(Opcode::GetStaticP(statics[DRE->getDecl()->getNameAsString()]));
+								Entryfunction.AddOpcode(Opcode::AddImm(size * iResult.getSExtValue()));
+								Entryfunction.AddOpcode(Opcode::SetStatic(oldStaticInc));
+								RuntimeStatics
+									<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl << add(size * iResult.getSExtValue()) << endl
+									<< setStatic(oldStaticInc++) << endl;
+
+							}
+							else
+							{
+								Throw("Expected integer literal for static array pointer initialisation", rewriter, op->getSourceRange());
+							}
+						}
+						else
+						{
+							Throw("Expected static declaration for static array pointer initialisation", rewriter, op->getSourceRange());
+						}
+					}
+					else
+					{
+						Throw("Expected static declaration for static array pointer initialisation", rewriter, op->getSourceRange());
+					}
+					
 
 				}
 				else if (isa<DeclRefExpr>(subE)) {
