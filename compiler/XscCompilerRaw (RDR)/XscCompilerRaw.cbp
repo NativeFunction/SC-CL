@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="XscCompilerRaw" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/XscCompilerRaw" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-pg" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add option="-pg -lgmon" />
+					<Add library="../../../../Program Files (x86)/Boost/boost_1_61_0/stage/lib/libboost_filesystem-mgw53-mt-d-1_61.a" />
+					<Add library="../../../../Program Files (x86)/Boost/boost_1_61_0/stage/lib/libboost_system-mgw53-mt-d-1_61.a" />
+					<Add library="../../../../Program Files (x86)/Boost/boost_1_61_0/stage/lib/libboost_timer-mgw53-mt-d-1_61.a" />
+					<Add library="../../../../Program Files (x86)/Boost/boost_1_61_0/stage/lib/libboost_chrono-mgw53-mt-d-1_61.a" />
+					<Add library="lib/libz.a" />
+					<Add library="lib/libz.dll.a" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/XscCompilerRaw" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O3" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="../../../../Program Files (x86)/Boost/boost_1_61_0/stage/lib/libboost_filesystem-mgw53-mt-1_61.a" />
+					<Add library="../../../../Program Files (x86)/Boost/boost_1_61_0/stage/lib/libboost_system-mgw53-mt-1_61.a" />
+					<Add library="../../../../Program Files (x86)/Boost/boost_1_61_0/stage/lib/libboost_timer-mgw53-mt-1_61.a" />
+					<Add library="../../../../Program Files (x86)/Boost/boost_1_61_0/stage/lib/libboost_chrono-mgw53-mt-1_61.a" />
+					<Add library="lib/libz.a" />
+					<Add library="lib/libz.dll.a" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+			<Add directory="$(#boost)" />
+		</Compiler>
+		<Linker>
+			<Add directory="$(#boost.lib)" />
+		</Linker>
+		<Unit filename="Constants.h" />
+		<Unit filename="Crypto/aes256.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="Crypto/aes256.h" />
+		<Unit filename="HighLevelCompiler.cpp" />
+		<Unit filename="HighLevelCompiler.h" />
+		<Unit filename="PikIO.cpp" />
+		<Unit filename="PikIO.h" />
+		<Unit filename="RSC.cpp" />
+		<Unit filename="RSC.h" />
+		<Unit filename="Utils.cpp" />
+		<Unit filename="Utils.h" />
+		<Unit filename="main.cpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

@@ -1,0 +1,2 @@
+XscCompilerRaw.exe -com C:\Users\Rocko\Desktop\outnew.xsa C:\Users\Rocko\Desktop\outnew.xsc -ow
+XscCompilerRaw.exe -dec C:\Users\Rocko\Desktop\Script.xsc C:\Users\Rocko\Desktop\outnew.xsa -ow

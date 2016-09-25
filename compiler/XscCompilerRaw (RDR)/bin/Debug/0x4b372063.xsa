@@ -1,0 +1,160 @@
+:MainFunction//>
+Function 0 2
+PushString "Initializing Mexico Gringos"
+Push_3
+Call @Function_0
+PushString "rstarGringoGeneric_Type"
+PushString "sitChair"
+PushString "mex_chair_sit"
+PushString "sit"
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+Push_1
+Push_0
+CallNative unk_0xC426D16F 12 1
+Drop
+PushString "rstarGringoGeneric_Type"
+PushString "sitTable"
+PushString "mex_drunk_sitTable"
+PushString "sit"
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+Push_1
+Push_0
+CallNative unk_0xC426D16F 12 1
+Drop
+PushString "rstarGringoGeneric_Type"
+PushString "sitStool"
+PushString "mex_stool_sit"
+PushString "sit"
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+Push_1
+Push_0
+CallNative unk_0xC426D16F 12 1
+Drop
+PushString "rstarGringoGeneric_Type"
+PushString "sitComfyChair"
+PushString "sit_drinkbrandy_s_any"
+PushString "sit"
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+Push_1
+Push_0
+CallNative unk_0xC426D16F 12 1
+Drop
+PushString "rstarGringoGeneric_Type"
+PushString "sitComfyCouch"
+PushString "mex_flirt_sit_link"
+PushString "sit"
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+Push_1
+Push_0
+CallNative unk_0xC426D16F 12 1
+Drop
+PushString "rstarGringoGeneric_Type"
+PushString "sitBenchChair"
+PushString "mex_bench_chair_sit"
+PushString "sit"
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+Push_1
+Push_0
+CallNative unk_0xC426D16F 12 1
+Drop
+PushString "rstarGringoGeneric_Type"
+PushString "sitBenchStool"
+PushString "mex_bench_stool_sit"
+PushString "sit"
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+PushF_0
+Push_1
+Push_0
+CallNative unk_0xC426D16F 12 1
+Drop
+CallNative terminate_this_script 0 0
+Return 0 0
+//<
+
+:Function_0//>
+Function 2 4
+PushB 128
+Call @Function_1
+Not
+JumpFalse @Label_0
+Return 2 0
+
+:Label_0
+GetGlobalP2 13133
+GetFrame1 0
+CallNative string_contains_string 2 1
+Not
+JumpFalse @Label_1
+GetFrame1 0
+GetGlobalP2 13133
+StrCopy 64
+Push_1
+GetGlobalP2 13133
+SetImm1 68
+CallNative unk_0x5842B9D1 0 1
+GetGlobalP2 13133
+SetImm1 64
+GetGlobalP2 13133
+GetImm1 64
+GetGlobalP2 13133
+SetImm1 72
+
+:Label_1
+Return 2 0
+//<
+
+:Function_1//>
+Function 1 4
+GetGlobal2 26119
+GetFrame1 0
+And
+SetFrame1 3
+GetFrame1 3
+Push_0
+CmpEq
+Not
+JumpFalse @Label_2
+Push_1
+Return 1 1
+Jump @Label_3
+
+:Label_2
+Push_0
+Return 1 1
+
+:Label_3
+//<
