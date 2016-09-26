@@ -931,7 +931,6 @@ public:
 					AddInstruction(PushInt, 16);
 					AddInstructionComment(ShiftLeft, "short type");
 				}
-
 				if (size > 4)//fromStack
 				{
 					int bSize = getSizeFromBytes(size);
@@ -945,7 +944,7 @@ public:
 				else
 				{
 					out << frameSet(index) << " //(pdecl)" << key << endl;
-					AddInstructionComment(SetFrame, "(pdecl)", index);
+					AddInstructionComment(SetFrame, "(pdecl)" + key, index);
 				}
 				
 			}
