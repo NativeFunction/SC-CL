@@ -384,7 +384,7 @@ string Opcode::toString() const
 	case OK_MemCpy: current = "MemCpy"; break;
 	case OK_PCall: current = "PCall"; break;
 	case OK_Label: current = "\r\n:" + getString(); break; //make labels have a line break
-	case OK_LabelLoc: current = "GetLoc(\"" + getString() + "\")"; break;
+	case OK_LabelLoc: current = "Push GetLoc(\"" + getString() + "\")"; break;
 	}
 #ifdef _DEBUG
 	if (hasComment())
