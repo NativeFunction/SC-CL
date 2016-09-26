@@ -3213,7 +3213,7 @@ public:
 			out << fPush(cast<const FloatingLiteral>(e)->getValue()) << endl;
 			AddInstruction(PushFloat, extractAPFloat(cast<const FloatingLiteral>(e)->getValue()));
 		}*/
-		else if (isa<CompoundLiteralExpr>(e)) {
+		if (isa<CompoundLiteralExpr>(e)) {
 			const CompoundLiteralExpr *cLit = cast<const CompoundLiteralExpr>(e);
 			if (isa<InitListExpr>(cLit->getInitializer())) {
 				const InitListExpr *init = cast<const InitListExpr>(cLit->getInitializer());
