@@ -19,6 +19,12 @@
 #define AddInstructionConditionally(cond, opName, ...) {if (cond) CurrentFunction->AddOpcode(Opcode::##opName(__VA_ARGS__));}
 #pragma endregion
 
+#ifdef _DEBUG
+#define AddInstructionComment(opName, comment, ...) CurrentFunction->AddOpcodeWithComment(Opcode::##opName(__VA_ARGS__), comment)
+#else
+#define AddInstructionComment(opName, comment, ...) CurrentFunction->AddOpcode(Opcode::##opName(__VA_ARGS__))
+#endif
+
 using namespace Utils;
 using namespace Utils::System;
 using namespace Utils::DataConversion;

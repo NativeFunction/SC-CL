@@ -47,10 +47,12 @@ void Opcode::setUShort(uint16_t value, int offset)
 
 Opcode::~Opcode()
 {
+#ifdef _DEBUG
 	if(_comment)
 	{
 		delete[] _comment;
 	}
+#endif
 	switch(opcodeKind)
 	{
 	case OK_Call:
@@ -87,7 +89,7 @@ Opcode::~Opcode()
 		break;
 	}
 }
-
+#ifdef _DEBUG
 void Opcode::setComment(string comment)
 {
 	if(_comment)
@@ -111,7 +113,7 @@ bool Opcode::hasComment() const
 {
 	return _comment;
 }
-
+#endif
 string Opcode::getString() const
 {
 	switch(opcodeKind)
@@ -374,10 +376,12 @@ string Opcode::toString() const
 	case OK_Label: current = "\r\n:" + getString(); break; //make labels have a line break
 	case OK_LabelLoc: current = "GetLoc(\"" + getString() + "\")"; break;
 	}
+#ifdef _DEBUG
 	if (hasComment())
 	{
 		current += " //" + getComment();
 	}
+#endif
 	return current;
 #undef Check12Op
 #undef Check23Op
@@ -415,13 +419,13 @@ void FunctionData::AddOpcode(Opcode * op)
 {
 	Instructions.push_back(op);
 }
-
+#ifdef _DEBUG
 void FunctionData::AddOpcodeWithComment(Opcode * op, string comment)
 {
 	op->setComment(comment);
 	Instructions.push_back(op);
 }
-
+#endif
 bool FunctionData::endsWithInlineReturn(unsigned position) const
 {
 	return Instructions.size() && Instructions.back()->GetKind() == OK_Jump && Instructions.back()->getString() == to_string(position);

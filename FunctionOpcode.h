@@ -101,7 +101,9 @@ class Opcode
 {
 	OpcodeKind opcodeKind;
 	char storage[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+#ifdef _DEBUG
 	char *_comment = NULL;
+#endif
 	Opcode(OpcodeKind kind) : opcodeKind(kind){ }
 	void setULong(uint64_t value);//can only really be at offset 0
 	void setString(string str);
@@ -168,9 +170,11 @@ public:
 		}
 		return new Opcode(OK_Nop);
 	}
+#ifdef _DEBUG
 	void setComment(string comment);
 	string getComment() const;
 	bool hasComment() const;
+#endif
 	string getString() const;
 	int getInt(int offset) const;
 	float getFloat(int offset) const;
@@ -587,7 +591,9 @@ public:
 	}
 	~FunctionData();
 	void AddOpcode(Opcode *op);
+#ifdef _DEBUG
 	void AddOpcodeWithComment(Opcode *op, string comment);
+#endif
 	bool endsWithReturn() const{ return Instructions.size() && Instructions.back()->GetKind() == OK_Return; }//this will get confused by if else having a return, but it will just return false when there actually is a return so no harm
 	bool endsWithInlineReturn(unsigned position) const;
 	void RemoveLast(){ Instructions.pop_back(); }
