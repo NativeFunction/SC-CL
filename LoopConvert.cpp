@@ -5538,6 +5538,9 @@ public:
 		const Expr *base = arr->getBase();
 		const Expr *index = arr->getIdx();
 
+		llvm::APSInt evalIndex;
+		bool isCst = index->EvaluateAsInt(evalIndex, *context);
+
 		const DeclRefExpr *declRef = getDeclRefExpr(base);
 		const Type *type = base->getType().getTypePtr();//declRef->getType().getTypePtr()->getArrayElementTypeNoTypeQual();
 
@@ -5562,11 +5565,23 @@ public:
 				AddInstruction(Mod);
 				AddInstruction(PushInt, 24);
 				AddInstruction(Native, "shift_left", 2, 1);
-				parseExpression(base, true);
-				parseExpression(index, false, true);
-				out << mult(getSizeOfType(type)) << "\r\nAdd\r\npGet\r\nPushI24 0xFFFFFF\r\nand\r\nor\r\n";
-				AddInstruction(MultImm, getSizeOfType(type));
-				AddInstruction(Add);
+				parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
+				if (isCst)
+				{
+					int iRes = evalIndex.getSExtValue();
+					if(iRes != 0)
+					{
+						out << add(iRes) << endl;
+						AddInstruction(AddImm, iRes);
+					}
+				}
+				else
+				{
+					parseExpression(index, false, true);
+					out << "Add\r\n";
+					AddInstruction(Add);
+				}
+				out << "pGet\r\nPushI24 0xFFFFFF\r\nand\r\nor\r\n";
 				AddInstruction(PGet);
 				AddInstruction(PushInt, 0xFFFFFF);
 				AddInstruction(And);
@@ -5581,11 +5596,24 @@ public:
 				AddInstruction(Mod);
 				AddInstruction(PushInt, 16);
 				AddInstruction(Native, "shift_left", 2, 1);
-				parseExpression(base, true);
-				parseExpression(index, false, true);
-				out << mult(getSizeOfType(type)) << "\r\nAdd\r\npGet\r\nPushI24 0xFFFF\r\nand\r\nor\r\n";
-				AddInstruction(MultImm, getSizeOfType(type));
-				AddInstruction(Add);
+				parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
+				if(isCst)
+				{
+					int iRes = evalIndex.getSExtValue();
+					if(iRes != 0)
+					{
+						out << add(iRes*2) << endl;
+						AddInstruction(AddImm, iRes*2);
+					}
+				}
+				else
+				{
+					parseExpression(index, false, true);
+					out << mult(2) << "\r\nAdd\r\n";
+					AddInstruction(MultImm, 2);
+					AddInstruction(Add);
+				}
+				out << "pGet\r\nPushI24 0xFFFF\r\nand\r\nor\r\n";
 				AddInstruction(PGet);
 				AddInstruction(PushInt, 0xFFFF);
 				AddInstruction(And);
@@ -5595,14 +5623,32 @@ public:
 
 
 		parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
-		parseExpression(index, false, true);
 
 
 		if (LValueToRValue && !addrOf)
 		{
-			out << mult(getSizeOfType(type)) << "\r\nAdd\r\npGet//GetArray2\r\n";
-			AddInstruction(MultImm, getSizeOfType(type));
-			AddInstruction(Add);
+			if(isCst)
+			{
+				int iRes = evalIndex.getSExtValue();
+				if(iRes != 0)
+				{
+					out << add(iRes * getSizeOfType(type)) << endl;
+					AddInstruction(AddImm, iRes * getSizeOfType(type));
+				}
+			}
+			else
+			{
+				parseExpression(index, false, true);
+				int size = getSizeOfType(type);
+				if (size > 1)
+				{
+					out << mult(size) << endl;
+					AddInstruction(MultImm, size);
+				}
+				out << "Add\r\n";
+				AddInstruction(Add);
+			}
+			out << "pGet//GetArray2\r\n";
 			AddInstruction(PGet);
 			//1 byte indexing
 			if (type->isCharType())
@@ -5625,16 +5671,51 @@ public:
 			int size = getSizeOfType(type);
 			if (type->isArrayType())
 				size = getSizeFromBytes(size) * 4;
-
-			out << mult(size) << "\r\nAdd//GetArrayP2\r\n";
-			AddInstruction(MultImm, size);
-			AddInstruction(Add);
+			if(isCst)
+			{
+				int iRes = evalIndex.getSExtValue();
+				if(iRes != 0)
+				{
+					out << add(iRes * size) << endl;
+					AddInstruction(AddImm, iRes * size);
+				}
+			}
+			else
+			{
+				parseExpression(index, false, true);
+				if(size > 1)
+				{
+					out << mult(size) << endl;
+					AddInstruction(MultImm, size);
+				}
+				out << "Add//GetArrayP2\r\n";
+				AddInstruction(Add);
+			}
 		}
 		else
 		{
-			out << mult(getSizeOfType(type)) << "\r\nAdd\r\npSet//SetArray2\r\n";
-			AddInstruction(MultImm, getSizeOfType(type));
-			AddInstruction(Add);
+			if(isCst)
+			{
+				int iRes = evalIndex.getSExtValue();
+				if(iRes != 0)
+				{
+					out << add(iRes * getSizeOfType(type)) << endl;
+					AddInstruction(AddImm, iRes * getSizeOfType(type));
+				}
+			}
+			else
+			{
+				parseExpression(index, false, true);
+				int size = getSizeOfType(type);
+				if(size > 1)
+				{
+					out << mult(size) << endl;
+					AddInstruction(MultImm, size);
+				}
+				out << "Add\r\n";
+				AddInstruction(Add);
+			}
+			out << "pSet//SetArray2\r\n";
 			AddInstruction(PSet);
 		}
 
