@@ -892,7 +892,7 @@ public:
 			{
 
 				out << frameGet(index) << " //(pdecl)" << key << endl;
-				AddInstruction(GetFrame, index);
+				AddInstructionComment(GetFrame, "(pdecl)" + key,index);
 				if (size == 1)//char
 				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
@@ -909,7 +909,7 @@ public:
 			else if (isAddr)
 			{
 				out << pFrame(index) << " //(pdecl)&" << key << endl;
-				AddInstructionComment(GetFrameP, "(pdecl)&", index);
+				AddInstructionComment(GetFrameP, "(pdecl)&" + key, index);
 			}
 			else if (isAssign)
 			{
@@ -939,7 +939,7 @@ public:
 					out << pFrame(index) << " //(pdecl)&" << key << endl;
 					out << "FromStack\r\n";
 					AddInstructionComment(PushInt, "Type Size", bSize);
-					AddInstructionComment(GetFrameP, "(pdecl)&", index);
+					AddInstructionComment(GetFrameP, "(pdecl)&" + key, index);
 					AddInstruction(FromStack);
 				}
 				else
@@ -958,8 +958,8 @@ public:
 			index = globals[key];
 			if (isLtoRValue && !isAddr)
 			{
-				out << getGlobal(index) << "  //" << key << endl;
-				AddInstruction(GetGlobal, index);
+				out << getGlobal(index) << " //Global_" << key << endl;
+				AddInstructionComment(GetGlobal, "Global_" + key, index);
 				if (size == 1)//char
 				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
@@ -975,8 +975,8 @@ public:
 			}
 			else if (isAddr)
 			{
-				out << getGlobalp(index) << "  //" << key << endl;
-				AddInstructionComment(GetGlobalP, key, index);
+				out << getGlobalp(index) << "  //Global_" << key << endl;
+				AddInstructionComment(GetGlobalP,"Global_" + key, index);
 			}
 			else if (isAssign)
 			{
@@ -1010,7 +1010,7 @@ public:
 				}
 				else
 				{
-					out << setGlobal(index) << "  //" << key << endl;
+					out << setGlobal(index) << " //" << key << endl;
 					AddInstructionComment(SetGlobal, key, index);
 				}
 			}
@@ -1023,8 +1023,8 @@ public:
 			index = statics[key];
 			if (isLtoRValue && !isAddr)
 			{
-				out << getStatic(index) << "  //" << key << endl;
-				AddInstruction(GetStatic, index);
+				out << getStatic(index) << " //" << key << endl;
+				AddInstructionComment(GetStatic, key, index);
 				if (size == 1)//char
 				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
@@ -1040,7 +1040,7 @@ public:
 			}
 			else if (isAddr)
 			{
-				out << getStaticp(index) << "  //" << key << endl;
+				out << getStaticp(index) << " //" << key << endl;
 				AddInstructionComment(GetStaticP, key, index);
 			}
 			else if (isAssign)
@@ -3298,7 +3298,7 @@ public:
 					{
 						//clang attribute arguments cannot be 64bits wide, so using 2 32 bit args can manually joining them is the nicest way to support pc
 						//when using 32 bit(xbox/ps3) the hi dword would be 0 so can be neglected
-						AddInstruction(Native, ((uint64_t)attr->getX64HiDwordHash() << 32) | attr->getHash(), call->getNumArgs(), getSizeFromBytes(getSizeOfType(type.getTypePtr())));
+						AddInstruction(Native, parseCast(cast<const CastExpr>(callee)).substr(1), ((uint64_t)attr->getX64HiDwordHash() << 32) | attr->getHash(), call->getNumArgs(), getSizeFromBytes(getSizeOfType(type.getTypePtr())));
 					}
 					else
 					{
@@ -3435,7 +3435,7 @@ public:
 							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
 
 						out << "Call " << name << " //NumArgs: " << call->getNumArgs() << " " << endl;
-						AddInstruction(Call, name.substr(1));
+						AddInstructionComment(Call, "NumArgs: " + to_string(call->getNumArgs()), name.substr(1));
 					}
 
 				}
@@ -5776,7 +5776,7 @@ public:
 				AddInstruction(Add);
 			}
 			out << "pSet//SetArray2\r\n";
-			AddInstruction(PSet);
+			AddInstructionComment(PSet, "SetArray2");
 		}
 
 

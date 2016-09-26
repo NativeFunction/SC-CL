@@ -256,6 +256,7 @@ public:
 		}
 		op->setUShort(pCount, 8);
 		op->setUShort(rCount, 10);
+		op->setComment(name);
 		return op;
 	}
 	static Opcode *Native(uint64_t hash, uint16_t pCount, uint16_t rCount)
@@ -265,6 +266,12 @@ public:
 		op->setUShort(pCount, 8);
 		op->setUShort(rCount, 10);
 		return op;
+	}
+	static Opcode *Native(string name, uint64_t hash, uint16_t pCount, uint16_t rCount)
+	{
+		Opcode*nat = Native(hash, pCount, rCount);
+		nat->setComment(name);
+		return nat;
 	}
 /*	static Opcode *Function(string name, uint16_t pCount, uint16_t frameSize)
 	{

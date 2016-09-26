@@ -95,6 +95,7 @@ void Opcode::setComment(string comment)
 #ifdef _DEBUG
 	if(_comment)
 	{
+		comment = string(_comment) + " - " + comment;
 		delete[] _comment;
 	}
 	_comment = new char[comment.length() + 1];
