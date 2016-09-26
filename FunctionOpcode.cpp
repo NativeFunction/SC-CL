@@ -220,6 +220,8 @@ string Opcode::toString() const
 	case OK_ItoF: current = "ItoF"; break;
 	case OK_FtoI: current = "FtoI"; break;
 	case OK_FtoV: current = "FtoV"; break;
+	case OK_ShiftLeft: current = "CallNative shift_left 2 1"; break;
+	case OK_ShiftRight: current = "CallNative shift_right 2 1"; break;
 	case OK_PushInt:
 	{
 		int value = getInt(0);

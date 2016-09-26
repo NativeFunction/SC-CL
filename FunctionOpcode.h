@@ -91,7 +91,9 @@ enum OpcodeKind{
 	OK_MemCpy,
 	OK_PCall,
 	OK_Label, 
-	OK_LabelLoc
+	OK_LabelLoc,
+	OK_ShiftLeft,
+	OK_ShiftRight
 	//do these really need including
 	//OK_Catch
 	//OK_Throw
@@ -155,6 +157,8 @@ public:
 			case OK_FtoI:
 			case OK_ItoF:
 			case OK_FtoV:
+			case OK_ShiftLeft:
+			case OK_ShiftRight:
 			case OK_Dup:
 			case OK_Drop:
 			case OK_PGet:
@@ -239,6 +243,8 @@ public:
 		op->setFloat(immediate, 0);
 		return op;
 	}
+	static Opcode *ShiftLeft(){ return new Opcode(OK_ShiftLeft); }
+	static Opcode *ShiftRight(){ return new Opcode(OK_ShiftRight); }
 #pragma endregion 
 
 

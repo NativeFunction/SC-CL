@@ -897,13 +897,13 @@ public:
 				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
 					AddInstruction(PushInt, 24);
-					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
+					AddInstructionComment(ShiftRight, "char type");
 				}
 				else if (size == 2)//short
 				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
 					AddInstruction(PushInt, 16);
-					AddInstructionComment(Native, "short type", "shift_right", 2, 1);
+					AddInstructionComment(ShiftRight, "short type");
 				}
 			}
 			else if (isAddr)
@@ -920,7 +920,7 @@ public:
 					AddInstruction(PushInt, 255);
 					AddInstruction(And);
 					AddInstruction(PushInt, 24);
-					AddInstructionComment(Native, "char type", "shift_left", 2, 1);
+					AddInstructionComment(ShiftLeft, "char type");
 
 				}
 				else if (size == 2)//short
@@ -929,7 +929,7 @@ public:
 					AddInstruction(PushInt, 65536);
 					AddInstruction(Mod);
 					AddInstruction(PushInt, 16);
-					AddInstructionComment(Native, "short type", "shift_left", 2, 1);
+					AddInstructionComment(ShiftLeft, "short type");
 				}
 
 				if (size > 4)//fromStack
@@ -964,13 +964,13 @@ public:
 				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
 					AddInstruction(PushInt, 24);
-					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
+					AddInstructionComment(ShiftRight, "char type");
 				}
 				else if (size == 2)//short
 				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
 					AddInstruction(PushInt, 16);
-					AddInstructionComment(Native, "short type", "shift_right", 2, 1);
+					AddInstructionComment(ShiftRight, "short type");
 				}
 			}
 			else if (isAddr)
@@ -987,7 +987,7 @@ public:
 					AddInstruction(PushInt, 255);
 					AddInstruction(And);
 					AddInstruction(PushInt, 24);
-					AddInstructionComment(Native, "char type", "shift_left", 2, 1);
+					AddInstructionComment(ShiftLeft, "char type");
 
 				}
 				else if (size == 2)//short
@@ -996,7 +996,7 @@ public:
 					AddInstruction(PushInt, 65536);
 					AddInstruction(Mod);
 					AddInstruction(PushInt, 16);
-					AddInstructionComment(Native, "short type", "shift_left", 2, 1);
+					AddInstructionComment(ShiftLeft, "short type");
 				}
 				if(size > 4)//fromStack
 				{
@@ -1029,13 +1029,13 @@ public:
 				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
 					AddInstruction(PushInt, 24);
-					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
+					AddInstructionComment(ShiftRight, "char type");
 				}
 				else if (size == 2)//short
 				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
 					AddInstruction(PushInt, 16);
-					AddInstructionComment(Native, "short type", "shift_right", 2, 1);
+					AddInstructionComment(ShiftRight, "short type");
 				}
 			}
 			else if (isAddr)
@@ -1052,7 +1052,7 @@ public:
 					AddInstruction(PushInt, 255);
 					AddInstruction(And);
 					AddInstruction(PushInt, 24);
-					AddInstructionComment(Native, "char type", "shift_left", 2, 1);
+					AddInstructionComment(ShiftLeft, "char type");
 
 				}
 				else if (size == 2)//short
@@ -1061,7 +1061,7 @@ public:
 					AddInstruction(PushInt, 65536);
 					AddInstruction(Mod);
 					AddInstruction(PushInt, 16);
-					AddInstructionComment(Native, "short type", "shift_left", 2, 1);
+					AddInstructionComment(ShiftLeft, "short type");
 				}
 
 				if(size > 4)//fromStack
@@ -1879,7 +1879,7 @@ public:
 					AddInstruction(GetFrame, srcIndex);
 					AddInstruction(PGet);
 					AddInstruction(PushInt, 24);
-					AddInstruction(Native, "shift_left", 2, 1);
+					AddInstruction(ShiftLeft);
 					AddInstruction(GetFrame, destIndex);
 					AddInstruction(PGet);
 					AddInstruction(PushInt, 0xFFFFFF);
@@ -1927,7 +1927,7 @@ public:
 					parseExpression(argArray[1], false, true);//value
 					out << "PushB 24\r\nCallNative shift_left 2 1\r\n";
 					AddInstruction(PushInt, 24);
-					AddInstruction(Native, "shift_left", 2, 1);
+					AddInstruction(ShiftLeft);
 					out << frameSet(valIndex) << endl;
 					AddInstruction(SetFrame, valIndex);
 					parseExpression(argArray[2], false, true);//size
@@ -4979,83 +4979,8 @@ public:
 				case BO_AndAssign:  OpAssign("And", false, OK_And); break;
 				case BO_RemAssign:  OpAssign("Mod", true, OK_Mod, OK_FMod); break;
 				case BO_XorAssign:  OpAssign("Xor", false, OK_Xor); break;
-				case BO_ShlAssign:
-				case BO_ShrAssign: {
-					string natName = (op == BO_ShlAssign) ? "shift_left" : "shift_right";
-					bool pointerSet = true;
-					if (isa<DeclRefExpr>(bOp->getLHS()))
-					{
-						const DeclRefExpr *dRef = cast<DeclRefExpr>(bOp->getLHS());
-						if (isa<VarDecl>(dRef->getFoundDecl()))
-						{
-							pointerSet = false;
-							parseExpression(bOp->getLHS(), false, true);
-						}
-					}
-					if (pointerSet)
-					{
-						parseExpression(bOp->getLHS(), true, false);
-						out << "dup\r\npGet\r\n";
-						AddInstruction(Dup);
-						AddInstruction(PGet);
-					}
-					llvm::APSInt intRes;
-					if (isa<PointerType>(bOp->getLHS()->getType()))
-					{
-						Throw("Invalid operator, " + bOp->getOpcodeStr().str() + " on pointer data types", rewriter, e->getSourceRange());
-					}
-					else if (bOp->getLHS()->getType()->isFloatingType())
-					{
-						Throw("Invalid operator, " + bOp->getOpcodeStr().str() + " on floating data types", rewriter, e->getSourceRange());
-					}
-					if (bOp->getRHS()->EvaluateAsInt(intRes, *context))
-					{
-						int64_t val = intRes.getSExtValue();
-						out << iPush(val) << endl;
-						AddInstruction(PushInt, val);
-						if (pointerSet)
-						{
-							out << "callnative " << natName << "2 1\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
-							AddInstruction(Native, natName, 2, 1);
-							AddInstruction(PeekSet);
-							AddInstructionCondition(isLtoRValue, PGet, Drop);
-						}
-						else
-						{
-							out << "callnative " << natName << "2 1\r\n";
-							AddInstruction(Native, natName, 2, 1);
-							if (isLtoRValue)
-							{
-								out << "dup\r\n";
-								AddInstruction(Dup);
-							}
-							parseExpression(bOp->getLHS(), false, false, false, true);
-						}
-					}
-					else
-					{
-						parseExpression(bOp->getRHS(), false, true);
-						if (pointerSet)
-						{
-							out << "callnative " << natName << "2 1\r\npPeekSet\r\n" << (isLtoRValue ? "pGet" : "Drop") << "\r\n";
-							AddInstruction(Native, natName, 2, 1);
-							AddInstruction(PeekSet);
-							AddInstructionCondition(isLtoRValue, PGet, Drop);
-						}
-						else
-						{
-							out << "callnative " << natName << "2 1\r\n";
-							AddInstruction(Native, natName, 2, 1);
-							if (isLtoRValue)
-							{
-								out << "dup\r\n";
-								AddInstruction(Dup);
-							}
-							parseExpression(bOp->getLHS(), false, false, false, true);
-						}
-					}
-				}
-								   break;
+				case BO_ShlAssign:	OpAssign("CallNative shift_left 2 1", false, OK_ShiftLeft); break;
+				case BO_ShrAssign: OpAssign("CallNative shift_right 2 1", false, OK_ShiftRight); break;
 				default:
 				{
 
@@ -5173,8 +5098,8 @@ public:
 							case BO_Add: out << "Add\r\n"; AddInstruction(Add); break;
 							case BO_LOr://needs changing
 							case BO_Or: out << "Or\r\n"; AddInstruction(Or); break;
-							case BO_Shl: out << "CallNative shift_left 2 1\r\n"; AddInstruction(Native, "shift_left", 2, 1); break;
-							case BO_Shr: out << "CallNative shift_right 2 1\r\n"; AddInstruction(Native, "shift_right", 2, 1); break;
+							case BO_Shl: out << "CallNative shift_left 2 1\r\n"; AddInstruction(ShiftLeft); break;
+							case BO_Shr: out << "CallNative shift_right 2 1\r\n"; AddInstruction(ShiftRight); break;
 							default:
 							Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
 						}
@@ -5324,7 +5249,7 @@ public:
 								parseExpression(I->getInit(i), false, true);
 								out << "PushB 255\r\nAnd\r\nPushB 24\r\nCallNative shift_left 2 1\r\n";
 								AddInstruction(PushInt, 24);
-								AddInstruction(Native, "shift_left", 2, 1);
+								AddInstruction(ShiftLeft);
 								AddInstruction(PushInt, 255);
 								AddInstruction(And);
 							}
@@ -5347,7 +5272,7 @@ public:
 									if(j != 3)
 									{
 										AddInstruction(PushInt, (3 - j) << 3);
-										AddInstruction(Native, "shift_left", 2, 1);
+										AddInstruction(ShiftLeft);
 									}
 									AddInstruction(Or);
 								}
@@ -5417,7 +5342,7 @@ public:
 								AddInstruction(PushInt, 65535);
 								AddInstruction(And);
 								AddInstruction(PushInt, 16);
-								AddInstruction(Native, "shift_left", 2, 1);
+								AddInstruction(ShiftLeft);
 							}
 							if(i + 1 < initCount)
 							{
@@ -5624,7 +5549,7 @@ public:
 				AddInstruction(PushInt, 256);
 				AddInstruction(Mod);
 				AddInstruction(PushInt, 24);
-				AddInstruction(Native, "shift_left", 2, 1);
+				AddInstruction(ShiftLeft);
 				parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
 				if (isCst)
 				{
@@ -5655,7 +5580,7 @@ public:
 				AddInstruction(PushInt, 65536);
 				AddInstruction(Mod);
 				AddInstruction(PushInt, 16);
-				AddInstruction(Native, "shift_left", 2, 1);
+				AddInstruction(ShiftLeft);
 				parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
 				if(isCst)
 				{
@@ -5715,14 +5640,14 @@ public:
 			{
 				out << "PushB 24\r\nCallNative shift_right 2 1\r\n";
 				AddInstruction(PushInt, 24);
-				AddInstruction(Native, "shift_right", 2, 1);
+				AddInstruction(ShiftRight);
 			}
 			//2 byte indexing
 			else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 			{
 				out << "PushB 16\r\nCallNative shift_right 2 1\r\n";
 				AddInstruction(PushInt, 16);
-				AddInstruction(Native, "shift_right", 2, 1);
+				AddInstruction(ShiftRight);
 			}
 
 		}
