@@ -8,7 +8,25 @@ struct SwitchCaseIns
 	string loc;
 	SwitchCaseIns* next;
 };
-
+struct StringStorage
+{
+	char* pointer;
+	int length;
+	string toString()const
+	{
+		return string(pointer, length);
+	}
+	StringStorage(string str)
+	{
+		length = str.length();
+		pointer = new char[length + 1];
+		memcpy(pointer, str.c_str(), length + 1);
+	}
+	~StringStorage()
+	{
+		delete[] pointer;
+	}
+};
 void Opcode::setULong(uint64_t value)
 {
 	*(uint64_t*)storage = value;
@@ -16,9 +34,7 @@ void Opcode::setULong(uint64_t value)
 
 void Opcode::setString(string str)
 {
-	char* temp = new char[str.length() + 1];
-	memcpy(temp, str.c_str(), str.length() + 1);
-	*(char**)storage = temp;
+	*(StringStorage**)storage = new StringStorage(str);
 }
 
 void Opcode::setInt(int value, int offset)
@@ -67,7 +83,7 @@ Opcode::~Opcode()
 	case OK_JumpLT:
 	case OK_JumpLE:
 	case OK_Label:
-		delete[] * (char**)storage;
+		delete *(StringStorage**)storage;
 		break;
 	case OK_Switch:
 	{
@@ -139,7 +155,7 @@ string Opcode::getString() const
 	case OK_JumpLE:
 	case OK_Label:
 	case OK_LabelLoc:
-		return string(*(char**)storage);
+		return (*(StringStorage**)storage)->toString();
 	default:
 		assert(false && "Get String called on a non string opcode");
 	}
