@@ -2995,7 +2995,7 @@ public:
 			{
 				FindBuffer.insert(labelName);
 				out << labelName << endl;
-				AddInstruction(Label, labelName);
+				AddInstruction(Label, labelName.substr(1));
 			}
 			LocalVariables.addLevel();
 
@@ -3011,7 +3011,7 @@ public:
 			{
 				FindBuffer.insert(labelName);
 				out << labelName << endl;
-				AddInstruction(Label, labelName);
+				AddInstruction(Label, labelName.substr(1));
 			}
 			LocalVariables.addLevel();
 			if (caseS->getRHS())
