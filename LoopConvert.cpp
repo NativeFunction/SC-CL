@@ -3229,13 +3229,22 @@ public:
 			}
 		}
 		else if (isa<StringLiteral>(e)) {
-			const StringLiteral *literal = cast<const StringLiteral>(e);
-			if (literal->getString().str().length() > 0)
-				out << "PushString \"" << literal->getString().str() << "\"" << endl;
-			else
-				out << "PushString \"\"" << endl;
-
-			AddInstruction(PushString, literal->getString().str());
+			string str = cast<const StringLiteral>(e)->getString().str();
+			int size = getSizeOfType(e->getType().getTypePtr());
+			int litSize = str.size();
+			const char *ptr = str.c_str();
+			for (int i = 0; i<size;i+= 4)
+			{
+				uint32_t res = 0;
+				for (int j = 0; j<4;j++)
+				{
+					if(i + j < litSize){
+						res |= ptr[i + j] << ((3-j) << 3);
+					}
+				}
+				out << iPush((int32_t)res) << endl;
+				AddInstruction(PushInt, (int32_t)res);
+			}
 		}
 		else if (isa<CallExpr>(e)) {
 			const CallExpr *call = cast<const CallExpr>(e);
@@ -3479,7 +3488,25 @@ public:
 				parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 				break;
 				case clang::CK_ArrayToPointerDecay:
-				parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					if(isa<StringLiteral>(icast->getSubExpr()))
+					{
+						string str = cast<const StringLiteral>(icast->getSubExpr())->getString().str();
+						if(isLtoRValue)
+						{
+							if(str.length() > 0)
+								out << "PushString \"" << str << "\"" << endl;
+							else
+								out << "PushString \"\"" << endl;
+
+							AddInstruction(PushString, str);
+						}
+
+					}
+					else
+					{
+						parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					}
+				
 				break;
 				case clang::CK_LValueToRValue:
 				{
@@ -5249,7 +5276,8 @@ public:
 				case 1:
 				{
 					int initCount = I->getNumInits();
-					for(int i = 0; i < initCount; i += 4)
+					int i;
+					for(i = 0; i < initCount; i += 4)
 					{
 						llvm::APSInt res;
 						int evaluated[4];
@@ -5279,7 +5307,7 @@ public:
 						}
 						if(allconst)
 						{
-							int val = (evaluated[0]) | (evaluated[1] << 8) | (evaluated[2] << 16) | (evaluated[3] << 24);
+							int val = (evaluated[0] << 24) | (evaluated[1] << 16) | (evaluated[2] << 8) | (evaluated[3]);
 							out << iPush(val) << endl;
 							AddInstruction(PushInt, val);
 						}
@@ -5287,14 +5315,16 @@ public:
 						{
 							if(succ[0])
 							{
-								out << iPush(evaluated[0]) << endl;
-								AddInstruction(PushInt, evaluated[0]);
+								out << iPush(evaluated[0] << 24) << endl;
+								AddInstruction(PushInt, evaluated[0] << 24);
 
 							}
 							else
 							{
 								parseExpression(I->getInit(i), false, true);
-								out << "PushB 255\r\nAnd\r\n";
+								out << "PushB 255\r\nAnd\r\nPushB 24\r\nCallNative shift_left 2 1\r\n";
+								AddInstruction(PushInt, 24);
+								AddInstruction(Native, "shift_left", 2, 1);
 								AddInstruction(PushInt, 255);
 								AddInstruction(And);
 							}
@@ -5304,30 +5334,41 @@ public:
 									break;
 								if(succ[j])
 								{
-									out << iPush(evaluated[j] << (j << 3)) << "\r\nOr\r\n";
-									AddInstruction(PushInt, evaluated[j] << (j << 3));
+									out << iPush(evaluated[j] << ((3 - j) << 3)) << "\r\nOr\r\n";
+									AddInstruction(PushInt, evaluated[j] << ((3-j) << 3));
 									AddInstruction(Or);
 								}
 								else
 								{
 									parseExpression(I->getInit(i + j), false, true);
-									out << "PushB 255\r\nAnd\r\nPushB " << (j << 3) << "\r\nCallNative shift_left 2 1\r\nOr\r\n";
+									out << "PushB 255\r\nAnd\r\nPushB " << ((3 - j) << 3) << "\r\nCallNative shift_left 2 1\r\nOr\r\n";
 									AddInstruction(PushInt, 255);
 									AddInstruction(And);
-									AddInstruction(PushInt, j << 3);
-									AddInstruction(Native, "shift_left", 2, 1);
+									if(j != 3)
+									{
+										AddInstruction(PushInt, (3 - j) << 3);
+										AddInstruction(Native, "shift_left", 2, 1);
+									}
 									AddInstruction(Or);
 								}
 
 							}
 						}
 					}
+					int size = getSizeOfType(I->getType().getTypePtr());
+					while (i < size)
+					{
+						out << iPush(0) << endl;
+						AddInstruction(PushInt, 0);
+						i += 4;
+					}
 				}
 					return 1;
 				case 2:
 				{
 					int initCount = I->getNumInits();
-					for(int i = 0; i < initCount; i += 2)
+					int i;
+					for(i = 0; i < initCount; i += 2)
 					{
 						llvm::APSInt res;
 						int evaluated[2];
@@ -5357,7 +5398,7 @@ public:
 						}
 						if(allconst)
 						{
-							int val = (evaluated[0]) | (evaluated[1] << 16);
+							int val = (evaluated[0] << 16) | (evaluated[1]);
 							out << iPush(val) << endl;
 							AddInstruction(PushInt, val);
 						}
@@ -5365,46 +5406,65 @@ public:
 						{
 							if(succ[0])
 							{
-								out << iPush(evaluated[0]) << endl;
-								AddInstruction(PushInt, evaluated[0]);
+								out << iPush(evaluated[0] << 16) << endl;
+								AddInstruction(PushInt, evaluated[0] << 16);
 
 							}
 							else
 							{
 								parseExpression(I->getInit(i), false, true);
-								out << "PushI24 65535\r\nAnd\r\n";
+								out << "PushI24 65535\r\nAnd\r\nPushB 16\r\nCallNative shift_left 2 1\r\n";
 								AddInstruction(PushInt, 65535);
 								AddInstruction(And);
+								AddInstruction(PushInt, 16);
+								AddInstruction(Native, "shift_left", 2, 1);
 							}
 							if(i + 1 < initCount)
 							{
 								if(succ[1])
 								{
-									out << iPush(evaluated[1] << 16) << "\r\nOr\r\n";
-									AddInstruction(PushInt, evaluated[1] << 16);
+									out << iPush(evaluated[1]) << "\r\nOr\r\n";
+									AddInstruction(PushInt, evaluated[1]);
 									AddInstruction(Or);
 								}
 								else
 								{
 									parseExpression(I->getInit(i + 1), false, true);
-									out << "PushI24 65535\r\nAnd\r\nPushB 16\r\nCallNative shift_left 2 1\r\nOr\r\n";
+									out << "PushI24 65535\r\nAnd\r\nOr\r\n";
 									AddInstruction(PushInt, 65535);
 									AddInstruction(And);
-									AddInstruction(PushInt, 16);
-									AddInstruction(Native, "shift_left", 2, 1);
 									AddInstruction(Or);
 								}
 							}
-
-
 						}
+					}
+					int size = getSizeOfType(I->getType().getTypePtr());
+					int curSize = getSizeFromBytes(i * 2) * 4;
+					while(curSize < size)
+					{
+						out << iPush(0) << endl;
+						AddInstruction(PushInt, 0);
+						curSize += 4;
 					}
 				}
 				return 1;
 				}
 			}
+			int size = getSizeOfType(I->getType().getTypePtr());
+			int curSize = 0;
 			for (unsigned int i = 0; i < I->getNumInits(); i++)
-				parseExpression(I->getInit(i), false, true);
+			{
+				const Expr *init = I->getInit(i);
+				curSize += 4 * getSizeFromBytes(getSizeOfType(init->getType().getTypePtr()));
+				parseExpression(init, false, true);
+			}
+			while (curSize < size)
+			{
+				out << iPush(0) << endl;
+				AddInstruction(PushInt, 0);
+				curSize += 4;
+			}
+				
 		}
 		else if (isa<ImplicitValueInitExpr>(e))
 		{
