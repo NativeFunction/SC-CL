@@ -6255,7 +6255,6 @@ public:
 				return true;
 			}
 		}
-
 		if (isa<StringLiteral>(e)) {
 			const StringLiteral *literal = cast<const StringLiteral>(e);
 			if (literal->getString().str().length() > 0)
@@ -6274,6 +6273,15 @@ public:
 						DefaultStaticValues.insert({ oldStaticInc++, to_string(Utils::Bitwise::SwapEndian(buffer)) });
 						b = 0;
 						buffer = 0;
+
+						#if STATIC_PADDING_DEBUG == 0
+						if (i >= (int32_t)strlit.length())
+						{
+							oldStaticInc += Utils::Math::CeilDivInt(strsize - i, 4);
+							break;
+						}
+						#endif
+
 					}
 					if (i >= (int32_t)strlit.length())
 						((uint8_t*)&buffer)[b] = 0;//add padding
