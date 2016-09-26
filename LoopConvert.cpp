@@ -13,17 +13,15 @@
 #define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4)
 #define STATIC_PADDING_DEBUG 0
 #define AddInstruction(opName, ...) CurrentFunction->AddOpcode(Opcode::##opName(__VA_ARGS__))
-#define AddInstructionComment(opName, comment, ...) CurrentFunction->AddOpcodeWithComment(Opcode::##opName(__VA_ARGS__), comment)
-#define AddFloatingOpCheck(isFlt, opEnum, opEnumFlt) CurrentFunction->AddOpcode(Opcode::AddSimpleOp((isFlt) ? opEnumFlt : opEnum))
-#define AddInstructionCondition(cond, opNameTrue, opNameFalse, ...) CurrentFunction->AddOpcode((cond) ? Opcode::##opNameTrue(__VA_ARGS__) : Opcode::##opNameFalse(__VA_ARGS__))
-#define AddInstructionConditionally(cond, opName, ...) {if (cond) CurrentFunction->AddOpcode(Opcode::##opName(__VA_ARGS__));}
-#pragma endregion
-
 #ifdef _DEBUG
 #define AddInstructionComment(opName, comment, ...) CurrentFunction->AddOpcodeWithComment(Opcode::##opName(__VA_ARGS__), comment)
 #else
 #define AddInstructionComment(opName, comment, ...) CurrentFunction->AddOpcode(Opcode::##opName(__VA_ARGS__))
 #endif
+#define AddFloatingOpCheck(isFlt, opEnum, opEnumFlt) CurrentFunction->AddOpcode(Opcode::AddSimpleOp((isFlt) ? opEnumFlt : opEnum))
+#define AddInstructionCondition(cond, opNameTrue, opNameFalse, ...) CurrentFunction->AddOpcode((cond) ? Opcode::##opNameTrue(__VA_ARGS__) : Opcode::##opNameFalse(__VA_ARGS__))
+#define AddInstructionConditionally(cond, opName, ...) {if (cond) CurrentFunction->AddOpcode(Opcode::##opName(__VA_ARGS__));}
+#pragma endregion
 
 using namespace Utils;
 using namespace Utils::System;

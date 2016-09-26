@@ -89,31 +89,38 @@ Opcode::~Opcode()
 		break;
 	}
 }
-#ifdef _DEBUG
+
 void Opcode::setComment(string comment)
 {
+#ifdef _DEBUG
 	if(_comment)
 	{
 		delete[] _comment;
 	}
 	_comment = new char[comment.length() + 1];
 	memcpy(_comment, comment.c_str(), comment.length() + 1);
+#endif
 }
 
 string Opcode::getComment() const
 {
+#ifdef _DEBUG
 	if(_comment)
 	{
 		return string(_comment);
 	}
+#endif
 	return "";
 }
 
 bool Opcode::hasComment() const
 {
+#ifdef _DEBUG
 	return _comment;
-}
+#else
+	return false;
 #endif
+}
 string Opcode::getString() const
 {
 	switch(opcodeKind)
@@ -419,13 +426,14 @@ void FunctionData::AddOpcode(Opcode * op)
 {
 	Instructions.push_back(op);
 }
-#ifdef _DEBUG
+
 void FunctionData::AddOpcodeWithComment(Opcode * op, string comment)
 {
+#ifdef _DEBUG
 	op->setComment(comment);
+#endif
 	Instructions.push_back(op);
 }
-#endif
 bool FunctionData::endsWithInlineReturn(unsigned position) const
 {
 	return Instructions.size() && Instructions.back()->GetKind() == OK_Jump && Instructions.back()->getString() == to_string(position);
