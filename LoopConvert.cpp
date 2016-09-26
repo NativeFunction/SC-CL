@@ -920,16 +920,16 @@ public:
 					AddInstruction(PushInt, 255);
 					AddInstruction(And);
 					AddInstruction(PushInt, 24);
-					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
+					AddInstructionComment(Native, "char type", "shift_left", 2, 1);
 
 				}
 				else if (size == 2)//short
 				{
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
-					AddInstruction(PushInt, 65535);
-					AddInstruction(And);
+					AddInstruction(PushInt, 65536);
+					AddInstruction(Mod);
 					AddInstruction(PushInt, 16);
-					AddInstructionComment(Native, "short type", "shift_right", 2, 1);
+					AddInstructionComment(Native, "short type", "shift_left", 2, 1);
 				}
 
 				if (size > 4)//fromStack
@@ -987,16 +987,16 @@ public:
 					AddInstruction(PushInt, 255);
 					AddInstruction(And);
 					AddInstruction(PushInt, 24);
-					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
+					AddInstructionComment(Native, "char type", "shift_left", 2, 1);
 
 				}
 				else if (size == 2)//short
 				{
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
-					AddInstruction(PushInt, 65535);
-					AddInstruction(And);
+					AddInstruction(PushInt, 65536);
+					AddInstruction(Mod);
 					AddInstruction(PushInt, 16);
-					AddInstructionComment(Native, "short type", "shift_right", 2, 1);
+					AddInstructionComment(Native, "short type", "shift_left", 2, 1);
 				}
 				if(size > 4)//fromStack
 				{
@@ -1052,16 +1052,16 @@ public:
 					AddInstruction(PushInt, 255);
 					AddInstruction(And);
 					AddInstruction(PushInt, 24);
-					AddInstructionComment(Native, "char type", "shift_right", 2, 1);
+					AddInstructionComment(Native, "char type", "shift_left", 2, 1);
 
 				}
 				else if (size == 2)//short
 				{
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
-					AddInstruction(PushInt, 65535);
-					AddInstruction(And);
+					AddInstruction(PushInt, 65536);
+					AddInstruction(Mod);
 					AddInstruction(PushInt, 16);
-					AddInstructionComment(Native, "short type", "shift_right", 2, 1);
+					AddInstructionComment(Native, "short type", "shift_left", 2, 1);
 				}
 
 				if(size > 4)//fromStack
