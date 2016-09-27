@@ -3214,18 +3214,7 @@ public:
 		}*/
 		if (isa<CompoundLiteralExpr>(e)) {
 			const CompoundLiteralExpr *cLit = cast<const CompoundLiteralExpr>(e);
-			if (isa<InitListExpr>(cLit->getInitializer())) {
-				const InitListExpr *init = cast<const InitListExpr>(cLit->getInitializer());
-				for (unsigned int i = 0; i<init->getNumInits(); i++) {
-					parseExpression(init->getInit(i), isAddr, isLtoRValue);
-				}
-				// if(!printVTable)
-				//     out << "iPush " << init->getNumInits() << " // numInitializers" << endl;
-			}
-			else {
-				parseExpression(cLit->getInitializer(), isAddr, isLtoRValue);
-				//                out << "Unimplemented CompoundLiteralExpr" << endl;
-			}
+			parseExpression(cLit->getInitializer(), isAddr, isLtoRValue);
 			if (isArrToPtrDecay && isLtoRValue)
 			{
 				int size = getSizeFromBytes(getSizeOfType(e->getType().getTypePtr()));
