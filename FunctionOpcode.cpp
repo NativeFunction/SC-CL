@@ -2,16 +2,31 @@
 #include <cassert>
 #include <sstream>
 
-struct SwitchCaseIns
+struct SwitchCaseStorage
 {
-	int value;
-	string loc;
-	SwitchCaseIns* next;
+private:
+	int _caseVal;
+	string _jumpLoc;
+	SwitchCaseStorage* _next;
+public:
+	SwitchCaseStorage(int caseVal, string jumpLoc) : _caseVal(caseVal), _jumpLoc(jumpLoc), _next(NULL){}
+	~SwitchCaseStorage()
+	{
+		if(_next)
+			delete _next;
+	}
+	string getLoc()const{ return _jumpLoc; }
+	int getCase()const{ return _caseVal; }
+	bool hasNextCase()const{ return _next; }
+	SwitchCaseStorage *getNextCase()const{ return _next; }
+	SwitchCaseStorage **getNextCasePtr(){ return &_next; }
 };
 struct StringStorage
 {
+private:
 	char* pointer;
 	int length;
+public:
 	string toString()const
 	{
 		return string(pointer, length);
@@ -27,37 +42,70 @@ struct StringStorage
 		delete[] pointer;
 	}
 };
-void Opcode::setULong(uint64_t value)
+struct NativeStorage
 {
-	*(uint64_t*)storage = value;
-}
+private:
+	uint64_t _hash;
+	StringStorage *_name;
+	uint16_t _pCount, _rCount;
+public:
+	NativeStorage(string name, uint64_t hash, uint16_t pCount, uint16_t rCount) :
+		_hash(hash), 
+		_name(new StringStorage(name)),
+		_pCount(pCount),
+		_rCount(rCount)
+	{
+	}
+	NativeStorage(string name, uint16_t pCount, uint16_t rCount) :
+		_hash((!strnicmp(name.c_str(), "unk_0x", 6) ? strtoull(name.c_str() + 6, NULL, 16) : Utils::Hashing::Joaat((char*)name.c_str()))),
+		_name(new StringStorage(name)),
+		_pCount(pCount),
+		_rCount(rCount)
+	{
+	}
+	NativeStorage(uint64_t hash, uint16_t pCount, uint16_t rCount) :
+		_hash(hash),
+		_name(NULL),
+		_pCount(pCount),
+		_rCount(rCount)
+	{
+	}
+	~NativeStorage()
+	{
+		if(_name)
+			delete _name;
+	}
+	bool hasName()const{ return _name; }
+	string getName()const{ if(hasName())return _name->toString(); return string(); }
+	uint64_t getHash()const{ return _hash; }
+	uint16_t getParamCount()const{ return _pCount; }
+	uint16_t getReturnCount()const{ return _rCount; }
+};
 
 void Opcode::setString(string str)
 {
 	*(StringStorage**)storage = new StringStorage(str);
 }
 
-void Opcode::setInt(int value, int offset)
+void Opcode::setInt(int value)
 {
-	assert(offset >= 0 && offset <= 8 && "int offset must be between 0 and 8");
-	*(int*)(storage + offset) = value;
+	*(int*)storage = value;
 }
 
-void Opcode::setFloat(float value, int offset)
+void Opcode::setFloat(float value)
 {
-	assert(offset >= 0 && offset <= 8 && "float offset must be between 0 and 8");
-	*(float*)(storage + offset) = value;
+	*(float*)storage = value;
 }
 
 void Opcode::setShort(int16_t value, int offset)
 {
-	assert(offset >= 0 && offset <= 10 && "short offset must be between 0 and 10");
+	assert(offset >= 0 && offset <= (sizeof(void*) - 2) && "short offset must be between 0 and 2");
 	*(int16_t*)(storage + offset) = value;
 }
 
 void Opcode::setUShort(uint16_t value, int offset)
 {
-	assert(offset >= 0 && offset <= 10 && "ushort offset must be between 0 and 10");
+	assert(offset >= 0 && offset <= (sizeof(void*) - 2) && "ushort offset must be between 0 and 2");
 	*(uint16_t*)(storage + offset) = value;
 }
 
@@ -85,18 +133,15 @@ Opcode::~Opcode()
 	case OK_Label:
 		delete *(StringStorage**)storage;
 		break;
+	case OK_Native:
+		delete *(NativeStorage**)storage;
+		break;
 	case OK_Switch:
 	{
-		SwitchCaseIns** sCasePtr = (SwitchCaseIns**)storage;
+		SwitchCaseStorage* sCasePtr = *(SwitchCaseStorage**)storage;
 		if(sCasePtr)
 		{
-			SwitchCaseIns *sCase = *sCasePtr;
-			while(sCase)
-			{
-				SwitchCaseIns* tmp = sCase;
-				sCase = sCase->next;
-				delete tmp;
-			}
+			delete sCasePtr;
 		}
 
 		break;
@@ -118,7 +163,6 @@ void Opcode::setComment(string comment)
 	memcpy(_comment, comment.c_str(), comment.length() + 1);
 #endif
 }
-
 string Opcode::getComment() const
 {
 #ifdef _DEBUG
@@ -129,7 +173,6 @@ string Opcode::getComment() const
 #endif
 	return "";
 }
-
 bool Opcode::hasComment() const
 {
 #ifdef _DEBUG
@@ -162,39 +205,32 @@ string Opcode::getString() const
 	return "";
 }
 
-int Opcode::getInt(int offset) const
+int Opcode::getInt() const
 {
-	assert(offset >= 0 && offset <= 8 && "int offset must be between 0 and 8");
-	return *(int*)(storage + offset);
+	return *(int*)storage;
 }
 
-float Opcode::getFloat(int offset) const
+float Opcode::getFloat() const
 {
-	assert(offset >= 0 && offset <= 8 && "float offset must be between 0 and 8");
-	return *(float*)(storage + offset);
+	return *(float*)storage;
 }
 
 int16_t Opcode::getShort(int offset) const
 {
-	assert(offset >= 0 && offset <= 10 && "short offset must be between 0 and 10");
+	assert(offset >= 0 && offset <= (sizeof(void*) - 2) && "ushort offset must be between 0 and 2");
 	return *(int16_t*)(storage + offset);
 }
 
 uint16_t Opcode::getUShort(int offset) const
 {
-	assert(offset >= 0 && offset <= 10 && "short offset must be between 0 and 10");
+	assert(offset >= 0 && offset <= (sizeof(void*) - 2) && "short offset must be between 0 and 2");
 	return *(uint16_t*)(storage + offset);
-}
-
-uint64_t Opcode::getULong() const
-{
-	return *(uint64_t*)storage;
 }
 
 string Opcode::toString() const
 {
 #define Check12Op(opcode){uint16_t value = getUShort(0);current = (value > 0xFF ? #opcode "2 " :  #opcode "1 ") + to_string(value); }
-#define Check23Op(opcode){int value = getInt(0);assert(value < 0 && "value cannot be negative"); current = (value > 0xFFFF ? #opcode "3 " :  #opcode "2 ") + to_string(value); }
+#define Check23Op(opcode){int value = getInt();assert(value < 0 && "value cannot be negative"); current = (value > 0xFFFF ? #opcode "3 " :  #opcode "2 ") + to_string(value); }
 #define PrintJump(cond){current = "Jump"#cond " @" + getString();}
 	string current;
 	switch(opcodeKind)
@@ -240,7 +276,7 @@ string Opcode::toString() const
 	case OK_ShiftRight: current = "CallNative shift_right 2 1"; break;
 	case OK_PushInt:
 	{
-		int value = getInt(0);
+		int value = getInt();
 		if(value >= -1 && value <= 7){
 			current = "Push_" + to_string(value);
 		}
@@ -260,7 +296,7 @@ string Opcode::toString() const
 	}
 	case OK_PushFloat:
 	{
-		float value = getFloat(0);
+		float value = getFloat();
 		if(value == -1.0){
 			current = "PushF_-1";
 		}
@@ -297,9 +333,14 @@ string Opcode::toString() const
 	case OK_Drop: current = "Drop"; break;
 	case OK_Native:
 	{
+		NativeStorage* native = *(NativeStorage**)storage;
 		char buff[17];
-		sprintf(buff, "%llX", getULong());
-		current = "CallNative 0x" + string(buff) + " " + to_string(getUShort(8)) + " " + to_string(getUShort(10));
+		sprintf(buff, "%llX", native->getHash());
+		current = "CallNative unk0x" + string(buff) + " " + to_string(native->getParamCount()) + " " + to_string(native->getReturnCount());
+		if (native->hasName())
+		{
+			current += " //" + native->getName();
+		}
 		break;
 	}
 /*	case OK_Func:
@@ -330,7 +371,7 @@ string Opcode::toString() const
 	case OK_SetGlobal:Check23Op(SetGlobal); break;
 	case OK_AddImm:
 	{
-		int value = getInt(0);
+		int value = getInt();
 		if(value > 0 && value < 256){
 			current = "Add1 " + to_string(value);
 		}
@@ -348,7 +389,7 @@ string Opcode::toString() const
 	}
 	case OK_MultImm:
 	{
-		int value = getInt(0);
+		int value = getInt();
 		if(value > 0 && value < 256){
 			current = "Mult1 " + to_string(value);
 		}
@@ -375,15 +416,13 @@ string Opcode::toString() const
 	case OK_JumpLT: PrintJump(LT); break;
 	case OK_JumpLE: PrintJump(LE); break;
 	case OK_Switch:{
-		SwitchCaseIns** sCasePtr = (SwitchCaseIns**)storage;
-		assert(sCasePtr && "Empty Switch Statement");
-		SwitchCaseIns* sCase = *sCasePtr;
-		current = "Switch [" + to_string(sCase->value) + " @" + sCase->loc + "]";
-		sCase = sCase->next;
-		while(sCase)
+		SwitchCaseStorage* sCase = *(SwitchCaseStorage**)storage;
+		assert(sCase && "Empty Switch Statement");
+		current = "Switch [" + to_string(sCase->getCase()) + " @" + sCase->getLoc() + "]";
+		while(sCase->hasNextCase())
 		{
-			current += ":[" + to_string(sCase->value) + " @" + sCase->loc + "]";
-			sCase = sCase->next;
+			sCase = sCase->getNextCase();
+			current += ":[" + to_string(sCase->getCase()) + " @" + sCase->getLoc() + "]";
 		}
 		break;
 	}
@@ -414,25 +453,6 @@ string Opcode::toString() const
 #undef PrintJump
 }
 
-void Opcode::addSwitchCase(int caseVal, string jumpLoc)
-{
-	assert(opcodeKind == OK_Switch && "AddSwitchCase must be called on switches");
-	SwitchCaseIns** curCasePtr = (SwitchCaseIns**)&storage;
-	int count = 0;
-	while(*curCasePtr)
-	{
-		assert(caseVal != (*curCasePtr)->value && "Duplicate switch case found");
-		curCasePtr = &(*curCasePtr)->next;
-		count++;
-	}
-	assert(count < 256 && "Too many switch cases in statement");
-	SwitchCaseIns* newCase = new SwitchCaseIns();
-	newCase->loc = jumpLoc;
-	newCase->value = caseVal;
-	newCase->next = NULL;
-	*curCasePtr = newCase;
-}
-
 FunctionData::~FunctionData()
 {
 	for (size_t i = 0; i < Instructions.size();i++)
@@ -441,17 +461,69 @@ FunctionData::~FunctionData()
 	}
 }
 
-void FunctionData::AddOpcode(Opcode * op)
-{
-	Instructions.push_back(op);
-}
-
-void FunctionData::AddOpcodeWithComment(Opcode * op, string comment)
+void FunctionData::pushComment(string comment)
 {
 #ifdef _DEBUG
-	op->setComment(comment);
+	assert(Instructions.size() && "Empty instruction stack"); Instructions.back()->setComment(comment);
 #endif
-	Instructions.push_back(op);
+}
+
+void FunctionData::AddSimpleOp(OpcodeKind operation)
+{
+	switch(operation)
+	{
+	case OK_Nop:
+	case OK_Add:
+	case OK_Sub:
+	case OK_Mult:
+	case OK_Div:
+	case OK_Mod:
+	case OK_Not:
+	case OK_Neg:
+	case OK_CmpEq:
+	case OK_CmpNe:
+	case OK_CmpGt:
+	case OK_CmpGe:
+	case OK_CmpLt:
+	case OK_CmpLe:
+	case OK_FAdd:
+	case OK_FSub:
+	case OK_FMult:
+	case OK_FDiv:
+	case OK_FMod:
+	case OK_FNeg:
+	case OK_FCmpEq:
+	case OK_FCmpNe:
+	case OK_FCmpGt:
+	case OK_FCmpGe:
+	case OK_FCmpLt:
+	case OK_FCmpLe:
+	case OK_VAdd:
+	case OK_VSub:
+	case OK_VMult:
+	case OK_VDiv:
+	case OK_VNeg:
+	case OK_And:
+	case OK_Or:
+	case OK_Xor:
+	case OK_FtoI:
+	case OK_ItoF:
+	case OK_FtoV:
+	case OK_ShiftLeft:
+	case OK_ShiftRight:
+	case OK_Dup:
+	case OK_Drop:
+	case OK_PGet:
+	case OK_PSet:
+	case OK_PeekSet:
+	case OK_ToStack:
+	case OK_FromStack:
+	case OK_MemCpy:
+	case OK_PCall:
+		Instructions.push_back(new Opcode(operation));
+	default:
+		assert(false && "Not a simple operation passed");
+	}
 }
 bool FunctionData::endsWithInlineReturn(unsigned position) const
 {
@@ -483,10 +555,21 @@ string FunctionData::toString() const
 	return stream.str();
 }
 
-void FunctionData::addSwitchCase(int caseVal, string jumpLoc) const
+void FunctionData::addSwitchCase(int caseVal, string jumpLoc)
 {
-	assert(Instructions.size() && "Instruction stakck empty, cant add switch case");
-	Instructions.back()->addSwitchCase(caseVal, jumpLoc);
+	assert(Instructions.size() && "Instruction stack empty, cant add switch case");
+	Opcode *end = Instructions.back();
+	assert(end->GetKind() == OK_Switch && "AddSwitchCase must be called on switches");
+	SwitchCaseStorage** curCasePtr = (SwitchCaseStorage**)end->storage;
+	int count = 0;
+	while(*curCasePtr)
+	{
+		assert(caseVal != (*curCasePtr)->getCase() && "Duplicate switch case found");
+		curCasePtr = (*curCasePtr)->getNextCasePtr();
+		count++;
+	}
+	assert(count < 256 && "Too many switch cases in statement");
+	*curCasePtr = new SwitchCaseStorage(caseVal, jumpLoc);
 }
 
 void FunctionData::addUsedFunc(FunctionData * func)
@@ -495,6 +578,27 @@ void FunctionData::addUsedFunc(FunctionData * func)
 	{
 		usedFuncs.push_back(func);
 	}
+}
+
+void FunctionData::addOpNative(string name, uint16_t pCount, uint16_t rCount)
+{
+	Opcode* op = new Opcode(OK_Native);
+	*(NativeStorage**)op->storage = new NativeStorage(name, pCount, rCount);
+	Instructions.push_back(op);
+}
+
+void FunctionData::addOpNative(uint64_t hash, uint16_t pCount, uint16_t rCount)
+{
+	Opcode* op = new Opcode(OK_Native);
+	*(NativeStorage**)op->storage = new NativeStorage(hash, pCount, rCount);
+	Instructions.push_back(op);
+}
+
+void FunctionData::addOpNative(string name, uint64_t hash, uint16_t pCount, uint16_t rCount)
+{
+	Opcode* op = new Opcode(OK_Native);
+	*(NativeStorage**)op->storage = new NativeStorage(name, hash, pCount, rCount);
+	Instructions.push_back(op);
 }
 
 ostream & operator<<(ostream & stream, const FunctionData & fdata)

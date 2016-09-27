@@ -12,15 +12,15 @@
 #undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
 #define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4)
 #define STATIC_PADDING_DEBUG 0
-#define AddInstruction(opName, ...) CurrentFunction->AddOpcode(Opcode::##opName(__VA_ARGS__))
+#define AddInstruction(opName, ...) CurrentFunction->addOp##opName(__VA_ARGS__)
 #ifdef _DEBUG
-#define AddInstructionComment(opName, comment, ...) CurrentFunction->AddOpcodeWithComment(Opcode::##opName(__VA_ARGS__), comment)
+#define AddInstructionComment(opName, comment, ...) {CurrentFunction->addOp##opName(__VA_ARGS__); CurrentFunction->pushComment(comment);}
 #else
-#define AddInstructionComment(opName, comment, ...) CurrentFunction->AddOpcode(Opcode::##opName(__VA_ARGS__))
+#define AddInstructionComment(opName, comment, ...) CurrentFunction->addOp##opName(__VA_ARGS__)
 #endif
-#define AddFloatingOpCheck(isFlt, opEnum, opEnumFlt) CurrentFunction->AddOpcode(Opcode::AddSimpleOp((isFlt) ? opEnumFlt : opEnum))
-#define AddInstructionCondition(cond, opNameTrue, opNameFalse, ...) CurrentFunction->AddOpcode((cond) ? Opcode::##opNameTrue(__VA_ARGS__) : Opcode::##opNameFalse(__VA_ARGS__))
-#define AddInstructionConditionally(cond, opName, ...) {if (cond) CurrentFunction->AddOpcode(Opcode::##opName(__VA_ARGS__));}
+#define AddFloatingOpCheck(isFlt, opEnum, opEnumFlt) CurrentFunction->AddSimpleOp((isFlt) ? opEnumFlt : opEnum)
+#define AddInstructionCondition(cond, opNameTrue, opNameFalse, ...) {if (cond) CurrentFunction->addOp##opNameTrue(__VA_ARGS__); else CurrentFunction->addOp##opNameFalse(__VA_ARGS__);}
+#define AddInstructionConditionally(cond, opName, ...) {if (cond) CurrentFunction->addOp##opName(__VA_ARGS__);}
 #pragma endregion
 
 using namespace Utils;
@@ -3076,6 +3076,10 @@ public:
 				else
 					llvm::errs() << "Unexpected Statement: " << switchCaseList->getStmtClassName();
 				switchCaseList = switchCaseList->getNextSwitchCase();
+			}
+			if(!caseLabelsNew.size())
+			{
+				Throw("Switch statement contains no cases", rewriter, switchStmt->getSourceRange());
 			}
 			while (caseLabels.size() > 1)
 			{
@@ -6255,6 +6259,7 @@ public:
 				return true;
 			}
 		}
+
 		if (isa<StringLiteral>(e)) {
 			const StringLiteral *literal = cast<const StringLiteral>(e);
 			if (literal->getString().str().length() > 0)
@@ -6274,14 +6279,13 @@ public:
 						b = 0;
 						buffer = 0;
 
-						#if STATIC_PADDING_DEBUG == 0
+#if STATIC_PADDING_DEBUG == 0
 						if (i >= (int32_t)strlit.length())
 						{
 							oldStaticInc += Utils::Math::CeilDivInt(strsize - i, 4);
 							break;
 						}
-						#endif
-
+#endif
 					}
 					if (i >= (int32_t)strlit.length())
 						((uint8_t*)&buffer)[b] = 0;//add padding
@@ -6333,8 +6337,8 @@ public:
 				if (isa<StringLiteral>(icast->getSubExpr()))
 				{
 					const StringLiteral *literal = cast<const StringLiteral>(icast->getSubExpr());
-					Entryfunction.AddOpcode(Opcode::PushString(literal->getString().str()));
-					Entryfunction.AddOpcode(Opcode::SetStatic(oldStaticInc));
+					Entryfunction.addOpPushString(literal->getString().str());
+					Entryfunction.addOpSetStatic(oldStaticInc);
 					if (literal->getString().str().length() > 0)
 						RuntimeStatics << "PushString \"" << literal->getString().str() << "\"\r\n";
 					else
@@ -6349,8 +6353,8 @@ public:
 
 					//we can index because the name has to be declared in clang to use the declare
 					//we will let clang handle errors
-					Entryfunction.AddOpcode(Opcode::GetStaticP(statics[DRE->getDecl()->getNameAsString()]));
-					Entryfunction.AddOpcode(Opcode::SetStatic(oldStaticInc));
+					Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
+					Entryfunction.addOpSetStatic(oldStaticInc);
 					RuntimeStatics
 						<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl
 						<< setStatic(oldStaticInc++) << endl;
@@ -6439,9 +6443,9 @@ public:
 								int size = getSizeOfType(type);
 								if(type->isArrayType())
 									size = getSizeFromBytes(size) * 4;
-								Entryfunction.AddOpcode(Opcode::GetStaticP(statics[DRE->getDecl()->getNameAsString()]));
-								Entryfunction.AddOpcode(Opcode::AddImm(size * iResult.getSExtValue()));
-								Entryfunction.AddOpcode(Opcode::SetStatic(oldStaticInc));
+								Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
+								Entryfunction.addOpAddImm(size * iResult.getSExtValue());
+								Entryfunction.addOpSetStatic(oldStaticInc);
 								RuntimeStatics
 									<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl << add(size * iResult.getSExtValue()) << endl
 									<< setStatic(oldStaticInc++) << endl;
@@ -6469,8 +6473,8 @@ public:
 
 					//we can index because the name has to be declared in clang to use the declare
 					//we will let clang handle errors
-					Entryfunction.AddOpcode(Opcode::GetStaticP(statics[DRE->getDecl()->getNameAsString()]));
-					Entryfunction.AddOpcode(Opcode::SetStatic(oldStaticInc));
+					Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
+					Entryfunction.addOpSetStatic(oldStaticInc);
 					RuntimeStatics
 						<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl
 						<< setStatic(oldStaticInc++) << endl;
@@ -6852,12 +6856,12 @@ public:
 				main << "Drop\r\n";
 			}
 			main << "Return 0 0\r\n";
-			Entryfunction.AddOpcode(Opcode::Call("main"));
+			Entryfunction.addOpCall("main");
 			for (int i = 0; i < Visitor.MainRets;i++)
 			{
-				Entryfunction.AddOpcode(Opcode::Drop());
+				Entryfunction.addOpDrop();
 			}
-			Entryfunction.AddOpcode(Opcode::Return(0, 0));
+			Entryfunction.addOpReturn(0, 0);
 		}
 		else
 			Throw("Function \"main\" was not found");
