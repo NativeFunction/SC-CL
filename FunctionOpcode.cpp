@@ -521,6 +521,7 @@ void FunctionData::AddSimpleOp(OpcodeKind operation)
 	case OK_MemCpy:
 	case OK_PCall:
 		Instructions.push_back(new Opcode(operation));
+		break;
 	default:
 		assert(false && "Not a simple operation passed");
 	}
