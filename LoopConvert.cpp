@@ -896,14 +896,12 @@ public:
 				if (size == 1)//char
 				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
-					AddInstruction(PushInt, 24);
-					AddInstructionComment(ShiftRight, "char type");
+					AddInstructionComment(ShiftRight, "char type", 24);
 				}
 				else if (size == 2)//short
 				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
-					AddInstruction(PushInt, 16);
-					AddInstructionComment(ShiftRight, "short type");
+					AddInstructionComment(ShiftRight, "short type", 16);
 				}
 			}
 			else if (isAddr)
@@ -919,8 +917,7 @@ public:
 					out << "PushS 256\r\nMod\r\nPushB 24\r\nCallNative shift_left 2 1//char type\r\n";
 					AddInstruction(PushInt, 255);
 					AddInstruction(And);
-					AddInstruction(PushInt, 24);
-					AddInstructionComment(ShiftLeft, "char type");
+					AddInstructionComment(ShiftLeft, "char type", 24);
 
 				}
 				else if (size == 2)//short
@@ -928,8 +925,7 @@ public:
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
 					AddInstruction(PushInt, 65536);
 					AddInstruction(Mod);
-					AddInstruction(PushInt, 16);
-					AddInstructionComment(ShiftLeft, "short type");
+					AddInstructionComment(ShiftLeft, "short type", 16);
 				}
 				if (size > 4)//fromStack
 				{
@@ -962,14 +958,12 @@ public:
 				if (size == 1)//char
 				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
-					AddInstruction(PushInt, 24);
-					AddInstructionComment(ShiftRight, "char type");
+					AddInstructionComment(ShiftRight, "char type", 24);
 				}
 				else if (size == 2)//short
 				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
-					AddInstruction(PushInt, 16);
-					AddInstructionComment(ShiftRight, "short type");
+					AddInstructionComment(ShiftRight, "short type", 16);
 				}
 			}
 			else if (isAddr)
@@ -985,8 +979,7 @@ public:
 					out << "PushS 256\r\nMod\r\nPushB 24\r\nCallNative shift_left 2 1//char type\r\n";
 					AddInstruction(PushInt, 255);
 					AddInstruction(And);
-					AddInstruction(PushInt, 24);
-					AddInstructionComment(ShiftLeft, "char type");
+					AddInstructionComment(ShiftLeft, "char type", 24);
 
 				}
 				else if (size == 2)//short
@@ -994,8 +987,7 @@ public:
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
 					AddInstruction(PushInt, 65536);
 					AddInstruction(Mod);
-					AddInstruction(PushInt, 16);
-					AddInstructionComment(ShiftLeft, "short type");
+					AddInstructionComment(ShiftLeft, "short type", 16);
 				}
 				if(size > 4)//fromStack
 				{
@@ -1027,14 +1019,12 @@ public:
 				if (size == 1)//char
 				{
 					out << "PushB 24\r\nCallNative shift_right 2 1//char type\r\n";
-					AddInstruction(PushInt, 24);
-					AddInstructionComment(ShiftRight, "char type");
+					AddInstructionComment(ShiftRight, "char type", 24);
 				}
 				else if (size == 2)//short
 				{
 					out << "PushB 16\r\nCallNative shift_right 2 1//short type\r\n";
-					AddInstruction(PushInt, 16);
-					AddInstructionComment(ShiftRight, "short type");
+					AddInstructionComment(ShiftRight, "short type", 16);
 				}
 			}
 			else if (isAddr)
@@ -1050,8 +1040,7 @@ public:
 					out << "PushS 256\r\nMod\r\nPushB 24\r\nCallNative shift_left 2 1//char type\r\n";
 					AddInstruction(PushInt, 255);
 					AddInstruction(And);
-					AddInstruction(PushInt, 24);
-					AddInstructionComment(ShiftLeft, "char type");
+					AddInstructionComment(ShiftLeft, "char type", 24);
 
 				}
 				else if (size == 2)//short
@@ -1059,8 +1048,7 @@ public:
 					out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1//short type\r\n";
 					AddInstruction(PushInt, 65536);
 					AddInstruction(Mod);
-					AddInstruction(PushInt, 16);
-					AddInstructionComment(ShiftLeft, "short type");
+					AddInstructionComment(ShiftLeft, "short type", 16);
 				}
 
 				if(size > 4)//fromStack
@@ -1877,8 +1865,7 @@ public:
 
 					AddInstruction(GetFrame, srcIndex);
 					AddInstruction(PGet);
-					AddInstruction(PushInt, 24);
-					AddInstruction(ShiftLeft);
+					AddInstruction(ShiftLeft, 24);
 					AddInstruction(GetFrame, destIndex);
 					AddInstruction(PGet);
 					AddInstruction(PushInt, 0xFFFFFF);
@@ -1925,8 +1912,7 @@ public:
 
 					parseExpression(argArray[1], false, true);//value
 					out << "PushB 24\r\nCallNative shift_left 2 1\r\n";
-					AddInstruction(PushInt, 24);
-					AddInstruction(ShiftLeft);
+					AddInstruction(ShiftLeft, 24);
 					out << frameSet(valIndex) << endl;
 					AddInstruction(SetFrame, valIndex);
 					parseExpression(argArray[2], false, true);//size
@@ -3956,6 +3942,16 @@ public:
 
 			}
 			else if (op->getOpcode() == UO_Deref) {
+				int size = getSizeOfType(e->getType().getTypePtr());
+				int bSize = getSizeFromBytes(size);
+				if (!isAddr)
+				{
+					if (bSize > 1)
+					{
+						out << iPush(bSize) << " //Type Size\r\n";
+						AddInstructionComment(PushInt, "Type Size", bSize);
+					}
+				}
 				if (isa<ArraySubscriptExpr>(subE)) {
 					out << "//deref ArraySubscriptExpr" << endl;
 					parseArraySubscriptExpr(subE, false);
@@ -3971,13 +3967,49 @@ public:
 				{
 					if (isLtoRValue)
 					{
-						out << "pGet" << endl;
-						AddInstruction(PGet);
+						if (bSize > 1)
+						{
+							out << "ToStack\r\n";
+							AddInstruction(ToStack);
+						}
+						else
+						{
+							out << "pGet" << endl;
+							AddInstruction(PGet);
+							if (size == 1)
+							{
+								out << "PushB 24\r\nCallNative shift_right 2 1\r\n";
+								AddInstructionComment(ShiftRight, "char type", 24);
+							}
+							else if (size == 2)
+							{
+								out << "PushB 16\r\nCallNative shift_right 2 1\r\n";
+								AddInstructionComment(ShiftRight, "short type", 16);
+								if (e->getType()->isSpecificBuiltinType(clang::BuiltinType::Kind::Short))
+								{
+									out << iPush(1 << 15) << "\r\nAnd\r\nJumpFalse @" << e->getLocEnd().getRawEncoding()
+										<< "\r\n" << iPush(0xFFFF0000) << "\r\nOr //ExtSignWord\r\n\r\n:" << e->getLocEnd().getRawEncoding() << endl;
+									AddInstruction(IsBitSet, 15);
+									AddInstruction(JumpFalse, e->getLocEnd().getRawEncoding());
+									AddInstruction(PushInt, 0xFFFF0000);
+									AddInstructionComment(Or, "ExtSignWord");
+									AddInstruction(Label, e->getLocEnd().getRawEncoding());
+								}
+							}
+						}
 					}
 					else
 					{
-						out << "pSet" << endl;
-						AddInstruction(PSet);
+						if (bSize > 1)
+						{
+							out << "ToStack\r\n";
+							AddInstruction(ToStack);
+						}
+						else
+						{
+							out << "pSet" << endl;
+							AddInstruction(PSet);
+						}
 					}
 				}
 
@@ -5252,8 +5284,7 @@ public:
 							{
 								parseExpression(I->getInit(i), false, true);
 								out << "PushB 255\r\nAnd\r\nPushB 24\r\nCallNative shift_left 2 1\r\n";
-								AddInstruction(PushInt, 24);
-								AddInstruction(ShiftLeft);
+								AddInstruction(ShiftLeft, 24);
 								AddInstruction(PushInt, 255);
 								AddInstruction(And);
 							}
@@ -5275,8 +5306,7 @@ public:
 									AddInstruction(And);
 									if(j != 3)
 									{
-										AddInstruction(PushInt, (3 - j) << 3);
-										AddInstruction(ShiftLeft);
+										AddInstruction(ShiftLeft, (3 - j) << 3);
 									}
 									AddInstruction(Or);
 								}
@@ -5345,8 +5375,7 @@ public:
 								out << "PushI24 65535\r\nAnd\r\nPushB 16\r\nCallNative shift_left 2 1\r\n";
 								AddInstruction(PushInt, 65535);
 								AddInstruction(And);
-								AddInstruction(PushInt, 16);
-								AddInstruction(ShiftLeft);
+								AddInstruction(ShiftLeft, 16);
 							}
 							if(i + 1 < initCount)
 							{
@@ -5552,8 +5581,7 @@ public:
 				out << "PushS 256\r\nMod\r\nPushB 24\r\nCallNative shift_left 2 1\r\n";
 				AddInstruction(PushInt, 256);
 				AddInstruction(Mod);
-				AddInstruction(PushInt, 24);
-				AddInstruction(ShiftLeft);
+				AddInstruction(ShiftLeft, 24);
 				parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
 				if (isCst)
 				{
@@ -5583,8 +5611,7 @@ public:
 				out << "Pushi24 65536\r\nMod\r\nPushB 16\r\nCallNative shift_left 2 1\r\n";
 				AddInstruction(PushInt, 65536);
 				AddInstruction(Mod);
-				AddInstruction(PushInt, 16);
-				AddInstruction(ShiftLeft);
+				AddInstruction(ShiftLeft, 16);
 				parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
 				if(isCst)
 				{
@@ -5643,15 +5670,13 @@ public:
 			if (type->isCharType())
 			{
 				out << "PushB 24\r\nCallNative shift_right 2 1\r\n";
-				AddInstruction(PushInt, 24);
-				AddInstruction(ShiftRight);
+				AddInstruction(ShiftRight, 24);
 			}
 			//2 byte indexing
 			else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 			{
 				out << "PushB 16\r\nCallNative shift_right 2 1\r\n";
-				AddInstruction(PushInt, 16);
-				AddInstruction(ShiftRight);
+				AddInstruction(ShiftRight, 16);
 				if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short))
 				{
 					out << iPush(1 << 15) << "\r\nAnd\r\nJumpFalse @" << arr->getLocEnd().getRawEncoding()

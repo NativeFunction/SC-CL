@@ -225,7 +225,23 @@ public:
 		Instructions.push_back(op);
 	}
 	void addOpShiftLeft(){ Instructions.push_back(new Opcode(OK_ShiftLeft)); }
+	void addOpShiftLeft(uint16_t shiftCount)
+	{
+		assert(shiftCount >= 0 && shiftCount <= 31 && "shiftCount must be between 0 and 31");
+		Opcode* op = new Opcode(OK_PushInt);
+		op->setInt(shiftCount);
+		Instructions.push_back(op);
+		Instructions.push_back(new Opcode(OK_ShiftLeft));
+	}
 	void addOpShiftRight(){ Instructions.push_back(new Opcode(OK_ShiftRight)); }
+	void addOpShiftRight(uint16_t shiftCount)
+	{
+		assert(shiftCount >= 0 && shiftCount <= 31 && "shiftCount must be between 0 and 31");
+		Opcode* op = new Opcode(OK_PushInt);
+		op->setInt(shiftCount);
+		Instructions.push_back(op);
+		Instructions.push_back(new Opcode(OK_ShiftRight));
+	}
 	void addOpIsBitSet(uint16_t bitIndex)
 	{
 		//treat it as 2 instructions to simplify compiling
