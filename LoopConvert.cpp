@@ -1813,79 +1813,108 @@ public:
 				ChkHashCol("memcpy");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
+					llvm::APSInt apCount;
+					int iCount;
+					if (argArray[2]->EvaluateAsInt(apCount, *context) && (iCount = apCount.getSExtValue(), iCount > 0) && iCount & ~3)
+					{
+						int itemCount = iCount / 4;
+						if (itemCount == 1)
+						{
+							parseExpression(argArray[1], true, true);
+							out << "pGet\r\n";
+							AddInstruction(PGet);
+							parseExpression(argArray[0], true, true);
+							out << "pSet\r\n";
+							AddInstruction(PSet);
+						}
+						else{
+							out << iPush(itemCount) << endl;
+							AddInstruction(PushInt, itemCount);
+							parseExpression(argArray[1], true, true);
+							out << "ToStack\r\n" << iPush(itemCount) << endl;
+							AddInstruction(ToStack);
+							AddInstruction(PushInt, itemCount);
+							parseExpression(argArray[0], true, true);
+							out << "FromStack\r\n";
+							AddInstruction(FromStack);
+						}
+					}
+					else
+					{
+						uint32_t loopLblCount = __COUNTER__;
 
-					uint32_t loopLblCount = __COUNTER__;
+						LocalVariables.addLevel();
 
-					LocalVariables.addLevel();
+						int destIndex = LocalVariables.addDecl("__memcpy-loop-dest", 1);
+						int srcIndex = LocalVariables.addDecl("__memcpy-loop-src", 1);
+						int sizeIndex = LocalVariables.addDecl("__memcpy-loop-size", 1);
 
-					int destIndex = LocalVariables.addDecl("__memcpy-loop-dest", 1);
-					int srcIndex = LocalVariables.addDecl("__memcpy-loop-src", 1);
-					int sizeIndex = LocalVariables.addDecl("__memcpy-loop-size", 1);
+						parseExpression(argArray[0], true, true);//dest
+						out << frameSet(destIndex) << endl;
+						AddInstruction(SetFrame, destIndex);
 
-					parseExpression(argArray[0], true, true);//dest
-					out << frameSet(destIndex) << endl;
-					AddInstruction(SetFrame, destIndex);
+						parseExpression(argArray[1], true, true);//src
+						out << frameSet(srcIndex) << endl;
+						AddInstruction(SetFrame, srcIndex);
+						parseExpression(argArray[2], false, true);//size
+						out << frameSet(sizeIndex) << endl
+							<< iPush(0) << endl//inc ini
 
-					parseExpression(argArray[1], true, true);//src
-					out << frameSet(srcIndex) << endl;
-					AddInstruction(SetFrame, srcIndex);
-					parseExpression(argArray[2], false, true);//size
-					out << frameSet(sizeIndex) << endl
-						<< iPush(0) << endl//inc ini
+							<< ":__memcpy-loop-" << loopLblCount << endl
+							<< "Dup\r\n"
+							<< frameGet(sizeIndex) << endl
+							<< "JumpGE @__memcpy-loopend-" << loopLblCount << endl
 
-						<< ":__memcpy-loop-" << loopLblCount << endl
-						<< "Dup\r\n"
-						<< frameGet(sizeIndex) << endl
-						<< "JumpGE @__memcpy-loopend-" << loopLblCount << endl
+							<< frameGet(srcIndex) << endl
+							<< "pGet\r\nPushB 24\r\nCallNative shift_left 2 1\r\n"
+							<< frameGet(destIndex) << endl
+							<< "pGet\r\nPushI24 0xFFFFFF\r\nAnd\r\nOr\r\n"
+							<< frameGet(destIndex) << endl
+							<< "pSet\r\n"
 
-						<< frameGet(srcIndex) << endl
-						<< "pGet\r\nPushB 24\r\nCallNative shift_left 2 1\r\n"
-						<< frameGet(destIndex) << endl
-						<< "pGet\r\nPushI24 0xFFFFFF\r\nAnd\r\nOr\r\n"
-						<< frameGet(destIndex) << endl
-						<< "pSet\r\n"
+							<< frameGet(destIndex) << endl
+							<< "Add1 1\r\n"
+							<< frameSet(destIndex) << endl
+							<< frameGet(srcIndex) << endl
+							<< "Add1 1\r\n"
+							<< frameSet(srcIndex) << endl
 
-						<< frameGet(destIndex) << endl
-						<< "Add1 1\r\n"
-						<< frameSet(destIndex) << endl
-						<< frameGet(srcIndex) << endl
-						<< "Add1 1\r\n"
-						<< frameSet(srcIndex) << endl
+							<< "Add1 1\r\n"//inc add
+							<< "Jump @__memcpy-loop-" << loopLblCount << endl
+							<< ":__memcpy-loopend-" << loopLblCount << endl
+							<< "Drop\r\n";
 
-						<< "Add1 1\r\n"//inc add
-						<< "Jump @__memcpy-loop-" << loopLblCount << endl
-						<< ":__memcpy-loopend-" << loopLblCount << endl
-						<< "Drop\r\n";
+						AddInstruction(SetFrame, sizeIndex);
+						AddInstruction(PushInt, 0);
+						AddInstruction(Label, "__memcpy-loop-" + to_string(loopLblCount));
+						AddInstruction(Dup);
+						AddInstruction(JumpGE, "__memcpy-loopend-" + to_string(loopLblCount));
 
-					AddInstruction(SetFrame, sizeIndex);
-					AddInstruction(PushInt, 0);
-					AddInstruction(Label, "__memcpy-loop-" + to_string(loopLblCount));
-					AddInstruction(Dup);
-					AddInstruction(JumpGE, "__memcpy-loopend-" + to_string(loopLblCount));
+						AddInstruction(GetFrame, srcIndex);
+						AddInstruction(PGet);
+						AddInstruction(ShiftLeft, 24);
+						AddInstruction(GetFrame, destIndex);
+						AddInstruction(PGet);
+						AddInstruction(PushInt, 0xFFFFFF);
+						AddInstruction(And);
+						AddInstruction(Or);
+						AddInstruction(GetFrame, destIndex);
+						AddInstruction(PSet);
 
-					AddInstruction(GetFrame, srcIndex);
-					AddInstruction(PGet);
-					AddInstruction(ShiftLeft, 24);
-					AddInstruction(GetFrame, destIndex);
-					AddInstruction(PGet);
-					AddInstruction(PushInt, 0xFFFFFF);
-					AddInstruction(And);
-					AddInstruction(Or);
-					AddInstruction(GetFrame, destIndex);
-					AddInstruction(PSet);
+						AddInstruction(GetFrame, destIndex);
+						AddInstruction(AddImm, 1);
+						AddInstruction(SetFrame, destIndex);
+						AddInstruction(GetFrame, srcIndex);
+						AddInstruction(AddImm, 1);
+						AddInstruction(SetFrame, srcIndex);
 
-					AddInstruction(GetFrame, destIndex);
-					AddInstruction(AddImm, 1);
-					AddInstruction(SetFrame, destIndex);
-					AddInstruction(GetFrame, srcIndex);
-					AddInstruction(AddImm, 1);
-					AddInstruction(SetFrame, srcIndex);
-
-					AddInstruction(AddImm, 1);
-					AddInstruction(Jump, "__memcpy-loop-" + to_string(loopLblCount));
-					AddInstruction(Label, "__memcpy-loopend-" + to_string(loopLblCount));
-					AddInstruction(Drop);
-					LocalVariables.removeLevel();
+						AddInstruction(AddImm, 1);
+						AddInstruction(Jump, "__memcpy-loop-" + to_string(loopLblCount));
+						AddInstruction(Label, "__memcpy-loopend-" + to_string(loopLblCount));
+						AddInstruction(Drop);
+						LocalVariables.removeLevel();
+					}
+					
 
 				}
 				else
