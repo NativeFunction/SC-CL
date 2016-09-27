@@ -2655,13 +2655,11 @@ public:
 	bool parseStatement(Stmt *s, uint64_t breakLoc = -1, uint64_t continueLoc = -1, uint64_t returnLoc = -1) {
 		if (isa<CompoundStmt>(s)) {
 			CompoundStmt *cSt = cast<CompoundStmt>(s);
-			//            cSt->dump();
+			LocalVariables.addLevel();
 			for (auto *CS : cSt->body()) {
-				if (isa<Stmt>(*CS))
-					parseStatement(cast<Stmt>(CS), breakLoc, continueLoc, returnLoc);
-				else if (isa<Expr>(CS))
-					parseExpression(cast<const Expr>(CS));
+				parseStatement(cast<Stmt>(CS), breakLoc, continueLoc, returnLoc);
 			}
+			LocalVariables.removeLevel();
 		}
 		else if (isa<DeclStmt>(s)) {
 			DeclStmt *decl = cast<DeclStmt>(s);
@@ -2972,9 +2970,9 @@ public:
 
 		}
 		else if (isa<Expr>(s)) {
-
-
+			LocalVariables.addLevel();
 			parseExpression(cast<const Expr>(s));
+			LocalVariables.removeLevel();
 		}
 		else if (isa<BreakStmt>(s)) {
 			out << "Jump @" << breakLoc << "//brkstmt jmp" << endl;
@@ -3150,7 +3148,7 @@ public:
 	/// <param name="printVTable">if set to <c>true</c> [print v table].</param>
 	/// <param name="isAssign">if set to <c>true</c> [is assign].</param>
 	/// <returns></returns>
-	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, bool isAssign = false) {
+	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, bool isAssign = false, bool isArrToPtrDecay= false ) {
 		Expr::EvalResult result;
 		if(e->EvaluateAsRValue(result, *context) && !result.HasSideEffects)
 		{
@@ -3227,27 +3225,59 @@ public:
 				//     out << "iPush " << init->getNumInits() << " // numInitializers" << endl;
 			}
 			else {
-				parseExpression(cLit->getInitializer());
+				parseExpression(cLit->getInitializer(), isAddr, isLtoRValue);
 				//                out << "Unimplemented CompoundLiteralExpr" << endl;
+			}
+			if (isArrToPtrDecay && isLtoRValue)
+			{
+				int size = getSizeFromBytes(getSizeOfType(e->getType().getTypePtr()));
+				int index = LocalVariables.addDecl("", size);
+				if (size > 1)
+				{
+					out << iPush(size) << " //Type Size\r\n" << pFrame(index) << "\r\nFromStack\r\n" << pFrame(index) << " //compound literal ptr decay\r\n";
+					AddInstructionComment(PushInt, "Type Size", size);
+					AddInstruction(GetFrameP, index);
+					AddInstruction(FromStack);
+					AddInstructionComment(GetFrameP, "compound literal ptr decay", index);
+				}
+				else
+				{
+					out << frameSet(index) << "\r\n" << pFrame(index) << " //compound literal ptr decay\r\n";
+					AddInstruction(SetFrame, index);
+					AddInstructionComment(GetFrameP, "compound literal ptr decay", index);
+				}
 			}
 		}
 		else if (isa<StringLiteral>(e)) {
 			string str = cast<const StringLiteral>(e)->getString().str();
-			int size = getSizeOfType(e->getType().getTypePtr());
-			int litSize = str.size();
-			const char *ptr = str.c_str();
-			for (int i = 0; i<size;i+= 4)
+			if (isLtoRValue)
 			{
-				uint32_t res = 0;
-				for (int j = 0; j<4;j++)
+				if (isArrToPtrDecay)
 				{
-					if(i + j < litSize){
-						res |= ptr[i + j] << ((3-j) << 3);
+					out << "PushString \"" << str << "\"";
+					AddInstruction(PushString, str);
+				}
+				else
+				{
+					int size = getSizeOfType(e->getType().getTypePtr());
+					int litSize = str.size();
+					const char *ptr = str.c_str();
+					for (int i = 0; i < size; i += 4)
+					{
+						uint32_t res = 0;
+						for (int j = 0; j < 4; j++)
+						{
+							if (i + j < litSize){
+								res |= ptr[i + j] << ((3 - j) << 3);
+							}
+						}
+						out << iPush((int32_t)res) << endl;
+						AddInstruction(PushInt, (int32_t)res);
 					}
 				}
-				out << iPush((int32_t)res) << endl;
-				AddInstruction(PushInt, (int32_t)res);
 			}
+			
+			
 		}
 		else if (isa<CallExpr>(e)) {
 			const CallExpr *call = cast<const CallExpr>(e);
@@ -3326,89 +3356,87 @@ public:
 						string curName = dumpName(cast<NamedDecl>(currFunction));
 						if (cDecl->hasBody() && !isFunctionInInline(name) && curName != name)
 						{
-							Stmt *body = cDecl->getBody();
+							CompoundStmt *body = cast<CompoundStmt>(cDecl->getBody());
 							Stmt *subBody = body;
 							bool isEmpty = false;
-							if (isa<CompoundStmt>(body))
+							if (!cDecl->hasAttr<NoInlineAttr>())
 							{
-								if (cast<CompoundStmt>(body)->size() == 0)
+								if (body->size() == 0)
 								{
 									isEmpty = true;
 								}
-								else if (cast<CompoundStmt>(body)->size() == 1)
+								else if (body->size() == 1)
 								{
-									subBody = cast<CompoundStmt>(body)->body_front();
+									subBody = body->body_front();
 								}
-							}
-							if (isEmpty)
-							{
-								inlined = true;
-								for (uint32_t i = 0; i < cDecl->getNumParams(); i++)
-								{
-									for (int32_t paramSize = getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr())); paramSize--;)
-									{
-										out << "Drop\r\n";
-										AddInstruction(Drop);
-									}
-								}
-							}
-							else
-							{
-								bool noInline = cDecl->hasAttr<NoInlineAttr>();
-								bool isRet = isa<ReturnStmt>(subBody);
-								bool isExpr = isa<Expr>(subBody);
-								bool inlineSpec = cDecl->isInlineSpecified();
-								if (!noInline && (isRet || isExpr || inlineSpec)) //inline it
+								if (isEmpty)
 								{
 									inlined = true;
-									if (!addFunctionInline(name))
-									{
-										assert(false);
-									}
-									LocalVariables.addLevel();
-									int Index = LocalVariables.getCurrentSize();
-									int32_t paramSize = 0;
 									for (uint32_t i = 0; i < cDecl->getNumParams(); i++)
 									{
-										paramSize += getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr()));
-										handleParmVarDecl((ParmVarDecl*)(cDecl->getParamDecl(i)));
-									}
-									if (paramSize == 1)
-									{
-										out << frameSet(Index) << endl;
-										AddInstruction(SetFrame, Index);
-									}
-									else if (paramSize > 1)
-									{
-										out << iPush(paramSize) << endl << pFrame(Index) << "\r\nFromStack\r\n";
-										AddInstruction(PushInt, paramSize);
-										AddInstruction(GetFrameP, Index);
-										AddInstruction(FromStack);
-									}
-									if (isRet) {
-										parseExpression(cast<ReturnStmt>(subBody)->getRetValue(), false, true);
-									}
-									else if (isExpr)
-									{
-										parseExpression(cast<Expr>(subBody));
-									}
-									else
-									{
-										parseStatement(body, -1, -1, e->getLocEnd().getRawEncoding());
-										if (CurrentFunction->endsWithInlineReturn(e->getLocEnd().getRawEncoding()))
+										for (int32_t paramSize = getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr())); paramSize--;)
 										{
-											CurrentFunction->RemoveLast();
-											//remove the last jump, but keep the label, just incase other places in the function have returns
+											out << "Drop\r\n";
+											AddInstruction(Drop);
 										}
-										out << ":" << e->getLocEnd().getRawEncoding() << endl;
-										AddInstruction(Label, e->getLocEnd().getRawEncoding());
 									}
-									LocalVariables.removeLevel();
-									removeFunctionInline(name);
+								}
+								else
+								{
+									bool isRet = isa<ReturnStmt>(subBody);
+									bool isExpr = isa<Expr>(subBody);
+									bool inlineSpec = cDecl->isInlineSpecified();
+									if (isRet || isExpr || inlineSpec) //inline it
+									{
+										inlined = true;
+										if (!addFunctionInline(name))
+										{
+											assert(false);
+										}
+										LocalVariables.addLevel();
+										int Index = LocalVariables.getCurrentSize();
+										int32_t paramSize = 0;
+										for (uint32_t i = 0; i < cDecl->getNumParams(); i++)
+										{
+											paramSize += getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr()));
+											handleParmVarDecl((ParmVarDecl*)(cDecl->getParamDecl(i)));
+										}
+										if (paramSize == 1)
+										{
+											out << frameSet(Index) << endl;
+											AddInstruction(SetFrame, Index);
+										}
+										else if (paramSize > 1)
+										{
+											out << iPush(paramSize) << endl << pFrame(Index) << "\r\nFromStack\r\n";
+											AddInstruction(PushInt, paramSize);
+											AddInstruction(GetFrameP, Index);
+											AddInstruction(FromStack);
+										}
+										if (isRet) {
+											parseExpression(cast<ReturnStmt>(subBody)->getRetValue(), false, true);
+										}
+										else if (isExpr)
+										{
+											parseExpression(cast<Expr>(subBody));
+										}
+										else
+										{
+											parseStatement(body, -1, -1, e->getLocEnd().getRawEncoding());
+											if (CurrentFunction->endsWithInlineReturn(e->getLocEnd().getRawEncoding()))
+											{
+												CurrentFunction->RemoveLast();
+												//remove the last jump, but keep the label, just incase other places in the function have returns
+											}
+											out << ":" << e->getLocEnd().getRawEncoding() << endl;
+											AddInstruction(Label, e->getLocEnd().getRawEncoding());
+										}
+										LocalVariables.removeLevel();
+										removeFunctionInline(name);
 
+									}
 								}
 							}
-
 						}
 					}
 					if (!inlined)
@@ -3491,24 +3519,8 @@ public:
 				parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 				break;
 				case clang::CK_ArrayToPointerDecay:
-					if(isa<StringLiteral>(icast->getSubExpr()))
-					{
-						string str = cast<const StringLiteral>(icast->getSubExpr())->getString().str();
-						if(isLtoRValue)
-						{
-							if(str.length() > 0)
-								out << "PushString \"" << str << "\"" << endl;
-							else
-								out << "PushString \"\"" << endl;
 
-							AddInstruction(PushString, str);
-						}
-
-					}
-					else
-					{
-						parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					}
+						parseExpression(icast->getSubExpr(), isAddr, isLtoRValue, printVTable, isAssign, true);
 				
 				break;
 				case clang::CK_LValueToRValue:
