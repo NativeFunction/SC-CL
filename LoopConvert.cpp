@@ -2970,9 +2970,7 @@ public:
 
 		}
 		else if (isa<Expr>(s)) {
-			LocalVariables.addLevel();
 			parseExpression(cast<const Expr>(s));
-			LocalVariables.removeLevel();
 		}
 		else if (isa<BreakStmt>(s)) {
 			out << "Jump @" << breakLoc << "//brkstmt jmp" << endl;
@@ -3288,6 +3286,7 @@ public:
 			{
 				Throw("cannot take the address of an rvalue of type '" + QualType::getAsString(call->getCallReturnType(*context).split()) + "'", rewriter, call->getSourceRange());
 			}
+			LocalVariables.addLevel();
 			if (isa<MemberExpr>(callee))
 			{
 				const MemberExpr *expr = cast<const MemberExpr>(call->getCallee());
@@ -3486,6 +3485,7 @@ public:
 			}
 			else
 				Throw("Unexpected Expression for Callee!", rewriter, callee->getExprLoc());
+				LocalVariables.removeLevel();
 			return 1;
 
 		}
