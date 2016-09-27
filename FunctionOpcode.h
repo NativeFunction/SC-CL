@@ -226,6 +226,15 @@ public:
 	}
 	void addOpShiftLeft(){ Instructions.push_back(new Opcode(OK_ShiftLeft)); }
 	void addOpShiftRight(){ Instructions.push_back(new Opcode(OK_ShiftRight)); }
+	void addOpIsBitSet(uint16_t bitIndex)
+	{
+		//treat it as 2 instructions to simplify compiling
+		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
+		Opcode* op = new Opcode(OK_PushInt);
+		op->setInt((int)(1 << bitIndex));
+		Instructions.push_back(op);
+		Instructions.push_back(new Opcode(OK_And));
+	}
 #pragma endregion 
 
 

@@ -5652,6 +5652,16 @@ public:
 				out << "PushB 16\r\nCallNative shift_right 2 1\r\n";
 				AddInstruction(PushInt, 16);
 				AddInstruction(ShiftRight);
+				if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short))
+				{
+					out << iPush(1 << 15) << "\r\nAnd\r\nJumpFalse @" << arr->getLocEnd().getRawEncoding()
+						<< "\r\n" << iPush(0xFFFF0000) << "\r\nOr //ExtSignWord\r\n\r\n:" << arr->getLocEnd().getRawEncoding() << endl;
+					AddInstruction(IsBitSet, 15);
+					AddInstruction(JumpFalse, arr->getLocEnd().getRawEncoding());
+					AddInstruction(PushInt, 0xFFFF0000);
+					AddInstructionComment(Or, "ExtSignWord");
+					AddInstruction(Label, arr->getLocEnd().getRawEncoding());
+				}
 			}
 
 		}
