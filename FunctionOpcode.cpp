@@ -491,7 +491,9 @@ FunctionData::~FunctionData()
 void FunctionData::pushComment(string comment)
 {
 #ifdef _DEBUG
-	assert(Instructions.size() && "Empty instruction stack"); Instructions.back()->setComment(comment);
+	if (Instructions.size()){//instruction stack can be empty in the rare case you're dropping the first instruction of a function
+		Instructions.back()->setComment(comment);
+	}
 #endif
 }
 
