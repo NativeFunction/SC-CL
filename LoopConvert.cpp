@@ -3879,9 +3879,11 @@ public:
 
 			}
 			else if (op->getOpcode() == UO_Deref) {
-				int size = getSizeOfType(e->getType().getTypePtr());
+				const Type* type = e->getType().getTypePtr();
+				int size = getSizeOfType(type);
 				int bSize = getSizeFromBytes(size);
-				if (!isAddr && !isArrToPtrDecay)
+				
+				if (!isAddr && !isArrToPtrDecay && (type->isStructureType() || type->isUnionType()))
 				{
 					if (bSize > 1)
 					{
@@ -3897,20 +3899,24 @@ public:
 					out << "//deref DeclRefExpr" << endl;
 					parseExpression(subE, false, false);
 				}
-				else {
+				else
+				{
 					parseExpression(subE, false, true);
 				}
 				if (!isAddr && !isArrToPtrDecay)
 				{
 					if (isLtoRValue)
 					{
-						if (bSize > 1)
+						if (bSize > 1 && (type->isStructureType() || type->isUnionType()))
 						{
 							out << "ToStack\r\n";
 							AddInstruction(ToStack);
 						}
 						else
 						{
+							if (bSize > 1 && type->isArrayType())
+								return true;
+
 							out << "pGet" << endl;
 							AddInstruction(PGet);
 							if (size == 1)
@@ -3937,7 +3943,7 @@ public:
 					}
 					else
 					{
-						if (bSize > 1)
+						if (bSize > 1 && (type->isStructureType() || type->isUnionType()))
 						{
 							out << "ToStack\r\n";
 							AddInstruction(ToStack);
@@ -3949,6 +3955,7 @@ public:
 						}
 					}
 				}
+				
 
 				return true;
 			}
