@@ -620,7 +620,10 @@ void FunctionData::addOpAdd()
 		}
 		else
 		{
-			Instructions.back()->opcodeKind = OK_AddImm;
+			int val = Instructions.back()->getInt();
+			delete Instructions.back();
+			Instructions.pop_back();
+			addOpAddImm(val);
 		}
 	}
 	else
@@ -642,8 +645,10 @@ void FunctionData::addOpSub()
 		}
 		else
 		{
-			Instructions.back()->opcodeKind = OK_AddImm;
-			Instructions.back()->setInt(-i);
+			int val = Instructions.back()->getInt();
+			delete Instructions.back();
+			Instructions.pop_back();
+			addOpAddImm(-val);
 		}
 	}
 	else
@@ -668,13 +673,12 @@ void FunctionData::addOpMult()
 			delete Instructions.back();//remove the push 1, mult by 1 does nothing
 			Instructions.pop_back();
 		}
-		else if (i == -1)
+		else 
 		{
-			Instructions.back()->opcodeKind = OK_Neg;//negate
-		}
-		else
-		{
-			Instructions.back()->opcodeKind = OK_MultImm;
+			int val = Instructions.back()->getInt();
+			delete Instructions.back();
+			Instructions.pop_back();
+			addOpMultImm(val);
 		}
 	}
 	else
@@ -804,6 +808,107 @@ void FunctionData::addOpPushInt(int immediate)
 	Instructions.push_back(op);
 }
 
+void FunctionData::addOpDrop()
+{
+//#ifdef _DEBUG
+//	Instructions.push_back(new Opcode(OK_Drop));
+//#else
+	switch(Instructions.back()->GetKind())
+	{
+	case OK_PushInt:
+	case OK_PushFloat:
+	case OK_PushString:
+	case OK_GetFrameP:
+	case OK_GetFrame:
+	case OK_GetStaticP:
+	case OK_GetStatic:
+	case OK_GetGlobalP:
+	case OK_GetGlobal:
+	case OK_Dup:
+	case OK_LabelLoc:
+		//delete instrucions that just push a value to the stack
+		delete Instructions.back();
+		Instructions.pop_back();
+		break;
+	case OK_PushBytes:
+		switch(Instructions.back()->getByte(0))
+		{
+		case 2:
+		{
+			int val = Instructions.back()->getByte(1);
+			delete Instructions.back();
+			Instructions.pop_back();
+			addOpPushInt(val);
+		}
+			break;
+		case 3:
+			Instructions.back()->setByte(2, 0);
+			break;
+		default:
+			assert(false && "Unexpected PushBytes item count");
+		}
+		break;
+	case OK_FtoV:
+		//this case would only ever come up if you have
+		// toVector3(1.0f); and dont use the result, in which case it would recursively get cancelled down 
+		Instructions.back()->opcodeKind = OK_Dup;//replace fToV(dup2) with dup
+		break;
+	case OK_AddImm:
+	case OK_MultImm:
+	case OK_PGet:
+	case OK_ItoF:
+	case OK_FtoI:
+	case OK_GetArrayP:
+	case OK_GetArray:
+	case OK_GetImmP:
+	case OK_GetImm:
+	case OK_Neg:
+	case OK_FNeg:
+	case OK_Not:
+		//replace instructions that just replace item at top of the stack with a drop
+		delete Instructions.back();
+		Instructions.pop_back();
+		addOpDrop();
+		break;
+	case OK_ShiftLeft:
+	case OK_ShiftRight:
+	case OK_Add:
+	case OK_Sub:
+	case OK_Mult:
+	case OK_Div:
+	case OK_Mod:
+	case OK_CmpEq:
+	case OK_CmpNe:
+	case OK_CmpGt:
+	case OK_CmpGe:
+	case OK_CmpLt:
+	case OK_CmpLe:
+	case OK_FAdd:
+	case OK_FSub:
+	case OK_FMult:
+	case OK_FDiv:
+	case OK_FMod:
+	case OK_FCmpEq:
+	case OK_FCmpNe:
+	case OK_FCmpGt:
+	case OK_FCmpGe:
+	case OK_FCmpLt:
+	case OK_FCmpLe:
+	case OK_And:
+	case OK_Or:
+	case OK_Xor:
+		delete Instructions.back();
+		Instructions.pop_back();
+		addOpDrop();
+		addOpDrop();
+		break;
+	default:
+		Instructions.push_back(new Opcode(OK_Drop));
+		break;
+	}
+//#endif
+}
+
 void FunctionData::addOpNative(string name, uint8_t pCount, uint8_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
@@ -912,7 +1017,10 @@ void FunctionData::addOpAddImm(int immediate)
 	}
 	else if (last->GetKind() == OK_AddImm)
 	{
-		last->setInt(last->getInt() + immediate);
+		int val = last->getInt() + immediate;
+		delete last;
+		Instructions.pop_back();
+		addOpAddImm(val);
 	}
 	else if (immediate != 0)
 	{
@@ -957,7 +1065,10 @@ void FunctionData::addOpMultImm(int immediate)
 	}
 	else if (last->GetKind() == OK_MultImm)
 	{
-		last->setInt(last->getInt() * immediate);
+		int val = last->getInt() * immediate;
+		delete last;
+		Instructions.pop_back();
+		addOpMultImm(val);
 	}
 	else if (immediate == -1)
 	{
@@ -996,7 +1107,7 @@ void FunctionData::addOpGetImm(uint16_t index)
 	}
 	else
 	{
-		Instructions.push_back(new Opcode(OK_PGet));
+		addOpPGet();
 	}
 }
 
@@ -1010,7 +1121,7 @@ void FunctionData::addOpSetImm(uint16_t index)
 	}
 	else
 	{
-		Instructions.push_back(new Opcode(OK_PSet));
+		addOpPSet();
 	}
 }
 

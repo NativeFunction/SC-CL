@@ -248,7 +248,7 @@ public:
 
 
 	void addOpDup(){ Instructions.push_back(new Opcode(OK_Dup)); }
-	void addOpDrop(){ Instructions.push_back(new Opcode(OK_Drop)); }
+	void addOpDrop();
 	void addOpNative(string name, uint8_t pCount, uint8_t rCount);
 	void addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount);
 	void addOpNative(string name, uint64_t hash, uint8_t pCount, uint8_t rCount);
@@ -446,24 +446,14 @@ public:
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpLabel(unsigned int rawEncoding)
-	{
-		Opcode* op = new Opcode(OK_Label);
-		op->setString(to_string(rawEncoding));
-		Instructions.push_back(op);
-	}
+	void addOpLabel(unsigned int rawEncoding){ addOpLabel(to_string(rawEncoding)); }
 	void addOpLabelLoc(string loc)
 	{
 		Opcode* op = new Opcode(OK_LabelLoc);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpLabelLoc(unsigned int rawEncoding)
-	{
-		Opcode* op = new Opcode(OK_LabelLoc);
-		op->setString(to_string(rawEncoding));
-		Instructions.push_back(op);
-	}
+	void addOpLabelLoc(unsigned int rawEncoding){ addOpLabelLoc(to_string(rawEncoding)); }
 
 #pragma endregion
 };
