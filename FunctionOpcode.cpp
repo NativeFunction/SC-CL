@@ -825,9 +825,96 @@ void FunctionData::addOpNative(string name, uint64_t hash, uint8_t pCount, uint8
 	Instructions.push_back(op);
 }
 
+void FunctionData::addOpPGet()
+{
+	assert(Instructions.size() && "Cannot add PGet to empty instruction stack");
+	switch (Instructions.back()->GetKind())
+	{
+	case OK_GetArrayP:
+		Instructions.back()->opcodeKind = OK_GetArray;
+		return;
+	case OK_GetFrameP:
+		Instructions.back()->opcodeKind = OK_GetFrame;
+		return;
+	case OK_GetGlobalP:
+		Instructions.back()->opcodeKind = OK_GetGlobal;
+		return;
+	case OK_GetStaticP:
+		Instructions.back()->opcodeKind = OK_GetStatic;
+		return;
+	case OK_GetImmP:
+		Instructions.back()->opcodeKind = OK_GetImm;
+		return;
+	default:
+		Instructions.push_back(new Opcode(OK_PGet));
+		return;
+	}
+}
+
+void FunctionData::addOpPSet()
+{
+	assert(Instructions.size() && "Cannot add PSet to empty instruction stack");
+	switch (Instructions.back()->GetKind())
+	{
+	case OK_GetArrayP:
+		Instructions.back()->opcodeKind = OK_SetArray;
+		return;
+	case OK_GetFrameP:
+		Instructions.back()->opcodeKind = OK_SetFrame;
+		return;
+	case OK_GetGlobalP:
+		Instructions.back()->opcodeKind = OK_SetGlobal;
+		return;
+	case OK_GetStaticP:
+		Instructions.back()->opcodeKind = OK_SetStatic;
+		return;
+	case OK_GetImmP:
+		Instructions.back()->opcodeKind = OK_SetImm;
+		return;
+	default:
+		Instructions.push_back(new Opcode(OK_PSet));
+		return;
+	}
+}
+
 void FunctionData::addOpAddImm(int immediate)
 {
-	if (immediate != 0)
+	assert(Instructions.size() && "Cannot add AddImm to empty instruction stack");
+	Opcode *last = Instructions.back();
+	if (last->GetKind() == OK_PushInt)
+	{
+		Instructions.pop_back();
+		addOpPushInt(last->getInt() + immediate);
+		delete last;//let addOpPushInt worry about PushBytes etc
+	}
+	else if (last->GetKind() == OK_PushBytes)
+	{
+		int count = last->getByte(0);
+		assert(count > 1 && count < 4 && "PushBytes opcode has invalid number of bytes");
+		int val = last->getByte(count) + immediate;
+		if (count == 3)
+		{
+			last->setByte(2, 0);//undefine the last push byte, just incase new value is outside range of pushB
+			addOpPushInt(val);
+		}
+		else if (count == 2)
+		{
+			//treat last instruction as pushint
+			//if new value >0 & < 0x100 it will be made back in pushBytes
+			last->setInt(last->getByte(1));
+			last->opcodeKind = OK_PushInt;
+			addOpPushInt(val);
+		}
+		else
+		{
+			assert(false && "This shouldn't happen");
+		}
+	}
+	else if (last->GetKind() == OK_AddImm)
+	{
+		last->setInt(last->getInt() + immediate);
+	}
+	else if (immediate != 0)
 	{
 		Opcode* op = new Opcode(OK_AddImm);
 		op->setInt(immediate);
@@ -837,7 +924,42 @@ void FunctionData::addOpAddImm(int immediate)
 
 void FunctionData::addOpMultImm(int immediate)
 {
-	if (immediate == -1)
+	assert(Instructions.size() && "Cannot add MultImm to empty instruction stack");
+	Opcode *last = Instructions.back();
+	if (last->GetKind() == OK_PushInt)
+	{
+		Instructions.pop_back();
+		addOpPushInt(last->getInt() * immediate);
+		delete last;//let addOpPushInt worry about PushBytes etc
+	}
+	else if (last->GetKind() == OK_PushBytes)
+	{
+		int count = last->getByte(0);
+		assert(count > 1 && count < 4 && "PushBytes opcode has invalid number of bytes");
+		int val = last->getByte(count) * immediate;
+		if (count == 3)
+		{
+			last->setByte(2, 0);//undefine the last push byte, just incase new value is outside range of pushB
+			addOpPushInt(val);
+		}
+		else if (count == 2)
+		{
+			//treat last instruction as pushint
+			//if new value >0 & < 0x100 it will be made back in pushBytes
+			last->setInt(last->getByte(1));
+			last->opcodeKind = OK_PushInt;
+			addOpPushInt(val);
+		}
+		else
+		{
+			assert(false && "This shouldn't happen");
+		}
+	}
+	else if (last->GetKind() == OK_MultImm)
+	{
+		last->setInt(last->getInt() * immediate);
+	}
+	else if (immediate == -1)
 	{
 		Instructions.push_back(new Opcode(OK_Neg));
 	}

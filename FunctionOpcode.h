@@ -259,8 +259,8 @@ public:
 		op->setByte(rCount, 1);
 		Instructions.push_back(op);
 	}
-	void addOpPGet(){ Instructions.push_back(new Opcode(OK_PGet)); }
-	void addOpPSet(){ Instructions.push_back(new Opcode(OK_PSet)); }
+	void addOpPGet();
+	void addOpPSet();
 	void addOpPeekSet(){ Instructions.push_back(new Opcode(OK_PeekSet)); }
 	void addOpToStack(){ Instructions.push_back(new Opcode(OK_ToStack)); }
 	void addOpFromStack(){ Instructions.push_back(new Opcode(OK_FromStack)); }
