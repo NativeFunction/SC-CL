@@ -717,118 +717,6 @@ public:
 	#pragma endregion
 
 	#pragma region Parsing
-	void parseJumpFalseCondition(Expr *condition, string location, bool invert = false)
-	{
-		while (isa<BinaryOperator>(condition))
-		{
-			BinaryOperator* bCond = cast<BinaryOperator>(condition);
-			if (bCond->getOpcode() == BO_Comma)
-			{
-				parseExpression(bCond->getLHS());
-				condition = bCond->getRHS();
-				continue;
-			}
-			break;
-		}
-		if (isa<BinaryOperator>(condition))
-		{
-			BinaryOperator* bCond = cast<BinaryOperator>(condition);
-			if (bCond->getLHS()->getType()->isIntegerType() && bCond->getRHS()->getType()->isIntegerType())
-			{
-				switch (bCond->getOpcode())
-				{
-					case BO_EQ:
-					case BO_NE:
-					case BO_GT:
-					case BO_GE:
-					case BO_LT:
-					case BO_LE:
-					parseExpression(bCond->getLHS(), false, true);
-					parseExpression(bCond->getRHS(), false, true);
-					if (invert) {
-						switch (bCond->getOpcode())
-						{
-							case BO_EQ:
-							out << "JumpEQ @" << location << endl;
-							AddInstruction(JumpEQ, location);
-							return;
-							case BO_NE:
-							out << "JumpNE @" << location << endl;
-							AddInstruction(JumpNE, location);
-							return;
-							case BO_GT:
-							out << "JumpGT @" << location << endl;
-							AddInstruction(JumpGT, location);
-							return;
-							case BO_GE:
-							out << "JumpGE @" << location << endl;
-							AddInstruction(JumpGE, location);
-							return;
-							case BO_LT:
-							out << "JumpLT @" << location << endl;
-							AddInstruction(JumpLT, location);
-							return;
-							case BO_LE:
-							out << "JumpLE @" << location << endl;
-							AddInstruction(JumpLE, location);
-							return;
-							default:
-							assert(false);//this shouldnt happen
-						}
-					}
-					else
-					{
-						switch (bCond->getOpcode())
-						{
-							case BO_EQ:
-							out << "JumpNE @" << location << endl;
-							AddInstruction(JumpNE, location);
-							return;
-							case BO_NE:
-							out << "JumpEQ @" << location << endl;
-							AddInstruction(JumpEQ, location);
-							return;
-							case BO_GT:
-							out << "JumpLE @" << location << endl;
-							AddInstruction(JumpLE, location);
-							return;
-							case BO_GE:
-							out << "JumpLT @" << location << endl;
-							AddInstruction(JumpLT, location);
-							return;
-							case BO_LT:
-							out << "JumpGE @" << location << endl;
-							AddInstruction(JumpGE, location);
-							return;
-							case BO_LE:
-							out << "JumpGT @" << location << endl;
-							AddInstruction(JumpGT, location);
-							return;
-							default:
-							assert(false);//this shouldnt happen
-						}
-					}
-					break;
-					default:
-					break;
-				}
-			}
-		}
-		parseExpression(condition, false, true);
-		if (invert)
-		{
-			out << "not //Invert the result\r\n";
-			out << "JumpFalse @" << location << endl;
-			AddInstruction(JumpTrue, location);
-		}
-		else
-		{
-			out << "JumpFalse @" << location << endl;
-			AddInstruction(JumpFalse, location);
-		}
-
-
-	}
 	string parseCast(const CastExpr *castExpr) {
 		switch (castExpr->getCastKind()) {
 			case clang::CK_LValueToRValue:
@@ -1645,79 +1533,87 @@ public:
 			}
 			break;
 			case JoaatCasedConst("getframe"):
-			ChkHashCol("getframe");
-			if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 			{
-				llvm::APSInt result;
-				if (argArray[0]->EvaluateAsInt(result, *context))
+				ChkHashCol("getframe");
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 				{
-					out << frameGet(result.getSExtValue()) << endl;
-					AddInstruction(GetFrame, result.getSExtValue());
-					return true;
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						out << frameGet(result.getSExtValue()) << endl;
+						AddInstruction(GetFrame, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got getframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
 				}
 				else
 				{
-					Throw("Argument got getframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					Throw("getframe must have signature \"extern __intrinsic int getframe(const int index);\"", rewriter, callee->getSourceRange());
 				}
-			}
-			else {
-				Throw("getframe must have signature \"extern __intrinsic int getframe(const int index);\"", rewriter, callee->getSourceRange());
 			}
 			break;
 			case JoaatCasedConst("getframep"):
-			ChkHashCol("getframep");
-			if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 			{
-				llvm::APSInt result;
-				if (argArray[0]->EvaluateAsInt(result, *context))
+				ChkHashCol("getframep");
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 				{
-					out << pFrame(result.getSExtValue()) << endl;
-					AddInstruction(GetFrameP, result.getSExtValue());
-					return true;
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						out << pFrame(result.getSExtValue()) << endl;
+						AddInstruction(GetFrameP, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got getframep must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
 				}
-				else
-				{
-					Throw("Argument got getframep must be a constant integer", rewriter, argArray[0]->getSourceRange());
+				else {
+					Throw("getframep must have signature \"extern __intrinsic int getframep(int index);\"", rewriter, callee->getSourceRange());
 				}
-			}
-			else {
-				Throw("getframep must have signature \"extern __intrinsic int getframep(int index);\"", rewriter, callee->getSourceRange());
 			}
 			break;
 			case JoaatCasedConst("setframe"):
-			ChkHashCol("setframe");
+			{
+				ChkHashCol("setframe");
 
-			if (argCount == 1 && callee->getReturnType()->isVoidType())
-			{
-				llvm::APSInt result;
-				if (argArray[0]->EvaluateAsInt(result, *context))
+				if (argCount == 1 && callee->getReturnType()->isVoidType())
 				{
-					out << frameSet(result.getSExtValue()) << endl;
-					AddInstruction(SetFrame, result.getSExtValue());
-					return true;
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						out << frameSet(result.getSExtValue()) << endl;
+						AddInstruction(SetFrame, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
 				}
-				else
+				else if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
 				{
-					Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						parseExpression(argArray[1], false, true);
+						out << frameSet(result.getSExtValue()) << endl;
+						AddInstruction(SetFrame, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
 				}
-			}
-			else if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
-			{
-				llvm::APSInt result;
-				if (argArray[0]->EvaluateAsInt(result, *context))
+				else 
 				{
-					parseExpression(argArray[1], false, true);
-					out << frameSet(result.getSExtValue()) << endl;
-					AddInstruction(SetFrame, result.getSExtValue());
-					return true;
+					Throw("setframe must have signature \"extern __intrinsic void setframe(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
 				}
-				else
-				{
-					Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
-				}
-			}
-			else {
-				Throw("setframe must have signature \"extern __intrinsic void setframe(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
 			}
 			break;
 			case JoaatCasedConst("getglobal"):
@@ -2759,7 +2655,9 @@ public:
 			}
 			else
 			{
-				parseJumpFalseCondition(conditional, Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd);
+				parseExpression(conditional, false, true);
+				out << "JumpFalse @" << (Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd) << endl;
+				AddInstruction(JumpFalse, Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd);
 				LocalVariables.addLevel();
 				parseStatement(Then, breakLoc, continueLoc, returnLoc);
 				LocalVariables.removeLevel();
@@ -2842,7 +2740,9 @@ public:
 
 				out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
 				AddInstruction(Label, conditional->getLocStart().getRawEncoding());
-				parseJumpFalseCondition(conditional, to_string(whileStmt->getLocEnd().getRawEncoding()));
+				parseExpression(conditional, false, true);
+				out << "JumpFalse @" << whileStmt->getLocEnd().getRawEncoding() << endl;
+				AddInstruction(JumpFalse, whileStmt->getLocEnd().getRawEncoding());
 				out << endl;
 
 				parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
@@ -2870,7 +2770,9 @@ public:
 				out << endl << ":" << conditional->getLocStart().getRawEncoding() << endl;
 				AddInstruction(Label, conditional->getLocStart().getRawEncoding());
 
-				parseJumpFalseCondition(conditional, to_string(body->getLocEnd().getRawEncoding()));
+				parseExpression(conditional, false, true);
+				out << "JumpFalse @" << body->getLocEnd().getRawEncoding() << endl;
+				AddInstruction(JumpFalse, body->getLocEnd().getRawEncoding());
 				out << endl;
 			}
 			else
@@ -2952,7 +2854,9 @@ public:
 			}
 			else
 			{
-				parseJumpFalseCondition(conditional, to_string(body->getLocStart().getRawEncoding()), true);
+				parseExpression(conditional, false, true);
+				out << "Not//Invert\r\nJumpFalse @" << body->getLocStart().getRawEncoding() << endl;
+				AddInstruction(JumpTrue, body->getLocStart().getRawEncoding());
 				out << endl;
 			}
 
@@ -5519,7 +5423,9 @@ public:
 				Throw("Invalid Use Of Operator", rewriter, e->getExprLoc());
 			const ConditionalOperator *cond = cast<const ConditionalOperator>(e);
 
-			parseJumpFalseCondition(cond->getCond(), to_string(cond->getRHS()->getLocStart().getRawEncoding()));
+			parseExpression(cond->getCond(), false, true);
+			out << "JumpFalse @" << cond->getRHS()->getLocStart().getRawEncoding() << endl;
+			AddInstruction(JumpFalse, cond->getRHS()->getLocStart().getRawEncoding());
 			out << endl;
 			parseExpression(cond->getLHS(), false, true);
 			out << "Jump @" << cond->getLHS()->getLocEnd().getRawEncoding() << endl;

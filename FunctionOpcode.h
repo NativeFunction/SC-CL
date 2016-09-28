@@ -42,6 +42,7 @@ enum OpcodeKind{
 	OK_ItoF,
 	OK_FtoV,
 	OK_PushInt,
+	OK_PushBytes,
 	OK_PushFloat,
 	OK_Dup,
 	OK_Drop,
@@ -74,7 +75,6 @@ enum OpcodeKind{
 	OK_SetImm,
 	OK_Call,
 	OK_Jump,
-	OK_JumpTrue,//evaluates as not -> jumpfalse
 	OK_JumpFalse,
 	OK_JumpEQ,
 	OK_JumpNE,
@@ -115,6 +115,7 @@ class Opcode
 	void setFloat(float value);
 	void setShort(int16_t value, int offset);
 	void setUShort(uint16_t value, int offset);
+	void setByte(uint8_t value, int offset);
 public:
 	~Opcode();
 	OpcodeKind GetKind() const{ return opcodeKind; }
@@ -126,6 +127,7 @@ public:
 	float getFloat() const;
 	int16_t getShort(int offset) const;
 	uint16_t getUShort(int offset) const;
+	uint8_t getByte(int offset) const;
 	
 
 	string toString() const;
@@ -145,7 +147,6 @@ private:
 	uint16_t stackSize = 2;
 	bool used = false;
 	vector<FunctionData *> usedFuncs;
-
 public:
 	FunctionData(string name, int pcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount)
 	{
@@ -176,12 +177,12 @@ public:
 #pragma region CreateOpcodes
 	void addOpNop(){ Instructions.push_back(new Opcode(OK_Nop)); }
 #pragma region MathOpcodes
-	void addOpAdd(){ Instructions.push_back(new Opcode(OK_Add)); }
-	void addOpSub(){ Instructions.push_back(new Opcode(OK_Sub)); }
-	void addOpMult(){ Instructions.push_back(new Opcode(OK_Mult)); }
-	void addOpDiv(){ Instructions.push_back(new Opcode(OK_Div)); }
+	void addOpAdd();
+	void addOpSub();
+	void addOpMult();
+	void addOpDiv();
 	void addOpMod(){ Instructions.push_back(new Opcode(OK_Mod)); }
-	void addOpNot(){ Instructions.push_back(new Opcode(OK_Not)); }
+	void addOpNot();
 	void addOpNeg(){ Instructions.push_back(new Opcode(OK_Neg)); }
 	void addOpCmpEq(){ Instructions.push_back(new Opcode(OK_CmpEq)); }
 	void addOpCmpNe(){ Instructions.push_back(new Opcode(OK_CmpNe)); }
@@ -214,6 +215,40 @@ public:
 	void addOpFtoV(){ Instructions.push_back(new Opcode(OK_FtoV)); }
 	void addOpPushInt(int immediate)
 	{
+		if ((immediate & 0xFF) == immediate && Instructions.size())
+		{
+			Opcode* op = Instructions.back();
+			switch (op->GetKind())
+			{
+			case OK_PushBytes:
+			{
+				int count = op->getByte(0);
+				if (count >= 3)//full pushBytes
+					goto setAsPushInt;
+				op->setByte(count + 1, 0);
+				op->setByte(immediate & 0xFF, count + 1);
+				return;
+			}
+			case OK_PushInt:
+			{
+				int iVal = op->getInt();
+				if ((iVal & 0xFF) != iVal)
+					goto setAsPushInt;
+				op->opcodeKind = OK_PushBytes;
+				op->setByte(2, 0);
+				op->setByte(iVal & 0xFF, 1);
+				op->setByte(immediate & 0xFF, 2);
+				return;
+			}
+
+			default:
+			setAsPushInt:
+				Opcode* op = new Opcode(OK_PushInt);
+				op->setInt(immediate);
+				Instructions.push_back(op);
+				return;
+			}
+		}
 		Opcode* op = new Opcode(OK_PushInt);
 		op->setInt(immediate);
 		Instructions.push_back(op);
@@ -404,16 +439,10 @@ public:
 	}
 	void addOpJumpTrue(string loc)
 	{
-		Opcode* op = new Opcode(OK_JumpTrue);
-		op->setString(loc);
-		Instructions.push_back(op);
+		addOpNot();
+		addOpJumpFalse(loc);
 	}
-	void addOpJumpFalse(string loc)
-	{
-		Opcode* op = new Opcode(OK_JumpFalse);
-		op->setString(loc);
-		Instructions.push_back(op);
-	}
+	void addOpJumpFalse(string loc);
 	void addOpJumpEQ(string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpEQ);
@@ -450,60 +479,15 @@ public:
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJump(unsigned int rawEncoding)
-	{
-		Opcode* op = new Opcode(OK_Jump);
-		op->setString(to_string(rawEncoding));
-		Instructions.push_back(op);
-	}
-	void addOpJumpTrue(unsigned int rawEncoding)
-	{
-		Opcode* op = new Opcode(OK_JumpTrue);
-		op->setString(to_string(rawEncoding));
-		Instructions.push_back(op);
-	}
-	void addOpJumpFalse(unsigned int rawEncoding)
-	{
-		Opcode* op = new Opcode(OK_JumpFalse);
-		op->setString(to_string(rawEncoding));
-		Instructions.push_back(op);
-	}
-	void addOpJumpEQ(unsigned int rawEncoding)
-	{
-		Opcode* op = new Opcode(OK_JumpEQ);
-		op->setString(to_string(rawEncoding));
-		Instructions.push_back(op);
-	}
-	void addOpJumpNE(unsigned int rawEncoding)
-	{
-		Opcode* op = new Opcode(OK_JumpNE);
-		op->setString(to_string(rawEncoding));
-		Instructions.push_back(op);
-	}
-	void addOpJumpGT(unsigned int rawEncoding)
-	{
-		Opcode* op = new Opcode(OK_JumpGT);
-		op->setString(to_string(rawEncoding));
-		Instructions.push_back(op);
-	}
-	void addOpJumpGE(unsigned int rawEncoding)
-	{
-		Opcode* op = new Opcode(OK_JumpGE);
-		op->setString(to_string(rawEncoding));
-		Instructions.push_back(op);
-	}
-	void addOpJumpLT(unsigned int rawEncoding)
-	{
-		Opcode* op = new Opcode(OK_JumpLT);
-		op->setString(to_string(rawEncoding));
-		Instructions.push_back(op);
-	}
-	void addOpJumpLE(unsigned int rawEncoding)
-	{
-		Opcode* op = new Opcode(OK_JumpLE);
-		op->setString(to_string(rawEncoding));
-		Instructions.push_back(op);
-	}
+	void addOpJump(unsigned int rawEncoding){ addOpJump(to_string(rawEncoding)); }
+	void addOpJumpTrue(unsigned int rawEncoding){ addOpJumpTrue(to_string(rawEncoding)); }
+	void addOpJumpFalse(unsigned int rawEncoding){ addOpJumpFalse(to_string(rawEncoding)); }
+	void addOpJumpEQ(unsigned int rawEncoding){ addOpJumpEQ(to_string(rawEncoding)); }
+	void addOpJumpNE(unsigned int rawEncoding){ addOpJumpNE(to_string(rawEncoding)); }
+	void addOpJumpGT(unsigned int rawEncoding){ addOpJumpGT(to_string(rawEncoding)); }
+	void addOpJumpGE(unsigned int rawEncoding){ addOpJumpGE(to_string(rawEncoding)); }
+	void addOpJumpLT(unsigned int rawEncoding){ addOpJumpLT(to_string(rawEncoding)); }
+	void addOpJumpLE(unsigned int rawEncoding){ addOpJumpLE(to_string(rawEncoding)); }
 #pragma endregion
 	void addOpSwitch(){ Instructions.push_back(new Opcode(OK_Switch)); }//handle adding the cases later
 	void addOpPushString(string str)

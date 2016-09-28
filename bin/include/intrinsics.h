@@ -14,7 +14,10 @@
 
 #define offsetof(st, m) ((uint)&(((st *)0)->m))
 #define countof(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
-#define stacksizeof(x) (sizeof(x) + 3) >> 2
+#define stacksizeof(x) ((sizeof(x) + 3) >> 2)
+#define BITTEST(integer, index) ((integer & (1 << index)) != 0)
+#define BITSET(integer, index) (integer | (1 << index))
+#define BITCLEAR(integer, index) (integer & ~(1 << index))
 
 #pragma region String
 //{ String

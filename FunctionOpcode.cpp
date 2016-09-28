@@ -109,6 +109,12 @@ void Opcode::setUShort(uint16_t value, int offset)
 	*(uint16_t*)(storage + offset) = value;
 }
 
+void Opcode::setByte(uint8_t value, int offset)
+{
+	assert(offset >= 0 && offset <= (sizeof(void*) - 1) && "byte offset must be between 0 and 3");
+	*(uint8_t*)(storage + offset) = value;
+}
+
 Opcode::~Opcode()
 {
 #ifdef _DEBUG
@@ -122,7 +128,6 @@ Opcode::~Opcode()
 	case OK_Call:
 	case OK_PushString:
 	case OK_Jump:
-	case OK_JumpTrue:
 	case OK_JumpFalse:
 	case OK_JumpEQ:
 	case OK_JumpNE:
@@ -188,7 +193,6 @@ string Opcode::getString() const
 	case OK_Call:
 	case OK_PushString:
 	case OK_Jump:
-	case OK_JumpTrue:
 	case OK_JumpFalse:
 	case OK_JumpEQ:
 	case OK_JumpNE:
@@ -225,6 +229,12 @@ uint16_t Opcode::getUShort(int offset) const
 {
 	assert(offset >= 0 && offset <= (sizeof(void*) - 2) && "short offset must be between 0 and 2");
 	return *(uint16_t*)(storage + offset);
+}
+
+uint8_t Opcode::getByte(int offset) const
+{
+	assert(offset >= 0 && offset <= (sizeof(void*) - 1) && "byte offset must be between 0 and 3");
+	return *(uint8_t*)(storage + offset);
 }
 
 string Opcode::toString() const
@@ -294,6 +304,27 @@ string Opcode::toString() const
 		}
 		break;
 	}
+	case OK_PushBytes:
+	{
+		switch(getByte(0))
+		{
+		case 0:
+			assert(false && "Empty PushBytes opcode");
+		case 1:
+			assert(false && "PushBytes opcode called with 1 byte, should never happen as it will be wrapped in PushInt");
+			//current = "PushB " + to_string(getByte(1));
+			break;
+		case 2:
+			current = "PushB2 " + to_string(getByte(1)) + " " + to_string(getByte(2));
+			break;
+		case 3:
+			current = "PushB3 " + to_string(getByte(1)) + " " + to_string(getByte(2)) + " " + to_string(getByte(3));
+			break;
+		default:
+			assert(false && "Too many bytes in PushBytes opcode");
+		}
+	}
+	break;
 	case OK_PushFloat:
 	{
 		float value = getFloat();
@@ -407,7 +438,6 @@ string Opcode::toString() const
 	}
 	case OK_Call:current = "Call @" + getString(); break;
 	case OK_Jump: current = "Jump @" + getString(); break;
-	case OK_JumpTrue: current = "Not\r\nJumpFalse @" + getString(); break;
 	case OK_JumpFalse: PrintJump(False); break;
 	case OK_JumpEQ: PrintJump(EQ); break;
 	case OK_JumpNE: PrintJump(NE); break;
@@ -581,6 +611,200 @@ void FunctionData::addUsedFunc(FunctionData * func)
 	}
 }
 
+void FunctionData::addOpAdd()
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add Add Instruction");
+	if (Instructions.back()->GetKind() == OK_PushInt)//no need to worry about the PushBytes, 0 + 1 etc would never happen
+	{
+		if (Instructions.back()->getInt() == 0)
+		{
+			Instructions.pop_back();
+		}
+		else
+		{
+			Instructions.back()->opcodeKind = OK_AddImm;
+		}
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_Add));
+	}
+}
+
+void FunctionData::addOpSub()
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add Sub Instruction");
+	if (Instructions.back()->GetKind() == OK_PushInt)
+	{
+		int i = Instructions.back()->getInt();
+		if (i == 0)
+		{
+			Instructions.pop_back();
+		}
+		else
+		{
+			Instructions.back()->opcodeKind = OK_AddImm;
+			Instructions.back()->setInt(-i);
+		}
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_Add));
+	}
+}
+
+void FunctionData::addOpMult()
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add Mult Instruction");
+	if (Instructions.back()->GetKind() == OK_PushInt)
+	{
+		int i = Instructions.back()->getInt();
+		if (i == 0)
+		{
+			Instructions.back()->opcodeKind = OK_Drop;//replace push 0 with a drop
+			Instructions.push_back(new Opcode(OK_PushInt));//no need to set int to 0 as its the default
+		}
+		else if (i == 1)
+		{
+			delete Instructions.back();//remove the push 1, mult by 1 does nothing
+			Instructions.pop_back();
+		}
+		else if (i == -1)
+		{
+			Instructions.back()->opcodeKind = OK_Neg;//negate
+		}
+		else
+		{
+			Instructions.back()->opcodeKind = OK_MultImm;
+		}
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_Mult));
+	}
+}
+
+void FunctionData::addOpDiv()
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add Div Instruction");
+	if (Instructions.back()->GetKind() == OK_PushInt)
+	{
+		int i = Instructions.back()->getInt();
+		if (i == 0)
+		{
+			//game treats division by zero as just putting 0 on top of stack
+			Instructions.back()->opcodeKind = OK_Drop;
+			Instructions.push_back(new Opcode(OK_PushInt));
+		}
+		else if (i == 1)
+		{
+			delete Instructions.back();//remove the push 1, div by 1 does nothing
+			Instructions.pop_back();
+		}
+		else if (i == -1)
+		{
+			Instructions.back()->opcodeKind = OK_Neg;//negate
+		}
+		else
+		{
+			Instructions.push_back(new Opcode(OK_Div));
+		}
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_Div));
+	}
+}
+
+void FunctionData::addOpNot()
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add Not Instruction");
+
+	switch (Instructions.back()->GetKind())
+	{
+	case OK_CmpEq:
+		Instructions.back()->opcodeKind = OK_CmpNe;
+		return;
+	case OK_CmpNe:
+		Instructions.back()->opcodeKind = OK_CmpEq;
+		return;
+	case OK_CmpGe:
+		Instructions.back()->opcodeKind = OK_CmpLt;
+		return;
+	case OK_CmpGt:
+		Instructions.back()->opcodeKind = OK_CmpLe;
+		return;
+	case OK_CmpLe:
+		Instructions.back()->opcodeKind = OK_CmpGt;
+		return;
+	case OK_CmpLt:
+		Instructions.back()->opcodeKind = OK_CmpGe;
+		return;
+	case OK_FCmpEq:
+		Instructions.back()->opcodeKind = OK_FCmpNe;
+		return;
+	case OK_FCmpNe:
+		Instructions.back()->opcodeKind = OK_FCmpEq;
+		return;
+	case OK_FCmpGe:
+		Instructions.back()->opcodeKind = OK_FCmpLt;
+		return;
+	case OK_FCmpGt:
+		Instructions.back()->opcodeKind = OK_FCmpLe;
+		return;
+	case OK_FCmpLe:
+		Instructions.back()->opcodeKind = OK_FCmpGt;
+		return;
+	case OK_FCmpLt:
+		Instructions.back()->opcodeKind = OK_FCmpGe;
+		return;
+	default:
+		Instructions.push_back(new Opcode(OK_Not));
+		return;
+	}
+}
+
+void FunctionData::addOpPushInt(int immediate)
+{
+	if ((immediate & 0xFF) == immediate && Instructions.size())
+	{
+		Opcode* op = Instructions.back();
+		switch (op->GetKind())
+		{
+		case OK_PushBytes:
+		{
+			int count = op->getByte(0);
+			if (count >= 3)//full pushBytes
+				goto setAsPushInt;
+			op->setByte(count + 1, 0);
+			op->setByte(immediate & 0xFF, count + 1);
+			return;
+		}
+		case OK_PushInt:
+		{
+			int iVal = op->getInt();
+			if ((iVal & 0xFF) != iVal)
+				goto setAsPushInt;
+			op->opcodeKind = OK_PushBytes;
+			op->setByte(2, 0);
+			op->setByte(iVal & 0xFF, 1);
+			op->setByte(immediate & 0xFF, 2);
+			return;
+		}
+
+		default:
+		setAsPushInt:
+			Opcode* op = new Opcode(OK_PushInt);
+			op->setInt(immediate);
+			Instructions.push_back(op);
+			return;
+		}
+	}
+	Opcode* op = new Opcode(OK_PushInt);
+	op->setInt(immediate);
+	Instructions.push_back(op);
+}
+
 void FunctionData::addOpNative(string name, uint16_t pCount, uint16_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
@@ -600,6 +824,44 @@ void FunctionData::addOpNative(string name, uint64_t hash, uint16_t pCount, uint
 	Opcode* op = new Opcode(OK_Native);
 	*(NativeStorage**)op->storage = new NativeStorage(name, hash, pCount, rCount);
 	Instructions.push_back(op);
+}
+
+void FunctionData::addOpJumpFalse(string loc)
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add JumpFalse Instruction");
+	Opcode *op = Instructions.back();
+	switch (op->GetKind())
+	{
+	case OK_CmpEq:
+		op->opcodeKind = OK_JumpNE;
+		op->setString(loc);
+		return;
+	case OK_CmpNe:
+		op->opcodeKind = OK_JumpEQ;
+		op->setString(loc);
+		return;
+	case OK_CmpGt:
+		op->opcodeKind = OK_JumpLE;
+		op->setString(loc);
+		return;
+	case OK_CmpGe:
+		op->opcodeKind = OK_JumpLT;
+		op->setString(loc);
+		return;
+	case OK_CmpLt:
+		op->opcodeKind = OK_JumpGE;
+		op->setString(loc);
+		return;
+	case OK_CmpLe:
+		op->opcodeKind = OK_JumpGT;
+		op->setString(loc);
+		return;
+	default:
+		op = new Opcode(OK_JumpFalse);
+		op->setString(loc);
+		Instructions.push_back(op);
+		return;
+	}
 }
 
 ostream & operator<<(ostream & stream, const FunctionData & fdata)
