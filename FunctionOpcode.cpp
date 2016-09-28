@@ -367,7 +367,7 @@ string Opcode::toString() const
 		NativeStorage* native = *(NativeStorage**)storage;
 		char buff[17];
 		sprintf(buff, "%llX", native->getHash());
-		current = "CallNative unk0x" + string(buff) + " " + to_string(native->getParamCount()) + " " + to_string(native->getReturnCount());
+		current = "CallNative unk_0x" + string(buff) + " " + to_string(native->getParamCount()) + " " + to_string(native->getReturnCount());
 		if (native->hasName())
 		{
 			current += " //" + native->getName();
