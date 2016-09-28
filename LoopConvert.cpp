@@ -3883,7 +3883,7 @@ public:
 				int size = getSizeOfType(type);
 				int bSize = getSizeFromBytes(size);
 				
-				if (!isAddr && !isArrToPtrDecay && (type->isStructureType() || type->isUnionType()))
+				if (!isAddr && !isArrToPtrDecay && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 				{
 					if (bSize > 1)
 					{
@@ -3907,7 +3907,7 @@ public:
 				{
 					if (isLtoRValue)
 					{
-						if (bSize > 1 && (type->isStructureType() || type->isUnionType()))
+						if (bSize > 1 && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 						{
 							out << "ToStack\r\n";
 							AddInstruction(ToStack);
@@ -3943,7 +3943,7 @@ public:
 					}
 					else
 					{
-						if (bSize > 1 && (type->isStructureType() || type->isUnionType()))
+						if (bSize > 1 && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 						{
 							out << "ToStack\r\n";
 							AddInstruction(ToStack);
@@ -5583,7 +5583,7 @@ public:
 		else if (LValueToRValue && !addrOf && !isArrToPtrDecay)
 		{
 			int bSize = getSizeFromBytes(getSizeOfType(type));
-			if (bSize > 1)
+			if (bSize > 1 && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 			{
 				out << iPush(bSize) << " //Type Size\r\n";
 				AddInstructionComment(PushInt, "Type Size", bSize);
@@ -5616,7 +5616,7 @@ public:
 				out << "Add\r\n";
 				AddInstruction(Add);
 			}
-			if (getSizeFromBytes(getSizeOfType(type)) > 1)
+			if (getSizeFromBytes(getSizeOfType(type)) > 1 && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 			{
 				out << "ToStack //GetArray2\r\n";
 				AddInstructionComment(ToStack, "GetArray2");
@@ -5700,6 +5700,7 @@ public:
 				out << "Add\r\n";
 				AddInstruction(Add);
 			}
+			
 			out << "pSet//SetArray2\r\n";
 			AddInstructionComment(PSet, "SetArray2");
 		}
