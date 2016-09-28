@@ -286,6 +286,10 @@ uint32_t getSizeOfType(const Type* type) {
 
 			uint32_t size = 0;
 			for (const auto *CS : rd->fields()) {
+				if (CS->isBitField())
+				{
+					Throw("Bit fileds aren't yet supported", rewriter, CS->getSourceRange());
+				}
 				const Type* type = CS->getType().getTypePtr();
 
 				size += (getSizeOfType(type) + 4 - 1) & ~3;
@@ -331,9 +335,9 @@ uint32_t getSizeOfType(const Type* type) {
 }
 bool CheckExprForSizeOf(const Expr* expr, int *outSize)
 {
-	if (isa<UnaryExprOrTypeTraitExpr>(expr))
+	if (isa<UnaryExprOrTypeTraitExpr>(expr->IgnoreParens()->IgnoreCasts()))
 	{
-		const UnaryExprOrTypeTraitExpr *ueTrait = cast<UnaryExprOrTypeTraitExpr>(expr);
+		const UnaryExprOrTypeTraitExpr *ueTrait = cast<UnaryExprOrTypeTraitExpr>(expr->IgnoreParens()->IgnoreCasts());
 		if (ueTrait->getKind() == UETT_SizeOf)
 		{
 			if (ueTrait->isArgumentType())
@@ -5190,8 +5194,6 @@ public:
 			}
 			else
 				parseExpression(BaseExpr, true);
-
-
 
 
 			int offset = 0;
