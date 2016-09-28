@@ -966,40 +966,43 @@ public:
 		}
 		else
 		{
-			string name = "@" + key;
-			uint32_t hash = Utils::Hashing::JoaatCased((char*)name.c_str());
-			uint32_t i = 0;
-			for (; i < functions.size(); i++)
+			if (isAddr || isLtoRValue)
 			{
-				if (functions[i].hash == hash)
+				string name = "@" + key;
+				uint32_t hash = Utils::Hashing::JoaatCased((char*)name.c_str());
+				uint32_t i = 0;
+				for (; i < functions.size(); i++)
 				{
-					if (functions[i].name == name)
+					if (functions[i].hash == hash)
 					{
-						functions[i].isused = true;
-						break;
+						if (functions[i].name == name)
+						{
+							functions[i].isused = true;
+							break;
+						}
 					}
 				}
-			}
-			for (uint32_t j = 0; j < functionsNew.size(); j++)
-			{
-				if (functionsNew[j]->Hash() == hash)
+				for (uint32_t j = 0; j < functionsNew.size(); j++)
 				{
-					if (functionsNew[j]->Name() == name)
+					if (functionsNew[j]->Hash() == hash)
 					{
-						CurrentFunction->addUsedFunc(functionsNew[j]);
-						break;
+						if (functionsNew[j]->Name() == name)
+						{
+							CurrentFunction->addUsedFunc(functionsNew[j]);
+							break;
+						}
 					}
 				}
+
+				if (i >= functions.size())
+					Throw("Function pointer \"" + key + "\" not found");
+
+				out << "//DeclRefExpr, nothing else, so func it" << endl;
+				out << "Push GetLoc(\"" << key << "\")" << endl;
+				AddInstructionComment(LabelLoc, "DeclRefExpr, nothing else, so func it", key);
+				//out << key << endl;
+				//out << "DeclRefExpr not implemented" << endl;
 			}
-
-			if (i >= functions.size())
-				Throw("Function pointer \"" + key + "\" not found");
-
-			out << "//DeclRefExpr, nothing else, so func it" << endl;
-			out << "Push GetLoc(\"" << key << "\")" << endl;
-			AddInstructionComment(LabelLoc, "DeclRefExpr, nothing else, so func it", key);
-			//out << key << endl;
-			//out << "DeclRefExpr not implemented" << endl;
 		}
 
 		if (isStackCpy) {//if greater then 4 bytes then a to stack is in order
