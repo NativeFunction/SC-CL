@@ -3785,7 +3785,7 @@ public:
 			return true;
 		}
 		else if (isa<ArraySubscriptExpr>(e)) {
-			return parseArraySubscriptExpr(e, isAddr, isLtoRValue);
+			return parseArraySubscriptExpr(e, isAddr, isLtoRValue, isArrToPtrDecay);
 		}
 		else if (isa<ParenExpr>(e)) {
 			const ParenExpr *parenExpr = cast<const ParenExpr>(e);
@@ -3973,7 +3973,7 @@ public:
 			else if (op->getOpcode() == UO_Deref) {
 				int size = getSizeOfType(e->getType().getTypePtr());
 				int bSize = getSizeFromBytes(size);
-				if (!isAddr)
+				if (!isAddr && !isArrToPtrDecay)
 				{
 					if (bSize > 1)
 					{
@@ -3983,7 +3983,7 @@ public:
 				}
 				if (isa<ArraySubscriptExpr>(subE)) {
 					out << "//deref ArraySubscriptExpr" << endl;
-					parseArraySubscriptExpr(subE, false);
+					parseArraySubscriptExpr(subE, false, isArrToPtrDecay);
 				}
 				else if (isa<DeclRefExpr>(subE)) {
 					out << "//deref DeclRefExpr" << endl;
@@ -3992,7 +3992,7 @@ public:
 				else {
 					parseExpression(subE, false, true);
 				}
-				if (!isAddr)
+				if (!isAddr && !isArrToPtrDecay)
 				{
 					if (isLtoRValue)
 					{
@@ -5580,7 +5580,7 @@ public:
 		return -1;
 	}
 
-	bool parseArraySubscriptExpr(const Expr *e, bool addrOf, bool LValueToRValue = false) {
+	bool parseArraySubscriptExpr(const Expr *e, bool addrOf, bool LValueToRValue = false, bool isArrToPtrDecay = false) {
 		const ArraySubscriptExpr *arr = cast<const ArraySubscriptExpr>(e);
 		const Expr *base = arr->getBase();
 		const Expr *index = arr->getIdx();
@@ -5601,7 +5601,7 @@ public:
 			type = type->getPointeeType().getTypePtr();
 
 
-		if (!addrOf && !LValueToRValue)
+		if (!addrOf && !LValueToRValue && !isArrToPtrDecay)
 		{
 			//1 byte indexing
 			if (type->isCharType())
@@ -5670,7 +5670,7 @@ public:
 		parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
 
 
-		if (LValueToRValue && !addrOf)
+		if (LValueToRValue && !addrOf && !isArrToPtrDecay)
 		{
 			if(isCst)
 			{
@@ -5719,7 +5719,7 @@ public:
 			}
 
 		}
-		else if (addrOf)
+		else if (addrOf || isArrToPtrDecay)
 		{
 			int size = getSizeOfType(type);
 			if (type->isArrayType())
