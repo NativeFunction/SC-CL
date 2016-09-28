@@ -47,7 +47,6 @@ enum OpcodeKind{
 	OK_Dup,
 	OK_Drop,
 	OK_Native,
-	//OK_Func,
 	OK_Return,
 	OK_PGet,
 	OK_PSet,
@@ -66,9 +65,7 @@ enum OpcodeKind{
 	OK_GetGlobalP,
 	OK_GetGlobal,
 	OK_SetGlobal,
-	OK_AddImm,
-	//OK_SubImm,//sees if operand can be made into adding a negative number
-	
+	OK_AddImm,	
 	OK_MultImm,
 	OK_GetImmP,
 	OK_GetImm,
@@ -213,46 +210,7 @@ public:
 	void addOpItoF(){ Instructions.push_back(new Opcode(OK_ItoF)); }
 	void addOpFtoI(){ Instructions.push_back(new Opcode(OK_FtoI)); }
 	void addOpFtoV(){ Instructions.push_back(new Opcode(OK_FtoV)); }
-	void addOpPushInt(int immediate)
-	{
-		if ((immediate & 0xFF) == immediate && Instructions.size())
-		{
-			Opcode* op = Instructions.back();
-			switch (op->GetKind())
-			{
-			case OK_PushBytes:
-			{
-				int count = op->getByte(0);
-				if (count >= 3)//full pushBytes
-					goto setAsPushInt;
-				op->setByte(count + 1, 0);
-				op->setByte(immediate & 0xFF, count + 1);
-				return;
-			}
-			case OK_PushInt:
-			{
-				int iVal = op->getInt();
-				if ((iVal & 0xFF) != iVal)
-					goto setAsPushInt;
-				op->opcodeKind = OK_PushBytes;
-				op->setByte(2, 0);
-				op->setByte(iVal & 0xFF, 1);
-				op->setByte(immediate & 0xFF, 2);
-				return;
-			}
-
-			default:
-			setAsPushInt:
-				Opcode* op = new Opcode(OK_PushInt);
-				op->setInt(immediate);
-				Instructions.push_back(op);
-				return;
-			}
-		}
-		Opcode* op = new Opcode(OK_PushInt);
-		op->setInt(immediate);
-		Instructions.push_back(op);
-	}
+	void addOpPushInt(int immediate);
 	void addOpPushFloat(float immediate)
 	{
 		Opcode* op = new Opcode(OK_PushFloat);
@@ -260,7 +218,7 @@ public:
 		Instructions.push_back(op);
 	}
 	void addOpShiftLeft(){ Instructions.push_back(new Opcode(OK_ShiftLeft)); }
-	void addOpShiftLeft(uint16_t shiftCount)
+	void addOpShiftLeft(uint8_t shiftCount)
 	{
 		assert(shiftCount >= 0 && shiftCount <= 31 && "shiftCount must be between 0 and 31");
 		Opcode* op = new Opcode(OK_PushInt);
@@ -269,7 +227,7 @@ public:
 		Instructions.push_back(new Opcode(OK_ShiftLeft));
 	}
 	void addOpShiftRight(){ Instructions.push_back(new Opcode(OK_ShiftRight)); }
-	void addOpShiftRight(uint16_t shiftCount)
+	void addOpShiftRight(uint8_t shiftCount)
 	{
 		assert(shiftCount >= 0 && shiftCount <= 31 && "shiftCount must be between 0 and 31");
 		Opcode* op = new Opcode(OK_PushInt);
@@ -277,7 +235,7 @@ public:
 		Instructions.push_back(op);
 		Instructions.push_back(new Opcode(OK_ShiftRight));
 	}
-	void addOpIsBitSet(uint16_t bitIndex)
+	void addOpIsBitSet(uint8_t bitIndex)
 	{
 		//treat it as 2 instructions to simplify compiling
 		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
@@ -291,22 +249,14 @@ public:
 
 	void addOpDup(){ Instructions.push_back(new Opcode(OK_Dup)); }
 	void addOpDrop(){ Instructions.push_back(new Opcode(OK_Drop)); }
-	void addOpNative(string name, uint16_t pCount, uint16_t rCount);
-	void addOpNative(uint64_t hash, uint16_t pCount, uint16_t rCount);
-	void addOpNative(string name, uint64_t hash, uint16_t pCount, uint16_t rCount);
-	/*	void addOpFunction(string name, uint16_t pCount, uint16_t frameSize)
-	{
-	Opcode* op = new Opcode(OK_Func);;
-	op->setString(name, 0);
-	op->setUShort(pCount, 4);
-	op->setUShort(frameSize, 6);
-	Instructions.push_back(op);
-	}*/
-	void addOpReturn(uint16_t pCount, uint16_t rCount)
+	void addOpNative(string name, uint8_t pCount, uint8_t rCount);
+	void addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount);
+	void addOpNative(string name, uint64_t hash, uint8_t pCount, uint8_t rCount);
+	void addOpReturn(uint8_t pCount, uint8_t rCount)
 	{
 		Opcode* op = new Opcode(OK_Return);
-		op->setUShort(pCount, 0);
-		op->setUShort(rCount, 2);
+		op->setByte(pCount, 0);
+		op->setByte(rCount, 1);
 		Instructions.push_back(op);
 	}
 	void addOpPGet(){ Instructions.push_back(new Opcode(OK_PGet)); }
@@ -496,28 +446,28 @@ public:
 		op->setString(str);
 		Instructions.push_back(op);
 	}
-	void addOpStrCopy(uint16_t size)
+	void addOpStrCopy(uint8_t size)
 	{
 		Opcode* op = new Opcode(OK_StrCopy);
-		op->setUShort(size, 0);
+		op->setByte(size, 0);
 		Instructions.push_back(op);
 	}
-	void addOpItoS(uint16_t size)
+	void addOpItoS(uint8_t size)
 	{
 		Opcode* op = new Opcode(OK_ItoS);
-		op->setUShort(size, 0);
+		op->setByte(size, 0);
 		Instructions.push_back(op);
 	}
-	void addOpStrAdd(uint16_t size)
+	void addOpStrAdd(uint8_t size)
 	{
 		Opcode* op = new Opcode(OK_StrAdd);
-		op->setUShort(size, 0);
+		op->setByte(size, 0);
 		Instructions.push_back(op);
 	}
-	void addOpStrAddI(uint16_t size)
+	void addOpStrAddI(uint8_t size)
 	{
 		Opcode* op = new Opcode(OK_StrAddI);
-		op->setUShort(size, 0);
+		op->setByte(size, 0);
 		Instructions.push_back(op);
 	}
 	void addOpMemCopy(){ Instructions.push_back(new Opcode(OK_MemCpy)); }

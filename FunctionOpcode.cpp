@@ -47,23 +47,23 @@ struct NativeStorage
 private:
 	uint64_t _hash;
 	StringStorage *_name;
-	uint16_t _pCount, _rCount;
+	uint8_t _pCount, _rCount;
 public:
-	NativeStorage(string name, uint64_t hash, uint16_t pCount, uint16_t rCount) :
+	NativeStorage(string name, uint64_t hash, uint8_t pCount, uint8_t rCount) :
 		_hash(hash), 
 		_name(new StringStorage(name)),
 		_pCount(pCount),
 		_rCount(rCount)
 	{
 	}
-	NativeStorage(string name, uint16_t pCount, uint16_t rCount) :
+	NativeStorage(string name, uint8_t pCount, uint8_t rCount) :
 		_hash((!strnicmp(name.c_str(), "unk_0x", 6) ? strtoull(name.c_str() + 6, NULL, 16) : Utils::Hashing::Joaat((char*)name.c_str()))),
 		_name(new StringStorage(name)),
 		_pCount(pCount),
 		_rCount(rCount)
 	{
 	}
-	NativeStorage(uint64_t hash, uint16_t pCount, uint16_t rCount) :
+	NativeStorage(uint64_t hash, uint8_t pCount, uint8_t rCount) :
 		_hash(hash),
 		_name(NULL),
 		_pCount(pCount),
@@ -78,8 +78,8 @@ public:
 	bool hasName()const{ return _name; }
 	string getName()const{ if(hasName())return _name->toString(); return string(); }
 	uint64_t getHash()const{ return _hash; }
-	uint16_t getParamCount()const{ return _pCount; }
-	uint16_t getReturnCount()const{ return _rCount; }
+	uint8_t getParamCount()const{ return _pCount; }
+	uint8_t getReturnCount()const{ return _rCount; }
 };
 
 void Opcode::setString(string str)
@@ -311,7 +311,7 @@ string Opcode::toString() const
 		case 0:
 			assert(false && "Empty PushBytes opcode");
 		case 1:
-			assert(false && "PushBytes opcode called with 1 byte, should never happen as it will be wrapped in PushInt");
+			assert(false && "PushBytes opcode called with 1 byte, should never happen as it should be wrapped in PushInt");
 			//current = "PushB " + to_string(getByte(1));
 			break;
 		case 2:
@@ -374,11 +374,8 @@ string Opcode::toString() const
 		}
 		break;
 	}
-/*	case OK_Func:
-		current = ":" + getString() + "\r\nFunction " + to_string(getUShort(4)) + " " + to_string(getUShort(6));
-		break;*/
 	case OK_Return:
-		current = "Return " + to_string(getUShort(0)) + " " + to_string(getUShort(2));
+		current = "Return " + to_string(getByte(0)) + " " + to_string(getByte(1));
 		break;
 	case OK_PGet: current = "pGet"; break;
 	case OK_PSet: current = "pSet"; break;
@@ -459,13 +456,13 @@ string Opcode::toString() const
 	case OK_PushString:
 		current = "PushString \"" + getString() + "\""; break;
 	case OK_StrCopy:
-		current = "StrCopy " + to_string(getUShort(0)); break;
+		current = "StrCopy " + to_string(getByte(0)); break;
 	case OK_ItoS:
-		current = "ItoS " + to_string(getUShort(0)); break;
+		current = "ItoS " + to_string(getByte(0)); break;
 	case OK_StrAdd:
-		current = "StrAdd " + to_string(getUShort(0)); break;
+		current = "StrAdd " + to_string(getByte(0)); break;
 	case OK_StrAddI:
-		current = "StrAddI " + to_string(getUShort(0)); break;
+		current = "StrAddI " + to_string(getByte(0)); break;
 	case OK_MemCpy: current = "MemCpy"; break;
 	case OK_PCall: current = "PCall"; break;
 	case OK_Label: current = "\r\n:" + getString(); break; //make labels have a line break
@@ -805,21 +802,21 @@ void FunctionData::addOpPushInt(int immediate)
 	Instructions.push_back(op);
 }
 
-void FunctionData::addOpNative(string name, uint16_t pCount, uint16_t rCount)
+void FunctionData::addOpNative(string name, uint8_t pCount, uint8_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
 	*(NativeStorage**)op->storage = new NativeStorage(name, pCount, rCount);
 	Instructions.push_back(op);
 }
 
-void FunctionData::addOpNative(uint64_t hash, uint16_t pCount, uint16_t rCount)
+void FunctionData::addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
 	*(NativeStorage**)op->storage = new NativeStorage(hash, pCount, rCount);
 	Instructions.push_back(op);
 }
 
-void FunctionData::addOpNative(string name, uint64_t hash, uint16_t pCount, uint16_t rCount)
+void FunctionData::addOpNative(string name, uint64_t hash, uint8_t pCount, uint8_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
 	*(NativeStorage**)op->storage = new NativeStorage(name, hash, pCount, rCount);
