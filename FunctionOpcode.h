@@ -336,43 +336,11 @@ public:
 		op->setInt(index);
 		Instructions.push_back(op);
 	}
-	void addOpAddImm(int immediate)
-	{
-		Opcode* op = new Opcode(OK_AddImm);
-		op->setInt(immediate);
-		Instructions.push_back(op);
-	}
-	/*	void addOpSubImm(int immediate)
-	{
-	Opcode* op = new Opcode(OK_SubImm);
-	op->setInt(immediate);
-	Instructions.push_back(op);
-	}*/
-	void addOpMultImm(int immediate)
-	{
-		Opcode* op = new Opcode(OK_MultImm);
-		op->setInt(immediate);
-		Instructions.push_back(op);
-	}
-
-	void addOpGetImmP(uint16_t index)
-	{
-		Opcode* op = new Opcode(OK_GetImmP);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
-	}
-	void addOpGetImm(uint16_t index)
-	{
-		Opcode* op = new Opcode(OK_GetImm);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
-	}
-	void addOpSetImm(uint16_t index)
-	{
-		Opcode* op = new Opcode(OK_SetImm);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
-	}
+	void addOpAddImm(int immediate);
+	void addOpMultImm(int immediate);
+	void addOpGetImmP(uint16_t index);
+	void addOpGetImm(uint16_t index);
+	void addOpSetImm(uint16_t index);
 
 	void addOpCall(string fName)
 	{

@@ -615,6 +615,7 @@ void FunctionData::addOpAdd()
 	{
 		if (Instructions.back()->getInt() == 0)
 		{
+			delete Instructions.back();
 			Instructions.pop_back();
 		}
 		else
@@ -636,6 +637,7 @@ void FunctionData::addOpSub()
 		int i = Instructions.back()->getInt();
 		if (i == 0)
 		{
+			delete Instructions.back();
 			Instructions.pop_back();
 		}
 		else
@@ -821,6 +823,73 @@ void FunctionData::addOpNative(string name, uint64_t hash, uint8_t pCount, uint8
 	Opcode* op = new Opcode(OK_Native);
 	*(NativeStorage**)op->storage = new NativeStorage(name, hash, pCount, rCount);
 	Instructions.push_back(op);
+}
+
+void FunctionData::addOpAddImm(int immediate)
+{
+	if (immediate != 0)
+	{
+		Opcode* op = new Opcode(OK_AddImm);
+		op->setInt(immediate);
+		Instructions.push_back(op);
+	}
+}
+
+void FunctionData::addOpMultImm(int immediate)
+{
+	if (immediate == -1)
+	{
+		Instructions.push_back(new Opcode(OK_Neg));
+	}
+	else if (immediate == 0)
+	{
+		Instructions.push_back(new Opcode(OK_Drop));
+		addOpPushInt(0);
+	}
+	else if (immediate != 1)
+	{
+		Opcode* op = new Opcode(OK_MultImm);
+		op->setInt(immediate);
+		Instructions.push_back(op);
+	}
+}
+
+void FunctionData::addOpGetImmP(uint16_t index)
+{
+	if (index != 0)
+	{
+		Opcode* op = new Opcode(OK_GetImmP);
+		op->setUShort(index, 0);
+		Instructions.push_back(op);
+	}
+}
+
+void FunctionData::addOpGetImm(uint16_t index)
+{
+	if (index != 0)
+	{
+		Opcode* op = new Opcode(OK_GetImm);
+		op->setUShort(index, 0);
+		Instructions.push_back(op);
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_PGet));
+	}
+}
+
+void FunctionData::addOpSetImm(uint16_t index)
+{
+	if (index != 0)
+	{
+		Opcode* op = new Opcode(OK_SetImm);
+		op->setUShort(index, 0);
+		Instructions.push_back(op);
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_PSet));
+	}
 }
 
 void FunctionData::addOpJumpFalse(string loc)
