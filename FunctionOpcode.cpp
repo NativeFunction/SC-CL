@@ -648,7 +648,7 @@ void FunctionData::addOpSub()
 	}
 	else
 	{
-		Instructions.push_back(new Opcode(OK_Add));
+		Instructions.push_back(new Opcode(OK_Sub));
 	}
 }
 
