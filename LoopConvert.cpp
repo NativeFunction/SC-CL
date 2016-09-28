@@ -3192,7 +3192,21 @@ public:
 		else if (isa<CallExpr>(e)) {
 			const CallExpr *call = cast<const CallExpr>(e);
 			if (checkIntrinsic(call))
+			{
+				if (call->getType()->isVoidType() == false) {
+					if (!isLtoRValue) {
+						out << "Drop//Function Result unused" << endl;
+						AddInstructionComment(Drop, "Function Result Unused");
+						int size = getSizeFromBytes(getSizeOfType(call->getType().getTypePtr()));
+						for (int i = 1; i < size; i++)
+						{
+							out << "Drop" << endl;
+							AddInstruction(Drop);
+						}
+					}
+				}
 				return 1;
+			}
 			const Expr* callee = call->getCallee();
 			if (isAddr)
 			{
