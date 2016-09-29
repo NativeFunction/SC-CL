@@ -57,7 +57,6 @@ vector<InlineData> InlineItems;
 #pragma region Global_Var_and_Scope_Decls
 map<string, int> globals;
 map<string, int> statics;
-map<const FunctionDecl*, int> localCounts;
 static int globalInc = 0;
 static uint32_t staticInc = 0;
 
@@ -179,7 +178,6 @@ void removeFunctionInline(string fName)
 {
 	assert(InlineItems.back().name == fName);
 	InlineItems.pop_back();
-
 }
 #pragma endregion
 
@@ -741,8 +739,8 @@ public:
 			}
 			case clang::CK_FunctionToPointerDecay:
 			{
-				if (isa<DeclRefExpr>(castExpr->getSubExpr())) {
-					const DeclRefExpr *declRef = cast<const DeclRefExpr>(castExpr->getSubExpr());
+				if (isa<DeclRefExpr>(castExpr->getSubExpr()->IgnoreParens()->IgnoreCasts())) {
+					const DeclRefExpr *declRef = cast<const DeclRefExpr>(castExpr->getSubExpr()->IgnoreParens()->IgnoreCasts());
 					if (isa<FunctionDecl>(declRef->getDecl())) {
 						const FunctionDecl *decl = cast<const FunctionDecl>(declRef->getDecl());
 						return getNameForFunc(decl);
@@ -3962,8 +3960,8 @@ public:
 					{
 						if (bSize > 1 && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 						{
-							out << "ToStack\r\n";
-							AddInstruction(ToStack);
+							out << "FromStack\r\n";
+							AddInstruction(FromStack);
 						}
 						else
 						{
@@ -6781,13 +6779,6 @@ public:
 	LocalsVisitor(Rewriter &R, ASTContext *context) : TheRewriter(R), context(context) { currentFunction = NULL; }
 
 	bool VisitDecl(Decl *D) {
-
-		if (isa<FunctionDecl>(D)) {
-			//const FunctionDecl *func = cast<const FunctionDecl>(D);
-			if (currentFunction) {
-				localCounts.insert(make_pair(currentFunction, LocalVariables.getCurrentSize() - currentFunction->getNumParams() - (isa<CXXMethodDecl>(currentFunction) ? 1 : 0)));
-			}
-		}
 		return true;
 	}
 
@@ -6802,10 +6793,6 @@ public:
 	bool TraverseDecl(Decl *D) {
 
 		RecursiveASTVisitor::TraverseDecl(D);
-		if (currentFunction)
-		{
-			localCounts.insert(make_pair(currentFunction, LocalVariables.getCurrentSize()));
-		}
 		return true;
 	}
 
