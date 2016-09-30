@@ -128,8 +128,6 @@ public:
 	uint16_t getUShort(int offset) const;
 	uint8_t getByte(int offset) const;
 	int getSizeEstimate() const;
-	
-
 	string toString() const;
 	friend std::ostream& operator << (std::ostream& stream, const Opcode& opcode) {
 		stream << opcode.toString();
@@ -173,6 +171,7 @@ public:
 	string toString() const;
 	void addSwitchCase(int caseVal, string jumpLoc);
 	void addUsedFunc(FunctionData *func);
+	int getSizeEstimate(int incDecl) const;//only to be used when seeing if a function should be inlined
 
 #pragma region CreateOpcodes
 	void addOpNop(){ Instructions.push_back(new Opcode(OK_Nop)); }
