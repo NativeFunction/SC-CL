@@ -327,36 +327,30 @@ string Opcode::toString() const
 	break;
 	case OK_PushFloat:
 	{
-		float value = getFloat();
-		if(value == -1.0){
-			current = "PushF_-1";
-		}
-		else if(value == 0.0){
-			current = "PushF_0";
-		}
-		else if(value == 1.0){
-			current = "PushF_1";
-		}
-		else if(value == 2.0){
-			current = "PushF_2";
-		}
-		else if(value == 3.0){
-			current = "PushF_3";
-		}
-		else if(value == 4.0){
-			current = "PushF_4";
-		}
-		else if(value == 5.0){
-			current = "PushF_5";
-		}
-		else if(value == 6.0){
-			current = "PushF_6";
-		}
-		else if(value == 7.0){
-			current = "PushF_7";
-		}
-		else{
-			current = "PushF " + to_string(value);
+		switch (getInt())
+		{
+		case 0xbf800000:
+			current = "PushF_-1"; break;
+		case 0x80000000://neg 0
+		case 0x00000000://pos 0
+			current = "PushF_0"; break;
+		case 0x3f800000:
+			current = "PushF_1"; break;
+		case 0x40000000:
+			current = "PushF_2"; break;
+		case 0x40400000:
+			current = "PushF_3"; break;
+		case 0x40800000:
+			current = "PushF_4"; break;
+		case 0x40A00000:
+			current = "PushF_5"; break;
+		case 0x40C00000:
+			current = "PushF_6"; break;
+		case 0x40E00000:
+			current = "PushF_7"; break;
+		default:
+			current = "PushF " + to_string(getFloat());
+			break;
 		}
 		break;
 	}
@@ -435,71 +429,78 @@ string Opcode::toString() const
 	}
 	case OK_FAddImm:
 	{
-		float value = getFloat();
-		if (value == -1.0){
-			current = "PushF_-1\r\nFAdd";
-		}
-		else if (value == 0.0){
-			current = "PushF_0\r\nFAdd";
-		}
-		else if (value == 1.0){
-			current = "PushF_1\r\nFAdd";
-		}
-		else if (value == 2.0){
-			current = "PushF_2\r\nFAdd";
-		}
-		else if (value == 3.0){
-			current = "PushF_3\r\nFAdd";
-		}
-		else if (value == 4.0){
-			current = "PushF_4\r\nFAdd";
-		}
-		else if (value == 5.0){
-			current = "PushF_5\r\nFAdd";
-		}
-		else if (value == 6.0){
-			current = "PushF_6\r\nFAdd";
-		}
-		else if (value == 7.0){
-			current = "PushF_7\r\nFAdd";
-		}
-		else{
-			current = "PushF " + to_string(value) + "\r\nFAdd";
+		switch (getInt())
+		{
+		case 0xc0e00000:
+			current = "PushF_7\r\nFSub"; break;
+		case 0xc0c00000:
+			current = "PushF_6\r\nFSub"; break;
+		case 0xc0a00000:
+			current = "PushF_5\r\nFSub"; break;
+		case 0xc0800000:
+			current = "PushF_4\r\nFSub"; break;
+		case 0xc0400000:
+			current = "PushF_3\r\nFSub"; break;
+		case 0xc0000000:
+			current = "PushF_2\r\nFSub"; break;
+		case 0xbf800000:
+			current = "PushF_1\r\nFSub"; break;
+		case 0x80000000://neg 0
+		case 0x00000000://pos 0
+			current = "";//dont parse anything for these, though they should never come up
+		case 0x3f800000:
+			current = "PushF_1\r\nFAdd"; break;
+		case 0x40000000:
+			current = "PushF_2\r\nFAdd"; break;
+		case 0x40400000:
+			current = "PushF_3\r\nFAdd"; break;
+		case 0x40800000:
+			current = "PushF_4\r\nFAdd"; break;
+		case 0x40A00000:
+			current = "PushF_5\r\nFAdd"; break;
+		case 0x40C00000:
+			current = "PushF_6\r\nFAdd"; break;
+		case 0x40E00000:
+			current = "PushF_7\r\nFAdd"; break;
+		default:
+			float fValue = getFloat();
+			if (fValue >= 0)
+			{
+				current = "PushF " + to_string(fValue) + "\r\nFAdd";
+			}else
+			{
+				current = "PushF " + to_string(-fValue) + "\r\nFSub";
+			}
+			break;
 		}
 		break;
 	}
 	case OK_FMultImm:
 	{
-		float value = getFloat();
-		if (value == -1.0){
-			current = "PushF_-1\r\nFMult";
-		}
-		else if (value == 0.0){
-			current = "PushF_0\r\nFMult";
-		}
-		else if (value == 1.0){
-			current = "PushF_1\r\nFMult";
-		}
-		else if (value == 2.0){
-			current = "PushF_2\r\nFMult";
-		}
-		else if (value == 3.0){
-			current = "PushF_3\r\nFMult";
-		}
-		else if (value == 4.0){
-			current = "PushF_4\r\nFMult";
-		}
-		else if (value == 5.0){
-			current = "PushF_5\r\nFMult";
-		}
-		else if (value == 6.0){
-			current = "PushF_6\r\nFMult";
-		}
-		else if (value == 7.0){
-			current = "PushF_7\r\nFMult";
-		}
-		else{
-			current = "PushF " + to_string(value) + "\r\nFMult";
+		switch (getInt())
+		{
+		case 0xbf800000:
+			current = "Neg"; break;//this should never come up
+		case 0x80000000://neg 0
+		case 0x00000000://pos 0
+			current = "PushF_0\r\nFMult"; break;//this should never come up
+		case 0x3f800000:
+			current = ""; break;//this should never come up
+		case 0x40000000:
+			current = "PushF_2\r\nFMult"; break;
+		case 0x40400000:
+			current = "PushF_3\r\nFMult"; break;
+		case 0x40800000:
+			current = "PushF_4\r\nFMult"; break;
+		case 0x40A00000:
+			current = "PushF_5\r\nFMult"; break;
+		case 0x40C00000:
+			current = "PushF_6\r\nFMult"; break;
+		case 0x40E00000:
+			current = "PushF_7\r\nFMult"; break;
+		default:
+			current = "PushF " + to_string(getFloat()) + "\r\nFMult";
+			break;
 		}
 		break;
 	}
