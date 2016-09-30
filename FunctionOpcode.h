@@ -127,6 +127,7 @@ public:
 	int16_t getShort(int offset) const;
 	uint16_t getUShort(int offset) const;
 	uint8_t getByte(int offset) const;
+	int getSizeEstimate() const;
 	
 
 	string toString() const;

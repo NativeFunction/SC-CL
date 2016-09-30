@@ -237,6 +237,246 @@ uint8_t Opcode::getByte(int offset) const
 	return *(uint8_t*)(storage + offset);
 }
 
+int Opcode::getSizeEstimate() const
+{
+	switch (opcodeKind)
+	{
+	case OK_Nop:
+	case OK_Add:
+	case OK_Sub:
+	case OK_Mult:
+	case OK_Div:
+	case OK_Mod:
+	case OK_Not:
+	case OK_Neg:
+	case OK_CmpEq:
+	case OK_CmpNe:
+	case OK_CmpGt:
+	case OK_CmpGe:
+	case OK_CmpLt:
+	case OK_CmpLe:
+	case OK_FAdd:
+	case OK_FSub:
+	case OK_FMult:
+	case OK_FDiv:
+	case OK_FMod:
+	case OK_FNeg:
+	case OK_FCmpEq:
+	case OK_FCmpNe:
+	case OK_FCmpGt:
+	case OK_FCmpGe:
+	case OK_FCmpLt:
+	case OK_FCmpLe:
+	case OK_VAdd:
+	case OK_VSub:
+	case OK_VMult:
+	case OK_VDiv:
+	case OK_VNeg:
+	case OK_And:
+	case OK_Or:
+	case OK_Xor:
+	case OK_ItoF:
+	case OK_FtoI:
+	case OK_FtoV:
+	case OK_Dup:
+	case OK_Drop:
+	case OK_PGet:
+	case OK_PSet:
+	case OK_PeekSet:
+	case OK_FromStack:
+	case OK_ToStack:
+	case OK_MemCpy:
+	case OK_PCall:
+		return 1;
+	case OK_PushInt:
+	{
+		int value = getInt();
+		if (value >= -1 && value <= 7){
+			return 1;//Push_Val
+		}
+		if (value > 0 && value < 256){
+			return 2;//PushB Val
+		}
+		if (value >= -32768 && value <= 32767){
+			return 3;//PushS Val
+		}
+		if (value > 0 && value < 0x1000000){
+			return 4;//PushI24 Val
+		}
+	}
+	return 5;//Push Val
+
+	case OK_PushBytes:
+		switch (getByte(0))
+		{
+		case 0:
+			assert(false && "Empty PushBytes opcode");
+			return 0;
+		case 1:
+			assert(false && "PushBytes opcode called with 1 byte, should never happen as it should be wrapped in PushInt");
+			return 2;
+		case 2:
+			return 3;
+		case 3:
+			return 4;
+		}
+		assert(false && "Too many bytes in PushBytes opcode");
+		return 0;
+
+	case OK_PushFloat:
+		switch (getInt())
+		{
+		case 0xbf800000:
+		case 0x80000000://neg 0
+		case 0x00000000://pos 0
+		case 0x3f800000:
+		case 0x40000000:
+		case 0x40400000:
+		case 0x40800000:
+		case 0x40A00000:
+		case 0x40C00000:
+		case 0x40E00000:
+			return 1;//PushF_Val
+		}
+		return 5;//PushF Val
+	case OK_ShiftLeft:
+	case OK_ShiftRight:
+	case OK_Native:
+	case OK_Call:
+		return 4;
+	case OK_Return:
+	case OK_Jump:
+	case OK_JumpFalse:
+	case OK_JumpEQ:
+	case OK_JumpNE:
+	case OK_JumpGT:
+	case OK_JumpGE:
+	case OK_JumpLT:
+	case OK_JumpLE:
+		return 3;
+	case OK_PushString:
+	{
+		bool rdr = false;
+		if (rdr)
+		{
+			return 3 + getString().length();//PushString <len> <string> <nullTerminator>
+		}
+	}
+	return 4;//just a guess as it depends where it is placed in string table
+	case OK_StrCopy:
+	case OK_ItoS:
+	case OK_StrAdd:
+	case OK_StrAddI:
+		return 2;
+	case OK_GetArrayP:
+	case OK_GetArray:
+	case OK_SetArray:
+	case OK_GetStaticP:
+	case OK_GetStatic:
+	case OK_SetStatic:
+	case OK_GetFrameP:
+	case OK_GetFrame:
+	case OK_SetFrame:
+	case OK_GetImmP:
+	case OK_GetImm:
+	case OK_SetImm:
+		return getUShort(0) > 0xFF ? 3 : 2;
+	case OK_GetGlobalP:
+	case OK_GetGlobal:
+	case OK_SetGlobal:
+		return (uint32_t)getInt() > 0xFFFF ? 4 : 3;
+	case OK_Label:
+		return 0;//labels dont take up storage
+	case OK_LabelLoc:
+		return 5;//Just PushInt32
+	case OK_AddImm:
+	{
+		int value = getInt();
+		if (value > 0 && value < 256){
+			return 2;//Add1 Val
+		}
+		if (value >= -32768 && value < 32768){
+			return 3;//Add2 Val
+		}
+		if (value > 0 && value < 0x1000000)
+		{
+			return 5;//PushI24 Val, Add
+		}
+	}
+	return 6;//Push Val, Add
+	case OK_MultImm:
+	{
+		int value = getInt();
+		if (value > 0 && value < 256){
+			return 2;//Mult1 Val
+		}
+		if (value >= -32768 && value < 32768){
+			return 3;//Mult2 Val
+		}
+		if (value > 0 && value < 0x1000000)
+		{
+			return 5;//PushI24 Val, Mult
+		}
+	}
+	return 6;//Push Val, Mult
+	case OK_FAddImm:
+		switch (getInt())
+		{
+		case 0x80000000://neg 0
+		case 0x00000000://pos 0
+			return 0;//can be skipped
+		case 0xc0e00000:
+		case 0xc0c00000:
+		case 0xc0a00000:
+		case 0xc0800000:
+		case 0xc0400000:
+		case 0xc0000000:
+		case 0xbf800000:
+		case 0x3f800000:
+		case 0x40000000:
+		case 0x40400000:
+		case 0x40800000:
+		case 0x40A00000:
+		case 0x40C00000:
+		case 0x40E00000:
+			return 2;//PushF_Val, FAdd/FSub
+		}
+		return 6;//PushF Val, FAdd/FSub
+	case OK_FMultImm:
+		switch (getInt())
+		{
+		case 0xbf800000:
+			return 1;//FNeg
+		case 0x3f800000:
+			return 0;//this should never come up(just skip it)
+		case 0x80000000://neg 0
+		case 0x00000000://pos 0 - this should never come up
+		case 0x40000000:
+		case 0x40400000:
+		case 0x40800000:
+		case 0x40A00000:
+		case 0x40C00000:
+		case 0x40E00000:
+			return 2;//PushF_Val, FMult
+		}
+		return 6;//PushF Val, FMult		
+	case OK_Switch:
+	{
+		int val = 2;//switch <count>
+		SwitchCaseStorage* sCase = *(SwitchCaseStorage**)storage;
+		val += 6;//<case(4)> <loc(6)>
+		while (sCase->hasNextCase())
+		{
+			sCase = sCase->getNextCase();
+			val += 6;
+		}
+		return val;
+	}
+	}
+	assert(false);//trying to figure out which path isnt returning a value
+	return 0;
+}
+
 string Opcode::toString() const
 {
 #define Check12Op(opcode){uint16_t value = getUShort(0);current = (value > 0xFF ? #opcode "2 " :  #opcode "1 ") + to_string(value); }
@@ -708,6 +948,17 @@ void FunctionData::addUsedFunc(FunctionData * func)
 	{
 		usedFuncs.push_back(func);
 	}
+}
+
+int FunctionData::getSizeEstimate(int incDecl) const
+{
+	int size = 0;
+	if (incDecl) size += 5;//fDecl
+	for(int i = 0, max = Instructions.size(); i < max;i++)
+	{
+		size += Instructions[i]->getSizeEstimate();
+	}
+	return size;
 }
 
 void FunctionData::addOpAdd()
