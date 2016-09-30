@@ -6158,6 +6158,7 @@ class GlobalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
 public:
 	GlobalsVisitor(Rewriter &R, ASTContext *context) : TheRewriter(R), context(context) {}
 
+
 	int32_t ParseLiteral(const Expr *e, bool isAddr = false, bool isLtoRValue = false)
 	{
 		Expr::EvalResult result;
@@ -6197,9 +6198,10 @@ public:
 
 				if (savedType == nullptr)
 					savedType = const_cast<Type*>(type);
-				else if (type != savedType)
+				else if (type != savedType)//if type change with out identifier// --------- NEED TO TEST TYPE CHANGE TO SAME TYPE WITHOUT IDENTIFIER FOR BUGS ---------
 				{
 					resetIntIndex();
+					isCurrentExprEvaluable = true;
 					savedType = const_cast<Type*>(type);
 				}
 
@@ -6241,10 +6243,10 @@ public:
 						oldStaticInc++;
 					}
 				}
-				else
+				else if (isCurrentExprEvaluable)
 					DefaultStaticValues.insert({ oldStaticInc++, to_string((int32_t)resValue) });
-
-
+				else
+					Entryfunction.addOpPushInt((int32_t)resValue);
 
 				return true;
 			}
@@ -6252,7 +6254,10 @@ public:
 			{
 				if (!isLtoRValue)
 					return -1;
-				DefaultStaticValues.insert({ oldStaticInc++, to_string(FloatToInt((float)extractAPFloat(result.Val.getFloat()))) });
+				if (isCurrentExprEvaluable)
+					DefaultStaticValues.insert({ oldStaticInc++, to_string(FloatToInt((float)extractAPFloat(result.Val.getFloat()))) });
+				else
+					Entryfunction.addOpPushFloat((float)extractAPFloat(result.Val.getFloat()));
 				return true;
 			}
 			else if (result.Val.isComplexFloat())
@@ -6292,13 +6297,13 @@ public:
 						b = 0;
 						buffer = 0;
 
-#if STATIC_PADDING_DEBUG == 0
+						#if STATIC_PADDING_DEBUG == 0
 						if (i >= (int32_t)strlit.length())
 						{
 							oldStaticInc += Utils::Math::CeilDivInt(strsize - i, 4);
 							break;
 						}
-#endif
+						#endif
 					}
 					if (i >= (int32_t)strlit.length())
 						((uint8_t*)&buffer)[b] = 0;//add padding
@@ -6322,9 +6327,17 @@ public:
 			resetIntIndex();
 
 			for (uint32_t i = 0; i < I->getNumInits(); i++)
+			{
+				isCurrentExprEvaluable = true;
+				doesCurrentValueNeedSet = false;
 				ParseLiteral(I->getInit(i), false, true);
+				if (doesCurrentValueNeedSet)
+					Entryfunction.addOpSetStatic(oldStaticInc - 1);
+			}
 
 			resetIntIndex();
+			isCurrentExprEvaluable = true;
+			doesCurrentValueNeedSet = false;
 
 			if (oldStaticInc - SavedStaticInc < size)
 			{
@@ -6340,8 +6353,80 @@ public:
 			}
 			return true;
 		}
+		
+		//need to add full pointer init support for 
+		//int* vstack_ptr = vstack + 4;
+		//this will require these function below and more for parseing unevaluable expressions
+
+		else if (isa<UnaryOperator>(e)) {
+			isCurrentExprEvaluable = false;
+			const UnaryOperator *op = cast<const UnaryOperator>(e);
+			Expr *subE = op->getSubExpr();
+			
+			if (op->getOpcode() == UO_AddrOf) {
+				if (isa<ArraySubscriptExpr>(subE)) {
+					const ArraySubscriptExpr* arr = cast<ArraySubscriptExpr>(subE);
+					const Expr* base = arr->getBase();
+					const Type* type = base->getType().getTypePtr();
+					if(isa<ImplicitCastExpr>(base) && cast<ImplicitCastExpr>(base)->getCastKind() == CK_ArrayToPointerDecay)
+					{
+						base = cast<ImplicitCastExpr>(base)->getSubExpr();
+						if(isa<DeclRefExpr>(base))
+						{
+							const DeclRefExpr* DRE = cast<DeclRefExpr>(base);
+							llvm::APSInt iResult;
+							if(arr->getIdx()->EvaluateAsInt(iResult, *context))
+							{
+								int size = getSizeOfType(type);
+								if(type->isArrayType())
+									size = getSizeFromBytes(size) * 4;
+								Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
+								Entryfunction.addOpAddImm(size * iResult.getSExtValue());
+								Entryfunction.addOpSetStatic(oldStaticInc);
+								RuntimeStatics
+									<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl << add(size * iResult.getSExtValue()) << endl
+									<< setStatic(oldStaticInc++) << endl;
+
+							}
+							else
+							{
+								Throw("Expected integer literal for static array pointer initialisation", rewriter, op->getSourceRange());
+							}
+						}
+						else
+						{
+							Throw("Expected static declaration for static array pointer initialisation", rewriter, op->getSourceRange());
+						}
+					}
+					else
+					{
+						Throw("Expected static declaration for static array pointer initialisation", rewriter, op->getSourceRange());
+					}
+					
+
+				}
+				else if (isa<DeclRefExpr>(subE)) {
+					const DeclRefExpr *DRE = cast<const DeclRefExpr>(subE);
+					doesCurrentValueNeedSet = true;
+
+					//we can index because the name has to be declared in clang to use the declare
+					//we will let clang handle errors
+					Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
+
+					RuntimeStatics << getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl;
+					oldStaticInc++;
+				}
+				else
+				{
+					ParseLiteral(subE, true, false);
+				}
+				return true;
+
+			}
+		}
 		else if (isa<ImplicitCastExpr>(e))
 		{
+			isCurrentExprEvaluable = false;
 			const ImplicitCastExpr *icast = cast<const ImplicitCastExpr>(e);
 
 			switch (icast->getCastKind())
@@ -6352,25 +6437,27 @@ public:
 					const StringLiteral *literal = cast<const StringLiteral>(icast->getSubExpr());
 					Entryfunction.addOpPushString(literal->getString().str());
 					Entryfunction.addOpSetStatic(oldStaticInc);
+
 					if (literal->getString().str().length() > 0)
 						RuntimeStatics << "PushString \"" << literal->getString().str() << "\"\r\n";
 					else
 						RuntimeStatics << "PushString \"\"\r\n";
 
 					RuntimeStatics << setStatic(oldStaticInc++) << endl;
-					
+
 				}
 				else if (isa<DeclRefExpr>(icast->getSubExpr()))//int vstack[10] = {1,2,3,4,5,6,7,8,9,10}, *vstack_ptr = vstack;
 				{
 					const DeclRefExpr *DRE = cast<const DeclRefExpr>(icast->getSubExpr());
+					doesCurrentValueNeedSet = true;
 
 					//we can index because the name has to be declared in clang to use the declare
 					//we will let clang handle errors
 					Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
-					Entryfunction.addOpSetStatic(oldStaticInc);
-					RuntimeStatics
-						<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl
-						<< setStatic(oldStaticInc++) << endl;
+
+					RuntimeStatics << getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl;
+
+					oldStaticInc++;
 				}
 				else// need to test byte* t = {1,2,3};
 					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getExprLoc());
@@ -6422,217 +6509,148 @@ public:
 					Throw("Unimplemented CK_FunctionToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()));
 				break;
 
+				case clang::CK_PointerToIntegral://int ptoitest = &addrptrtest;
+				ParseLiteral(icast->getSubExpr());
+				break;
+
+				case clang::CK_BitCast://short* testok = &addrptrtest;//(addrptrtest is an int)
+
+				ParseLiteral(icast->getSubExpr());
+				break;
+
 				default:
 				Throw("Unimplemented ImplicitCastExpr of type " + string(icast->getCastKindName()));
 			}
 
 
 		}
-
-		//need to add full pointer init support for 
-		//ex:  int vstack[10] = {1,2,3,4,5,6,7,8,9,10};
-		//int* vstack_ptr = vstack + 4; //or
-		//int* vstack_ptr2 = &vstack[1]; //ect
-		//this will require these function below and more for parseing unevaluable expressions
-
-		else if (isa<UnaryOperator>(e)) {
-			const UnaryOperator *op = cast<const UnaryOperator>(e);
-
-			Expr *subE = op->getSubExpr();
-			if (op->getOpcode() == UO_AddrOf) {
-				if (isa<ArraySubscriptExpr>(subE)) {
-					const ArraySubscriptExpr* arr = cast<ArraySubscriptExpr>(subE);
-					const Expr* base = arr->getBase();
-					const Type* type = base->getType().getTypePtr();
-					if(isa<ImplicitCastExpr>(base) && cast<ImplicitCastExpr>(base)->getCastKind() == CK_ArrayToPointerDecay)
-					{
-						base = cast<ImplicitCastExpr>(base)->getSubExpr();
-						if(isa<DeclRefExpr>(base))
-						{
-							const DeclRefExpr* DRE = cast<DeclRefExpr>(base);
-							llvm::APSInt iResult;
-							if(arr->getIdx()->EvaluateAsInt(iResult, *context))
-							{
-								int size = getSizeOfType(type);
-								if(type->isArrayType())
-									size = getSizeFromBytes(size) * 4;
-								Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
-								Entryfunction.addOpAddImm(size * iResult.getSExtValue());
-								Entryfunction.addOpSetStatic(oldStaticInc);
-								RuntimeStatics
-									<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl << add(size * iResult.getSExtValue()) << endl
-									<< setStatic(oldStaticInc++) << endl;
-
-							}
-							else
-							{
-								Throw("Expected integer literal for static array pointer initialisation", rewriter, op->getSourceRange());
-							}
-						}
-						else
-						{
-							Throw("Expected static declaration for static array pointer initialisation", rewriter, op->getSourceRange());
-						}
-					}
-					else
-					{
-						Throw("Expected static declaration for static array pointer initialisation", rewriter, op->getSourceRange());
-					}
-					
-
-				}
-				else if (isa<DeclRefExpr>(subE)) {
-					const DeclRefExpr *DRE = cast<const DeclRefExpr>(subE);
-
-					//we can index because the name has to be declared in clang to use the declare
-					//we will let clang handle errors
-					Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
-					Entryfunction.addOpSetStatic(oldStaticInc);
-					RuntimeStatics
-						<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl
-						<< setStatic(oldStaticInc++) << endl;
-				}
-				else {
-					ParseLiteral(subE, true, false);
-				}
-				return  true;
-
-			}
-
-
-		}
-		else if (isa<CompoundLiteralExpr>(e)) {
-			Throw("COL", rewriter, e->getExprLoc());
-			const CompoundLiteralExpr *cLit = cast<const CompoundLiteralExpr>(e);
-			if (isa<InitListExpr>(cLit->getInitializer())) {
-				const InitListExpr *init = cast<const InitListExpr>(cLit->getInitializer());
-				for (unsigned int i = 0; i<init->getNumInits(); i++) {
-					ParseLiteral(init->getInit(i));
-				}
-				// if(!printVTable)
-				//     out << "iPush " << init->getNumInits() << " // numInitializers" << endl;
-			}
-			else {
-				ParseLiteral(cLit->getInitializer());
-				//                out << "Unimplemented CompoundLiteralExpr" << endl;
-			}
-		}
 		else if (isa<CastExpr>(e)) {
-			Throw("CE", rewriter, e->getExprLoc());
+			isCurrentExprEvaluable = false;
 			const CastExpr *icast = cast<const CastExpr>(e);
 			switch (icast->getCastKind()) {
-				case clang::CK_IntegralToFloating:
-				{
-					if (isa<IntegerLiteral>(icast->getSubExpr())) {
 
-						const IntegerLiteral *literal = cast<const IntegerLiteral>(icast->getSubExpr());
-						InitializationStack.push({ FloatToInt((float)literal->getValue().getSExtValue()), FBWT_FLOAT });
-						return true;
-					}
-					else {
-						Throw("Unable to cast a non literal on initialization of a static var");
-					}
-				}
-				case clang::CK_FloatingToIntegral:
-				{
-					if (isa<FloatingLiteral>(icast->getSubExpr())) {
-						const FloatingLiteral *literal = cast<const FloatingLiteral>(icast->getSubExpr());
-						float fltliteral;
-						if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
-							fltliteral = literal->getValue().convertToFloat();
-						else
-							fltliteral = (float)literal->getValue().convertToDouble();
-						InitializationStack.push({ (int32_t)fltliteral, FBWT_INT });
-					}
-					else
-					{
-						ParseLiteral(icast->getSubExpr(), false, true);
-						InitializationStack.push({ (int32_t)IntToFloat(IS_Pop().bytes), FBWT_INT });
-					}
-					break;
-				}
-				case clang::CK_FloatingCast:
-				case clang::CK_IntegralCast:
-				ParseLiteral(icast->getSubExpr(), isAddr, isLtoRValue);
-				break;
 				case clang::CK_ArrayToPointerDecay:
-
-				ParseLiteral(icast->getSubExpr(), true, false);
+					ParseLiteral(icast->getSubExpr(), true, false);
 				break;
-				case clang::CK_LValueToRValue:
-				{
-					ParseLiteral(icast->getSubExpr(), isAddr, true);
-					//const Expr *subE = icast->getSubExpr();
 
-					//handleRValueDeclRef(subE);
-					break;
-				}
-				case clang::CK_DerivedToBase:
-				{
+				//case clang::CK_DerivedToBase:
+				//	ParseLiteral(icast->getSubExpr());
+				//break;
+
+				case clang::CK_PointerToIntegral://int ptoitest = (int)&addrptrtest;
 					ParseLiteral(icast->getSubExpr());
-					break;
-				}
-				case clang::CK_PointerToIntegral:
-				{
+				break;
+
+				//case clang::CK_PointerToBoolean:
+				//	ParseLiteral(icast->getSubExpr());
+				//break;
+				//
+				//case clang::CK_NoOp:
+				//	ParseLiteral(icast->getSubExpr());
+				//break;
+
+				case clang::CK_BitCast://short* testok = (short*)&addrptrtest;//(addrptrtest is an int)
 					ParseLiteral(icast->getSubExpr());
-					break;
-				}
-				case clang::CK_PointerToBoolean:
-				{
-					ParseLiteral(icast->getSubExpr());
-					break;
-				}
-				case clang::CK_NoOp:
-				{
-					ParseLiteral(icast->getSubExpr());
-					break;
-				}
-				case clang::CK_BitCast:
-				{
-					ParseLiteral(icast->getSubExpr());
-					break;
-				}
+				break;
 
 				default:
-				Throw("Cast " + string(icast->getCastKindName()) + " is unimplemented for a static define");
+					Throw("Cast " + string(icast->getCastKindName()) + " is unimplemented for a static define");
 
 			}
-		}
-		else if (isa<DeclRefExpr>(e)) {
-
-			//const DeclRefExpr *declref = cast<const DeclRefExpr>(e);
-			//
-			//if (isa<EnumConstantDecl>(declref->getDecl())) {
-			//	const EnumConstantDecl *enumDecl = cast<const EnumConstantDecl>(declref->getDecl());
-			//	int val = enumDecl->getInitVal().getSExtValue();
-			//	out << iPush(val) << endl;
-			//	return 1;
-			//}
-			//
-			//string key = declref->getNameInfo().getAsString();
-			//printDeclWithKey(key, isAddr, isLtoRValue, getSizeFromBytes(getSizeOfType(declref->getType().getTypePtr())));
-			Throw("DeclRefExpr", rewriter, e->getExprLoc());
-			//int k;
-			//int x = &k;
-			return true;
 		}
 		else if (isa<ArraySubscriptExpr>(e)) {
 			Throw("ASE", rewriter, e->getExprLoc());
 			Throw("parseArraySubscriptExpr", rewriter, e->getExprLoc());
 			//return parseArraySubscriptExpr(e, isAddr, isLtoRValue);
 		}
-		else if (isa<ParenExpr>(e)) {
-			Throw("PE", rewriter, e->getExprLoc());
-			const ParenExpr *parenExpr = cast<const ParenExpr>(e);
-			ParseLiteral(parenExpr->getSubExpr(), isAddr, isLtoRValue);
-		}
 		else if (isa<BinaryOperator>(e)) {
-			Throw("BO", rewriter, e->getExprLoc());
+			isCurrentExprEvaluable = false;
 			const BinaryOperator *bOp = cast<const BinaryOperator>(e);
-			ParseLiteral(bOp->getLHS(), false, true);
-			ParseLiteral(bOp->getRHS(), false, true);
-		}
+			BinaryOperatorKind op = bOp->getOpcode();
+					
+			//c allows same type pointer to pointer subtraction to obtain the logical difference. 
+			if (isa<PointerType>(bOp->getLHS()->getType()) && isa<PointerType>(bOp->getRHS()->getType()))
+			{
+				ParseLiteral(bOp->getLHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
+				ParseLiteral(bOp->getRHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
 
+				if (op == BO_Sub)
+				{
+					const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+					int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+
+					if (bOp->getLHS()->getType()->isFloatingType())
+						Entryfunction.addOpFSub();
+					else
+						Entryfunction.addOpSub();
+
+					if (pSize > 1)
+					{
+						Entryfunction.addOpPushInt(pSize);
+						Entryfunction.addOpDiv();
+					}
+
+					return -1;
+				}
+				else 
+					Throw("Pointer to pointer operation not subtraction \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
+			}
+			else if (isa<PointerType>(bOp->getLHS()->getType()))
+			{
+				//we need to parse left as an addr if its an array else its a pointer val
+				ParseLiteral(bOp->getLHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
+				ParseLiteral(bOp->getRHS(), false, true);
+
+				if (op == BO_Add || op == BO_Sub)
+				{
+					const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+					int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+
+					if (pSize > 1)
+						Entryfunction.addOpMultImm(pSize);
+				}
+				else
+					Throw("Pointer to literal operation not addition or subtraction \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
+
+			}
+			else if (isa<PointerType>(bOp->getRHS()->getType()))
+			{
+				//we need to parse right as an addr if its an array else its a pointer val
+				ParseLiteral(bOp->getLHS(), false, true);
+
+				if (op == BO_Add || op == BO_Sub)
+				{
+					const Type* pTypePtr = bOp->getRHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+					int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+
+					if (pSize > 1)
+						Entryfunction.addOpMultImm(pSize);
+				}
+				else
+					Throw("Pointer to literal operation not addition or subtraction \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
+
+				ParseLiteral(bOp->getRHS(), bOp->getRHS()->getType().getTypePtr()->isArrayType(), true);
+			}
+			else
+			{
+				//no pointer operations
+				Throw("Expected pointer operation for static BinaryOperator", rewriter, e->getExprLoc());
+				//parseExpression(bOp->getLHS(), false, true);
+				//parseExpression(bOp->getRHS(), false, true);
+			}
+
+			switch (op)
+			{
+				case BO_Sub: Entryfunction.addOpSub(); break;
+				case BO_Add: Entryfunction.addOpAdd(); break;
+				default:
+				Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
+			}
+				
+		}
 		else
 			Throw("Class " + string(e->getStmtClassName()) + " is unimplemented for a static define");
 		return -1;
@@ -6649,6 +6667,8 @@ public:
 					resetIntIndex();
 					savedType = nullptr;
 					oldStaticInc = staticInc;
+					isCurrentExprEvaluable = true;
+					doesCurrentValueNeedSet = false;
 					statics.insert(make_pair(dumpName(cast<NamedDecl>(D)), staticInc));
 					staticInc += getSizeFromBytes(size);
 
@@ -6667,19 +6687,8 @@ public:
 						if (oldStaticInc > staticInc)//undefined length arrays (should check if it is an undefined length array)
 							staticInc = oldStaticInc;
 
-
-
-						//if (varDecl->getType()->isCharType())
-						//	DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::SwapEndian(IS_Pop().bytes % 256)) });
-						//else if (varDecl->getType()->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || varDecl->getType()->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
-						//	DefaultStaticValues.insert({ oldStaticInc, to_string(Utils::Bitwise::Flip2BytesIn4(IS_Pop().bytes % 65536)) });
-						//else
-						//	DefaultStaticValues.insert({ oldStaticInc, to_string(IS_Pop().bytes) });
-
-
-						//cout << "init Name: " << varDecl->getName().str() << " class: " << initializer->getStmtClassName() << '\n';
-						//Pause();
-
+						if(doesCurrentValueNeedSet)
+							Entryfunction.addOpSetStatic(oldStaticInc-1);
 
 					}
 
@@ -6703,6 +6712,7 @@ public:
 		}
 		return "";
 	}
+	
 	void resetIntIndex()
 	{
 		if (intIndex != 0)
@@ -6712,11 +6722,12 @@ public:
 		}
 	}
 
-
 	VarDecl* globalVarDecl;
 	uint32_t oldStaticInc = 0;
 	uint32_t intIndex = 0;
 	Type* savedType = nullptr;
+	bool isCurrentExprEvaluable = true;
+	bool doesCurrentValueNeedSet = false;
 
 	stringstream RuntimeStatics;
 	map<uint32_t, string> DefaultStaticValues;//index, value
