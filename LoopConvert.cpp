@@ -5076,7 +5076,7 @@ public:
 			const CXXRecordDecl *baseDecl = baseSpec.getType()->getAsCXXRecordDecl();
 			//vtableInc += printVTableInit(baseDecl, classLoc);
 			bool foundVirt = false;
-			int func = 0;
+			//int func = 0;
 			for (CXXMethodDecl *VFI : baseDecl->methods()) {
 
 				if (VFI->isVirtual()) {
@@ -5101,7 +5101,7 @@ public:
 
 
 
-					const CXXMethodDecl *VFII = VFI->getCorrespondingMethodInClass(classDecl);
+					//const CXXMethodDecl *VFII = VFI->getCorrespondingMethodInClass(classDecl);
 /*
 					if (VFI != VFII) { //getLocStart(VFI) != getLocStart(VFII)) {
 									   //const Stmt *body = VFII->FunctionDecl::getBody();
@@ -5390,7 +5390,7 @@ public:
 				doesCurrentValueNeedSet = false;
 				ParseLiteral(I->getInit(i), false, true);
 				if (doesCurrentValueNeedSet)
-					Entryfunction.addOpSetStatic(oldStaticInc - 1);
+					Entryfunction.addOpSetStatic(oldStaticInc++);
 			}
 
 			resetIntIndex();
@@ -5436,14 +5436,13 @@ public:
 							if(arr->getIdx()->EvaluateAsInt(iResult, *context))
 							{
 								int size = getSizeOfType(type);
+
 								if(type->isArrayType())
 									size = getSizeFromBytes(size) * 4;
+
 								Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
 								Entryfunction.addOpAddImm(size * iResult.getSExtValue());
-								Entryfunction.addOpSetStatic(oldStaticInc);
-								RuntimeStatics
-									<< getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl << add(size * iResult.getSExtValue()) << endl
-									<< setStatic(oldStaticInc++) << endl;
+								Entryfunction.addOpSetStatic(oldStaticInc++);
 
 							}
 							else
@@ -5467,12 +5466,8 @@ public:
 					const DeclRefExpr *DRE = cast<const DeclRefExpr>(subE);
 					doesCurrentValueNeedSet = true;
 
-					//we can index because the name has to be declared in clang to use the declare
-					//we will let clang handle errors
+					//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
 					Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
-
-					RuntimeStatics << getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl;
-					oldStaticInc++;
 				}
 				else
 				{
@@ -5494,28 +5489,15 @@ public:
 				{
 					const StringLiteral *literal = cast<const StringLiteral>(icast->getSubExpr());
 					Entryfunction.addOpPushString(literal->getString().str());
-					Entryfunction.addOpSetStatic(oldStaticInc);
-
-					if (literal->getString().str().length() > 0)
-						RuntimeStatics << "PushString \"" << literal->getString().str() << "\"\r\n";
-					else
-						RuntimeStatics << "PushString \"\"\r\n";
-
-					RuntimeStatics << setStatic(oldStaticInc++) << endl;
-
+					Entryfunction.addOpSetStatic(oldStaticInc++);
 				}
 				else if (isa<DeclRefExpr>(icast->getSubExpr()))//int vstack[10] = {1,2,3,4,5,6,7,8,9,10}, *vstack_ptr = vstack;
 				{
 					const DeclRefExpr *DRE = cast<const DeclRefExpr>(icast->getSubExpr());
 					doesCurrentValueNeedSet = true;
 
-					//we can index because the name has to be declared in clang to use the declare
-					//we will let clang handle errors
+					//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
 					Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
-
-					RuntimeStatics << getStaticp(statics[DRE->getDecl()->getNameAsString()]) << endl;
-
-					oldStaticInc++;
 				}
 				else// need to test byte* t = {1,2,3};
 					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getExprLoc());
@@ -5561,7 +5543,6 @@ public:
 				break;
 
 				case clang::CK_BitCast://short* testok = &addrptrtest;//(addrptrtest is an int)
-
 				ParseLiteral(icast->getSubExpr());
 				break;
 
@@ -5735,7 +5716,7 @@ public:
 							staticInc = oldStaticInc;
 
 						if(doesCurrentValueNeedSet)
-							Entryfunction.addOpSetStatic(oldStaticInc-1);
+							Entryfunction.addOpSetStatic(oldStaticInc++);
 
 					}
 
@@ -5776,54 +5757,7 @@ public:
 	bool isCurrentExprEvaluable = true;
 	bool doesCurrentValueNeedSet = false;
 
-	stringstream RuntimeStatics;
 	map<uint32_t, string> DefaultStaticValues;//index, value
-
-	#pragma region InitializationStack
-	enum FBWT_Types : uint8_t
-	{
-		FBWT_INT,
-		FBWT_CHAR,
-		FBWT_FLOAT,
-		FBWT_ARRAY,
-		FBWT_INIT_LIST
-	};
-	typedef struct {
-		int32_t bytes;
-		FBWT_Types type;
-	} FBWT;
-	stack<FBWT> InitializationStack;
-	FBWT IS_Pop()
-	{
-		if (!InitializationStack.empty())
-		{
-			FBWT ret = InitializationStack.top();
-			InitializationStack.pop();
-			return ret;
-		}
-		else
-			Throw("InitializationStack Empty");
-		return{ 0, FBWT_INT };
-	}
-	void IS_Clear()
-	{
-		while (!InitializationStack.empty())
-		{
-			InitializationStack.pop();
-		}
-	}
-	void IS_Exch()
-	{
-		if (InitializationStack.size() >= 2)
-		{
-			FBWT val1 = IS_Pop();
-			FBWT val2 = IS_Pop();
-			InitializationStack.push(val1);
-			InitializationStack.push(val2);
-		}
-		else Throw("InitializationStack not big enough to exch");
-	}
-	#pragma endregion
 
 private:
 	Rewriter &TheRewriter;
