@@ -433,6 +433,76 @@ string Opcode::toString() const
 		}
 		break;
 	}
+	case OK_FAddImm:
+	{
+		float value = getFloat();
+		if (value == -1.0){
+			current = "PushF_-1\r\nFAdd";
+		}
+		else if (value == 0.0){
+			current = "PushF_0\r\nFAdd";
+		}
+		else if (value == 1.0){
+			current = "PushF_1\r\nFAdd";
+		}
+		else if (value == 2.0){
+			current = "PushF_2\r\nFAdd";
+		}
+		else if (value == 3.0){
+			current = "PushF_3\r\nFAdd";
+		}
+		else if (value == 4.0){
+			current = "PushF_4\r\nFAdd";
+		}
+		else if (value == 5.0){
+			current = "PushF_5\r\nFAdd";
+		}
+		else if (value == 6.0){
+			current = "PushF_6\r\nFAdd";
+		}
+		else if (value == 7.0){
+			current = "PushF_7\r\nFAdd";
+		}
+		else{
+			current = "PushF " + to_string(value) + "\r\nFAdd";
+		}
+		break;
+	}
+	case OK_FMultImm:
+	{
+		float value = getFloat();
+		if (value == -1.0){
+			current = "PushF_-1\r\nFMult";
+		}
+		else if (value == 0.0){
+			current = "PushF_0\r\nFMult";
+		}
+		else if (value == 1.0){
+			current = "PushF_1\r\nFMult";
+		}
+		else if (value == 2.0){
+			current = "PushF_2\r\nFMult";
+		}
+		else if (value == 3.0){
+			current = "PushF_3\r\nFMult";
+		}
+		else if (value == 4.0){
+			current = "PushF_4\r\nFMult";
+		}
+		else if (value == 5.0){
+			current = "PushF_5\r\nFMult";
+		}
+		else if (value == 6.0){
+			current = "PushF_6\r\nFMult";
+		}
+		else if (value == 7.0){
+			current = "PushF_7\r\nFMult";
+		}
+		else{
+			current = "PushF " + to_string(value) + "\r\nFMult";
+		}
+		break;
+	}
 	case OK_Call:current = "Call @" + getString(); break;
 	case OK_Jump: current = "Jump @" + getString(); break;
 	case OK_JumpFalse: PrintJump(False); break;
@@ -501,26 +571,58 @@ void FunctionData::AddSimpleOp(OpcodeKind operation)
 {
 	switch(operation)
 	{
-	case OK_Nop:
+		//special handling cases
 	case OK_Add:
+		addOpAdd();
+		break;
 	case OK_Sub:
+		addOpSub();
+		break;
 	case OK_Mult:
+		addOpMult();
+		break;
 	case OK_Div:
-	case OK_Mod:
+		addOpDiv();
+		break;
 	case OK_Not:
+		addOpNot();
+		break;
 	case OK_Neg:
+		addOpNeg();
+		break;
+	case OK_FAdd:
+		addOpFAdd();
+		break;
+	case OK_FSub:
+		addOpFSub();
+		break;
+	case OK_FMult:
+		addOpFMult();
+		break;
+	case OK_FDiv:
+		addOpFDiv();
+		break;
+	case OK_FNeg:
+		addOpFNeg();
+		break;
+	case OK_Drop:
+		addOpDrop();
+		break;
+	case OK_PGet:
+		addOpPGet();
+		break;
+	case OK_PSet:
+		addOpPSet();
+		break;
+	case OK_Nop:
+	case OK_Mod:
 	case OK_CmpEq:
 	case OK_CmpNe:
 	case OK_CmpGt:
 	case OK_CmpGe:
 	case OK_CmpLt:
 	case OK_CmpLe:
-	case OK_FAdd:
-	case OK_FSub:
-	case OK_FMult:
-	case OK_FDiv:
 	case OK_FMod:
-	case OK_FNeg:
 	case OK_FCmpEq:
 	case OK_FCmpNe:
 	case OK_FCmpGt:
@@ -541,9 +643,6 @@ void FunctionData::AddSimpleOp(OpcodeKind operation)
 	case OK_ShiftLeft:
 	case OK_ShiftRight:
 	case OK_Dup:
-	case OK_Drop:
-	case OK_PGet:
-	case OK_PSet:
 	case OK_PeekSet:
 	case OK_ToStack:
 	case OK_FromStack:
@@ -689,14 +788,22 @@ void FunctionData::addOpMult()
 	}
 }
 
-void FunctionData::addOpDiv()
+void FunctionData::addOpDiv(bool *isZeroDivDetected)
 {
 	assert(Instructions.size() && "Instruction stack empty, cant add Div Instruction");
+	if (isZeroDivDetected)
+	{
+		*isZeroDivDetected = false;
+	}
 	if (Instructions.back()->GetKind() == OK_PushInt)
 	{
 		int i = Instructions.back()->getInt();
 		if (i == 0)
 		{
+			if (isZeroDivDetected)
+			{
+				*isZeroDivDetected = true;
+			}
 			//game treats division by zero as just putting 0 on top of stack
 			Instructions.back()->opcodeKind = OK_Drop;
 			Instructions.push_back(new Opcode(OK_PushInt));
@@ -766,6 +873,121 @@ void FunctionData::addOpNot()
 	default:
 		Instructions.push_back(new Opcode(OK_Not));
 		return;
+	}
+}
+
+void FunctionData::addOpNeg()
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add Neg Instruction");
+	Opcode *back = Instructions.back();
+	if (back->GetKind() == OK_PushInt || back->GetKind() == OK_MultImm)//treat pushInt and MultImm as the same, ignore pushBytes as they cant be negated
+	{
+		back->setInt(-back->getInt());
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_Neg));
+	}
+}
+
+void FunctionData::addOpFAdd()
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add FAdd Instruction");
+	Opcode *back = Instructions.back();
+	if (back->GetKind() == OK_PushFloat)
+	{
+		float imm = back->getFloat();
+		delete back;
+		Instructions.pop_back();
+		addOpFAddImm(imm);
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_FAdd));
+	}
+}
+
+void FunctionData::addOpFSub()
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add FSub Instruction");
+	Opcode *back = Instructions.back();
+	if (back->GetKind() == OK_PushFloat)
+	{
+		float imm = back->getFloat();
+		delete back;
+		Instructions.pop_back();
+		addOpFAddImm(-imm);
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_FSub));
+	}
+}
+
+void FunctionData::addOpFMult()
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add FMult Instruction");
+	Opcode *back = Instructions.back();
+	if (back->GetKind() == OK_PushFloat)
+	{
+		float imm = back->getFloat();
+		delete back;
+		Instructions.pop_back();
+		addOpFMultImm(imm);
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_FMult));
+	}
+}
+
+void FunctionData::addOpFDiv(bool * isZeroDivDetected)
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add FDiv Instruction");
+	Opcode *back = Instructions.back();
+	if (back->GetKind() == OK_PushFloat)
+	{
+		float imm = back->getFloat();
+		if (imm == 0)
+		{
+			Instructions.push_back(new Opcode(OK_FDiv));//still parse the instruction as FDiv, but warn user
+			if (isZeroDivDetected)
+			{
+				*isZeroDivDetected = true;
+			}
+		}
+		else
+		{
+			delete back;
+			Instructions.pop_back();
+			addOpFMultImm(1.0f / imm);
+			if (isZeroDivDetected)
+			{
+				*isZeroDivDetected = false;
+			}
+		}
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_FDiv));
+		if (isZeroDivDetected)
+		{
+			*isZeroDivDetected = false;
+		}
+	}
+}
+
+void FunctionData::addOpFNeg()
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add FNeg Instruction");
+	Opcode *back = Instructions.back();
+	if (back->GetKind() == OK_PushFloat || back->GetKind() == OK_FMultImm)//treat pushFloat and FMultImm as the same
+	{
+		back->setFloat(-back->getFloat());
+	}
+	else
+	{
+		Instructions.push_back(new Opcode(OK_FNeg));
 	}
 }
 
@@ -1085,6 +1307,70 @@ void FunctionData::addOpMultImm(int immediate)
 	{
 		Opcode* op = new Opcode(OK_MultImm);
 		op->setInt(immediate);
+		Instructions.push_back(op);
+	}
+}
+
+void FunctionData::addOpFAddImm(float immediate)
+{
+	assert(Instructions.size() && "Cannot add FAddImm to empty instruction stack");
+	Opcode *last = Instructions.back();
+	if (last->GetKind() == OK_PushFloat)
+	{
+		last->setFloat(last->getFloat() + immediate);
+	}
+	else if (last->GetKind() == OK_FAddImm)
+	{
+		float val = immediate + last->getFloat();
+		delete last;
+		Instructions.pop_back();
+		addOpFAddImm(val);
+	}
+	else if (immediate == 0.0f)
+	{
+		//do nothing
+	}
+	else
+	{
+		Opcode* op = new Opcode(OK_FAddImm);
+		op->setFloat(immediate);
+		Instructions.push_back(op);
+	}
+
+}
+
+void FunctionData::addOpFMultImm(float immediate)
+{
+	assert(Instructions.size() && "Cannot add FMultImm to empty instruction stack");
+	Opcode *last = Instructions.back();
+	if (last->GetKind() == OK_PushFloat)
+	{
+		last->setFloat(last->getFloat() * immediate);
+	}
+	else if (last->GetKind() == OK_FMultImm)
+	{
+		float val = immediate * last->getFloat();
+		delete last;
+		Instructions.pop_back();
+		addOpFMultImm(val);
+	}
+	else if (immediate == 0.0f)
+	{
+		addOpDrop();
+		addOpPushFloat(0.0f);
+	}
+	else if (immediate == -1.0f)
+	{
+		addOpFNeg();
+	}
+	else if (immediate == 1.0f)
+	{
+		//do nothing
+	}
+	else
+	{
+		Opcode* op = new Opcode(OK_FMultImm);
+		op->setFloat(immediate);
 		Instructions.push_back(op);
 	}
 }

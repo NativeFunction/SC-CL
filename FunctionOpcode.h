@@ -67,6 +67,8 @@ enum OpcodeKind{
 	OK_SetGlobal,
 	OK_AddImm,	
 	OK_MultImm,
+	OK_FAddImm,//simplify optimising
+	OK_FMultImm,//simplify optimising
 	OK_GetImmP,
 	OK_GetImm,
 	OK_SetImm,
@@ -177,22 +179,22 @@ public:
 	void addOpAdd();
 	void addOpSub();
 	void addOpMult();
-	void addOpDiv();
+	void addOpDiv(bool *isZeroDivDetected = nullptr);
 	void addOpMod(){ Instructions.push_back(new Opcode(OK_Mod)); }
 	void addOpNot();
-	void addOpNeg(){ Instructions.push_back(new Opcode(OK_Neg)); }
+	void addOpNeg();
 	void addOpCmpEq(){ Instructions.push_back(new Opcode(OK_CmpEq)); }
 	void addOpCmpNe(){ Instructions.push_back(new Opcode(OK_CmpNe)); }
 	void addOpCmpGt(){ Instructions.push_back(new Opcode(OK_CmpGt)); }
 	void addOpCmpGe(){ Instructions.push_back(new Opcode(OK_CmpGe)); }
 	void addOpCmpLt(){ Instructions.push_back(new Opcode(OK_CmpLt)); }
 	void addOpCmpLe(){ Instructions.push_back(new Opcode(OK_CmpLe)); }
-	void addOpFAdd(){ Instructions.push_back(new Opcode(OK_FAdd)); }
-	void addOpFSub(){ Instructions.push_back(new Opcode(OK_FSub)); }
-	void addOpFMult(){ Instructions.push_back(new Opcode(OK_FMult)); }
-	void addOpFDiv(){ Instructions.push_back(new Opcode(OK_FDiv)); }
+	void addOpFAdd();
+	void addOpFSub();
+	void addOpFMult();
+	void addOpFDiv(bool *isZeroDivDetected = nullptr);
 	void addOpFMod(){ Instructions.push_back(new Opcode(OK_FMod)); }
-	void addOpFNeg(){ Instructions.push_back(new Opcode(OK_FNeg)); }
+	void addOpFNeg();
 	void addOpFCmpEq(){ Instructions.push_back(new Opcode(OK_FCmpEq)); }
 	void addOpFCmpNe(){ Instructions.push_back(new Opcode(OK_FCmpNe)); }
 	void addOpFCmpGt(){ Instructions.push_back(new Opcode(OK_FCmpGt)); }
@@ -221,18 +223,14 @@ public:
 	void addOpShiftLeft(uint8_t shiftCount)
 	{
 		assert(shiftCount >= 0 && shiftCount <= 31 && "shiftCount must be between 0 and 31");
-		Opcode* op = new Opcode(OK_PushInt);
-		op->setInt(shiftCount);
-		Instructions.push_back(op);
+		addOpPushInt(shiftCount);
 		Instructions.push_back(new Opcode(OK_ShiftLeft));
 	}
 	void addOpShiftRight(){ Instructions.push_back(new Opcode(OK_ShiftRight)); }
 	void addOpShiftRight(uint8_t shiftCount)
 	{
 		assert(shiftCount >= 0 && shiftCount <= 31 && "shiftCount must be between 0 and 31");
-		Opcode* op = new Opcode(OK_PushInt);
-		op->setInt(shiftCount);
-		Instructions.push_back(op);
+		addOpPushInt(shiftCount);
 		Instructions.push_back(new Opcode(OK_ShiftRight));
 	}
 	void addOpIsBitSet(uint8_t bitIndex)
@@ -338,6 +336,8 @@ public:
 	}
 	void addOpAddImm(int immediate);
 	void addOpMultImm(int immediate);
+	void addOpFAddImm(float immediate);
+	void addOpFMultImm(float immediate);
 	void addOpGetImmP(uint16_t index);
 	void addOpGetImm(uint16_t index);
 	void addOpSetImm(uint16_t index);
