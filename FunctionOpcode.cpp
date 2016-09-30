@@ -312,7 +312,7 @@ string Opcode::toString() const
 			assert(false && "Empty PushBytes opcode");
 		case 1:
 			assert(false && "PushBytes opcode called with 1 byte, should never happen as it should be wrapped in PushInt");
-			//current = "PushB " + to_string(getByte(1));
+			current = "PushB " + to_string(getByte(1));
 			break;
 		case 2:
 			current = "PushB2 " + to_string(getByte(1)) + " " + to_string(getByte(2));
@@ -480,7 +480,7 @@ string Opcode::toString() const
 		switch (getInt())
 		{
 		case 0xbf800000:
-			current = "Neg"; break;//this should never come up
+			current = "FNeg"; break;//this should never come up
 		case 0x80000000://neg 0
 		case 0x00000000://pos 0
 			current = "PushF_0\r\nFMult"; break;//this should never come up
