@@ -153,7 +153,7 @@ public:
 	void pushComment(string comment);
 	void AddSimpleOp(OpcodeKind operation);
 	bool endsWithReturn() const{ return Instructions.size() && Instructions.back()->GetKind() == OK_Return; }//this will get confused by if else having a return, but it will just return false when there actually is a return so no harm
-	bool endsWithInlineReturn(unsigned position) const;
+	bool endsWithInlineReturn(string position) const;
 	void RemoveLast(){ Instructions.pop_back(); }
 	uint16_t getPCount()const { return pcount; }
 	uint16_t getStackSize()const { return stackSize; }

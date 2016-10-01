@@ -21,6 +21,22 @@
 #define AddFloatingOpCheck(isFlt, opEnum, opEnumFlt) CurrentFunction->AddSimpleOp((isFlt) ? opEnumFlt : opEnum)
 #define AddInstructionCondition(cond, opNameTrue, opNameFalse, ...) {if (cond) CurrentFunction->addOp##opNameTrue(__VA_ARGS__); else CurrentFunction->addOp##opNameFalse(__VA_ARGS__);}
 #define AddInstructionConditionally(cond, opName, ...) {if (cond) CurrentFunction->addOp##opName(__VA_ARGS__);}
+#ifdef _DEBUG
+#define AddInstructionConditionallyComment(cond, opName, comment, ...) {if (cond) {CurrentFunction->addOp##opName(__VA_ARGS__); CurrentFunction->pushComment(comment);}}
+#else
+#define AddInstructionConditionallyComment(cond, opName, comment, ...) AddInstructionConditionally(cond, opName, __VA_ARGS__)
+#endif
+#define AddJumpInlineCheck(jumpType, loc) CurrentFunction->addOp##jumpType(to_string(loc) + getInlineJumpLabelAppend())
+#define AddJumpInlineCheckStr(jumpType, loc) CurrentFunction->addOp##jumpType((loc) + getInlineJumpLabelAppend())
+#define AddJumpInlineCheckComment(jumpType, comment, loc) {CurrentFunction->addOp##jumpType(to_string(loc) + getInlineJumpLabelAppend()); CurrentFunction->pushComment(comment);}
+#define AddJumpInlineCheckStrComment(jumpType, comment, loc) {CurrentFunction->addOp##jumpType((loc) + getInlineJumpLabelAppend()); CurrentFunction->pushComment(comment);}
+#define AddJumpInlineCheckConditionally(cond, jumpType, loc) {if (cond) CurrentFunction->addOp##jumpType(to_string(loc) + getInlineJumpLabelAppend());}
+#define AddJumpInlineCheckConditionallyStr(cond, jumpType, loc) {if (cond) CurrentFunction->addOp##jumpType((loc) + getInlineJumpLabelAppend());}
+#ifdef _DEBUG
+#define AddJumpInlineCheckConditionallyComment(cond, jumpType, comment, loc){if (cond) {CurrentFunction->addOp##jumpType(to_string(loc) + getInlineJumpLabelAppend()); CurrentFunction->pushComment(comment);}}
+#else
+#define AddJumpInlineCheckConditionallyComment(cond, jumpType, comment, loc) AddJumpInlineCheckConditionally(cond, jumpType, loc)
+#endif
 #pragma endregion
 
 using namespace Utils;
@@ -41,7 +57,7 @@ static Rewriter rewriter;
 vector<FunctionData*> functionsNew;
 FunctionData* CurrentFunction;
 FunctionData Entryfunction("@EntryPoint", 0);
-struct InlineData { uint32_t hash; string name; };
+struct InlineData { uint32_t hash; string name; string inlineLblAppend; };
 vector<InlineData> InlineItems;
 #pragma endregion
 
@@ -145,6 +161,15 @@ constexpr uint32_t JoaatConst(const char * cstr) { return hashImpl(cstr, 0); }
 #pragma endregion
 
 #pragma region Global_Inline_Function_Functions
+string getInlineJumpLabelAppend()
+{
+	if (InlineItems.size())
+	{
+		return InlineItems.back().inlineLblAppend;
+	}
+	return "";
+}
+bool isInInline(){ return InlineItems.size(); }
 bool isFunctionInInline(string fName)
 {
 	uint32_t hash = Utils::Hashing::Joaat((char*)fName.c_str());
@@ -158,11 +183,11 @@ bool isFunctionInInline(string fName)
 	}
 	return false;
 }
-bool addFunctionInline(string fName)
+bool addFunctionInline(string fName, string returnLoc)
 {
 	if (isFunctionInInline(fName))
 		return false;
-	InlineItems.push_back({ Utils::Hashing::Joaat((char*)fName.c_str()) , fName });
+	InlineItems.push_back({ Utils::Hashing::Joaat((char*)fName.c_str()) , fName, getInlineJumpLabelAppend() + "_" + returnLoc});
 	return true;
 }
 void removeFunctionInline(string fName)
@@ -1520,7 +1545,7 @@ public:
 				Throw("pushVector3 must have signature \"extern __intrinsic void pushVector3(vector3 vec3Value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
-			case JoaatCasedConst("popFloat"):;
+			case JoaatCasedConst("popFloat"):
 			{
 				ChkHashCol("popFloat");
 				if (argCount == 0 && callee->getReturnType()->isRealFloatingType())
@@ -1563,10 +1588,7 @@ public:
 						if (castee->getCastKind() == CK_BitCast)
 						{
 							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
-							if (size > 1)
-							{
-								AddInstructionComment(PushInt, "Struct Size", size);
-							}
+							AddInstructionConditionallyComment(size > 1, PushInt, "Struct Size", size);
 							parseExpression(argArray[0], true, true);
 							AddInstructionCondition(size > 1, ToStack, PGet);
 							return true;
@@ -1591,10 +1613,7 @@ public:
 						if (castee->getCastKind() == CK_BitCast)
 						{
 							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
-							if (size > 1)
-							{
-								AddInstructionComment(PushInt, "Struct Size", size);
-							}
+							AddInstructionConditionallyComment(size > 1, PushInt, "Struct Size", size);
 							parseExpression(argArray[0], true, true);
 							AddInstructionCondition(size > 1, FromStack, PSet);
 							return true;
@@ -1980,12 +1999,12 @@ public:
 		return false;
 	}
 
-	bool parseStatement(Stmt *s, uint64_t breakLoc = -1, uint64_t continueLoc = -1, uint64_t returnLoc = -1) {
+	bool parseStatement(Stmt *s, uint64_t breakLoc = -1, uint64_t continueLoc = -1) {
 		if (isa<CompoundStmt>(s)) {
 			CompoundStmt *cSt = cast<CompoundStmt>(s);
 			LocalVariables.addLevel();
 			for (auto *CS : cSt->body()) {
-				parseStatement(cast<Stmt>(CS), breakLoc, continueLoc, returnLoc);
+				parseStatement(cast<Stmt>(CS), breakLoc, continueLoc);
 			}
 			LocalVariables.removeLevel();
 		}
@@ -2015,75 +2034,58 @@ public:
 				if (bValue)
 				{
 					LocalVariables.addLevel();
-					parseStatement(Then, breakLoc, continueLoc, returnLoc);
+					parseStatement(Then, breakLoc, continueLoc);
 					LocalVariables.removeLevel();
-					bool ifEndRet = CurrentFunction->endsWithReturn() || CurrentFunction->endsWithInlineReturn(returnLoc);
+					bool ifEndRet = CurrentFunction->endsWithReturn() || (isInInline() && CurrentFunction->endsWithInlineReturn(getInlineJumpLabelAppend()));
 					if (Else)//still parse the else code just incase there are goto labeils in there
 					{
-						if (!ifEndRet)
-						{
-							AddInstruction(Jump, IfLocEnd);
-						}
+
+						AddJumpInlineCheckConditionallyStr(!ifEndRet, Jump, IfLocEnd);
 						LocalVariables.addLevel();
-						parseStatement(Else, breakLoc, continueLoc, returnLoc);
+						parseStatement(Else, breakLoc, continueLoc);
 						LocalVariables.removeLevel();
-						if (!ifEndRet)
-						{
-							AddInstruction(Label, IfLocEnd);
-						}
+						AddJumpInlineCheckConditionallyStr(!ifEndRet, Label, IfLocEnd);
 
 					}
 				}
 				else
 				{
 					//still parse the then code just incase there are goto labels in there
-					AddInstruction(Jump, Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd);
+					AddJumpInlineCheckStr(Jump, Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd);
 					LocalVariables.addLevel();
-					parseStatement(Then, breakLoc, continueLoc, returnLoc);
+					parseStatement(Then, breakLoc, continueLoc);
 					LocalVariables.removeLevel();
-					bool ifEndRet = CurrentFunction->endsWithReturn() || CurrentFunction->endsWithInlineReturn(returnLoc);
+					bool ifEndRet = CurrentFunction->endsWithReturn() || (isInInline() && CurrentFunction->endsWithInlineReturn(getInlineJumpLabelAppend()));
 					if (Else)
 					{
-						if (!ifEndRet)
-						{
-							AddInstruction(Jump, IfLocEnd);
-						}
+						AddJumpInlineCheckConditionallyStr(!ifEndRet, Jump, IfLocEnd);
 
-						AddInstruction(Label, Else->getLocStart().getRawEncoding());
+						AddJumpInlineCheck(Label, Else->getLocStart().getRawEncoding());
 						LocalVariables.addLevel();
-						parseStatement(Else, breakLoc, continueLoc, returnLoc);
+						parseStatement(Else, breakLoc, continueLoc);
 						LocalVariables.removeLevel();
 					}
-					if (!ifEndRet || !Else)
-					{
-						AddInstruction(Label, IfLocEnd);
-					}
+					AddJumpInlineCheckConditionallyStr(!ifEndRet || !Else, Label, IfLocEnd);
 				}
 			}
 			else
 			{
 				parseExpression(conditional, false, true);
-				AddInstruction(JumpFalse, Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd);
+				AddJumpInlineCheckStr(JumpFalse, Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd);
 				LocalVariables.addLevel();
-				parseStatement(Then, breakLoc, continueLoc, returnLoc);
+				parseStatement(Then, breakLoc, continueLoc);
 				LocalVariables.removeLevel();
-				bool ifEndRet = CurrentFunction->endsWithReturn() || CurrentFunction->endsWithInlineReturn(returnLoc);
-				if (!ifEndRet)//if the last instruction is a return, no point adding a jump
-				{
-					AddInstruction(Jump, IfLocEnd);
-				}
+				bool ifEndRet = CurrentFunction->endsWithReturn() || (isInInline() && CurrentFunction->endsWithInlineReturn(getInlineJumpLabelAppend()));
+				AddJumpInlineCheckConditionallyStr(!ifEndRet, Jump, IfLocEnd);//if the last instruction is a return, no point adding a jump
 
 				if (Else) {
-					AddInstruction(Label, Else->getLocStart().getRawEncoding());
+					AddJumpInlineCheck(Label, Else->getLocStart().getRawEncoding());
 					LocalVariables.addLevel();
-					parseStatement(Else, breakLoc, continueLoc, returnLoc);
+					parseStatement(Else, breakLoc, continueLoc);
 					LocalVariables.removeLevel();
 				}
 
-				if (!ifEndRet || !Else)
-				{
-					AddInstruction(Label, IfLocEnd);
-				}
+				AddJumpInlineCheckConditionallyStr(!ifEndRet || !Else, Label, IfLocEnd);
 
 			}
 		}
@@ -2107,35 +2109,35 @@ public:
 			{
 				if (bValue)
 				{
-					AddInstruction(Label, conditional->getLocStart().getRawEncoding());
-					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
+					AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
+					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding());
 
-					AddInstruction(Jump, conditional->getLocStart().getRawEncoding());
-					AddInstruction(Label, whileStmt->getLocEnd().getRawEncoding());
+					AddJumpInlineCheck(Jump, conditional->getLocStart().getRawEncoding());
+					AddJumpInlineCheck(Label, whileStmt->getLocEnd().getRawEncoding());
 				}
 				else
 				{
 
-					AddInstruction(Label, conditional->getLocStart().getRawEncoding());
-					AddInstruction(Jump, whileStmt->getLocEnd().getRawEncoding());
+					AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
+					AddJumpInlineCheck(Jump, whileStmt->getLocEnd().getRawEncoding());
 
-					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
+					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding());
 
-					AddInstruction(Jump, conditional->getLocStart().getRawEncoding());
-					AddInstruction(Label, whileStmt->getLocEnd().getRawEncoding());
+					AddJumpInlineCheck(Jump, conditional->getLocStart().getRawEncoding());
+					AddJumpInlineCheck(Label, whileStmt->getLocEnd().getRawEncoding());
 				}
 
 			}
 			else {
-				AddInstruction(Label, conditional->getLocStart().getRawEncoding());
+				AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
 				parseExpression(conditional, false, true);
 
-				AddInstruction(JumpFalse, whileStmt->getLocEnd().getRawEncoding());
+				AddJumpInlineCheck(JumpFalse, whileStmt->getLocEnd().getRawEncoding());
 
-				parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding(), returnLoc);
+				parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding());
 
-				AddInstruction(Jump, conditional->getLocStart().getRawEncoding());
-				AddInstruction(Label, whileStmt->getLocEnd().getRawEncoding());
+				AddJumpInlineCheck(Jump, conditional->getLocStart().getRawEncoding());
+				AddJumpInlineCheck(Label, whileStmt->getLocEnd().getRawEncoding());
 			}
 			LocalVariables.removeLevel();
 		}
@@ -2147,29 +2149,28 @@ public:
 			Stmt *body = forStmt->getBody();
 			LocalVariables.addLevel();
 			if (decl) {
-				parseStatement(decl, -1, -1, returnLoc);
+				parseStatement(decl, -1, -1);
 			}
 
 			if (conditional) {
-				AddInstruction(Label, conditional->getLocStart().getRawEncoding());
+				AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
 
 				parseExpression(conditional, false, true);
-				AddInstruction(JumpFalse, body->getLocEnd().getRawEncoding());
+				AddJumpInlineCheck(JumpFalse, body->getLocEnd().getRawEncoding());
 			}
 			else
 			{
-				AddInstruction(Label, body->getLocStart().getRawEncoding());
+				AddJumpInlineCheck(Label, body->getLocStart().getRawEncoding());
 			}
 
 			parseStatement(
 				body,
 				forStmt->getLocEnd().getRawEncoding(),
-				increment ? increment->getLocStart().getRawEncoding() : conditional ? conditional->getLocStart().getRawEncoding() : body->getLocStart().getRawEncoding(),
-				returnLoc);
+				increment ? increment->getLocStart().getRawEncoding() : conditional ? conditional->getLocStart().getRawEncoding() : body->getLocStart().getRawEncoding());
 
 			if (increment)
 			{
-				AddInstructionComment(Label, "forstmt inc lbl", increment->getLocStart().getRawEncoding());
+				AddJumpInlineCheckComment(Label, "forstmt inc lbl", increment->getLocStart().getRawEncoding());
 			}
 
 			if (increment)
@@ -2177,14 +2178,14 @@ public:
 
 			if (conditional)
 			{
-				AddInstructionComment(Jump, "forstmt cond jmp", conditional->getLocStart().getRawEncoding());
+				AddJumpInlineCheckComment(Jump, "forstmt cond jmp", conditional->getLocStart().getRawEncoding());
 			}
 			else
 			{
-				AddInstructionComment(Jump, "forstmt jmp", body->getLocStart().getRawEncoding());
+				AddJumpInlineCheckComment(Jump, "forstmt jmp", body->getLocStart().getRawEncoding());
 			}
 
-			AddInstructionComment(Label, "forend lbl", body->getLocEnd().getRawEncoding());
+			AddJumpInlineCheckComment(Label, "forend lbl", body->getLocEnd().getRawEncoding());
 			LocalVariables.removeLevel();
 
 
@@ -2199,10 +2200,10 @@ public:
 			Stmt *body = doStmt->getBody();
 			LocalVariables.addLevel();
 
-			AddInstruction(Label, body->getLocStart().getRawEncoding());
-			parseStatement(body, conditional->getLocEnd().getRawEncoding(), body->getLocEnd().getRawEncoding(), returnLoc);
+			AddJumpInlineCheck(Label, body->getLocStart().getRawEncoding());
+			parseStatement(body, conditional->getLocEnd().getRawEncoding(), body->getLocEnd().getRawEncoding());
 
-			AddInstruction(Label, body->getLocEnd().getRawEncoding());
+			AddJumpInlineCheck(Label, body->getLocEnd().getRawEncoding());
 
 			Expr::EvalResult eResult;
 			bool bValue = false, ignoreCondition = false;
@@ -2215,20 +2216,16 @@ public:
 			}
 			if (ignoreCondition)
 			{
-				if (bValue)
-				{
-					AddInstruction(Jump, body->getLocStart().getRawEncoding());
-				}
+				AddJumpInlineCheckConditionally(bValue, Jump, body->getLocStart().getRawEncoding());
 				//no need for else, just jump right out
-
 			}
 			else
 			{
 				parseExpression(conditional, false, true);
-				AddInstruction(JumpTrue, body->getLocStart().getRawEncoding());
+				AddJumpInlineCheck(JumpTrue, body->getLocStart().getRawEncoding());
 			}
 
-			AddInstruction(Label, conditional->getLocEnd().getRawEncoding());
+			AddJumpInlineCheck(Label, conditional->getLocEnd().getRawEncoding());
 			LocalVariables.removeLevel();
 
 		}
@@ -2237,7 +2234,7 @@ public:
 			const Expr* retVal = ret->getRetValue();
 			if (retVal)
 				parseExpression(retVal, false, true);
-			if (returnLoc == -1)
+			if (!isInInline())
 			{
 				int size = 0;
 				if (ret->getRetValue()) {
@@ -2253,7 +2250,7 @@ public:
 			}
 			else
 			{
-				AddInstructionComment(Jump, "Inline return", to_string(returnLoc));
+				AddInstructionComment(Jump, "Inline return", getInlineJumpLabelAppend());
 			}
 
 		}
@@ -2261,16 +2258,16 @@ public:
 			parseExpression(cast<const Expr>(s));
 		}
 		else if (isa<BreakStmt>(s)) {
-			AddInstructionComment(Jump, "brkstmt jmp", to_string(breakLoc));
+			AddJumpInlineCheckStrComment(Jump, "brkstmt jmp", to_string(breakLoc));
 		}
 		else if (isa<NullStmt>(s)) {
 		}
 		else if (isa<ContinueStmt>(s)) {
-			AddInstructionComment(Jump, "contstmt jmp", to_string(continueLoc));
+			AddJumpInlineCheckStrComment(Jump, "contstmt jmp", to_string(continueLoc));
 		}
 		else if (isa<DefaultStmt>(s)) {
 			DefaultStmt *caseD = cast<DefaultStmt>(s);
-			string labelName = to_string(caseD->getLocEnd().getRawEncoding());
+			string labelName = to_string(caseD->getLocEnd().getRawEncoding()) + getInlineJumpLabelAppend();
 			if (FindBuffer.find(labelName) == FindBuffer.end())
 			{
 				FindBuffer.insert(labelName);
@@ -2279,13 +2276,13 @@ public:
 			LocalVariables.addLevel();
 
 			if (caseD->getSubStmt())
-				parseStatement(caseD->getSubStmt(), breakLoc, continueLoc, returnLoc);
+				parseStatement(caseD->getSubStmt(), breakLoc, continueLoc);
 			LocalVariables.removeLevel();
 		}
 		else if (isa<CaseStmt>(s)) {
 			CaseStmt *caseS = cast<CaseStmt>(s);
 
-			string labelName = to_string(caseS->getLocEnd().getRawEncoding());
+			string labelName = to_string(caseS->getLocEnd().getRawEncoding()) + getInlineJumpLabelAppend();
 			if (FindBuffer.find(labelName) == FindBuffer.end())
 			{
 				FindBuffer.insert(labelName);
@@ -2296,7 +2293,7 @@ public:
 				parseExpression(caseS->getRHS());
 
 			if (caseS->getSubStmt())
-				parseStatement(caseS->getSubStmt(), breakLoc, continueLoc, returnLoc);
+				parseStatement(caseS->getSubStmt(), breakLoc, continueLoc);
 			LocalVariables.removeLevel();
 		}
 		else if (isa<SwitchStmt>(s)) {
@@ -2322,11 +2319,11 @@ public:
 							int val;
 							if (CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
 							{
-								caseLabels.push({ val, to_string(caseS->getLocEnd().getRawEncoding()) });
+								caseLabels.push({ val, to_string(caseS->getLocEnd().getRawEncoding()) + getInlineJumpLabelAppend()});
 							}
 							else
 							{
-								caseLabels.push({ (int)result.Val.getInt().getSExtValue(), to_string(caseS->getLocEnd().getRawEncoding()) });
+								caseLabels.push({ (int)result.Val.getInt().getSExtValue(), to_string(caseS->getLocEnd().getRawEncoding()) + getInlineJumpLabelAppend() });
 							}
 						}
 						else if (result.Val.isFloat())
@@ -2362,28 +2359,28 @@ public:
 
 			if (defaultCase)
 			{
-				AddInstructionComment(Jump, "Switch Default Jump", defaultCase->getLocEnd().getRawEncoding());
+				AddJumpInlineCheckComment(Jump, "Switch Default Jump", defaultCase->getLocEnd().getRawEncoding());
 			}
 			else
 			{
-				AddInstructionComment(Jump, "Switch End Jump", switchStmt->getLocEnd().getRawEncoding());
+				AddJumpInlineCheckComment(Jump, "Switch End Jump", switchStmt->getLocEnd().getRawEncoding());
 			}
 
 			//parse all
-			parseStatement(switchStmt->getBody(), switchStmt->getLocEnd().getRawEncoding(), continueLoc, returnLoc);
-			AddInstruction(Label, switchStmt->getLocEnd().getRawEncoding());
+			parseStatement(switchStmt->getBody(), switchStmt->getLocEnd().getRawEncoding(), continueLoc);
+			AddJumpInlineCheck(Label, switchStmt->getLocEnd().getRawEncoding());
 			FindBuffer.clear();
 		}
 		else if (isa<GotoStmt>(s))
 		{
 			GotoStmt *gotoStmt = cast<GotoStmt>(s);
-			AddInstruction(Jump, gotoStmt->getLabel()->getNameAsString());
+			AddJumpInlineCheckStr(Jump, gotoStmt->getLabel()->getNameAsString());
 		}
 		else if (isa<LabelStmt>(s))
 		{
 			LabelStmt *labelStmt = cast<LabelStmt>(s);
-			AddInstruction(Label, string(labelStmt->getName()));
-			parseStatement(labelStmt->getSubStmt(), breakLoc, continueLoc, returnLoc);
+			AddJumpInlineCheckStr(Label, string(labelStmt->getName()));
+			parseStatement(labelStmt->getSubStmt(), breakLoc, continueLoc);
 		}
 		else if (isa<GCCAsmStmt>(s))
 		{
@@ -2629,7 +2626,7 @@ public:
 									if (isRet || isExpr || inlineSpec) //inline it
 									{
 										inlined = true;
-										if (!addFunctionInline(name))
+										if (!addFunctionInline(name,to_string(e->getLocEnd().getRawEncoding())))
 										{
 											assert(false);
 										}
@@ -2660,13 +2657,13 @@ public:
 										}
 										else
 										{
-											parseStatement(body, -1, -1, e->getLocEnd().getRawEncoding());
-											if (CurrentFunction->endsWithInlineReturn(e->getLocEnd().getRawEncoding()))
+											parseStatement(body, -1, -1);
+											if (CurrentFunction->endsWithInlineReturn(getInlineJumpLabelAppend()))
 											{
 												CurrentFunction->RemoveLast();
 												//remove the last jump, but keep the label, just incase other places in the function have returns
 											}
-											AddInstruction(Label, e->getLocEnd().getRawEncoding());
+											AddInstruction(Label, getInlineJumpLabelAppend());
 										}
 										LocalVariables.removeLevel();
 										removeFunctionInline(name);
@@ -3169,10 +3166,10 @@ public:
 								if (e->getType()->isSpecificBuiltinType(clang::BuiltinType::Kind::Short))
 								{
 									AddInstruction(IsBitSet, 15);
-									AddInstruction(JumpFalse, e->getLocEnd().getRawEncoding());
+									AddJumpInlineCheck(JumpFalse, e->getLocEnd().getRawEncoding());
 									AddInstruction(PushInt, 0xFFFF0000);
 									AddInstructionComment(Or, "ExtSignWord");
-									AddInstruction(Label, e->getLocEnd().getRawEncoding());
+									AddJumpInlineCheck(Label, e->getLocEnd().getRawEncoding());
 								}
 							}
 						}
@@ -3520,7 +3517,7 @@ public:
 					AddInstruction(FromStack);
 					if (isLtoRValue)
 					{
-						parseExpression(bOp->getLHS(), false, true, true, true);
+						parseExpression(bOp->getLHS(), false, true, true, false);
 					}
 				}
 				else {
@@ -3541,51 +3538,85 @@ public:
 			}
 			if (bOp->getOpcode() == BO_LAnd)
 			{
-				parseExpression(bOp->getLHS(), false, true);
-				if (bOp->getLHS()->getType()->isAnyComplexType())
+				if (isLtoRValue)
 				{
-					ComplexToBoolean(bOp->getLHS()->getType()->isComplexType());
+					parseExpression(bOp->getLHS(), false, true);
+					if (bOp->getLHS()->getType()->isAnyComplexType())
+					{
+						ComplexToBoolean(bOp->getLHS()->getType()->isComplexType());
+					}
+					AddInstruction(Dup);
+					AddJumpInlineCheck(JumpFalse, bOp->getRHS()->getLocEnd().getRawEncoding());
+					parseExpression(bOp->getRHS(), false, true);
+					if (bOp->getRHS()->getType()->isAnyComplexType())
+					{
+						ComplexToBoolean(bOp->getRHS()->getType()->isComplexType());
+					}
+					AddInstruction(And);
+					AddJumpInlineCheck(Label, bOp->getRHS()->getLocEnd().getRawEncoding());
 				}
-				AddInstruction(Dup);
-				AddInstruction(JumpFalse, bOp->getRHS()->getLocEnd().getRawEncoding());
-				parseExpression(bOp->getRHS(), false, true);
-				if (bOp->getRHS()->getType()->isAnyComplexType())
+				else
 				{
-					ComplexToBoolean(bOp->getRHS()->getType()->isComplexType());
-				}
-				AddInstruction(And);
-				AddInstruction(Label, bOp->getRHS()->getLocEnd().getRawEncoding());
-				if (!isLtoRValue)
-				{
-					AddInstructionComment(Drop, "unused value");
+					//parse LHS and RHS as not LtoR so the results get dropped, but any function calls etc still happen
+					parseExpression(bOp->getLHS());
+					parseExpression(bOp->getRHS());
 				}
 				return true;
 			}
 			if (bOp->getOpcode() == BO_LOr)
 			{
-				parseExpression(bOp->getLHS(), false, true);
-				if (bOp->getLHS()->getType()->isAnyComplexType())
+				if (isLtoRValue)
 				{
-					ComplexToBoolean(bOp->getLHS()->getType()->isComplexType());
+
+
+					parseExpression(bOp->getLHS(), false, true);
+					if (bOp->getLHS()->getType()->isAnyComplexType())
+					{
+						ComplexToBoolean(bOp->getLHS()->getType()->isComplexType());
+					}
+					AddInstruction(Dup);
+					AddJumpInlineCheck(JumpTrue, bOp->getRHS()->getLocEnd().getRawEncoding());
+					parseExpression(bOp->getRHS(), false, true);
+					if (bOp->getRHS()->getType()->isAnyComplexType())
+					{
+						ComplexToBoolean(bOp->getRHS()->getType()->isComplexType());
+					}
+					AddInstruction(Or);
+					AddJumpInlineCheck(Label, bOp->getRHS()->getLocEnd().getRawEncoding());
 				}
-				AddInstruction(Dup);
-				AddInstruction(JumpTrue, bOp->getRHS()->getLocEnd().getRawEncoding());
-				parseExpression(bOp->getRHS(), false, true);
-				if (bOp->getRHS()->getType()->isAnyComplexType())
+				else
 				{
-					ComplexToBoolean(bOp->getRHS()->getType()->isComplexType());
-				}
-				AddInstruction(Or);
-				AddInstruction(Label, bOp->getRHS()->getLocEnd().getRawEncoding());
-				if (!isLtoRValue)
-				{
-					AddInstructionComment(Drop, "unused value");
+					//parse LHS and RHS as not LtoR so the results get dropped, but any function calls etc still happen
+					parseExpression(bOp->getLHS());
+					parseExpression(bOp->getRHS());
 				}
 				return true;
 			}
 
 			if (bOp->getLHS()->getType()->isAnyComplexType() || bOp->getRHS()->getType()->isAnyComplexType())
 			{
+				if (!isLtoRValue)
+				{
+					switch (bOp->getOpcode())
+					{
+					case BO_AddAssign:
+					case BO_AndAssign:
+					case BO_DivAssign:
+					case BO_MulAssign:
+					case BO_OrAssign:
+					case BO_RemAssign:
+					case BO_ShlAssign:
+					case BO_ShrAssign:
+					case BO_SubAssign:
+					case BO_XorAssign:
+						break;//these are ok if not LtoR, BO_Assign has already been handled
+					default:
+						parseExpression(bOp->getLHS());
+						parseExpression(bOp->getRHS());
+						Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
+						return true;
+					}
+				}
 				if (currFunction)
 				{
 					parseExpression(bOp->getLHS(), isAddr, true, true);
@@ -3971,76 +4002,72 @@ public:
 				case BO_ShrAssign: OpAssign(OK_ShiftRight); break;
 				default:
 				{
-
-					//c allows same type pointer to pointer subtraction to obtain the logical difference. 
-					if (isa<PointerType>(bOp->getLHS()->getType()) && isa<PointerType>(bOp->getRHS()->getType()))
+					if (isLtoRValue)
 					{
-						parseExpression(bOp->getLHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
-						parseExpression(bOp->getRHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
 
-						if (op == BO_Sub)
+						//c allows same type pointer to pointer subtraction to obtain the logical difference. 
+						if (isa<PointerType>(bOp->getLHS()->getType()) && isa<PointerType>(bOp->getRHS()->getType()))
 						{
-							const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
-							int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
-							int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+							parseExpression(bOp->getLHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
+							parseExpression(bOp->getRHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
 
-							AddInstructionCondition(bOp->getLHS()->getType()->isFloatingType(), FSub, Sub);
-
-							if (pSize > 1)
+							if (op == BO_Sub)
 							{
-								AddInstruction(PushInt, pSize);
-								AddInstruction(Div);
+								const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+								int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+
+								AddInstructionCondition(bOp->getLHS()->getType()->isFloatingType(), FSub, Sub);
+
+								if (pSize > 1)
+								{
+									AddInstruction(PushInt, pSize);
+									AddInstruction(Div);
+								}
+								return -1;
+							}
+						}
+						else if (isa<PointerType>(bOp->getLHS()->getType()))
+						{
+							//we need to parse left as an addr if its an array else its a pointer val
+							parseExpression(bOp->getLHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
+							parseExpression(bOp->getRHS(), false, true);
+
+							if (op == BO_Add || op == BO_Sub)
+							{
+								const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+								int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+								AddInstructionConditionally(pSize > 1, MultImm, pSize);
+							}
+						}
+						else if (isa<PointerType>(bOp->getRHS()->getType()))
+						{
+							//we need to parse right as an addr if its an array else its a pointer val
+							parseExpression(bOp->getLHS(), false, true);
+
+							if (op == BO_Add || op == BO_Sub)
+							{
+								const Type* pTypePtr = bOp->getRHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+								int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+								AddInstructionConditionally(pSize > 1, MultImm, pSize);
 							}
 
-
-							if (!isLtoRValue) {
-								Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
-								AddInstruction(Drop);
-							}
-							return -1;
+							parseExpression(bOp->getRHS(), bOp->getRHS()->getType().getTypePtr()->isArrayType(), true);
 						}
-					}
-					else if (isa<PointerType>(bOp->getLHS()->getType()))
-					{
-						//we need to parse left as an addr if its an array else its a pointer val
-						parseExpression(bOp->getLHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
-						parseExpression(bOp->getRHS(), false, true);
-
-						if (op == BO_Add || op == BO_Sub)
+						else
 						{
-							const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
-							int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
-							int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
-							AddInstructionConditionally(pSize > 1, MultImm, pSize);
-						}
-					}
-					else if (isa<PointerType>(bOp->getRHS()->getType()))
-					{
-						//we need to parse right as an addr if its an array else its a pointer val
-						parseExpression(bOp->getLHS(), false, true);
-
-						if (op == BO_Add || op == BO_Sub)
-						{
-							const Type* pTypePtr = bOp->getRHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
-							int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
-							int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
-							AddInstructionConditionally(pSize > 1, MultImm, pSize);
+							//no pointer operations
+							parseExpression(bOp->getLHS(), false, true);
+							parseExpression(bOp->getRHS(), false, true);
 						}
 
-						parseExpression(bOp->getRHS(), bOp->getRHS()->getType().getTypePtr()->isArrayType(), true);
-					}
-					else
-					{
-						//no pointer operations
-						parseExpression(bOp->getLHS(), false, true);
-						parseExpression(bOp->getRHS(), false, true);
-					}
-
-					if (bOp->getLHS()->getType()->isFloatingType()) {
-						switch (op) {
+						if (bOp->getLHS()->getType()->isFloatingType()) {
+							switch (op) {
 							case BO_EQ: AddInstruction(FCmpEq); break;
 							case BO_Mul: AddInstruction(FMult); break;
-							case BO_Div: 
+							case BO_Div:
 							{
 								bool isZeroDiv;
 								AddInstruction(FDiv, &isZeroDiv);
@@ -4048,7 +4075,7 @@ public:
 								{
 									Warn("Zero division error detected", rewriter, bOp->getRHS()->getSourceRange());//just warn the user of the undefined behaviour
 								}
-							} 
+							}
 							break;
 							case BO_Rem: AddInstruction(FMod); break;
 							case BO_Sub:  AddInstruction(FSub); break;
@@ -4062,11 +4089,11 @@ public:
 							case BO_LOr: AddInstruction(Or); break;//needs changing
 
 							default:
-							Throw("Unimplemented binary floating op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
+								Throw("Unimplemented binary floating op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
+							}
 						}
-					}
-					else {
-						switch (op) {
+						else {
+							switch (op) {
 							case BO_EQ: AddInstruction(CmpEq); break;
 							case BO_Mul: AddInstruction(Mult); break;
 							case BO_Div:
@@ -4094,14 +4121,15 @@ public:
 							case BO_Shl: AddInstruction(ShiftLeft); break;
 							case BO_Shr: AddInstruction(ShiftRight); break;
 							default:
-							Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
+								Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
+							}
 						}
 					}
-
-					if (!isLtoRValue) {
-
+					else
+					{
+						parseExpression(bOp->getLHS());
+						parseExpression(bOp->getRHS());
 						Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
-						AddInstruction(Drop);
 					}
 				}
 
@@ -4415,13 +4443,13 @@ public:
 			const ConditionalOperator *cond = cast<const ConditionalOperator>(e);
 
 			parseExpression(cond->getCond(), false, true);
-			AddInstruction(JumpFalse, cond->getRHS()->getLocStart().getRawEncoding());
+			AddJumpInlineCheck(JumpFalse, cond->getRHS()->getLocStart().getRawEncoding());
 			parseExpression(cond->getLHS(), false, true);
-			AddInstruction(Jump, cond->getLHS()->getLocEnd().getRawEncoding());
+			AddJumpInlineCheck(Jump, cond->getLHS()->getLocEnd().getRawEncoding());
 
-			AddInstruction(Label, cond->getRHS()->getLocStart().getRawEncoding());
+			AddJumpInlineCheck(Label, cond->getRHS()->getLocStart().getRawEncoding());
 			parseExpression(cond->getRHS(), false, true);
-			AddInstruction(Label, cond->getLHS()->getLocEnd().getRawEncoding());
+			AddJumpInlineCheck(Label, cond->getLHS()->getLocEnd().getRawEncoding());
 		}
 		else if (isa<ImaginaryLiteral>(e))
 		{
@@ -4451,17 +4479,17 @@ public:
 			//out << "COND:" << endl;
 			parseExpression(bco->getCond(), false, true);
 			AddInstruction(Dup);
-			AddInstruction(JumpFalse, bco->getFalseExpr()->getExprLoc().getRawEncoding());
+			AddJumpInlineCheck(JumpFalse, bco->getFalseExpr()->getExprLoc().getRawEncoding());
 			if (!isLtoRValue)
 			{
 				AddInstruction(Drop);//drop the value if not LtoR
 			}
-			AddInstruction(Jump, bco->getLocStart().getRawEncoding());
+			AddJumpInlineCheck(Jump, bco->getLocStart().getRawEncoding());
 
-			AddInstruction(Label, bco->getFalseExpr()->getExprLoc().getRawEncoding());
+			AddJumpInlineCheck(Label, bco->getFalseExpr()->getExprLoc().getRawEncoding());
 			AddInstruction(Drop);
 			parseExpression(bco->getFalseExpr(), false, isLtoRValue);//LtoR should handle the drop
-			AddInstruction(Label, bco->getLocStart().getRawEncoding());
+			AddJumpInlineCheck(Label, bco->getLocStart().getRawEncoding());
 		}
 		else if (isa<OpaqueValueExpr>(e))
 		{
@@ -4602,10 +4630,10 @@ public:
 					if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short))
 					{
 						AddInstruction(IsBitSet, 15);
-						AddInstruction(JumpFalse, arr->getLocEnd().getRawEncoding());
+						AddJumpInlineCheck(JumpFalse, arr->getLocEnd().getRawEncoding());
 						AddInstruction(PushInt, 0xFFFF0000);
 						AddInstructionComment(Or, "ExtSignWord");
-						AddInstruction(Label, arr->getLocEnd().getRawEncoding());
+						AddJumpInlineCheck(Label, arr->getLocEnd().getRawEncoding());
 					}
 				}
 

@@ -895,9 +895,9 @@ void FunctionData::AddSimpleOp(OpcodeKind operation)
 		assert(false && "Not a simple operation passed");
 	}
 }
-bool FunctionData::endsWithInlineReturn(unsigned position) const
+bool FunctionData::endsWithInlineReturn(string position) const
 {
-	return Instructions.size() && Instructions.back()->GetKind() == OK_Jump && Instructions.back()->getString() == to_string(position);
+	return Instructions.size() && Instructions.back()->GetKind() == OK_Jump && Instructions.back()->getString() == position;
 }
 
 void FunctionData::setUsed()
