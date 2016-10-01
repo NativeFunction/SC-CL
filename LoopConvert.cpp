@@ -5545,6 +5545,10 @@ public:
 			}
 
 		}
+		else if (isa<ParenExpr>(e)) {
+			const ParenExpr *parenExpr = cast<const ParenExpr>(e);
+			ParseLiteral(parenExpr->getSubExpr(), isAddr, isLtoRValue);
+		}
 		else
 			Throw("Class " + string(e->getStmtClassName()) + " is unimplemented for a static define");
 		return -1;
