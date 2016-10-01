@@ -5245,7 +5245,7 @@ public:
 
 			if (oldStaticInc - SavedStaticInc < size)
 			{
-				cout << "init list size is less adding " << size - (oldStaticInc - SavedStaticInc) << " size: " << size << endl;
+				//cout << "init list size is less adding " << size - (oldStaticInc - SavedStaticInc) << " size: " << size << endl;
 
 				#if STATIC_PADDING_DEBUG == 0
 				oldStaticInc += size - (oldStaticInc - SavedStaticInc);
@@ -5257,11 +5257,6 @@ public:
 			}
 			return true;
 		}
-
-		//need to add full pointer init support for 
-		//int* vstack_ptr = vstack + 4;
-		//this will require these function below and more for parseing unevaluable expressions
-
 		else if (isa<UnaryOperator>(e)) {
 			isCurrentExprEvaluable = false;
 			const UnaryOperator *op = cast<const UnaryOperator>(e);
@@ -5342,8 +5337,8 @@ public:
 
 			switch (icast->getCastKind())
 			{
-				case CK_ArrayToPointerDecay://char* x = "hello";
-				if (isa<StringLiteral>(icast->getSubExpr()))
+				case CK_ArrayToPointerDecay:
+				if (isa<StringLiteral>(icast->getSubExpr()))//char* x = "hello";
 				{
 					const StringLiteral *literal = cast<const StringLiteral>(icast->getSubExpr());
 					Entryfunction.addOpPushString(literal->getString().str());
@@ -5372,13 +5367,10 @@ public:
 						uint32_t i = 0;
 						for (; i < functionsNew.size(); i++)
 						{
-							if (functionsNew[i]->Hash() == hash)
+							if (functionsNew[i]->Hash() == hash && functionsNew[i]->Name() == name)
 							{
-								if (functionsNew[i]->Name() == name)
-								{
-									Entryfunction.addUsedFunc(functionsNew[i]);
-									break;
-								}
+								Entryfunction.addUsedFunc(functionsNew[i]);
+								break;
 							}
 						}
 
@@ -5443,11 +5435,6 @@ public:
 				Throw("Cast " + string(icast->getCastKindName()) + " is unimplemented for a static define");
 
 			}
-		}
-		else if (isa<ArraySubscriptExpr>(e)) {
-			Throw("ASE", rewriter, e->getExprLoc());
-			Throw("parseArraySubscriptExpr", rewriter, e->getExprLoc());
-			//return parseArraySubscriptExpr(e, isAddr, isLtoRValue);
 		}
 		else if (isa<BinaryOperator>(e)) {
 			isCurrentExprEvaluable = false;
