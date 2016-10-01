@@ -449,198 +449,10 @@ uint32_t getNumVirtMethods(const CXXRecordDecl *classDecl) {
 
 #pragma region Global_Opcode_Functions
 #pragma region Opcodes_Push
-string iPush(int64_t val) {
-	if (val < -1)
-		return "Push " + to_string(val);
-	else if (val >= -1 && val <= 7)
-		return "Push_" + to_string(val);
-	else if ((val & 0xFF) == val)
-		return "PushB " + to_string(val);
-	else if (val > -32768 && val < 32767)
-		return "PushS " + to_string(val);
-	else if ((val & 0xFFFFFF) == val)
-		return "PushI24 " + to_string(val);
-	else
-	{
-		return "Push " + to_string(val);
-	}
-}
-string fPush(double value)
-{
-	if (value == -1.0)
-		return "PushF_-1";
-	if (value == 0.0 || value == -0.0)//double has -ive 0 and +ive 0
-		return "PushF_0";
-	if (value == 1.0)
-		return "PushF_1";
-	if (value == 2.0)
-		return "PushF_2";
-	if (value == 3.0)
-		return "PushF_3";
-	if (value == 4.0)
-		return "PushF_4";
-	if (value == 5.0)
-		return "PushF_5";
-	if (value == 6.0)
-		return "PushF_6";
-	if (value == 7.0)
-		return "PushF_7";
-	return "PushF " + to_string(value);
-}
-string fPush(llvm::APFloat value)
-{
-	if (&value.getSemantics() == &llvm::APFloat::IEEEsingle)
-		return fPush((double)value.convertToFloat());
-	else
-		return fPush(value.convertToDouble());
-}
+
 double extractAPFloat(llvm::APFloat value)
 {
 	return &value.getSemantics() == &llvm::APFloat::IEEEsingle ? (double)value.convertToFloat() : value.convertToDouble();
-}
-#pragma endregion
-#pragma region Opcodes_Math
-string mult(int value)
-{
-	if (value < -32768 || value > 32767)
-		return iPush(value) + "\r\nMult";
-	else if (value > 0xFF || value < 0)
-		return "Mult2 " + to_string(value);
-	else
-		return "Mult1 " + to_string(value);
-}
-string add(int value)
-{
-	if (value == 0)
-		return "";
-	if (value < -32768 || value > 32767)
-		return iPush(value) + "\r\nAdd";
-	else if (value > 0xFF || value < 0)
-		return "Add2 " + to_string(value);
-	else
-		return "Add1 " + to_string(value);
-}
-string sub(int value)
-{
-	if (value < -32767 || value > 32768)
-		return iPush(value) + "\r\nSub";
-	else
-		return "Add2 " + to_string(-value);
-}
-string div(int value)
-{
-	return iPush(value) + "\r\nDiv";
-}
-#pragma endregion
-#pragma region Opcodes_Var
-string frameSet(int index) {
-	if ((index & 0xFF) == index) {
-		return "SetFrame1 " + to_string(index);
-	}
-	else if ((index & 0xFFFF) == index) {
-		return "SetFrame2 " + to_string(index);
-	}
-	else
-		Throw("SetFrame Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-	return "null";
-}
-string frameGet(int index) {
-	if ((index & 0xFF) == index) {
-		return "GetFrame1 " + to_string(index);
-	}
-	else if ((index & 0xFFFF) == index) {
-		return "GetFrame2 " + to_string(index);
-	}
-	else
-		Throw("GetFrame Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-	return "null";
-}
-string pFrame(const int index) {
-	if ((index & 0xFF) == index)
-		return "GetFrameP1 " + to_string(index);
-	else if ((index & 0xFFFF) == index)
-		return "GetFrameP2 " + to_string(index);
-	else
-		Throw("GetFrameP Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-	return "null";
-}
-string setGlobal(int index) {
-	if ((index & 0xFFFF) == index)
-		return "SetGlobal2 " + to_string(index);
-	else if ((index & 0xFFFFFF) == index)
-		return "SetGlobal3 " + to_string(index);
-	else
-		Throw("SetGlobal Index \"" + to_string(index) + "\" is out of range 0 - 16777215");
-	return "null";
-}
-string getGlobal(int index) {
-	if ((index & 0xFFFF) == index)
-		return "GetGlobal2 " + to_string(index);
-	else if ((index & 0xFFFFFF) == index)
-		return "GetGlobal3 " + to_string(index);
-	else
-		Throw("GetGlobal Index \"" + to_string(index) + "\" is out of range 0 - 16777215");
-	return "null";
-}
-string getGlobalp(const int index) {
-	if ((index & 0xFFFF) == index)
-		return "GetGlobalP2 " + to_string(index);
-	else if ((index & 0xFFFFFF) == index)
-		return "GetGlobalP3 " + to_string(index);
-	else
-		Throw("GetGlobalP Index \"" + to_string(index) + "\" is out of range 0 - 16777215");
-	return "null";
-}
-string setStatic(int index) {
-	if ((index & 0xFF) == index)
-		return "SetStatic1 " + to_string(index);
-	else if ((index & 0xFFFF) == index)
-		return "SetStatic2 " + to_string(index);
-	else
-		Throw("SetStatic Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-	return "null";
-}
-string getStatic(int index) {
-	if ((index & 0xFF) == index)
-		return "GetStatic1 " + to_string(index);
-	else if ((index & 0xFFFF) == index)
-		return "GetStatic2 " + to_string(index);
-	else
-		Throw("GetStatic Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-	return "null";
-}
-string getStaticp(const int index) {
-	if ((index & 0xFF) == index)
-		return "GetStaticP1 " + to_string(index);
-	else if ((index & 0xFFFF) == index)
-		return "GetStaticP2 " + to_string(index);
-	else
-		Throw("GetStaticP Index \"" + to_string(index) + "\" is out of range 0 - 65535");
-	return "null";
-}
-#pragma endregion
-#pragma region Opcodes_Immediate
-string GetImm(int size)
-{
-	return add(size * 4) + "\r\npGet";
-	int aSize = size * 4;
-	if ((size & 0xFF) == size)
-		return "Add1 " + to_string(aSize) + "\r\npGet";
-	else if ((size & 0xFFFF) == size)
-		return "Add2 " + to_string(aSize) + "\r\npGet";
-	else
-		return iPush(aSize) + "\r\nAdd\r\npGet";
-}
-string SetImm(int size)
-{
-	return add(size * 4) + "\r\npSet";
-	int aSize = size * 4;
-	if ((size & 0xFF) == size)
-		return "Add1 " + to_string(aSize) + "\r\npSet";
-	else if ((size & 0xFFFF) == size)
-		return "Add2 " + to_string(aSize) + "\r\npSet";
-	else
-		return iPush(aSize) + "\r\nAdd\r\npSet";
 }
 #pragma endregion
 #pragma endregion
@@ -2657,7 +2469,6 @@ public:
 				int index = LocalVariables.addDecl("", size);
 				if (size > 1)
 				{
-					out << iPush(size) << " //Type Size\r\n" << pFrame(index) << "\r\nFromStack\r\n" << pFrame(index) << " //compound literal ptr decay\r\n";
 					AddInstructionComment(PushInt, "Type Size", size);
 					AddInstruction(GetFrameP, index);
 					AddInstruction(FromStack);
@@ -2665,7 +2476,6 @@ public:
 				}
 				else
 				{
-					out << frameSet(index) << "\r\n" << pFrame(index) << " //compound literal ptr decay\r\n";
 					AddInstruction(SetFrame, index);
 					AddInstructionComment(GetFrameP, "compound literal ptr decay", index);
 				}
@@ -5151,6 +4961,9 @@ public:
 
 			out << endl << endl;
 			out << ":" << getLocStart(CS) << endl << ":" << CS->getDeclName().getAsString() << endl << "Function " << CS->getNumParams() + 1 << "//" << getNameForFunc(CS) << endl;
+			FunctionData* ctor = new FunctionData("@" + CS->getDeclName().getAsString(), CS->getNumParams() + 1);
+			functionsNew.push_back(ctor);
+			CurrentFunction = ctor;
 			currFunction = CS;
 
 			for (auto *PI : CS->params()) {
@@ -5162,8 +4975,8 @@ public:
 				if (IS->getMember()) {
 
 					parseExpression(IS->getInit());
-					out << "GetFrame1 0 //\"this\"" << endl;
-					out << SetImm(getSizeFromBytes(getCXXOffsetOfNamedDecl(d, IS->getMember()))) << " //" << IS->getMember()->getDeclName().getAsString() << endl;
+					AddInstructionComment(GetFrame, "this", 0);
+					AddInstructionComment(SetImm, IS->getMember()->getDeclName().getAsString(), getSizeFromBytes(getCXXOffsetOfNamedDecl(d, IS->getMember())))
 				}
 				else {
 					if (isa<CXXConstructExpr>(IS->getInit())) {
@@ -5171,7 +4984,7 @@ public:
 						for (auto *ARG : constructor->arguments()) {
 							parseExpression(ARG);
 						}
-						out << "GetFrame1 0 //\"this\"" << endl;
+						AddInstructionComment(GetFrame, "this", 0);
 					}
 					parseExpression(IS->getInit(), false, false, false);
 				}
@@ -5184,7 +4997,10 @@ public:
 			for (uint32_t i = 0; i < currFunction->getNumParams(); i++) {
 				paramSize += getSizeFromBytes(getSizeOfType(currFunction->getParamDecl(i)->getType().getTypePtr()));
 			}
-			out << "Return " << paramSize + (isa<CXXMethodDecl>(currFunction)) << " 0" << endl;
+			if (!CurrentFunction->endsWithReturn())
+			{
+				AddInstruction(Return, paramSize + (isa<CXXMethodDecl>(currFunction)), 0);
+			}
 
 			out << "#FuncEnd L " << LocalVariables.getCurrentSize() - (isa<CXXMethodDecl>(CS) ? 1 : 0) << endl << endl;
 			if (d->isPolymorphic()) {
