@@ -92,7 +92,8 @@ enum OpcodeKind{
 	OK_Label, 
 	OK_LabelLoc,
 	OK_ShiftLeft,
-	OK_ShiftRight
+	OK_ShiftRight,
+	OK_GetHash
 	//do these really need including
 	//OK_Catch
 	//OK_Throw
@@ -454,6 +455,7 @@ public:
 		Instructions.push_back(op);
 	}
 	void addOpLabelLoc(unsigned int rawEncoding){ addOpLabelLoc(to_string(rawEncoding)); }
+	void addOpGetHash(){ Instructions.push_back(new Opcode(OK_GetHash)); }
 
 #pragma endregion
 };

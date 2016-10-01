@@ -241,6 +241,7 @@ uint8_t Opcode::getByte(int offset) const
 
 int Opcode::getSizeEstimate() const
 {
+	bool isRDR = false;
 	switch (opcodeKind)
 	{
 	case OK_Nop:
@@ -357,14 +358,14 @@ int Opcode::getSizeEstimate() const
 	case OK_JumpLE:
 		return 3;
 	case OK_PushString:
-	{
-		bool rdr = false;
-		if (rdr)
+		if (isRDR)
 		{
 			return 3 + getString().length();//PushString <len> <string> <nullTerminator>
 		}
-	}
-	return 4;//just a guess as it depends where it is placed in string table
+		else
+		{
+			return 4;//just a guess as it depends where it is placed in string table
+		}
 	case OK_StrCopy:
 	case OK_ItoS:
 	case OK_StrAdd:
@@ -474,6 +475,15 @@ int Opcode::getSizeEstimate() const
 		}
 		return val;
 	}
+	case OK_GetHash:
+		if (isRDR)
+		{
+			return 4;//CallNative
+		}
+		else
+		{
+			return 1;//GetHash opcode
+		}
 	}
 	assert(false);//trying to figure out which path isnt returning a value
 	return 0;
@@ -526,6 +536,7 @@ string Opcode::toString() const
 	case OK_FtoV: current = "FtoV"; break;
 	case OK_ShiftLeft: current = "CallNative shift_left 2 1"; break;
 	case OK_ShiftRight: current = "CallNative shift_right 2 1"; break;
+	case OK_GetHash: current = "CallNative get_hash_key 1 1"; break;
 	case OK_PushInt:
 	{
 		int value = getInt();

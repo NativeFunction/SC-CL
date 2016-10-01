@@ -27,6 +27,7 @@ extern __intrinsic void strcpy(char* dest, char* src, const byte destBufferLen);
 extern __intrinsic void stradd(char* dest, char* src, const byte destBufferLen);
 extern __intrinsic void straddi(char* dest, int value, const byte destBufferLen);
 extern __intrinsic void itos(char* dest, int value, const byte destBufferLen);
+extern __intrinsic int getHashKey(char *string);
 //}
 #pragma endregion
 
