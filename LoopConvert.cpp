@@ -5283,7 +5283,7 @@ public:
 							base = cast<ImplicitCastExpr>(base)->getSubExpr();
 
 						const DeclRefExpr *declRef = getDeclRefExpr(base);
-						const Type* type = const_cast<Type*>(base->getType().getTypePtr());
+						Type* type = const_cast<Type*>(base->getType().getTypePtr());
 
 						if (type == NULL)
 							type = const_cast<Type*>(declRef->getType().getTypePtr());
