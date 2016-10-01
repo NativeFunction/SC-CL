@@ -169,7 +169,7 @@ string getInlineJumpLabelAppend()
 	}
 	return "";
 }
-bool isInInline(){ return InlineItems.size(); }
+bool isInInline() { return InlineItems.size(); }
 bool isFunctionInInline(string fName)
 {
 	uint32_t hash = Utils::Hashing::Joaat((char*)fName.c_str());
@@ -187,7 +187,7 @@ bool addFunctionInline(string fName, string returnLoc)
 {
 	if (isFunctionInInline(fName))
 		return false;
-	InlineItems.push_back({ Utils::Hashing::Joaat((char*)fName.c_str()) , fName, getInlineJumpLabelAppend() + "_" + returnLoc});
+	InlineItems.push_back({ Utils::Hashing::Joaat((char*)fName.c_str()) , fName, getInlineJumpLabelAppend() + "_" + returnLoc });
 	return true;
 }
 void removeFunctionInline(string fName)
@@ -482,6 +482,21 @@ double extractAPFloat(llvm::APFloat value)
 #pragma endregion
 #pragma endregion
 
+#pragma region Global_Local/Static_Functions
+const DeclRefExpr *getDeclRefExpr(const Expr *e) {
+	if (isa<DeclRefExpr>(e)) {
+		return cast<const DeclRefExpr>(e);
+	}
+	else {
+		for (auto *CS : e->clang::Stmt::children()) {
+			if (isa<Expr>(CS)) {
+				return getDeclRefExpr(cast<const Expr>(CS));
+			}
+		}
+	}
+	return NULL;
+}
+#pragma endregion
 
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
 public:
@@ -605,7 +620,7 @@ public:
 		{
 			if (isLtoRValue && !isAddr)
 			{
-				AddInstructionComment(GetFrame, "(pdecl)" + key,index);
+				AddInstructionComment(GetFrame, "(pdecl)" + key, index);
 				if (size == 1)//char
 				{
 					AddInstructionComment(ShiftRight, "char type", 24);
@@ -645,7 +660,7 @@ public:
 				{
 					AddInstructionComment(SetFrame, "(pdecl)" + key, index);
 				}
-				
+
 			}
 		}
 		else if (globals.find(key) != globals.end()) {
@@ -664,7 +679,7 @@ public:
 			}
 			else if (isAddr)
 			{
-				AddInstructionComment(GetGlobalP,"Global_" + key, index);
+				AddInstructionComment(GetGlobalP, "Global_" + key, index);
 			}
 			else if (isAssign)
 			{
@@ -682,7 +697,7 @@ public:
 					AddInstruction(Mod);
 					AddInstructionComment(ShiftLeft, "short type", 16);
 				}
-				if(size > 4)//fromStack
+				if (size > 4)//fromStack
 				{
 					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
 					AddInstructionComment(GetGlobalP, "&Global_" + key, index);
@@ -729,7 +744,7 @@ public:
 					AddInstructionComment(ShiftLeft, "short type", 16);
 				}
 
-				if(size > 4)//fromStack
+				if (size > 4)//fromStack
 				{
 					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
 					AddInstructionComment(GetStaticP, "&" + key, index);
@@ -873,19 +888,6 @@ public:
 			}
 		}
 		return true;
-	}
-	const DeclRefExpr *getDeclRefExpr(const Expr *e) {
-		if (isa<DeclRefExpr>(e)) {
-			return cast<const DeclRefExpr>(e);
-		}
-		else {
-			for (auto *CS : e->clang::Stmt::children()) {
-				if (isa<Expr>(CS)) {
-					return getDeclRefExpr(cast<const Expr>(CS));
-				}
-			}
-		}
-		return NULL;
 	}
 	#pragma endregion
 
@@ -1159,7 +1161,7 @@ public:
 					parseExpression(argArray[0], false, true);
 					bool zeroDiv;
 					AddInstruction(Div, &zeroDiv);
-					if (zeroDiv){
+					if (zeroDiv) {
 						Warn("Zero division error detected", rewriter, argArray[0]->getSourceRange());//just warn the user of the undefined behaviour)
 					}
 					return true;
@@ -1254,7 +1256,7 @@ public:
 						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
 					}
 				}
-				else 
+				else
 				{
 					Throw("setframe must have signature \"extern __intrinsic void setframe(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
 				}
@@ -1365,7 +1367,7 @@ public:
 							parseExpression(argArray[0], true, true);
 							AddInstruction(PSet);
 						}
-						else{
+						else {
 							AddInstruction(PushInt, itemCount);
 							parseExpression(argArray[1], true, true);
 							AddInstruction(ToStack);
@@ -1423,7 +1425,7 @@ public:
 						AddInstruction(Drop);
 						LocalVariables.removeLevel();
 					}
-					
+
 
 				}
 				else
@@ -1956,7 +1958,7 @@ public:
 								AddInstruction(PushInt, value);
 								AddInstruction(GetFrameP, secondItemIndex);
 								AddInstruction(FromStack);
-								
+
 								//Put them back on stack in reverse
 								AddInstruction(PushInt, value);
 								AddInstruction(GetFrameP, firstItemIndex);
@@ -2319,7 +2321,7 @@ public:
 							int val;
 							if (CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
 							{
-								caseLabels.push({ val, to_string(caseS->getLocEnd().getRawEncoding()) + getInlineJumpLabelAppend()});
+								caseLabels.push({ val, to_string(caseS->getLocEnd().getRawEncoding()) + getInlineJumpLabelAppend() });
 							}
 							else
 							{
@@ -2347,7 +2349,7 @@ public:
 					llvm::errs() << "Unexpected Statement: " << switchCaseList->getStmtClassName();
 				switchCaseList = switchCaseList->getNextSwitchCase();
 			}
-			if(!caseLabels.size())
+			if (!caseLabels.size())
 			{
 				Throw("Switch statement contains no cases", rewriter, switchStmt->getSourceRange());
 			}
@@ -2406,16 +2408,16 @@ public:
 	/// <param name="printVTable">if set to <c>true</c> [print v table].</param>
 	/// <param name="isAssign">if set to <c>true</c> [is assign].</param>
 	/// <returns></returns>
-	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, bool isAssign = false, bool isArrToPtrDecay= false ) {
+	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, bool isAssign = false, bool isArrToPtrDecay = false) {
 		Expr::EvalResult result;
-		if(e->EvaluateAsRValue(result, *context) && !result.HasSideEffects)
+		if (e->EvaluateAsRValue(result, *context) && !result.HasSideEffects)
 		{
-			if(result.Val.isInt())
+			if (result.Val.isInt())
 			{
-				if(!isLtoRValue)
+				if (!isLtoRValue)
 					return -1;
 				int val;
-				if(CheckExprForSizeOf(e->IgnoreParens(), &val))
+				if (CheckExprForSizeOf(e->IgnoreParens(), &val))
 				{
 					AddInstruction(PushInt, val);
 				}
@@ -2423,7 +2425,7 @@ public:
 				{
 					int64_t resValue = result.Val.getInt().getSExtValue();
 
-					if(doesInt64FitIntoInt32(resValue))
+					if (doesInt64FitIntoInt32(resValue))
 					{
 						string value = to_string(resValue);
 						Warn("Integer overflow. Value: " + value + " is out of bounds of (-2,147,483,648 to 2,147,483,647). Changed value to " + to_string((int32_t)resValue), rewriter, e->getExprLoc(), e->getExprLoc().getLocWithOffset(value.length() - 1));
@@ -2433,24 +2435,24 @@ public:
 				}
 				return -1;
 			}
-			else if(result.Val.isFloat())
+			else if (result.Val.isFloat())
 			{
-				if(!isLtoRValue)
+				if (!isLtoRValue)
 					return -1;
 				AddInstruction(PushFloat, extractAPFloat(result.Val.getFloat()));
 				return -1;
 			}
-			else if(result.Val.isComplexFloat())
+			else if (result.Val.isComplexFloat())
 			{
-				if(!isLtoRValue)
+				if (!isLtoRValue)
 					return -1;
 				AddInstruction(PushFloat, extractAPFloat(result.Val.getComplexFloatReal()));
 				AddInstruction(PushFloat, extractAPFloat(result.Val.getComplexFloatImag()));
 				return -1;
 			}
-			else if(result.Val.isComplexInt())
+			else if (result.Val.isComplexInt())
 			{
-				if(!isLtoRValue)
+				if (!isLtoRValue)
 					return -1;
 				AddInstruction(PushInt, result.Val.getComplexIntReal().getSExtValue());
 				AddInstruction(PushInt, result.Val.getComplexIntImag().getSExtValue());
@@ -2496,7 +2498,7 @@ public:
 						uint32_t res = 0;
 						for (int j = 0; j < 4; j++)
 						{
-							if (i + j < litSize){
+							if (i + j < litSize) {
 								res |= ptr[i + j] << ((3 - j) << 3);
 							}
 						}
@@ -2504,8 +2506,8 @@ public:
 					}
 				}
 			}
-			
-			
+
+
 		}
 		else if (isa<CallExpr>(e)) {
 			const CallExpr *call = cast<const CallExpr>(e);
@@ -2626,7 +2628,7 @@ public:
 									if (isRet || isExpr || inlineSpec) //inline it
 									{
 										inlined = true;
-										if (!addFunctionInline(name,to_string(e->getLocEnd().getRawEncoding())))
+										if (!addFunctionInline(name, to_string(e->getLocEnd().getRawEncoding())))
 										{
 											assert(false);
 										}
@@ -2708,7 +2710,7 @@ public:
 			}
 			else
 				Throw("Unexpected Expression for Callee!", rewriter, callee->getExprLoc());
-				LocalVariables.removeLevel();
+			LocalVariables.removeLevel();
 			return 1;
 
 		}
@@ -2737,8 +2739,8 @@ public:
 				break;
 				case clang::CK_ArrayToPointerDecay:
 
-						parseExpression(icast->getSubExpr(), isAddr, isLtoRValue, printVTable, isAssign, true);
-				
+				parseExpression(icast->getSubExpr(), isAddr, isLtoRValue, printVTable, isAssign, true);
+
 				break;
 				case clang::CK_LValueToRValue:
 				{
@@ -2787,7 +2789,7 @@ public:
 								out << "GetArrayP2 1  " << " //Cast : " << base->getDeclName().getAsString() << " to " << icast->getType()->getPointeeCXXRecordDecl()->getDeclName().getAsString() << endl;
 							AddInstructionComment(GetArrayP, base->getDeclName().getAsString() + "to" +
 								(icast->getType()->getAsCXXRecordDecl() ? icast->getType()->getAsCXXRecordDecl()->getDeclName().getAsString() :
-									icast->getType()->getPointeeCXXRecordDecl()->getDeclName().getAsString()), 1);
+												  icast->getType()->getPointeeCXXRecordDecl()->getDeclName().getAsString()), 1);
 						}
 						else {
 							parseExpression(icast->getSubExpr());
@@ -3124,7 +3126,7 @@ public:
 				const Type* type = e->getType().getTypePtr();
 				int size = getSizeOfType(type);
 				int bSize = getSizeFromBytes(size);
-				
+
 				if (!isAddr && !isArrToPtrDecay && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 				{
 					if (bSize > 1)
@@ -3186,7 +3188,7 @@ public:
 						}
 					}
 				}
-				
+
 
 				return true;
 			}
@@ -3259,7 +3261,7 @@ public:
 					{
 						AddInstruction(FAddImm, 1.0);
 					}
-					else if(subE->getType()->isComplexType())
+					else if (subE->getType()->isComplexType())
 					{
 						LocalVariables.addLevel();
 						int index = LocalVariables.addDecl("complexTemp", 1);
@@ -3268,7 +3270,7 @@ public:
 						AddInstruction(GetFrame, index);
 						LocalVariables.removeLevel();
 					}
-					else if(subE->getType()->isComplexIntegerType())
+					else if (subE->getType()->isComplexIntegerType())
 					{
 						LocalVariables.addLevel();
 						int index = LocalVariables.addDecl("complexTemp", 1);
@@ -3285,9 +3287,9 @@ public:
 					{
 						AddInstruction(AddImm, pMult);
 					}
-					if(isLtoRValue)
+					if (isLtoRValue)
 					{
-						if(subE->getType()->isAnyComplexType())
+						if (subE->getType()->isAnyComplexType())
 						{
 							LocalVariables.addLevel();
 							int index = LocalVariables.addDecl("complex", 2);
@@ -3310,11 +3312,11 @@ public:
 				else if (op->isDecrementOp()) {
 					parseExpression(subE, false, true);
 
-					if(subE->getType()->isRealFloatingType())
+					if (subE->getType()->isRealFloatingType())
 					{
 						AddInstruction(FAddImm, -1.0);
 					}
-					else if(subE->getType()->isComplexType())
+					else if (subE->getType()->isComplexType())
 					{
 						LocalVariables.addLevel();
 						int index = LocalVariables.addDecl("complexTemp", 1);
@@ -3323,7 +3325,7 @@ public:
 						AddInstruction(GetFrame, index);
 						LocalVariables.removeLevel();
 					}
-					else if(subE->getType()->isComplexIntegerType())
+					else if (subE->getType()->isComplexIntegerType())
 					{
 						LocalVariables.addLevel();
 						int index = LocalVariables.addDecl("complexTemp", 1);
@@ -3332,7 +3334,7 @@ public:
 						AddInstruction(GetFrame, index);
 						LocalVariables.removeLevel();
 					}
-					else if(getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
+					else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
 					{
 						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
 					}
@@ -3340,9 +3342,9 @@ public:
 					{
 						AddInstruction(AddImm, -pMult);
 					}
-					if(isLtoRValue)
+					if (isLtoRValue)
 					{
-						if(subE->getType()->isAnyComplexType())
+						if (subE->getType()->isAnyComplexType())
 						{
 							LocalVariables.addLevel();
 							int index = LocalVariables.addDecl("complex", 2);
@@ -3366,9 +3368,9 @@ public:
 			else if (op->isPostfix()) {
 				if (op->isIncrementOp()) {
 					parseExpression(subE, false, true);
-					if(isLtoRValue)
+					if (isLtoRValue)
 					{
-						if(subE->getType()->isAnyComplexType())
+						if (subE->getType()->isAnyComplexType())
 						{
 							LocalVariables.addLevel();
 							int index = LocalVariables.addDecl("complex", 2);
@@ -3385,11 +3387,11 @@ public:
 							AddInstruction(Dup);
 						}
 					}
-					if(subE->getType()->isRealFloatingType())
+					if (subE->getType()->isRealFloatingType())
 					{
 						AddInstruction(FAddImm, 1.0);
 					}
-					else if(subE->getType()->isComplexType())
+					else if (subE->getType()->isComplexType())
 					{
 						LocalVariables.addLevel();
 						int index = LocalVariables.addDecl("complexTemp", 1);
@@ -3398,7 +3400,7 @@ public:
 						AddInstruction(GetFrame, index);
 						LocalVariables.removeLevel();
 					}
-					else if(subE->getType()->isComplexIntegerType())
+					else if (subE->getType()->isComplexIntegerType())
 					{
 						LocalVariables.addLevel();
 						int index = LocalVariables.addDecl("complexTemp", 1);
@@ -3407,7 +3409,7 @@ public:
 						AddInstruction(GetFrame, index);
 						LocalVariables.removeLevel();
 					}
-					else if(getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
+					else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
 					{
 						Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
 					}
@@ -3421,9 +3423,9 @@ public:
 				}
 				else if (op->isDecrementOp()) {
 					parseExpression(subE, false, true);
-					if(isLtoRValue)
+					if (isLtoRValue)
 					{
-						if(subE->getType()->isAnyComplexType())
+						if (subE->getType()->isAnyComplexType())
 						{
 							LocalVariables.addLevel();
 							int index = LocalVariables.addDecl("complex", 2);
@@ -3441,11 +3443,11 @@ public:
 						}
 					}
 
-					if(subE->getType()->isRealFloatingType())
+					if (subE->getType()->isRealFloatingType())
 					{
 						AddInstruction(FAddImm, -1.0);
 					}
-					else if(subE->getType()->isComplexType())
+					else if (subE->getType()->isComplexType())
 					{
 						LocalVariables.addLevel();
 						int index = LocalVariables.addDecl("complexTemp", 1);
@@ -3454,7 +3456,7 @@ public:
 						AddInstruction(GetFrame, index);
 						LocalVariables.removeLevel();
 					}
-					else if(subE->getType()->isComplexIntegerType())
+					else if (subE->getType()->isComplexIntegerType())
 					{
 						LocalVariables.addLevel();
 						int index = LocalVariables.addDecl("complexTemp", 1);
@@ -3463,7 +3465,7 @@ public:
 						AddInstruction(GetFrame, index);
 						LocalVariables.removeLevel();
 					}
-					else if(getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
+					else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
 					{
 						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
 					}
@@ -3599,18 +3601,18 @@ public:
 				{
 					switch (bOp->getOpcode())
 					{
-					case BO_AddAssign:
-					case BO_AndAssign:
-					case BO_DivAssign:
-					case BO_MulAssign:
-					case BO_OrAssign:
-					case BO_RemAssign:
-					case BO_ShlAssign:
-					case BO_ShrAssign:
-					case BO_SubAssign:
-					case BO_XorAssign:
+						case BO_AddAssign:
+						case BO_AndAssign:
+						case BO_DivAssign:
+						case BO_MulAssign:
+						case BO_OrAssign:
+						case BO_RemAssign:
+						case BO_ShlAssign:
+						case BO_ShrAssign:
+						case BO_SubAssign:
+						case BO_XorAssign:
 						break;//these are ok if not LtoR, BO_Assign has already been handled
-					default:
+						default:
 						parseExpression(bOp->getLHS());
 						parseExpression(bOp->getRHS());
 						Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
@@ -3675,10 +3677,10 @@ public:
 					AddInstruction(PushInt, 4);
 					AddInstruction(GetFrameP, startindex);
 					AddInstruction(FromStack);
-#define AddIns() AddInstructionCondition(isFlt, FAdd, Add)
-#define SubIns() AddInstructionCondition(isFlt, FSub, Sub)
-#define MultIns() AddInstructionCondition(isFlt, FMult, Mult)
-#define DivIns() AddInstructionCondition(isFlt, FDiv, Div)
+					#define AddIns() AddInstructionCondition(isFlt, FAdd, Add)
+					#define SubIns() AddInstructionCondition(isFlt, FSub, Sub)
+					#define MultIns() AddInstructionCondition(isFlt, FMult, Mult)
+					#define DivIns() AddInstructionCondition(isFlt, FDiv, Div)
 					switch (bOp->getOpcode())
 					{
 						case BO_Add:
@@ -3716,7 +3718,7 @@ public:
 							if (!isLtoRValue) {
 								break;//just skip the calculations if its not a l to r, dont need to worry about operands on the stack as they have already been removed
 							}
-						
+
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 2);
 							SubIns();
@@ -3756,7 +3758,7 @@ public:
 							AddInstruction(GetFrame, startindex);
 							AddInstruction(GetFrame, startindex + 3);
 							MultIns();
-				
+
 							AddInstruction(GetFrame, startindex + 1);
 							AddInstruction(GetFrame, startindex + 2);
 							MultIns();
@@ -3880,10 +3882,10 @@ public:
 						}
 						break;
 					}
-#undef AddIns
-#undef SubIns
-#undef MultIns
-#undef DivIns
+					#undef AddIns
+					#undef SubIns
+					#undef MultIns
+					#undef DivIns
 					LocalVariables.removeLevel();
 					return true;
 				}
@@ -4065,62 +4067,62 @@ public:
 
 						if (bOp->getLHS()->getType()->isFloatingType()) {
 							switch (op) {
-							case BO_EQ: AddInstruction(FCmpEq); break;
-							case BO_Mul: AddInstruction(FMult); break;
-							case BO_Div:
-							{
-								bool isZeroDiv;
-								AddInstruction(FDiv, &isZeroDiv);
-								if (isZeroDiv)
+								case BO_EQ: AddInstruction(FCmpEq); break;
+								case BO_Mul: AddInstruction(FMult); break;
+								case BO_Div:
 								{
-									Warn("Zero division error detected", rewriter, bOp->getRHS()->getSourceRange());//just warn the user of the undefined behaviour
+									bool isZeroDiv;
+									AddInstruction(FDiv, &isZeroDiv);
+									if (isZeroDiv)
+									{
+										Warn("Zero division error detected", rewriter, bOp->getRHS()->getSourceRange());//just warn the user of the undefined behaviour
+									}
 								}
-							}
-							break;
-							case BO_Rem: AddInstruction(FMod); break;
-							case BO_Sub:  AddInstruction(FSub); break;
-							case BO_LT: AddInstruction(FCmpLt); break;
-							case BO_GT: AddInstruction(FCmpGt); break;
-							case BO_GE: AddInstruction(FCmpGe); break;
-							case BO_LE: AddInstruction(FCmpLe); break;
-							case BO_NE: AddInstruction(FCmpNe); break;
-							case BO_LAnd:  AddInstruction(And); break;//needs changing
-							case BO_Add: AddInstruction(FAdd); break;
-							case BO_LOr: AddInstruction(Or); break;//needs changing
+								break;
+								case BO_Rem: AddInstruction(FMod); break;
+								case BO_Sub:  AddInstruction(FSub); break;
+								case BO_LT: AddInstruction(FCmpLt); break;
+								case BO_GT: AddInstruction(FCmpGt); break;
+								case BO_GE: AddInstruction(FCmpGe); break;
+								case BO_LE: AddInstruction(FCmpLe); break;
+								case BO_NE: AddInstruction(FCmpNe); break;
+								case BO_LAnd:  AddInstruction(And); break;//needs changing
+								case BO_Add: AddInstruction(FAdd); break;
+								case BO_LOr: AddInstruction(Or); break;//needs changing
 
-							default:
+								default:
 								Throw("Unimplemented binary floating op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
 							}
 						}
 						else {
 							switch (op) {
-							case BO_EQ: AddInstruction(CmpEq); break;
-							case BO_Mul: AddInstruction(Mult); break;
-							case BO_Div:
-							{
-								bool isZeroDiv;
-								AddInstruction(Div, &isZeroDiv);
-								if (isZeroDiv)
+								case BO_EQ: AddInstruction(CmpEq); break;
+								case BO_Mul: AddInstruction(Mult); break;
+								case BO_Div:
 								{
-									Warn("Zero division error detected", rewriter, bOp->getRHS()->getSourceRange());//just warn the user of the undefined behaviour
-								}
-							} break;
-							case BO_Rem: AddInstruction(Mod); break;
-							case BO_Sub: AddInstruction(Sub); break;
-							case BO_LT: AddInstruction(CmpLt); break;
-							case BO_GT: AddInstruction(CmpGt); break;
-							case BO_GE: AddInstruction(CmpGe); break;
-							case BO_LE: AddInstruction(CmpLe); break;
-							case BO_NE: AddInstruction(CmpNe); break;
-							case BO_LAnd://needs changing
-							case BO_And: AddInstruction(And); break;
-							case BO_Xor: AddInstruction(Xor); break;
-							case BO_Add: AddInstruction(Add); break;
-							case BO_LOr://needs changing
-							case BO_Or: AddInstruction(Or); break;
-							case BO_Shl: AddInstruction(ShiftLeft); break;
-							case BO_Shr: AddInstruction(ShiftRight); break;
-							default:
+									bool isZeroDiv;
+									AddInstruction(Div, &isZeroDiv);
+									if (isZeroDiv)
+									{
+										Warn("Zero division error detected", rewriter, bOp->getRHS()->getSourceRange());//just warn the user of the undefined behaviour
+									}
+								} break;
+								case BO_Rem: AddInstruction(Mod); break;
+								case BO_Sub: AddInstruction(Sub); break;
+								case BO_LT: AddInstruction(CmpLt); break;
+								case BO_GT: AddInstruction(CmpGt); break;
+								case BO_GE: AddInstruction(CmpGe); break;
+								case BO_LE: AddInstruction(CmpLe); break;
+								case BO_NE: AddInstruction(CmpNe); break;
+								case BO_LAnd://needs changing
+								case BO_And: AddInstruction(And); break;
+								case BO_Xor: AddInstruction(Xor); break;
+								case BO_Add: AddInstruction(Add); break;
+								case BO_LOr://needs changing
+								case BO_Or: AddInstruction(Or); break;
+								case BO_Shl: AddInstruction(ShiftLeft); break;
+								case BO_Shr: AddInstruction(ShiftRight); break;
+								default:
 								Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
 							}
 						}
@@ -4207,164 +4209,164 @@ public:
 			{
 				switch (getSizeOfType(I->getType()->getArrayElementTypeNoTypeQual()))
 				{
-				case 1:
-				{
-					int initCount = I->getNumInits();
-					int i;
-					for(i = 0; i < initCount; i += 4)
+					case 1:
 					{
-						llvm::APSInt res;
-						int evaluated[4];
-						const Expr* inits[4];
-						bool allconst = true;
-						bool succ[4];
-						for(int j = 0; j < 4; j++)
+						int initCount = I->getNumInits();
+						int i;
+						for (i = 0; i < initCount; i += 4)
 						{
-							if(i + j < initCount)
+							llvm::APSInt res;
+							int evaluated[4];
+							const Expr* inits[4];
+							bool allconst = true;
+							bool succ[4];
+							for (int j = 0; j < 4; j++)
 							{
-								inits[j] = I->getInit(i + j);
-								if((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+								if (i + j < initCount)
 								{
-									evaluated[j] = res.getSExtValue() & 0xFF;
+									inits[j] = I->getInit(i + j);
+									if ((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+									{
+										evaluated[j] = res.getSExtValue() & 0xFF;
+									}
+									else
+									{
+										allconst = false;
+									}
 								}
 								else
 								{
-									allconst = false;
+									succ[j] = true;
+									evaluated[j] = 0;
 								}
+
+							}
+							if (allconst)
+							{
+								int val = (evaluated[0] << 24) | (evaluated[1] << 16) | (evaluated[2] << 8) | (evaluated[3]);
+								AddInstruction(PushInt, val);
 							}
 							else
 							{
-								succ[j] = true;
-								evaluated[j] = 0;
-							}
-
-						}
-						if(allconst)
-						{
-							int val = (evaluated[0] << 24) | (evaluated[1] << 16) | (evaluated[2] << 8) | (evaluated[3]);
-							AddInstruction(PushInt, val);
-						}
-						else
-						{
-							if(succ[0])
-							{
-								AddInstruction(PushInt, evaluated[0] << 24);
-
-							}
-							else
-							{
-								parseExpression(I->getInit(i), false, true);
-								AddInstruction(PushInt, 255);
-								AddInstruction(And);
-								AddInstruction(ShiftLeft, 24);
-
-							}
-							for(int j = 1; j < 4; j++)
-							{
-								if(i + j >= initCount)
-									break;
-								if(succ[j])
+								if (succ[0])
 								{
-									AddInstruction(PushInt, evaluated[j] << ((3-j) << 3));
-									AddInstruction(Or);
+									AddInstruction(PushInt, evaluated[0] << 24);
+
 								}
 								else
 								{
-									parseExpression(I->getInit(i + j), false, true);
+									parseExpression(I->getInit(i), false, true);
 									AddInstruction(PushInt, 255);
 									AddInstruction(And);
-									AddInstructionConditionally(j != 3, ShiftLeft, (3 - j) << 3);
-									AddInstruction(Or);
-								}
+									AddInstruction(ShiftLeft, 24);
 
+								}
+								for (int j = 1; j < 4; j++)
+								{
+									if (i + j >= initCount)
+										break;
+									if (succ[j])
+									{
+										AddInstruction(PushInt, evaluated[j] << ((3 - j) << 3));
+										AddInstruction(Or);
+									}
+									else
+									{
+										parseExpression(I->getInit(i + j), false, true);
+										AddInstruction(PushInt, 255);
+										AddInstruction(And);
+										AddInstructionConditionally(j != 3, ShiftLeft, (3 - j) << 3);
+										AddInstruction(Or);
+									}
+
+								}
 							}
 						}
+						int size = getSizeOfType(I->getType().getTypePtr());
+						while (i < size)
+						{
+							AddInstruction(PushInt, 0);
+							i += 4;
+						}
 					}
-					int size = getSizeOfType(I->getType().getTypePtr());
-					while (i < size)
-					{
-						AddInstruction(PushInt, 0);
-						i += 4;
-					}
-				}
 					return 1;
-				case 2:
-				{
-					int initCount = I->getNumInits();
-					int i;
-					for(i = 0; i < initCount; i += 2)
+					case 2:
 					{
-						llvm::APSInt res;
-						int evaluated[2];
-						const Expr* inits[2];
-						bool allconst = true;
-						bool succ[2];
-						for(int j = 0; j < 2; j++)
+						int initCount = I->getNumInits();
+						int i;
+						for (i = 0; i < initCount; i += 2)
 						{
-							if(i + j < initCount)
+							llvm::APSInt res;
+							int evaluated[2];
+							const Expr* inits[2];
+							bool allconst = true;
+							bool succ[2];
+							for (int j = 0; j < 2; j++)
 							{
-								inits[j] = I->getInit(i + j);
-								if((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+								if (i + j < initCount)
 								{
-									evaluated[j] = res.getSExtValue() & 0xFFFF;
+									inits[j] = I->getInit(i + j);
+									if ((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+									{
+										evaluated[j] = res.getSExtValue() & 0xFFFF;
+									}
+									else
+									{
+										allconst = false;
+									}
 								}
 								else
 								{
-									allconst = false;
+									succ[j] = true;
+									evaluated[j] = 0;
 								}
+
+							}
+							if (allconst)
+							{
+								int val = (evaluated[0] << 16) | (evaluated[1]);
+								AddInstruction(PushInt, val);
 							}
 							else
 							{
-								succ[j] = true;
-								evaluated[j] = 0;
-							}
-
-						}
-						if(allconst)
-						{
-							int val = (evaluated[0] << 16) | (evaluated[1]);
-							AddInstruction(PushInt, val);
-						}
-						else
-						{
-							if(succ[0])
-							{
-								AddInstruction(PushInt, evaluated[0] << 16);
-
-							}
-							else
-							{
-								parseExpression(I->getInit(i), false, true);
-								AddInstruction(PushInt, 65535);
-								AddInstruction(And);
-								AddInstruction(ShiftLeft, 16);
-							}
-							if(i + 1 < initCount)
-							{
-								if(succ[1])
+								if (succ[0])
 								{
-									AddInstruction(PushInt, evaluated[1]);
-									AddInstruction(Or);
+									AddInstruction(PushInt, evaluated[0] << 16);
+
 								}
 								else
 								{
-									parseExpression(I->getInit(i + 1), false, true);
+									parseExpression(I->getInit(i), false, true);
 									AddInstruction(PushInt, 65535);
 									AddInstruction(And);
-									AddInstruction(Or);
+									AddInstruction(ShiftLeft, 16);
+								}
+								if (i + 1 < initCount)
+								{
+									if (succ[1])
+									{
+										AddInstruction(PushInt, evaluated[1]);
+										AddInstruction(Or);
+									}
+									else
+									{
+										parseExpression(I->getInit(i + 1), false, true);
+										AddInstruction(PushInt, 65535);
+										AddInstruction(And);
+										AddInstruction(Or);
+									}
 								}
 							}
 						}
+						int size = getSizeOfType(I->getType().getTypePtr());
+						int curSize = getSizeFromBytes(i * 2) * 4;
+						while (curSize < size)
+						{
+							AddInstruction(PushInt, 0);
+							curSize += 4;
+						}
 					}
-					int size = getSizeOfType(I->getType().getTypePtr());
-					int curSize = getSizeFromBytes(i * 2) * 4;
-					while(curSize < size)
-					{
-						AddInstruction(PushInt, 0);
-						curSize += 4;
-					}
-				}
-				return 1;
+					return 1;
 				}
 			}
 			int size = getSizeOfType(I->getType().getTypePtr());
@@ -4380,7 +4382,7 @@ public:
 				AddInstruction(PushInt, 0);
 				curSize += 4;
 			}
-				
+
 		}
 		else if (isa<ImplicitValueInitExpr>(e))
 		{
@@ -4536,7 +4538,7 @@ public:
 				if (isCst)
 				{
 					int iRes = evalIndex.getSExtValue();
-					if(iRes != 0)
+					if (iRes != 0)
 					{
 						AddInstruction(AddImm, iRes);
 					}
@@ -4559,12 +4561,12 @@ public:
 				AddInstruction(Mod);
 				AddInstruction(ShiftLeft, 16);
 				parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
-				if(isCst)
+				if (isCst)
 				{
 					int iRes = evalIndex.getSExtValue();
-					if(iRes != 0)
+					if (iRes != 0)
 					{
-						AddInstruction(AddImm, iRes*2);
+						AddInstruction(AddImm, iRes * 2);
 					}
 				}
 				else
@@ -4593,10 +4595,10 @@ public:
 
 		if (LValueToRValue && !addrOf && !isArrToPtrDecay)
 		{
-			if(isCst)
+			if (isCst)
 			{
 				int iRes = evalIndex.getSExtValue();
-				if(iRes != 0)
+				if (iRes != 0)
 				{
 					AddInstruction(AddImm, iRes * getSizeOfType(type));
 				}
@@ -4638,17 +4640,17 @@ public:
 				}
 
 			}
-			
+
 		}
 		else if (addrOf || isArrToPtrDecay)
 		{
 			int size = getSizeOfType(type);
 			if (type->isArrayType())
 				size = getSizeFromBytes(size) * 4;
-			if(isCst)
+			if (isCst)
 			{
 				int iRes = evalIndex.getSExtValue();
-				if(iRes != 0)
+				if (iRes != 0)
 				{
 					AddInstruction(AddImm, iRes * size);
 				}
@@ -4662,10 +4664,10 @@ public:
 		}
 		else
 		{
-			if(isCst)
+			if (isCst)
 			{
 				int iRes = evalIndex.getSExtValue();
-				if(iRes != 0)
+				if (iRes != 0)
 				{
 					AddInstruction(AddImm, iRes * getSizeOfType(type));
 				}
@@ -4709,18 +4711,18 @@ public:
 			{
 				uint32_t hash = Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str());
 				size_t i;
-				for(i = 0; i < functionsNew.size(); i++)
+				for (i = 0; i < functionsNew.size(); i++)
 				{
-					if(functionsNew[i]->Hash() == hash)
+					if (functionsNew[i]->Hash() == hash)
 					{
-						if(functionsNew[i]->Name() == getNameForFunc(f))
+						if (functionsNew[i]->Name() == getNameForFunc(f))
 						{
 							CurrentFunction = functionsNew[i];
 							break;
 						}
 					}
 				}
-				if(i == functionsNew.size())
+				if (i == functionsNew.size())
 				{
 					functionsNew.push_back(new FunctionData(getNameForFunc(f), (paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0))));
 					CurrentFunction = functionsNew.back();
@@ -4881,7 +4883,7 @@ public:
 				//const CXXMethodDecl *VFII = VFI->getCorrespondingMethodInClass(superDecl);
 				if (VFI->getName() == method->getName()) { //getLocStart(VFI) != getLocStart(VFII)) {
 
-					//out << "push " << func << endl;
+														   //out << "push " << func << endl;
 					parseExpression(baseExpr);
 					AddInstruction(Dup);
 					AddInstructionComment(GetImm, classDecl->getDeclName().getAsString() + "::VTablePtr[" + to_string(getSizeFromBytes(getSizeOfCXXDecl(superDecl, false, true, classDecl)) + vtableInc) + "]", (getSizeFromBytes(getSizeOfCXXDecl(superDecl, false, true, classDecl)) + vtableInc));
@@ -4925,7 +4927,7 @@ public:
 						//                        out << "StaticGet 0 //\"this\"" << endl;
 						uint32_t size = getSizeFromBytes(getSizeOfCXXDecl(classDecl, false, false));
 						uint32_t sizeBase = getSizeFromBytes(getSizeOfCXXDecl(classDecl, false, true, baseDecl));
-			
+
 						foundVirt = true;
 
 						AddInstruction(GetFrame, 0);
@@ -4940,23 +4942,23 @@ public:
 
 
 					//const CXXMethodDecl *VFII = VFI->getCorrespondingMethodInClass(classDecl);
-/*
+					/*
 					if (VFI != VFII) { //getLocStart(VFI) != getLocStart(VFII)) {
-									   //const Stmt *body = VFII->FunctionDecl::getBody();
+					//const Stmt *body = VFII->FunctionDecl::getBody();
 
-						out << "PushFunction " << getNameForFunc(VFII) << " // &" << VFII->getDeclName().getAsString() << endl;
-						out << "getFrame1 0" << endl;
-						out << SetImm(getSizeFromBytes(getSizeOfCXXDecl(classDecl, false, false)) + vtableInc + func++) << endl;
+					out << "PushFunction " << getNameForFunc(VFII) << " // &" << VFII->getDeclName().getAsString() << endl;
+					out << "getFrame1 0" << endl;
+					out << SetImm(getSizeFromBytes(getSizeOfCXXDecl(classDecl, false, false)) + vtableInc + func++) << endl;
 
 
 					}
 					else {
-						out << "PushFunction " << getNameForFunc(VFII) << " // " << VFII->getDeclName().getAsString() << endl;
-						out << "getFrame1 0" << endl;
-						out << SetImm(getSizeFromBytes(getSizeOfCXXDecl(classDecl, false, false)) + vtableInc + func++) << endl;
+					out << "PushFunction " << getNameForFunc(VFII) << " // " << VFII->getDeclName().getAsString() << endl;
+					out << "getFrame1 0" << endl;
+					out << SetImm(getSizeFromBytes(getSizeOfCXXDecl(classDecl, false, false)) + vtableInc + func++) << endl;
 
 					}
-*/
+					*/
 				}
 
 			}
@@ -5255,7 +5257,7 @@ public:
 			}
 			return true;
 		}
-		
+
 		//need to add full pointer init support for 
 		//int* vstack_ptr = vstack + 4;
 		//this will require these function below and more for parseing unevaluable expressions
@@ -5264,46 +5266,58 @@ public:
 			isCurrentExprEvaluable = false;
 			const UnaryOperator *op = cast<const UnaryOperator>(e);
 			Expr *subE = op->getSubExpr();
-			
+
 			if (op->getOpcode() == UO_AddrOf) {
 				if (isa<ArraySubscriptExpr>(subE)) {
-					const ArraySubscriptExpr* arr = cast<ArraySubscriptExpr>(subE);
-					const Expr* base = arr->getBase();
-					const Type* type = base->getType().getTypePtr();
-					if(isa<ImplicitCastExpr>(base) && cast<ImplicitCastExpr>(base)->getCastKind() == CK_ArrayToPointerDecay)
+					Expr* sexpr = subE;
+					uint32_t inc = 0, ssize = 0;
+					while (isa<ArraySubscriptExpr>(sexpr))
 					{
-						base = cast<ImplicitCastExpr>(base)->getSubExpr();
-						if(isa<DeclRefExpr>(base))
+						const ArraySubscriptExpr* arr = cast<ArraySubscriptExpr>(sexpr);
+						const Expr *index = arr->getIdx();
+						const Expr *base = arr->getBase();
+
+						if (!(isa<ImplicitCastExpr>(base) && cast<ImplicitCastExpr>(base)->getCastKind() == CK_ArrayToPointerDecay))
+							Throw("Expected static declaration for static array pointer initialisation (cast)", rewriter, op->getSourceRange());
+						else
+							base = cast<ImplicitCastExpr>(base)->getSubExpr();
+
+						const DeclRefExpr *declRef = getDeclRefExpr(base);
+						const Type* type = const_cast<Type*>(base->getType().getTypePtr());
+
+						if (type == NULL)
+							type = const_cast<Type*>(declRef->getType().getTypePtr());
+						if (type->isPointerType())
+							type = const_cast<Type*>(type->getPointeeType().getTypePtr());
+
+						llvm::APSInt iResult;
+						if (index->EvaluateAsInt(iResult, *context))
 						{
-							const DeclRefExpr* DRE = cast<DeclRefExpr>(base);
-							llvm::APSInt iResult;
-							if(arr->getIdx()->EvaluateAsInt(iResult, *context))
+							doesCurrentValueNeedSet = true;
+
+							if (!inc)
+								Entryfunction.addOpGetStaticP(statics[declRef->getDecl()->getNameAsString()]);
+
+							if (!ssize)
 							{
-								int size = getSizeOfType(type);
+								uint32_t elementSize = 4;
+								if (type->isArrayType())
+									elementSize = getSizeOfType(base->getType()->getArrayElementTypeNoTypeQual());
 
-								if(type->isArrayType())
-									size = getSizeFromBytes(size) * 4;
-
-								Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
-								Entryfunction.addOpAddImm(size * iResult.getSExtValue());
-								Entryfunction.addOpSetStatic(oldStaticInc++);
-
+								Entryfunction.addOpAddImm(iResult.getSExtValue() * elementSize);
 							}
 							else
-							{
-								Throw("Expected integer literal for static array pointer initialisation", rewriter, op->getSourceRange());
-							}
+								Entryfunction.addOpAddImm(ssize * iResult.getSExtValue());
+
+							ssize = getSizeOfType(type);
 						}
 						else
-						{
-							Throw("Expected static declaration for static array pointer initialisation", rewriter, op->getSourceRange());
-						}
+							Throw("Expected integer literal for static array pointer initialisation", rewriter, op->getSourceRange());
+
+						inc++;
+						sexpr = const_cast<Expr*>(base);
+
 					}
-					else
-					{
-						Throw("Expected static declaration for static array pointer initialisation", rewriter, op->getSourceRange());
-					}
-					
 
 				}
 				else if (isa<DeclRefExpr>(subE)) {
@@ -5402,7 +5416,7 @@ public:
 			switch (icast->getCastKind()) {
 
 				case clang::CK_ArrayToPointerDecay:
-					ParseLiteral(icast->getSubExpr(), true, false);
+				ParseLiteral(icast->getSubExpr(), true, false);
 				break;
 
 				//case clang::CK_DerivedToBase:
@@ -5410,7 +5424,7 @@ public:
 				//break;
 
 				case clang::CK_PointerToIntegral://int ptoitest = (int)&addrptrtest;
-					ParseLiteral(icast->getSubExpr());
+				ParseLiteral(icast->getSubExpr());
 				break;
 
 				//case clang::CK_PointerToBoolean:
@@ -5422,11 +5436,11 @@ public:
 				//break;
 
 				case clang::CK_BitCast://short* testok = (short*)&addrptrtest;//(addrptrtest is an int)
-					ParseLiteral(icast->getSubExpr());
+				ParseLiteral(icast->getSubExpr());
 				break;
 
 				default:
-					Throw("Cast " + string(icast->getCastKindName()) + " is unimplemented for a static define");
+				Throw("Cast " + string(icast->getCastKindName()) + " is unimplemented for a static define");
 
 			}
 		}
@@ -5439,7 +5453,7 @@ public:
 			isCurrentExprEvaluable = false;
 			const BinaryOperator *bOp = cast<const BinaryOperator>(e);
 			BinaryOperatorKind op = bOp->getOpcode();
-					
+
 			//c allows same type pointer to pointer subtraction to obtain the logical difference. 
 			if (isa<PointerType>(bOp->getLHS()->getType()) && isa<PointerType>(bOp->getRHS()->getType()))
 			{
@@ -5465,7 +5479,7 @@ public:
 
 					return -1;
 				}
-				else 
+				else
 					Throw("Pointer to pointer operation not subtraction \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
 			}
 			else if (isa<PointerType>(bOp->getLHS()->getType()))
@@ -5521,7 +5535,7 @@ public:
 				default:
 				Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
 			}
-				
+
 		}
 		else
 			Throw("Class " + string(e->getStmtClassName()) + " is unimplemented for a static define");
@@ -5559,7 +5573,7 @@ public:
 						if (oldStaticInc > staticInc)//undefined length arrays (should check if it is an undefined length array)
 							staticInc = oldStaticInc;
 
-						if(doesCurrentValueNeedSet)
+						if (doesCurrentValueNeedSet)
 							Entryfunction.addOpSetStatic(oldStaticInc++);
 
 					}
@@ -5584,7 +5598,7 @@ public:
 		}
 		return "";
 	}
-	
+
 	void resetIntIndex()
 	{
 		if (intIndex != 0)
@@ -5689,7 +5703,7 @@ public:
 		if (Visitor.MainRets != -1)
 		{
 			Entryfunction.addOpCall("main");
-			for (int i = 0; i < Visitor.MainRets;i++)
+			for (int i = 0; i < Visitor.MainRets; i++)
 			{
 				Entryfunction.addOpDrop();
 			}
