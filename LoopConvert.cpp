@@ -7,6 +7,7 @@
 #include <cmath>
 #include "Utils.h"
 #include "FunctionOpcode.h"
+#include "clang/Lex/PreProcessor.h"
 
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
@@ -5766,6 +5767,13 @@ private:
 #pragma endregion
 
 #pragma region CreateASTConsumer
+enum BuildType
+{
+	BT_RDR_XSC,
+	BT_RDR_SCO,
+	BT_GTA_V,
+	//BT_GTA_V_PC
+};
 class MyFrontendAction : public ASTFrontendAction {
 public:
 	MyFrontendAction() {}
@@ -5779,8 +5787,30 @@ public:
 		//TheRewriter.getEditBuffer(SM.getMainFileID()).write(llvm::outs());
 	}
 
-	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
+	void AddDefines(Preprocessor &PP)
+	{
+		switch(bType)
+		{
+		case BT_RDR_XSC:
+			PP.appendDefMacroDirective(PP.getIdentifierInfo("__RDR__"), PP.AllocateMacroInfo(SourceLocation()));
+			PP.appendDefMacroDirective(PP.getIdentifierInfo("__RSC__"), PP.AllocateMacroInfo(SourceLocation()));
+			break;
+		case BT_RDR_SCO:
+			PP.appendDefMacroDirective(PP.getIdentifierInfo("__RDR__"), PP.AllocateMacroInfo(SourceLocation()));
+			PP.appendDefMacroDirective(PP.getIdentifierInfo("__SCO__"), PP.AllocateMacroInfo(SourceLocation()));
+			break;
+		case BT_GTA_V:
+			PP.appendDefMacroDirective(PP.getIdentifierInfo("__GTA__"), PP.AllocateMacroInfo(SourceLocation()));
+			break;
+		/*case BT_GTA_V_PC:
+			PP.appendDefMacroDirective(PP.getIdentifierInfo("__GTA_PC__"), PP.AllocateMacroInfo(SourceLocation()));
+			break;*/
+		}
+				
+	}
 
+	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
+		AddDefines(CI.getPreprocessor());
 		llvm::errs() << "Compiling: " << file << "\n";
 		TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
 		rewriter = TheRewriter;
@@ -5793,6 +5823,7 @@ public:
 
 private:
 	Rewriter TheRewriter;
+	BuildType bType = BT_RDR_XSC;
 };
 #pragma endregion
 
