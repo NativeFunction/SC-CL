@@ -5284,59 +5284,7 @@ public:
 			Expr *subE = op->getSubExpr();
 
 			if (op->getOpcode() == UO_AddrOf) {
-				if (isa<ArraySubscriptExpr>(subE)) {
-					Expr* sexpr = subE;
-					uint32_t inc = 0, ssize = 0;
-					while (isa<ArraySubscriptExpr>(sexpr))
-					{
-						const ArraySubscriptExpr* arr = cast<ArraySubscriptExpr>(sexpr);
-						const Expr *index = arr->getIdx();
-						const Expr *base = arr->getBase();
-
-						if (!(isa<ImplicitCastExpr>(base) && cast<ImplicitCastExpr>(base)->getCastKind() == CK_ArrayToPointerDecay))
-							Throw("Expected static declaration for static array pointer initialisation (cast)", rewriter, op->getSourceRange());
-						else
-							base = cast<ImplicitCastExpr>(base)->getSubExpr();
-
-						const DeclRefExpr *declRef = getDeclRefExpr(base);
-						Type* type = const_cast<Type*>(base->getType().getTypePtr());
-
-						if (type == NULL)
-							type = const_cast<Type*>(declRef->getType().getTypePtr());
-						if (type->isPointerType())
-							type = const_cast<Type*>(type->getPointeeType().getTypePtr());
-
-						llvm::APSInt iResult;
-						if (index->EvaluateAsInt(iResult, *context))
-						{
-							doesCurrentValueNeedSet = true;
-
-							if (!inc)
-								Entryfunction.addOpGetStaticP(statics[declRef->getDecl()->getNameAsString()]);
-
-							if (!ssize)
-							{
-								uint32_t elementSize = 4;
-								if (type->isArrayType())
-									elementSize = getSizeOfType(base->getType()->getArrayElementTypeNoTypeQual());
-
-								Entryfunction.addOpAddImm(iResult.getSExtValue() * elementSize);
-							}
-							else
-								Entryfunction.addOpAddImm(ssize * iResult.getSExtValue());
-
-							ssize = getSizeOfType(type);
-						}
-						else
-							Throw("Expected integer literal for static array pointer initialisation", rewriter, op->getSourceRange());
-
-						inc++;
-						sexpr = const_cast<Expr*>(base);
-
-					}
-
-				}
-				else if (isa<DeclRefExpr>(subE)) {
+				if (isa<DeclRefExpr>(subE)) {
 					const DeclRefExpr *DRE = cast<const DeclRefExpr>(subE);
 					doesCurrentValueNeedSet = true;
 
@@ -5549,6 +5497,66 @@ public:
 			const ParenExpr *parenExpr = cast<const ParenExpr>(e);
 			ParseLiteral(parenExpr->getSubExpr(), isAddr, isLtoRValue);
 		}
+		else if (isa<ArraySubscriptExpr>(e)) {
+			Expr* sexpr = const_cast<Expr*>(e);
+			uint32_t inc = 0, ssize = 0;
+			while (isa<ArraySubscriptExpr>(sexpr))
+			{
+				const ArraySubscriptExpr* arr = cast<ArraySubscriptExpr>(sexpr);
+				const Expr *index = arr->getIdx();
+				const Expr *base = arr->getBase();
+
+				if (isa<ImplicitCastExpr>(base))
+					base = cast<ImplicitCastExpr>(base)->getSubExpr();
+				else if(isa<ParenExpr>(base))
+					base = cast<ParenExpr>(base)->getSubExpr();
+				else
+					Throw("Unimplemented static array base resolution of " + string(base->getStmtClassName()), rewriter, e->getSourceRange());
+
+
+
+				const DeclRefExpr *declRef = getDeclRefExpr(base);
+				Type* type = const_cast<Type*>(base->getType().getTypePtr());
+
+				if (type == NULL)
+					type = const_cast<Type*>(declRef->getType().getTypePtr());
+				if (type->isPointerType())
+					type = const_cast<Type*>(type->getPointeeType().getTypePtr());
+
+				llvm::APSInt iResult;
+				if (index->EvaluateAsInt(iResult, *context))
+				{
+					doesCurrentValueNeedSet = true;
+
+					if (!inc)
+						Entryfunction.addOpGetStaticP(statics[declRef->getDecl()->getNameAsString()]);
+
+					if (!ssize)
+					{
+						uint32_t elementSize = 4;
+						if (type->isArrayType())
+							elementSize = getSizeOfType(base->getType()->getArrayElementTypeNoTypeQual());
+
+						Entryfunction.addOpAddImm(iResult.getSExtValue() * elementSize);
+					}
+					else
+						Entryfunction.addOpAddImm(ssize * iResult.getSExtValue());
+
+					ssize = getSizeOfType(type);
+				}
+				else
+					Throw("Expected integer literal for static array pointer initialisation", rewriter, e->getSourceRange());
+
+				inc++;
+				sexpr = const_cast<Expr*>(base);
+				while (isa<ParenExpr>(sexpr))
+					sexpr = const_cast<Expr*>(cast<const ParenExpr>(sexpr)->getSubExpr());
+
+
+			}
+
+		}
+
 		else
 			Throw("Class " + string(e->getStmtClassName()) + " is unimplemented for a static define");
 		return -1;
