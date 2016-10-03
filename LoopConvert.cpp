@@ -5302,12 +5302,12 @@ public:
 		}
 		else if (isa<ImplicitCastExpr>(e))
 		{
-			isCurrentExprEvaluable = false;
 			const ImplicitCastExpr *icast = cast<const ImplicitCastExpr>(e);
 
 			switch (icast->getCastKind())
 			{
 				case CK_ArrayToPointerDecay:
+				isCurrentExprEvaluable = false;
 				if (isa<StringLiteral>(icast->getSubExpr()))//char* x = "hello";
 				{
 					const StringLiteral *literal = cast<const StringLiteral>(icast->getSubExpr());
@@ -5327,6 +5327,7 @@ public:
 				break;
 
 				case CK_FunctionToPointerDecay://int (*ggg)(int, float) = test; // test is a function
+				isCurrentExprEvaluable = false;
 				if (isa<DeclRefExpr>(icast->getSubExpr())) {
 					const DeclRefExpr *declRef = cast<const DeclRefExpr>(icast->getSubExpr());
 					if (isa<FunctionDecl>(declRef->getDecl())) {
@@ -5359,11 +5360,14 @@ public:
 				break;
 
 				case clang::CK_PointerToIntegral://int ptoitest = &addrptrtest;
-				ParseLiteral(icast->getSubExpr());
+				ParseLiteral(icast->getSubExpr(), false, isLtoRValue);
+				break;
+				case clang::CK_IntegralToPointer://*vstack_ptr = &vstack[9] - &vstack[0];
+				ParseLiteral(icast->getSubExpr(), false, isLtoRValue);
 				break;
 
 				case clang::CK_BitCast://short* testok = &addrptrtest;//(addrptrtest is an int)
-				ParseLiteral(icast->getSubExpr());
+				ParseLiteral(icast->getSubExpr(), false, isLtoRValue);
 				break;
 
 				default:
@@ -5373,11 +5377,12 @@ public:
 
 		}
 		else if (isa<CastExpr>(e)) {
-			isCurrentExprEvaluable = false;
+			
 			const CastExpr *icast = cast<const CastExpr>(e);
 			switch (icast->getCastKind()) {
 
 				case clang::CK_ArrayToPointerDecay:
+				isCurrentExprEvaluable = false;
 				ParseLiteral(icast->getSubExpr(), true, false);
 				break;
 
@@ -5386,19 +5391,14 @@ public:
 				//break;
 
 				case clang::CK_PointerToIntegral://int ptoitest = (int)&addrptrtest;
-				ParseLiteral(icast->getSubExpr());
+				ParseLiteral(icast->getSubExpr(), false, isLtoRValue);
+				break;
+				case clang::CK_IntegralToPointer://*vstack_ptr = (int*)(&vstack[9] - &vstack[0]);
+				ParseLiteral(icast->getSubExpr(), false, isLtoRValue);
 				break;
 
-				//case clang::CK_PointerToBoolean:
-				//	ParseLiteral(icast->getSubExpr());
-				//break;
-				//
-				//case clang::CK_NoOp:
-				//	ParseLiteral(icast->getSubExpr());
-				//break;
-
 				case clang::CK_BitCast://short* testok = (short*)&addrptrtest;//(addrptrtest is an int)
-				ParseLiteral(icast->getSubExpr());
+				ParseLiteral(icast->getSubExpr(), false, isLtoRValue);
 				break;
 
 				default:
@@ -5410,6 +5410,7 @@ public:
 			isCurrentExprEvaluable = false;
 			const BinaryOperator *bOp = cast<const BinaryOperator>(e);
 			BinaryOperatorKind op = bOp->getOpcode();
+			
 
 			//c allows same type pointer to pointer subtraction to obtain the logical difference. 
 			if (isa<PointerType>(bOp->getLHS()->getType()) && isa<PointerType>(bOp->getRHS()->getType()))
