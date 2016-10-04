@@ -86,35 +86,35 @@ public:
 
 void Opcode::setString(string str)
 {
-	*(StringStorage**)storage = new StringStorage(str);
+	storage.string = new StringStorage(str);
 }
 
 void Opcode::setInt(int value)
 {
-	*(int*)storage = value;
+	storage.i32 = value;
 }
 
 void Opcode::setFloat(float value)
 {
-	*(float*)storage = value;
+	storage.f32 = value;
 }
 
 void Opcode::setShort(int16_t value, int offset)
 {
-	assert(offset >= 0 && offset <= (sizeof(void*) - 2) && "short offset must be between 0 and 2");
-	*(int16_t*)(storage + offset) = value;
+	assert(offset >= 0 && offset < (sizeof(void*)/2) && "short offset must be between 0 and 2");
+	storage.i16[offset] = value;
 }
 
 void Opcode::setUShort(uint16_t value, int offset)
 {
-	assert(offset >= 0 && offset <= (sizeof(void*) - 2) && "ushort offset must be between 0 and 2");
-	*(uint16_t*)(storage + offset) = value;
+	assert(offset >= 0 && offset < (sizeof(void*) / 2) && "short offset must be between 0 and 2");
+	storage.u16[offset] = value;
 }
 
 void Opcode::setByte(uint8_t value, int offset)
 {
-	assert(offset >= 0 && offset <= (sizeof(void*) - 1) && "byte offset must be between 0 and 3");
-	*(uint8_t*)(storage + offset) = value;
+	assert(offset >= 0 && offset < (sizeof(void*)) && "byte offset must be between 0 and 4");
+	storage.u8[offset] = value;
 }
 
 Opcode::~Opcode()
@@ -122,7 +122,7 @@ Opcode::~Opcode()
 #ifdef _DEBUG
 	if(_comment)
 	{
-		delete[] _comment;
+		delete _comment;
 	}
 #endif
 	switch(opcodeKind)
@@ -138,15 +138,14 @@ Opcode::~Opcode()
 	case OK_JumpLT:
 	case OK_JumpLE:
 	case OK_Label:
-		delete *(StringStorage**)storage;
+		delete storage.string;
 		break;
 	case OK_Native:
-		delete *(NativeStorage**)storage;
+		delete storage.native;
 		break;
 	case OK_Switch:
 	{
-		SwitchCaseStorage* sCasePtr = *(SwitchCaseStorage**)storage;
-		if(sCasePtr)
+		if(SwitchCaseStorage* sCasePtr = storage.switchCase)
 		{
 			delete sCasePtr;
 		}
@@ -163,11 +162,10 @@ void Opcode::setComment(string comment)
 #ifdef _DEBUG
 	if(_comment)
 	{
-		comment = string(_comment) + " - " + comment;
-		delete[] _comment;
+		comment = _comment->toString() + " - " + comment;
+		delete _comment;
 	}
-	_comment = new char[comment.length() + 1];
-	memcpy(_comment, comment.c_str(), comment.length() + 1);
+	_comment = new StringStorage(comment);
 #endif
 }
 string Opcode::getComment() const
@@ -175,7 +173,7 @@ string Opcode::getComment() const
 #ifdef _DEBUG
 	if(_comment)
 	{
-		return string(_comment);
+		return _comment->toString();
 	}
 #endif
 	return "";
@@ -204,7 +202,7 @@ string Opcode::getString() const
 	case OK_JumpLE:
 	case OK_Label:
 	case OK_LabelLoc:
-		return (*(StringStorage**)storage)->toString();
+		return storage.string->toString();
 	default:
 		assert(false && "Get String called on a non string opcode");
 	}
@@ -213,30 +211,30 @@ string Opcode::getString() const
 
 int Opcode::getInt() const
 {
-	return *(int*)storage;
+	return storage.i32;
 }
 
 float Opcode::getFloat() const
 {
-	return *(float*)storage;
+	return storage.f32;
 }
 
 int16_t Opcode::getShort(int offset) const
 {
-	assert(offset >= 0 && offset <= (sizeof(void*) - 2) && "ushort offset must be between 0 and 2");
-	return *(int16_t*)(storage + offset);
+	assert(offset >= 0 && offset < (sizeof(void*) / 2) && "short offset must be between 0 and 2");
+	return storage.i16[offset];
 }
 
 uint16_t Opcode::getUShort(int offset) const
 {
-	assert(offset >= 0 && offset <= (sizeof(void*) - 2) && "short offset must be between 0 and 2");
-	return *(uint16_t*)(storage + offset);
+	assert(offset >= 0 && offset < (sizeof(void*) / 2) && "ushort offset must be between 0 and 2");
+	return storage.u16[offset];
 }
 
 uint8_t Opcode::getByte(int offset) const
 {
-	assert(offset >= 0 && offset <= (sizeof(void*) - 1) && "byte offset must be between 0 and 3");
-	return *(uint8_t*)(storage + offset);
+	assert(offset >= 0 && offset < (sizeof(void*)) && "byte offset must be between 0 and 4");
+	return storage.u8[offset];
 }
 
 int Opcode::getSizeEstimate() const
@@ -466,7 +464,7 @@ int Opcode::getSizeEstimate() const
 	case OK_Switch:
 	{
 		int val = 2;//switch <count>
-		SwitchCaseStorage* sCase = *(SwitchCaseStorage**)storage;
+		SwitchCaseStorage* sCase = storage.switchCase;
 		val += 6;//<case(4)> <loc(6)>
 		while (sCase->hasNextCase())
 		{
@@ -611,13 +609,12 @@ string Opcode::toString() const
 	case OK_Drop: current = "Drop"; break;
 	case OK_Native:
 	{
-		NativeStorage* native = *(NativeStorage**)storage;
 		char buff[17];
-		sprintf(buff, "%llX", native->getHash());
-		current = "CallNative unk_0x" + string(buff) + " " + to_string(native->getParamCount()) + " " + to_string(native->getReturnCount());
-		if (native->hasName())
+		sprintf(buff, "%llX", storage.native->getHash());
+		current = "CallNative unk_0x" + string(buff) + " " + to_string(storage.native->getParamCount()) + " " + to_string(storage.native->getReturnCount());
+		if (storage.native->hasName())
 		{
-			current += " //" + native->getName();
+			current += " //" + storage.native->getName();
 		}
 		break;
 	}
@@ -767,7 +764,7 @@ string Opcode::toString() const
 	case OK_JumpLT: PrintJump(LT); break;
 	case OK_JumpLE: PrintJump(LE); break;
 	case OK_Switch:{
-		SwitchCaseStorage* sCase = *(SwitchCaseStorage**)storage;
+		SwitchCaseStorage* sCase = storage.switchCase;
 		assert(sCase && "Empty Switch Statement");
 		current = "Switch [" + to_string(sCase->getCase()) + " @" + sCase->getLoc() + "]";
 		while(sCase->hasNextCase())
@@ -1017,7 +1014,7 @@ void FunctionData::addSwitchCase(int caseVal, string jumpLoc)
 	assert(Instructions.size() && "Instruction stack empty, cant add switch case");
 	Opcode *end = Instructions.back();
 	assert(end->GetKind() == OK_Switch && "AddSwitchCase must be called on switches");
-	SwitchCaseStorage** curCasePtr = (SwitchCaseStorage**)end->storage;
+	SwitchCaseStorage** curCasePtr = &(end->storage.switchCase);
 	int count = 0;
 	while(*curCasePtr)
 	{
@@ -1527,21 +1524,21 @@ void FunctionData::addOpDrop()
 void FunctionData::addOpNative(string name, uint8_t pCount, uint8_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
-	*(NativeStorage**)op->storage = new NativeStorage(name, pCount, rCount);
+	op->storage.native = new NativeStorage(name, pCount, rCount);
 	Instructions.push_back(op);
 }
 
 void FunctionData::addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
-	*(NativeStorage**)op->storage = new NativeStorage(hash, pCount, rCount);
+	op->storage.native = new NativeStorage(hash, pCount, rCount);
 	Instructions.push_back(op);
 }
 
 void FunctionData::addOpNative(string name, uint64_t hash, uint8_t pCount, uint8_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
-	*(NativeStorage**)op->storage = new NativeStorage(name, hash, pCount, rCount);
+	op->storage.native = new NativeStorage(name, hash, pCount, rCount);
 	Instructions.push_back(op);
 }
 

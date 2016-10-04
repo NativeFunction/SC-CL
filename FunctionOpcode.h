@@ -100,14 +100,28 @@ enum OpcodeKind{
 };
 
 class FunctionData;
+struct SwitchCaseStorage;
+struct NativeStorage;
+struct StringStorage;
 
 class Opcode
 {
 	friend class FunctionData;
 	OpcodeKind opcodeKind;
-	char storage[sizeof(void*)] = {0,0,0,0};
+	union
+	{
+		char u8[sizeof(void*)];
+		uint16_t u16[sizeof(void*)/sizeof(2)];
+		uint16_t i16[sizeof(void*) / sizeof(2)];
+		int32_t i32;
+		uint32_t u32;
+		float f32;
+		SwitchCaseStorage *switchCase;
+		NativeStorage *native;
+		StringStorage *string;
+	}storage = {0,0,0,0};
 #ifdef _DEBUG
-	char *_comment = NULL;
+	StringStorage *_comment = NULL;
 #endif
 	Opcode(OpcodeKind kind) : opcodeKind(kind){ }
 	void setString(string str);
