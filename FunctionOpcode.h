@@ -173,6 +173,7 @@ public:
 	void addSwitchCase(int caseVal, string jumpLoc);
 	void addUsedFunc(FunctionData *func);
 	int getSizeEstimate(int incDecl) const;//only to be used when seeing if a function should be inlined
+	
 
 #pragma region CreateOpcodes
 	void addOpNop(){ Instructions.push_back(new Opcode(OK_Nop)); }
@@ -243,6 +244,8 @@ public:
 		Instructions.push_back(op);
 		Instructions.push_back(new Opcode(OK_And));
 	}
+	void addOpGetConv(int size, bool isSigned);
+	void addOpSetConv(int size);
 #pragma endregion 
 
 

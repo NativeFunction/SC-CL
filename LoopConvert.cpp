@@ -529,6 +529,7 @@ public:
 		}
 		LocalVariables.removeLevel();
 	}
+	
 	#pragma endregion
 
 	#pragma region Name_Resolution
@@ -622,13 +623,9 @@ public:
 			if (isLtoRValue && !isAddr)
 			{
 				AddInstructionComment(GetFrame, "(pdecl)" + key, index);
-				if (size == 1)//char
+				if (size == 1 || size == 2)
 				{
-					AddInstructionComment(ShiftRight, "char type", 24);
-				}
-				else if (size == 2)//short
-				{
-					AddInstructionComment(ShiftRight, "short type", 16);
+					AddInstruction(GetConv, size, declref->getType()->isSignedIntegerType());
 				}
 			}
 			else if (isAddr)
@@ -638,18 +635,9 @@ public:
 			else if (isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if (size == 1)//char
+				if (size == 1 || size == 2)
 				{
-					AddInstruction(PushInt, 256);
-					AddInstruction(Mod);
-					AddInstructionComment(ShiftLeft, "char type", 24);
-
-				}
-				else if (size == 2)//short
-				{
-					AddInstruction(PushInt, 65536);
-					AddInstruction(Mod);
-					AddInstructionComment(ShiftLeft, "short type", 16);
+					AddInstruction(SetConv, size);
 				}
 				if (size > 4)//fromStack
 				{
@@ -669,13 +657,9 @@ public:
 			if (isLtoRValue && !isAddr)
 			{
 				AddInstructionComment(GetGlobal, "Global_" + key, index);
-				if (size == 1)//char
+				if (size == 1 || size == 2)
 				{
-					AddInstructionComment(ShiftRight, "char type", 24);
-				}
-				else if (size == 2)//short
-				{
-					AddInstructionComment(ShiftRight, "short type", 16);
+					AddInstruction(GetConv, size, declref->getType()->isSignedIntegerType());
 				}
 			}
 			else if (isAddr)
@@ -685,18 +669,9 @@ public:
 			else if (isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if (size == 1)//char
+				if (size == 1 || size == 2)
 				{
-					AddInstruction(PushInt, 256);
-					AddInstruction(Mod);
-					AddInstructionComment(ShiftLeft, "char type", 24);
-
-				}
-				else if (size == 2)//short
-				{
-					AddInstruction(PushInt, 65536);
-					AddInstruction(Mod);
-					AddInstructionComment(ShiftLeft, "short type", 16);
+					AddInstruction(SetConv, size);
 				}
 				if (size > 4)//fromStack
 				{
@@ -715,13 +690,9 @@ public:
 			if (isLtoRValue && !isAddr)
 			{
 				AddInstructionComment(GetStatic, key, index);
-				if (size == 1)//char
+				if (size == 1 || size == 2)
 				{
-					AddInstructionComment(ShiftRight, "char type", 24);
-				}
-				else if (size == 2)//short
-				{
-					AddInstructionComment(ShiftRight, "short type", 16);
+					AddInstruction(GetConv, size, declref->getType()->isSignedIntegerType());
 				}
 			}
 			else if (isAddr)
@@ -731,18 +702,9 @@ public:
 			else if (isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if (size == 1)//char
+				if (size == 1 || size == 2)//char
 				{
-					AddInstruction(PushInt, 256);
-					AddInstruction(Mod);
-					AddInstructionComment(ShiftLeft, "char type", 24);
-
-				}
-				else if (size == 2)//short
-				{
-					AddInstruction(PushInt, 65536);
-					AddInstruction(Mod);
-					AddInstructionComment(ShiftLeft, "short type", 16);
+					AddInstruction(SetConv, size);
 				}
 
 				if (size > 4)//fromStack
@@ -3149,17 +3111,31 @@ public:
 				int size = getSizeOfType(type);
 				int bSize = getSizeFromBytes(size);
 
-				if (!isAddr && !isArrToPtrDecay && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
+				if (!isAddr && !isArrToPtrDecay)
 				{
-					if (bSize > 1)
+					if (bSize > 1 && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 					{
 						AddInstructionComment(PushInt, "Type Size", bSize);
 					}
+					else if (size == 1 || size == 2)
+					{
+						AddInstruction(SetConv, size);
+
+						parseExpression(subE, subE->getType().getTypePtr()->isArrayType(), true);
+
+						AddInstruction(PGet);
+						AddInstruction(PushInt, size == 1 ? 0xFFFFFF : 0xFFFF);
+						AddInstruction(And);
+						AddInstruction(Or);
+					}
+
 				}
-				if (isa<ArraySubscriptExpr>(subE)) {
+				if (isa<ArraySubscriptExpr>(subE))
+				{
 					parseArraySubscriptExpr(subE, false, isArrToPtrDecay);
 				}
-				else if (isa<DeclRefExpr>(subE)) {
+				else if (isa<DeclRefExpr>(subE))
+				{
 					parseExpression(subE, false, false);
 				}
 				else
@@ -3180,21 +3156,9 @@ public:
 								return true;
 
 							AddInstruction(PGet);
-							if (size == 1)
+							if (size == 1 || size == 2)
 							{
-								AddInstructionComment(ShiftRight, "char type", 24);
-							}
-							else if (size == 2)
-							{
-								AddInstructionComment(ShiftRight, "short type", 16);
-								if (e->getType()->isSpecificBuiltinType(clang::BuiltinType::Kind::Short))
-								{
-									AddInstruction(IsBitSet, 15);
-									AddJumpInlineCheck(JumpFalse, e->getLocEnd().getRawEncoding());
-									AddInstruction(PushInt, 0xFFFF0000);
-									AddInstructionComment(Or, "ExtSignWord");
-									AddJumpInlineCheck(Label, e->getLocEnd().getRawEncoding());
-								}
+								AddInstruction(GetConv, size, e->getType()->isSignedIntegerType());
 							}
 						}
 					}
@@ -4553,10 +4517,9 @@ public:
 			if (type->isCharType())
 			{
 				//mod for narrowing conversion
-				AddInstruction(PushInt, 256);
-				AddInstruction(Mod);
-				AddInstruction(ShiftLeft, 24);
+				AddInstruction(SetConv, 1);
 				parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
+
 				if (isCst)
 				{
 					int iRes = evalIndex.getSExtValue();
@@ -4570,6 +4533,7 @@ public:
 					parseExpression(index, false, true);
 					AddInstruction(Add);
 				}
+
 				AddInstruction(PGet);
 				AddInstruction(PushInt, 0xFFFFFF);
 				AddInstruction(And);
@@ -4579,9 +4543,8 @@ public:
 			else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 			{
 				//mod for narrowing conversion
-				AddInstruction(PushInt, 65536);
-				AddInstruction(Mod);
-				AddInstruction(ShiftLeft, 16);
+				
+				AddInstruction(SetConv, 2);
 				parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
 				if (isCst)
 				{
@@ -4645,20 +4608,12 @@ public:
 				//1 byte indexing
 				if (type->isCharType())
 				{
-					AddInstruction(ShiftRight, 24);
+					AddInstruction(GetConv, 1, e->getType()->isSignedIntegerType());
 				}
 				//2 byte indexing
 				else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 				{
-					AddInstruction(ShiftRight, 16);
-					if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short))
-					{
-						AddInstruction(IsBitSet, 15);
-						AddJumpInlineCheck(JumpFalse, arr->getLocEnd().getRawEncoding());
-						AddInstruction(PushInt, 0xFFFF0000);
-						AddInstructionComment(Or, "ExtSignWord");
-						AddJumpInlineCheck(Label, arr->getLocEnd().getRawEncoding());
-					}
+					AddInstruction(GetConv, 2, e->getType()->isSignedIntegerType());
 				}
 
 			}

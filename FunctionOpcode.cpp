@@ -821,6 +821,80 @@ void FunctionData::pushComment(string comment)
 #endif
 }
 
+void FunctionData::addOpGetConv(int size, bool isSigned)
+{
+	
+	if (!(size == 1 || size == 2))
+		return;
+
+
+	const uint32_t extSW = size == 1 ? 0xFF000000 : size == 2 ? 0xFFFF0000 : 0;
+	const uint32_t shiftSize = size == 1 ? 24 : size == 2 ? 16 : 0;
+	const string type = size == 1 ? "Char Type" : size == 2 ? "Short Type" : "";
+
+	addOpShiftRight(shiftSize);
+	pushComment(type);
+	if (isSigned)
+	{
+		addOpPushInt(extSW);
+		addOpOr();
+		pushComment("ExtSignWord");
+	}
+
+}
+void FunctionData::addOpSetConv(int size)
+{
+	if (!(size == 1 || size == 2))
+		return;
+
+	const uint32_t modSize = size == 1 ? 256 : size == 2 ? 65536 : 0xFFFFFFFF;
+	const uint32_t shiftSize = size == 1 ? 24 : size == 2 ? 16 : 0;
+	const string type = size == 1 ? "Char Type" : size == 2 ? "Short Type" : "";
+
+	#ifdef USE_OPTIMISATIONS
+	assert(Instructions.size() && "Cannot add convert a type on an empty instruction stack");
+	Opcode *last = Instructions.back();
+	if (last->GetKind() == OK_PushInt)
+	{
+		Instructions.pop_back();
+		addOpPushInt(last->getInt() % modSize << shiftSize);
+		delete last;
+	}
+	else if (last->GetKind() == OK_PushBytes)
+	{
+		int count = last->getByte(0);
+		assert(count > 1 && count < 4 && "PushBytes opcode has invalid number of bytes");
+		int val = last->getByte(count) % modSize << shiftSize;
+		if (count == 3)
+		{
+			last->setByte(2, 0);//undefine the last push byte, just incase new value is outside range of pushB
+			addOpPushInt(val);
+		}
+		else if (count == 2)
+		{
+			//treat last instruction as pushint
+			//if new value >0 & < 0x100 it will be made back in pushBytes
+			last->setInt(last->getByte(1));
+			last->opcodeKind = OK_PushInt;
+			addOpPushInt(val);
+		}
+		else
+		{
+			assert(false && "This shouldn't happen");
+		}
+	}
+	else
+		#endif
+	{
+		addOpPushInt(modSize);
+		addOpMod();
+		addOpShiftLeft(shiftSize);
+		pushComment(type);
+	}
+
+
+
+}
 void FunctionData::AddSimpleOp(OpcodeKind operation)
 {
 	switch(operation)
