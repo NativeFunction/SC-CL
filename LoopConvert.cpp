@@ -3117,7 +3117,7 @@ public:
 					{
 						AddInstructionComment(PushInt, "Type Size", bSize);
 					}
-					else if (size == 1 || size == 2)
+					else if ((size == 1 || size == 2) && isAssign)
 					{
 						AddInstruction(SetConv, size);
 
