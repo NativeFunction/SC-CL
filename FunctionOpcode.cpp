@@ -1021,12 +1021,18 @@ void FunctionData::addSwitchCase(int caseVal, string jumpLoc)
 	int count = 0;
 	while(*curCasePtr)
 	{
-		assert(caseVal != (*curCasePtr)->getCase() && "Duplicate switch case found");
 		curCasePtr = (*curCasePtr)->getNextCasePtr();
 		count++;
 	}
-	assert(count < 256 && "Too many switch cases in statement");
-	*curCasePtr = new SwitchCaseStorage(caseVal, jumpLoc);
+	if (count < 255)
+	{
+		*curCasePtr = new SwitchCaseStorage(caseVal, jumpLoc);
+	}
+	else
+	{
+		addOpSwitch();
+		addSwitchCase(caseVal, jumpLoc);
+	}
 }
 
 void FunctionData::addUsedFunc(FunctionData * func)
