@@ -298,7 +298,7 @@ namespace Utils {
 
 	namespace Hashing
 	{
-		uint32_t Joaat(char* key)
+		uint32_t Joaat(const char* key)
 		{
 			uint32_t hash, i;
 			for (hash = i = 0; key[i]; ++i)
@@ -312,7 +312,7 @@ namespace Utils {
 			hash += (hash << 15);
 			return hash;
 		}
-		uint32_t JoaatCased(char* key)
+		uint32_t JoaatCased(const char* key)
 		{
 			uint32_t hash, i;
 			for (hash = i = 0; key[i]; ++i)

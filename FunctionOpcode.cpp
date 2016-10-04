@@ -59,7 +59,7 @@ public:
 	{
 	}
 	NativeStorage(string name, uint8_t pCount, uint8_t rCount) :
-		_hash((!strnicmp(name.c_str(), "unk_0x", 6) ? strtoull(name.c_str() + 6, NULL, 16) : Utils::Hashing::Joaat((char*)name.c_str()))),
+		_hash((!strnicmp(name.c_str(), "unk_0x", 6) ? strtoull(name.c_str() + 6, NULL, 16) : Utils::Hashing::Joaat(name.c_str()))),
 		_name(new StringStorage(name)),
 		_pCount(pCount),
 		_rCount(rCount)

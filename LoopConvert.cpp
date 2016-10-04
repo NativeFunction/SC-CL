@@ -173,7 +173,7 @@ string getInlineJumpLabelAppend()
 bool isInInline() { return InlineItems.size(); }
 bool isFunctionInInline(string fName)
 {
-	uint32_t hash = Utils::Hashing::Joaat((char*)fName.c_str());
+	uint32_t hash = Utils::Hashing::Joaat(fName.c_str());
 	for (InlineData data : InlineItems)
 	{
 		if (data.hash == hash)
@@ -188,7 +188,7 @@ bool addFunctionInline(string fName, string returnLoc)
 {
 	if (isFunctionInInline(fName))
 		return false;
-	InlineItems.push_back({ Utils::Hashing::Joaat((char*)fName.c_str()) , fName, getInlineJumpLabelAppend() + "_" + returnLoc });
+	InlineItems.push_back({ Utils::Hashing::Joaat(fName.c_str()) , fName, getInlineJumpLabelAppend() + "_" + returnLoc });
 	return true;
 }
 void removeFunctionInline(string fName)
@@ -724,7 +724,7 @@ public:
 			if (isAddr || isLtoRValue)
 			{
 				string name = "@" + key;
-				uint32_t hash = Utils::Hashing::JoaatCased((char*)name.c_str());
+				uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
 				uint32_t i = 0;
 				for (i = 0; i < functionsNew.size(); i++)
 				{
@@ -1962,7 +1962,7 @@ public:
 					if (isa<StringLiteral>(argArray[0]->IgnoreParens()->IgnoreCasts()))
 					{
 						string str = cast<StringLiteral>(argArray[0]->IgnoreParens()->IgnoreCasts())->getString().str();
-						AddInstructionComment(PushInt, "getHashKey(\"" + str + "\")", Utils::Hashing::Joaat((char*)str.c_str()));
+						AddInstructionComment(PushInt, "getHashKey(\"" + str + "\")", Utils::Hashing::Joaat(str.c_str()));
 					}
 					else
 					{
@@ -2662,7 +2662,7 @@ public:
 					if (!inlined)
 					{
 						string name = parseCast(cast<const CastExpr>(callee));
-						uint32_t hash = Utils::Hashing::JoaatCased((char*)name.c_str());
+						uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
 						uint32_t i = 0;
 						for (; i < functionsNew.size(); i++)
 							if (functionsNew[i]->Hash() == hash)
@@ -4410,7 +4410,7 @@ public:
 						if (isa<StringLiteral>(arg))
 						{
 							string str = cast<StringLiteral>(arg)->getString().str();
-							AddInstructionComment(PushInt, "Joaat(\"" + str + "\")", Utils::Hashing::Joaat((char*)str.c_str()));
+							AddInstructionComment(PushInt, "Joaat(\"" + str + "\")", Utils::Hashing::Joaat(str.c_str()));
 							break;
 						}
 						Throw("Jenkins Method called with unsupported arg type, please use a StringLiteral argument", rewriter, arg->getLocStart());
@@ -4686,7 +4686,7 @@ public:
 			for (uint32_t i = 0; i<f->getNumParams(); i++)
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
 			{
-				uint32_t hash = Utils::Hashing::JoaatCased((char*)getNameForFunc(f).c_str());
+				uint32_t hash = Utils::Hashing::JoaatCased(getNameForFunc(f).c_str());
 				size_t i;
 				for (i = 0; i < functionsNew.size(); i++)
 				{
