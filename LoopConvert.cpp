@@ -2703,15 +2703,15 @@ public:
 			switch (icast->getCastKind()) {
 				case clang::CK_IntegralToFloating:
 				{
-					if (isa<IntegerLiteral>(icast->getSubExpr())) {
+					if (isa<IntegerLiteral>(icast->getSubExpr())) 
+					{
 						const IntegerLiteral *literal = cast<const IntegerLiteral>(icast->getSubExpr());
-						if (isLtoRValue)
-						{
-							AddInstruction(PushFloat, (float)(int)(literal->getValue().getSExtValue()));
-						}
+
+						AddInstructionConditionally(isLtoRValue, PushFloat, (float)(int)(literal->getValue().getSExtValue()));
 						return true;
 					}
-					else {
+					else 
+					{
 						parseExpression(icast->getSubExpr(), false, isLtoRValue);
 						AddInstructionConditionally(isLtoRValue, ItoF);
 						return true;
@@ -2966,35 +2966,37 @@ public:
 				if (isa<Expr>(subE))
 				{
 					parseExpression(subE, isAddr, isLtoRValue);
-					if (subE->getType()->isComplexType())
+					if (isLtoRValue)
 					{
-						LocalVariables.addLevel();
-						int index = LocalVariables.addDecl("imagPart", 1);
-						AddInstruction(SetFrame, index);
-						AddInstruction(FNeg);
-						AddInstruction(GetFrame, index);
-						AddInstruction(FNeg);
-						LocalVariables.removeLevel();
+						if (subE->getType()->isComplexType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("imagPart", 1);
+							AddInstruction(SetFrame, index);
+							AddInstruction(FNeg);
+							AddInstruction(GetFrame, index);
+							AddInstruction(FNeg);
+							LocalVariables.removeLevel();
+						}
+						else if (subE->getType()->isComplexIntegerType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("imagPart", 1);
+							AddInstruction(SetFrame, index);
+							AddInstruction(Neg);
+							AddInstruction(GetFrame, index);
+							AddInstruction(Neg);
+							LocalVariables.removeLevel();
+						}
+						else if (subE->getType()->isRealFloatingType())
+						{
+							AddInstruction(FNeg);
+						}
+						else
+						{
+							AddInstruction(Neg);
+						}
 					}
-					else if (subE->getType()->isComplexIntegerType())
-					{
-						LocalVariables.addLevel();
-						int index = LocalVariables.addDecl("imagPart", 1);
-						AddInstruction(SetFrame, index);
-						AddInstruction(Neg);
-						AddInstruction(GetFrame, index);
-						AddInstruction(Neg);
-						LocalVariables.removeLevel();
-					}
-					else if (subE->getType()->isRealFloatingType())
-					{
-						AddInstruction(FNeg);
-					}
-					else
-					{
-						AddInstruction(Neg);
-					}
-
 				}
 				else
 				{
@@ -3005,48 +3007,51 @@ public:
 			else if (op->getOpcode() == UO_LNot) {
 				if (isa<IntegerLiteral>(subE)) {
 					const IntegerLiteral *literal = cast<const IntegerLiteral>(subE);
-					AddInstruction(PushInt, !literal->getValue().getSExtValue());
+					AddInstructionConditionally(isLtoRValue, PushInt, !literal->getValue().getSExtValue());
 				}
 				else if (isa<FloatingLiteral>(subE))
 				{
 					const FloatingLiteral *literal = cast<const FloatingLiteral>(subE);
-					AddInstruction(PushFloat, !extractAPFloat(literal->getValue()));
+					AddInstructionConditionally(isLtoRValue, PushFloat, !extractAPFloat(literal->getValue()));
 				}
 				else if (isa<Expr>(subE))
 				{
 					parseExpression(subE, isAddr, isLtoRValue);
-					if (subE->getType()->isComplexType())
+					if (isLtoRValue)
 					{
-						LocalVariables.addLevel();
-						int index = LocalVariables.addDecl("imagPart", 1);
-						AddInstruction(SetFrame, index);
-						AddInstruction(PushFloat, 0);
-						AddInstruction(FCmpEq);
-						AddInstruction(GetFrame, index);
-						AddInstruction(PushFloat, 0);
-						AddInstruction(FCmpEq);
-						AddInstruction(And);
-						LocalVariables.removeLevel();
-					}
-					else if (subE->getType()->isComplexIntegerType())
-					{
-						LocalVariables.addLevel();
-						int index = LocalVariables.addDecl("imagPart", 1);
-						AddInstruction(SetFrame, index);
-						AddInstruction(Not);
-						AddInstruction(GetFrame, index);
-						AddInstruction(Not);
-						AddInstruction(And);
-						LocalVariables.removeLevel();
-					}
-					else if (subE->getType()->isFloatingType())
-					{
-						AddInstruction(PushFloat, 0);
-						AddInstruction(FCmpEq);
-					}
-					else
-					{
-						AddInstruction(Not);
+						if (subE->getType()->isComplexType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("imagPart", 1);
+							AddInstruction(SetFrame, index);
+							AddInstruction(PushFloat, 0);
+							AddInstruction(FCmpEq);
+							AddInstruction(GetFrame, index);
+							AddInstruction(PushFloat, 0);
+							AddInstruction(FCmpEq);
+							AddInstruction(And);
+							LocalVariables.removeLevel();
+						}
+						else if (subE->getType()->isComplexIntegerType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("imagPart", 1);
+							AddInstruction(SetFrame, index);
+							AddInstruction(Not);
+							AddInstruction(GetFrame, index);
+							AddInstruction(Not);
+							AddInstruction(And);
+							LocalVariables.removeLevel();
+						}
+						else if (subE->getType()->isFloatingType())
+						{
+							AddInstruction(PushFloat, 0);
+							AddInstruction(FCmpEq);
+						}
+						else
+						{
+							AddInstruction(Not);
+						}
 					}
 				}
 				else
@@ -3060,25 +3065,28 @@ public:
 			{
 				if (isa<IntegerLiteral>(subE)) {
 					const IntegerLiteral *literal = cast<const IntegerLiteral>(subE);
-					AddInstruction(PushInt, ~(int)literal->getValue().getSExtValue());
-
+					AddInstructionConditionally(isLtoRValue, PushInt, ~(int)literal->getValue().getSExtValue());
+					
 				}
 				else if (isa<Expr>(subE))
 				{
 					parseExpression(subE, isAddr, isLtoRValue);
 					//Not operator for complex numbers is the conjugate
-					if (subE->getType()->isComplexIntegerType())
+					if (isLtoRValue)
 					{
-						AddInstruction(Neg);
-					}
-					else if (subE->getType()->isComplexType())
-					{
-						AddInstruction(FNeg);
-					}
-					else
-					{
-						AddInstruction(AddImm, 1);
-						AddInstruction(Neg);
+						if (subE->getType()->isComplexIntegerType())
+						{
+							AddInstruction(Neg);
+						}
+						else if (subE->getType()->isComplexType())
+						{
+							AddInstruction(FNeg);
+						}
+						else
+						{
+							AddInstruction(AddImm, 1);
+							AddInstruction(Neg);
+						}
 					}
 				}
 				else
@@ -3467,6 +3475,10 @@ public:
 		else if (isa<CXXThisExpr>(e)) {
 			out << "GetFrame1 0 //\"this\"" << endl;
 			AddInstructionComment(GetFrame, "\"this\"", 0);
+			if (!isLtoRValue)
+			{
+				AddInstructionComment(Drop, "Unused This Expr");
+			}
 		}
 		else if (isa<CXXConstructExpr>(e)) {
 			const CXXConstructExpr *expr = cast<const CXXConstructExpr>(e);
@@ -4275,7 +4287,7 @@ public:
 							i += 4;
 						}
 					}
-					return 1;
+					goto L2RCheck;
 					case 2:
 					{
 						int initCount = I->getNumInits();
@@ -4352,7 +4364,7 @@ public:
 							curSize += 4;
 						}
 					}
-					return 1;
+					goto L2RCheck;
 				}
 			}
 			int size = getSizeOfType(I->getType().getTypePtr());
@@ -4368,7 +4380,16 @@ public:
 				AddInstruction(PushInt, 0);
 				curSize += 4;
 			}
-
+		L2RCheck:
+			if (!isLtoRValue)
+			{
+				int bSize = getSizeFromBytes(getSizeOfType(I->getType().getTypePtr()));
+				while(bSize--)
+				{
+					AddInstructionComment(Drop, "Unused InitListExpr");
+				}
+			}
+			return 1;
 		}
 		else if (isa<ImplicitValueInitExpr>(e))
 		{
@@ -4377,6 +4398,13 @@ public:
 			for (uint32_t i = 0; i < size; i++)
 			{
 				AddInstruction(PushInt, 0);
+			}
+			if (!isLtoRValue)
+			{
+				for (uint32_t i = 0; i < size; i++)
+				{
+					AddInstructionComment(Drop, "Unused ImplicitValueInitExpr");
+				}
 			}
 		}
 		else if (isa<UnaryExprOrTypeTraitExpr>(e))
@@ -4411,6 +4439,10 @@ public:
 						{
 							string str = cast<StringLiteral>(arg)->getString().str();
 							AddInstructionComment(PushInt, "Joaat(\"" + str + "\")", Utils::Hashing::Joaat(str.c_str()));
+							if(!isLtoRValue)
+							{
+								AddInstructionComment(Drop, "unused jenkins hash");
+							}
 							break;
 						}
 						Throw("Jenkins Method called with unsupported arg type, please use a StringLiteral argument", rewriter, arg->getLocStart());
@@ -4426,17 +4458,15 @@ public:
 		}
 		else if (isa<ConditionalOperator>(e))
 		{
-			if (!isLtoRValue)
-				Throw("Invalid Use Of Operator", rewriter, e->getExprLoc());
 			const ConditionalOperator *cond = cast<const ConditionalOperator>(e);
 
 			parseExpression(cond->getCond(), false, true);
 			AddJumpInlineCheck(JumpFalse, cond->getRHS()->getLocStart().getRawEncoding());
-			parseExpression(cond->getLHS(), false, true);
+			parseExpression(cond->getLHS(), isAddr, isLtoRValue);
 			AddJumpInlineCheck(Jump, cond->getLHS()->getLocEnd().getRawEncoding());
 
 			AddJumpInlineCheck(Label, cond->getRHS()->getLocStart().getRawEncoding());
-			parseExpression(cond->getRHS(), false, true);
+			parseExpression(cond->getRHS(), isAddr, isLtoRValue);
 			AddJumpInlineCheck(Label, cond->getLHS()->getLocEnd().getRawEncoding());
 		}
 		else if (isa<ImaginaryLiteral>(e))
@@ -4483,6 +4513,10 @@ public:
 		{
 			const OpaqueValueExpr *ov = cast<OpaqueValueExpr>(e);
 			parseExpression(ov->getSourceExpr(), isAddr, isLtoRValue);
+		}
+		else if (isa<AddrLabelExpr>(e))
+		{
+			Throw("Address of Label Expressions are not supported", rewriter, e->getSourceRange());
 		}
 		else
 			Throw("Unimplemented expression " + string(e->getStmtClassName()), rewriter, e->getExprLoc());
