@@ -3557,12 +3557,24 @@ public:
 					{
 						ComplexToBoolean(bOp->getLHS()->getType()->isComplexType());
 					}
+					else if (bOp->getLHS()->getType()->isRealFloatingType())
+					{
+						AddInstruction(PushFloat, 0.0);
+						AddInstruction(FCmpNe);
+					}
 					AddInstruction(Dup);
 					AddJumpInlineCheck(JumpFalse, bOp->getRHS()->getLocEnd().getRawEncoding());
+					AddInstruction(Drop);
+					AddInstruction(PushInt, 1);
 					parseExpression(bOp->getRHS(), false, true);
 					if (bOp->getRHS()->getType()->isAnyComplexType())
 					{
 						ComplexToBoolean(bOp->getRHS()->getType()->isComplexType());
+					}
+					else if (bOp->getLHS()->getType()->isRealFloatingType())
+					{
+						AddInstruction(PushFloat, 0.0);
+						AddInstruction(FCmpNe);
 					}
 					AddInstruction(And);
 					AddJumpInlineCheck(Label, bOp->getRHS()->getLocEnd().getRawEncoding());
@@ -3586,12 +3598,22 @@ public:
 					{
 						ComplexToBoolean(bOp->getLHS()->getType()->isComplexType());
 					}
+					else if (bOp->getLHS()->getType()->isRealFloatingType())
+					{
+						AddInstruction(PushFloat, 0.0);
+						AddInstruction(FCmpNe);
+					}
 					AddInstruction(Dup);
 					AddJumpInlineCheck(JumpTrue, bOp->getRHS()->getLocEnd().getRawEncoding());
 					parseExpression(bOp->getRHS(), false, true);
 					if (bOp->getRHS()->getType()->isAnyComplexType())
 					{
 						ComplexToBoolean(bOp->getRHS()->getType()->isComplexType());
+					}
+					else if (bOp->getLHS()->getType()->isRealFloatingType())
+					{
+						AddInstruction(PushFloat, 0.0);
+						AddInstruction(FCmpNe);
 					}
 					AddInstruction(Or);
 					AddJumpInlineCheck(Label, bOp->getRHS()->getLocEnd().getRawEncoding());
@@ -4096,9 +4118,7 @@ public:
 								case BO_GE: AddInstruction(FCmpGe); break;
 								case BO_LE: AddInstruction(FCmpLe); break;
 								case BO_NE: AddInstruction(FCmpNe); break;
-								case BO_LAnd:  AddInstruction(And); break;//needs changing
 								case BO_Add: AddInstruction(FAdd); break;
-								case BO_LOr: AddInstruction(Or); break;//needs changing
 
 								default:
 								Throw("Unimplemented binary floating op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
@@ -4124,11 +4144,9 @@ public:
 								case BO_GE: AddInstruction(CmpGe); break;
 								case BO_LE: AddInstruction(CmpLe); break;
 								case BO_NE: AddInstruction(CmpNe); break;
-								case BO_LAnd://needs changing
 								case BO_And: AddInstruction(And); break;
 								case BO_Xor: AddInstruction(Xor); break;
 								case BO_Add: AddInstruction(Add); break;
-								case BO_LOr://needs changing
 								case BO_Or: AddInstruction(Or); break;
 								case BO_Shl: AddInstruction(ShiftLeft); break;
 								case BO_Shr: AddInstruction(ShiftRight); break;
