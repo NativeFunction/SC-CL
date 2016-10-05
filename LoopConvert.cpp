@@ -635,10 +635,7 @@ public:
 			else if (isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if (size == 1 || size == 2)
-				{
-					AddInstruction(SetConv, size);
-				}
+				
 				if (size > 4)//fromStack
 				{
 					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
@@ -647,6 +644,10 @@ public:
 				}
 				else
 				{
+					if (size == 1 || size == 2)
+					{
+						AddInstruction(SetConv, size);
+					}
 					AddInstructionComment(SetFrame, "(pdecl)" + key, index);
 				}
 
@@ -669,10 +670,7 @@ public:
 			else if (isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if (size == 1 || size == 2)
-				{
-					AddInstruction(SetConv, size);
-				}
+				
 				if (size > 4)//fromStack
 				{
 					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
@@ -681,6 +679,10 @@ public:
 				}
 				else
 				{
+					if (size == 1 || size == 2)
+					{
+						AddInstruction(SetConv, size);
+					}
 					AddInstructionComment(SetGlobal, key, index);
 				}
 			}
@@ -702,10 +704,7 @@ public:
 			else if (isAssign)
 			{
 				//this for single var setting (and or) for data preservation is not needed
-				if (size == 1 || size == 2)//char
-				{
-					AddInstruction(SetConv, size);
-				}
+				
 
 				if (size > 4)//fromStack
 				{
@@ -715,6 +714,10 @@ public:
 				}
 				else
 				{
+					if (size == 1 || size == 2)
+					{
+						AddInstruction(SetConv, size);
+					}
 					AddInstructionComment(SetStatic, key, index);
 				}
 			}
@@ -836,13 +839,18 @@ public:
 						//}
 
 						parseExpression(initializer, false, true);
+						
 						if (size > 4) {
 							AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
 							AddInstructionComment(GetFrameP, "&" + var->getNameAsString(), curIndex);
 							AddInstruction(FromStack);
 						}
 						else {
-							AddInstructionComment(SetFrame, var->getName().str(), curIndex);
+							if (size == 1 || size == 2)
+							{
+								AddInstruction(SetConv, size);
+							}
+							AddInstructionComment(SetFrame, "(init)" + var->getName().str(), curIndex);
 						}
 					}
 					LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
