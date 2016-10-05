@@ -825,48 +825,48 @@ void FunctionData::addOpIsNotZero()
 	Opcode *last = Instructions.back();
 	switch (last->GetKind())
 	{
-	case OK_PushInt:
-	{
-		int val = last->getInt();
-		delete last;
-		Instructions.pop_back();
-		addOpPushInt(val != 0);
-		return;
-	}
-	case OK_PushBytes:
-	{
-		int count = last->getByte(0);
-		switch (count)
+		case OK_PushInt:
 		{
-		case 2:
-		case 3:
-			last->setByte(last->getByte(count) != 0, count);
+			int val = last->getInt();
+			delete last;
+			Instructions.pop_back();
+			addOpPushInt(val != 0);
+			return;
+		}
+		case OK_PushBytes:
+		{
+			int count = last->getByte(0);
+			switch (count)
+			{
+			case 2:
+			case 3:
+				last->setByte(last->getByte(count) != 0, count);
+				return;
+			default:
+				assert(false && "Unexpected PushBytes count");
+				addOpPushInt(0);
+				addOpCmpNe();
+				return;
+			}
+		}
+		case OK_CmpEq:
+		case OK_CmpNe:
+		case OK_CmpGt:
+		case OK_CmpGe:
+		case OK_CmpLt:
+		case OK_CmpLe:
+		case OK_FCmpEq:
+		case OK_FCmpNe:
+		case OK_FCmpGt:
+		case OK_FCmpGe:
+		case OK_FCmpLt:
+		case OK_FCmpLe:
+			//dont need to worry about these cases
 			return;
 		default:
-			assert(false && "Unexpected PushBytes count");
 			addOpPushInt(0);
 			addOpCmpNe();
 			return;
-		}
-	}
-	case OK_CmpEq:
-	case OK_CmpNe:
-	case OK_CmpGt:
-	case OK_CmpGe:
-	case OK_CmpLt:
-	case OK_CmpLe:
-	case OK_FCmpEq:
-	case OK_FCmpNe:
-	case OK_FCmpGt:
-	case OK_FCmpGe:
-	case OK_FCmpLt:
-	case OK_FCmpLe:
-		//dont need to worry about these cases
-		return;
-	default:
-		addOpPushInt(0);
-		addOpCmpNe();
-		return;
 	}
 #else
 	addOpPushInt(0);

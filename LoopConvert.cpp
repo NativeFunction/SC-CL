@@ -2835,12 +2835,11 @@ public:
 				case clang::CK_IntegralToBoolean:
 				{
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
-					if (isLtoRValue) {
-
+					if (isLtoRValue) 
+					{
 						if (!icast->getSubExpr()->isEvaluatable(*context, Expr::SE_NoSideEffects))
 						{
-							AddInstruction(PushInt, 0);
-							AddInstruction(CmpNe);
+							AddInstruction(IsNotZero);
 						}
 					}
 					break;
