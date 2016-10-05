@@ -2834,7 +2834,6 @@ public:
 				}
 				case clang::CK_IntegralToBoolean:
 				{
-					cout << icast->getSubExpr()->getStmtClassName() << endl;
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					if (isLtoRValue) {
 
@@ -5846,9 +5845,13 @@ public:
 	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
 
 		#define DisableClangWarning(str) CI.getDiagnostics().setSeverityForGroup(diag::Flavor::WarningOrError, str, diag::Severity::Ignored, SourceLocation());
+		#define EvevateClangWarning(str) CI.getDiagnostics().setSeverityForGroup(diag::Flavor::WarningOrError, str, diag::Severity::Error, SourceLocation());
 
 		DisableClangWarning("main-return-type");
 		DisableClangWarning("incompatible-library-redeclaration");
+		EvevateClangWarning("return-type");
+		EvevateClangWarning("dangling-else");
+
 
 		AddDefines(CI.getPreprocessor());
 		llvm::errs() << "Compiling: " << file << "\n";
@@ -5860,6 +5863,7 @@ public:
 
 		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), fileName + GetBuildTypeExt());
 		#undef DisableClangWarning
+		#undef EvevateClangWarning
 	}
 
 private:
