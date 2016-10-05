@@ -2834,8 +2834,6 @@ public:
 				}
 				case clang::CK_IntegralToBoolean:
 				{
-					cout << icast->getSubExpr()->getStmtClassName() << endl;
-					//Throw("hit");
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					break;
 				}
