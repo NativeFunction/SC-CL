@@ -258,6 +258,7 @@ public:
 		Instructions.push_back(op);
 		Instructions.push_back(new Opcode(OK_And));
 	}
+	void addOpIsNotZero();
 	void addOpGetConv(int size, bool isSigned);
 	void addOpSetConv(int size);
 #pragma endregion 
