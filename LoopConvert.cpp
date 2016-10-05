@@ -2839,8 +2839,8 @@ public:
 
 						if (!icast->getSubExpr()->isEvaluatable(*context, Expr::SE_NoSideEffects))
 						{
-							AddInstruction(PushInt, 1);
-							AddInstruction(And);
+							AddInstruction(PushInt, 0);
+							AddInstruction(CmpNe);
 						}
 					}
 					break;
