@@ -2407,14 +2407,18 @@ public:
 				}
 				else
 				{
+					
 					int64_t resValue = result.Val.getInt().getSExtValue();
 
 					if (doesInt64FitIntoInt32(resValue))
 					{
 						string value = to_string(resValue);
 						Warn("Integer overflow. Value: " + value + " is out of bounds of (-2,147,483,648 to 2,147,483,647). Changed value to " + to_string((int32_t)resValue), rewriter, e->getExprLoc(), e->getExprLoc().getLocWithOffset(value.length() - 1));
-
 					}
+
+					if (e->getType()->isBooleanType() && (int32_t)resValue == -1)
+						resValue = 1;
+
 					AddInstruction(PushInt, (int32_t)resValue);
 				}
 				return -1;
@@ -2830,6 +2834,8 @@ public:
 				}
 				case clang::CK_IntegralToBoolean:
 				{
+					cout << icast->getSubExpr()->getStmtClassName() << endl;
+					//Throw("hit");
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					break;
 				}
