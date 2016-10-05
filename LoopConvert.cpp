@@ -5807,6 +5807,18 @@ public:
 		Throw("No platform selected");
 		return 0;
 	}
+	string GetBuildTypeExt()
+	{
+		switch (bType)
+		{
+			case BT_GTAIV: return "sca";//it would be cool to support gta 4 at some point but its not a priority
+			case BT_RDR_XSC: return GetPlatformAbv() + "sa";
+			case BT_RDR_SCO: return "sca2";
+			case BT_GTAV: return GetPlatformAbv() + "sa2";
+		}
+		return "asm";
+	}
+
 	void AddDefines(Preprocessor &PP)
 	{
 		switch(bType)
@@ -5830,29 +5842,24 @@ public:
 		}
 				
 	}
-	string GetBuildTypeExt()
+	void ModifyClangWarnings(DiagnosticsEngine& DE)
 	{
-		switch (bType)
-		{
-			case BT_GTAIV: return "sca";//it would be cool to support gta 4 at some point but its not a priority
-			case BT_RDR_XSC: return GetPlatformAbv() + "sa";
-			case BT_RDR_SCO: return "sca2";
-			case BT_GTAV: return GetPlatformAbv() + "sa2";
-		}
-		return "asm";
-	}
-
-	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
-
-		#define DisableClangWarning(str) CI.getDiagnostics().setSeverityForGroup(diag::Flavor::WarningOrError, str, diag::Severity::Ignored, SourceLocation());
-		#define EvevateClangWarning(str) CI.getDiagnostics().setSeverityForGroup(diag::Flavor::WarningOrError, str, diag::Severity::Error, SourceLocation());
-
+		#define DisableClangWarning(str) DE.setSeverityForGroup(diag::Flavor::WarningOrError, str, diag::Severity::Ignored, SourceLocation());
+		#define EvevateClangWarning(str) DE.setSeverityForGroup(diag::Flavor::WarningOrError, str, diag::Severity::Error, SourceLocation());
+		
 		DisableClangWarning("main-return-type");
 		DisableClangWarning("incompatible-library-redeclaration");
 		EvevateClangWarning("return-type");
 		EvevateClangWarning("dangling-else");
+		
+		#undef DisableClangWarning
+		#undef EvevateClangWarning
+	}
+	
+	
+	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
 
-
+		ModifyClangWarnings(CI.getDiagnostics());
 		AddDefines(CI.getPreprocessor());
 		llvm::errs() << "Compiling: " << file << "\n";
 		TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
@@ -5862,8 +5869,6 @@ public:
 		fileName.erase(fileName.find_last_of(".c"));
 
 		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), fileName + GetBuildTypeExt());
-		#undef DisableClangWarning
-		#undef EvevateClangWarning
 	}
 
 private:
