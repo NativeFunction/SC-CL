@@ -10,7 +10,7 @@
 #include "clang/Lex/PreProcessor.h"
 
 #pragma region Global_Defines
-#undef ReplaceText//(commdlg.h) fix for the retard at microsoft who thought having a define as ReplaceText was a good idea
+#undef ReplaceText//(commdlg.h)
 #define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4)
 #define STATIC_PADDING_DEBUG 0
 #define AddInstruction(opName, ...) CurrentFunction->addOp##opName(__VA_ARGS__)
@@ -5831,6 +5831,12 @@ public:
 	}
 
 	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
+
+		#define DisableClangWarning(str) CI.getDiagnostics().setSeverityForGroup(diag::Flavor::WarningOrError, str, diag::Severity::Ignored, SourceLocation());
+
+		DisableClangWarning("main-return-type");
+		DisableClangWarning("incompatible-library-redeclaration");
+
 		AddDefines(CI.getPreprocessor());
 		llvm::errs() << "Compiling: " << file << "\n";
 		TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
@@ -5840,6 +5846,7 @@ public:
 		fileName.erase(fileName.find_last_of(".c"));
 
 		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), fileName + GetBuildTypeExt());
+		#undef DisableClangWarning
 	}
 
 private:
@@ -5854,7 +5861,6 @@ int main(int argc, const char **argv) {
 
 	CommonOptionsParser op(argc, argv, ToolingSampleCategory);
 	ClangTool Tool(op.getCompilations(), op.getSourcePathList());
-
 	// ClangTool::run accepts a FrontendActionFactory, which is then used to
 	// create new objects implementing the FrontendAction interface. Here we use
 	// the helper newFrontendActionFactory to create a default factory that will
