@@ -2834,7 +2834,16 @@ public:
 				}
 				case clang::CK_IntegralToBoolean:
 				{
+					cout << icast->getSubExpr()->getStmtClassName() << endl;
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					if (isLtoRValue) {
+
+						if (!icast->getSubExpr()->isEvaluatable(*context, Expr::SE_NoSideEffects))
+						{
+							AddInstruction(PushInt, 1);
+							AddInstruction(And);
+						}
+					}
 					break;
 				}
 				case clang::CK_FloatingToBoolean:
