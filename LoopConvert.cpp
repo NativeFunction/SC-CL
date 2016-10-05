@@ -5759,10 +5759,16 @@ private:
 #pragma region CreateASTConsumer
 enum BuildType
 {
+	BT_GTAIV,
 	BT_RDR_XSC,
 	BT_RDR_SCO,
-	BT_GTA_V,
-	//BT_GTA_V_PC
+	BT_GTAV
+};
+enum Platform
+{
+	P_XBOX,
+	P_PS3,
+	P_PC
 };
 class MyFrontendAction : public ASTFrontendAction {
 public:
@@ -5777,26 +5783,51 @@ public:
 		//TheRewriter.getEditBuffer(SM.getMainFileID()).write(llvm::outs());
 	}
 
+
+	string GetPlatformAbv()
+	{
+		switch (Plat)
+		{
+			case P_XBOX: return "x";
+			case P_PS3: return "c";
+			case P_PC: return "w";
+		}
+		Throw("No platform selected");
+		return 0;
+	}
 	void AddDefines(Preprocessor &PP)
 	{
 		switch(bType)
 		{
-		case BT_RDR_XSC:
-			PP.appendDefMacroDirective(PP.getIdentifierInfo("__RDR__"), PP.AllocateMacroInfo(SourceLocation()));
-			PP.appendDefMacroDirective(PP.getIdentifierInfo("__RSC__"), PP.AllocateMacroInfo(SourceLocation()));
-			break;
-		case BT_RDR_SCO:
-			PP.appendDefMacroDirective(PP.getIdentifierInfo("__RDR__"), PP.AllocateMacroInfo(SourceLocation()));
-			PP.appendDefMacroDirective(PP.getIdentifierInfo("__SCO__"), PP.AllocateMacroInfo(SourceLocation()));
-			break;
-		case BT_GTA_V:
-			PP.appendDefMacroDirective(PP.getIdentifierInfo("__GTA__"), PP.AllocateMacroInfo(SourceLocation()));
-			break;
-		/*case BT_GTA_V_PC:
-			PP.appendDefMacroDirective(PP.getIdentifierInfo("__GTA_PC__"), PP.AllocateMacroInfo(SourceLocation()));
-			break;*/
+			case BT_GTAIV://it would be cool to support gta 4 at some point but its not a priority
+				PP.appendDefMacroDirective(PP.getIdentifierInfo("__GTAIV__"), PP.AllocateMacroInfo(SourceLocation()));
+				PP.appendDefMacroDirective(PP.getIdentifierInfo("__SCO__"), PP.AllocateMacroInfo(SourceLocation()));
+				break;
+			case BT_RDR_XSC:
+				PP.appendDefMacroDirective(PP.getIdentifierInfo("__RDR__"), PP.AllocateMacroInfo(SourceLocation()));
+				PP.appendDefMacroDirective(PP.getIdentifierInfo(string("__").append(1,toupper(*GetPlatformAbv().c_str())) + "SC__"), PP.AllocateMacroInfo(SourceLocation()));
+				break;
+			case BT_RDR_SCO:
+				PP.appendDefMacroDirective(PP.getIdentifierInfo("__RDR__"), PP.AllocateMacroInfo(SourceLocation()));
+				PP.appendDefMacroDirective(PP.getIdentifierInfo("__SCO__"), PP.AllocateMacroInfo(SourceLocation()));
+				break;
+			case BT_GTAV:
+				PP.appendDefMacroDirective(PP.getIdentifierInfo("__GTAV__"), PP.AllocateMacroInfo(SourceLocation()));
+				PP.appendDefMacroDirective(PP.getIdentifierInfo(string("__").append(1, toupper(*GetPlatformAbv().c_str())) + "SC__"), PP.AllocateMacroInfo(SourceLocation()));
+				break;
 		}
 				
+	}
+	string GetBuildTypeExt()
+	{
+		switch (bType)
+		{
+			case BT_GTAIV: return "sca";//it would be cool to support gta 4 at some point but its not a priority
+			case BT_RDR_XSC: return GetPlatformAbv() + "sa";
+			case BT_RDR_SCO: return "sca2";
+			case BT_GTAV: return GetPlatformAbv() + "sa2";
+		}
+		return "asm";
 	}
 
 	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
@@ -5808,12 +5839,13 @@ public:
 		string fileName(string(SM.getFileEntryForID(SM.getMainFileID())->getName()));
 		fileName.erase(fileName.find_last_of(".c"));
 
-		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), fileName + "asm");
+		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), fileName + GetBuildTypeExt());
 	}
 
 private:
 	Rewriter TheRewriter;
 	BuildType bType = BT_RDR_XSC;
+	Platform Plat = P_XBOX;
 };
 #pragma endregion
 
