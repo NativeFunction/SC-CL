@@ -5839,26 +5839,27 @@ public:
 
 	void AddDefines(Preprocessor &PP)
 	{
+		#define AddClangDefine(str) PP.appendDefMacroDirective(PP.getIdentifierInfo(str), PP.AllocateMacroInfo(SourceLocation()));
 		switch(bType)
 		{
 			case BT_GTAIV://it would be cool to support gta 4 at some point but its not a priority
-				PP.appendDefMacroDirective(PP.getIdentifierInfo("__GTAIV__"), PP.AllocateMacroInfo(SourceLocation()));
-				PP.appendDefMacroDirective(PP.getIdentifierInfo("__SCO__"), PP.AllocateMacroInfo(SourceLocation()));
+				AddClangDefine("__GTAIV__");
+				AddClangDefine("__SCO__");
 				break;
 			case BT_RDR_XSC:
-				PP.appendDefMacroDirective(PP.getIdentifierInfo("__RDR__"), PP.AllocateMacroInfo(SourceLocation()));
-				PP.appendDefMacroDirective(PP.getIdentifierInfo(string("__").append(1,toupper(*GetPlatformAbv().c_str())) + "SC__"), PP.AllocateMacroInfo(SourceLocation()));
+				AddClangDefine("__RDR__");
+				AddClangDefine(string("__").append(1, toupper(*GetPlatformAbv().c_str())) + "SC__");
 				break;
 			case BT_RDR_SCO:
-				PP.appendDefMacroDirective(PP.getIdentifierInfo("__RDR__"), PP.AllocateMacroInfo(SourceLocation()));
-				PP.appendDefMacroDirective(PP.getIdentifierInfo("__SCO__"), PP.AllocateMacroInfo(SourceLocation()));
+				AddClangDefine("__RDR__");
+				AddClangDefine("__SCO__");
 				break;
 			case BT_GTAV:
-				PP.appendDefMacroDirective(PP.getIdentifierInfo("__GTAV__"), PP.AllocateMacroInfo(SourceLocation()));
-				PP.appendDefMacroDirective(PP.getIdentifierInfo(string("__").append(1, toupper(*GetPlatformAbv().c_str())) + "SC__"), PP.AllocateMacroInfo(SourceLocation()));
+				AddClangDefine("__GTAV__");
+				AddClangDefine(string("__").append(1, toupper(*GetPlatformAbv().c_str())) + "SC__");
 				break;
 		}
-				
+		#undef AddClangMacro
 	}
 	void ModifyClangWarnings(DiagnosticsEngine& DE)
 	{
