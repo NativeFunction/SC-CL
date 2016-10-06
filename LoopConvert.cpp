@@ -3268,37 +3268,46 @@ public:
 			if (op->isPrefix()) {
 
 				if (op->isIncrementOp()) {
-					parseExpression(subE, false, true);
 
-					if (subE->getType()->isRealFloatingType())
+					if (subE->getType()->isBooleanType())
 					{
-						AddInstruction(FAddImm, 1.0);
-					}
-					else if (subE->getType()->isComplexType())
-					{
-						LocalVariables.addLevel();
-						int index = LocalVariables.addDecl("complexTemp", 1);
-						AddInstruction(SetFrame, index);
-						AddInstruction(FAddImm, 1.0);
-						AddInstruction(GetFrame, index);
-						LocalVariables.removeLevel();
-					}
-					else if (subE->getType()->isComplexIntegerType())
-					{
-						LocalVariables.addLevel();
-						int index = LocalVariables.addDecl("complexTemp", 1);
-						AddInstruction(SetFrame, index);
-						AddInstruction(AddImm, 1);
-						AddInstruction(GetFrame, index);
-						LocalVariables.removeLevel();
-					}
-					else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
-					{
-						Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
+						AddInstruction(PushInt, 1);//bool inc operation can only be 1
 					}
 					else
 					{
-						AddInstruction(AddImm, pMult);
+						parseExpression(subE, false, true);
+
+						if (subE->getType()->isRealFloatingType())
+						{
+							AddInstruction(FAddImm, 1.0);
+						}
+						else if (subE->getType()->isComplexType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("complexTemp", 1);
+							AddInstruction(SetFrame, index);
+							AddInstruction(FAddImm, 1.0);
+							AddInstruction(GetFrame, index);
+							LocalVariables.removeLevel();
+						}
+						else if (subE->getType()->isComplexIntegerType())
+						{
+							LocalVariables.addLevel();
+							int index = LocalVariables.addDecl("complexTemp", 1);
+							AddInstruction(SetFrame, index);
+							AddInstruction(AddImm, 1);
+							AddInstruction(GetFrame, index);
+							LocalVariables.removeLevel();
+						}
+						else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
+						{
+							Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
+						}
+						else
+						{
+							AddInstruction(AddImm, pMult);
+						}
+
 					}
 					if (isLtoRValue)
 					{
@@ -3323,11 +3332,17 @@ public:
 					return 1;
 				}
 				else if (op->isDecrementOp()) {
+
 					parseExpression(subE, false, true);
 
 					if (subE->getType()->isRealFloatingType())
 					{
 						AddInstruction(FAddImm, -1.0);
+					}
+					else if (subE->getType()->isBooleanType())
+					{
+						AddInstruction(AddImm, -pMult);
+						AddInstruction(IsNotZero);//bool dec operation can be 1 or 0
 					}
 					else if (subE->getType()->isComplexType())
 					{
@@ -3371,7 +3386,7 @@ public:
 						}
 						else
 						{
-							AddInstruction(Dup);
+							AddInstruction(Dup);//ret value
 						}
 					}
 					parseExpression(subE, false, false, true, true);
@@ -3380,7 +3395,10 @@ public:
 			}
 			else if (op->isPostfix()) {
 				if (op->isIncrementOp()) {
-					parseExpression(subE, false, true);
+
+					if (!subE->getType()->isBooleanType())
+						parseExpression(subE, false, true);
+
 					if (isLtoRValue)
 					{
 						if (subE->getType()->isAnyComplexType())
@@ -3395,14 +3413,23 @@ public:
 							AddInstruction(GetFrame, index + 1);//push imag
 							LocalVariables.removeLevel();
 						}
+						else if (subE->getType()->isBooleanType())
+						{
+							parseExpression(subE, false, true);
+						}
 						else
 						{
 							AddInstruction(Dup);
 						}
 					}
+
 					if (subE->getType()->isRealFloatingType())
 					{
 						AddInstruction(FAddImm, 1.0);
+					}
+					else if (subE->getType()->isBooleanType())
+					{
+						AddInstruction(PushInt, 1);//bool inc operation can only be 1
 					}
 					else if (subE->getType()->isComplexType())
 					{
@@ -3436,6 +3463,7 @@ public:
 				}
 				else if (op->isDecrementOp()) {
 					parseExpression(subE, false, true);
+
 					if (isLtoRValue)
 					{
 						if (subE->getType()->isAnyComplexType())
@@ -3459,6 +3487,11 @@ public:
 					if (subE->getType()->isRealFloatingType())
 					{
 						AddInstruction(FAddImm, -1.0);
+					}
+					else if (subE->getType()->isBooleanType())
+					{
+						AddInstruction(AddImm, -pMult);
+						AddInstruction(IsNotZero);//bool dec operation can be 1 or 0
 					}
 					else if (subE->getType()->isComplexType())
 					{
@@ -3486,6 +3519,7 @@ public:
 					{
 						AddInstruction(AddImm, -pMult);
 					}
+
 					parseExpression(subE, false, false, true, true);
 					return 1;
 				}
@@ -3994,6 +4028,8 @@ public:
 						else
 						{
 							AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+							if (bOp->getLHS()->getType()->isBooleanType())
+								AddInstruction(IsNotZero);
 							if (isLtoRValue)
 							{
 								AddInstruction(Dup);
@@ -4020,6 +4056,8 @@ public:
 					else
 					{
 						AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+						if (bOp->getLHS()->getType()->isBooleanType())
+							AddInstruction(IsNotZero);
 						if (isLtoRValue)
 						{
 							AddInstruction(Dup);
