@@ -4,6 +4,7 @@
 //any value above or below that will be automatically cast to a signed int
 typedef unsigned int uint;
 typedef unsigned char byte;
+typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef _Bool bool;
 
