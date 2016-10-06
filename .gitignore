@@ -1,16 +1,15 @@
-CMakeFiles/
-INSTALL.vcxproj
-INSTALL.vcxproj.filters
-PACKAGE.vcxproj
-PACKAGE.vcxproj.filters
-cmake_install.cmake
-loop-convert.dir/Debug/
-loop-convert.vcxproj
-loop-convert.vcxproj.filters
-loop-convert.VC.db
-loop-convert.VC.VC.opendb
-loop-convert.sln
-loop-convert.dir/
+*
+!.gitignore
+!CMakeLists.txt
+!ConsoleColor.h
+!contributors.txt
+!FunctionOpcode.cpp
+!FunctionOpcode.h
+!LoopConvert.cpp
+!Utils.cpp
+!Utils.h
+!bin/include
+!compiler/
 compiler/XscCompilerRaw (RDR)/obj/
 compiler/XscCompilerRaw (RDR)/bin/
 compiler/XscCompilerRaw/bin/
