@@ -2227,7 +2227,12 @@ public:
 			const ReturnStmt *ret = cast<const ReturnStmt>(s);
 			const Expr* retVal = ret->getRetValue();
 			if (retVal)
+			{
+				const Type* type = retVal->getType().getTypePtr();
 				parseExpression(retVal, false, true);
+			}
+			
+
 			if (!isInInline())
 			{
 				int size = 0;
@@ -2553,8 +2558,18 @@ public:
 			{
 				const Expr * const*argArray = call->getArgs();
 				std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
+
 				for (uint32_t i = 0; i < call->getNumArgs(); i++)
+				{
 					parseExpression(argArray[i], false, true);
+					const Type* type = argArray[i]->getType().getTypePtr();
+					if (type->isCharType() || type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
+					{
+						AddInstruction(SetConv, getSizeOfType(type));
+					}
+				}
+
+
 				if (call->getDirectCallee() && call->getDirectCallee()->hasAttr<NativeFuncAttr>())
 				{
 					NativeFuncAttr *attr = call->getDirectCallee()->getAttr<NativeFuncAttr>();
