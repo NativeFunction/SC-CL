@@ -2227,11 +2227,7 @@ public:
 			const ReturnStmt *ret = cast<const ReturnStmt>(s);
 			const Expr* retVal = ret->getRetValue();
 			if (retVal)
-			{
-				const Type* type = retVal->getType().getTypePtr();
 				parseExpression(retVal, false, true);
-			}
-			
 
 			if (!isInInline())
 			{

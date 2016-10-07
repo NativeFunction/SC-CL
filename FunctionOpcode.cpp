@@ -1056,12 +1056,12 @@ void FunctionData::setUsed()
 string FunctionData::toString() const
 {
 	stringstream stream;
-	stream << "\r\n:" << name.substr(1) << "\r\nFunction " << pcount << " " << stackSize << endl;
+	stream << "\r\n:" << name.substr(1) << "//>\r\nFunction " << pcount << " " << stackSize << "\r\n";
 	for(size_t i = 0; i < Instructions.size(); i++)
 	{
-		stream << *Instructions[i] << endl;
+		stream << *Instructions[i] << "\r\n";
 	}
-	stream << endl;
+	stream << "//<\r\n";
 	return stream.str();
 }
 
@@ -1933,11 +1933,11 @@ void FunctionData::addOpJumpFalse(string loc)
 
 ostream & operator<<(ostream & stream, const FunctionData & fdata)
 {
-	stream << "\r\n:" << fdata.name.substr(1) << "\r\nFunction " << fdata.pcount << " " << fdata.stackSize << endl;
+	stream << "\r\n:" << fdata.name.substr(1) << "//>\r\nFunction " << fdata.pcount << " " << fdata.stackSize << "\r\n";
 	for(size_t i = 0; i < fdata.Instructions.size(); i++)
 	{
-		stream << *fdata.Instructions[i] << endl;
+		stream << *fdata.Instructions[i] << "\r\n";
 	}
-	stream << endl;
+	stream << "//<\r\n";
 	return stream;
 }
