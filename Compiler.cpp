@@ -120,14 +120,14 @@ void CompileBase::ParseGeneral(OpcodeKind OK)
 
 
 		case OK_Call:		Call();  break;//call def| gta4: 4 byte loc | gta5: 3 byte loc | rdr: 2 byte loc (loc or'ed)
-		case OK_Jump:		AddJump(JT_Jump, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpFalse:	AddJump(JT_JumpFalse, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpEQ:		AddJump(JT_JumpEQ, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpNE:		AddJump(JT_JumpNE, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpGT:		AddJump(JT_JumpGT, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpGE:		AddJump(JT_JumpGE, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpLT:		AddJump(JT_JumpLT, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpLE:		AddJump(JT_JumpLE, DATA->getString()); break;//gta 4 needs to override
+		case OK_Jump:		AddJump(JumpType::Jump, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpFalse:	AddJump(JumpType::JumpFalse, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpEQ:		AddJump(JumpType::JumpEQ, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpNE:		AddJump(JumpType::JumpNE, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpGT:		AddJump(JumpType::JumpGT, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpGE:		AddJump(JumpType::JumpGE, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpLT:		AddJump(JumpType::JumpLT, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpLE:		AddJump(JumpType::JumpLE, DATA->getString()); break;//gta 4 needs to override
 
 		case OK_Switch:		break;
 

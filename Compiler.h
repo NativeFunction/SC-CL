@@ -207,17 +207,17 @@ typedef union OpCodes {
 class CompileBase
 {
 private:
-	enum JumpType
+	enum class JumpType
 	{
-		JT_Jump
-		, JT_JumpFalse
-		, JT_JumpNE
-		, JT_JumpEQ
-		, JT_JumpLE
-		, JT_JumpLT
-		, JT_JumpGE
-		, JT_JumpGT
-		, JT_Switch
+		  Jump
+		, JumpFalse
+		, JumpNE
+		, JumpEQ
+		, JumpLE
+		, JumpLT
+		, JumpGE
+		, JumpGT
+		, Switch
 	};
 	typedef struct JumpData
 	{
@@ -287,15 +287,15 @@ public:
 	{
 		switch (type)
 		{
-			case JT_Jump:		AddOpcode(Jump); AddShort(0); break;
-			case JT_JumpFalse:	AddOpcode(JumpFalse); AddShort(0); break;
-			case JT_JumpNE:		AddOpcode(JumpNE); AddShort(0); break;
-			case JT_JumpEQ:		AddOpcode(JumpEQ); AddShort(0); break;
-			case JT_JumpLE:		AddOpcode(JumpLE); AddShort(0); break;
-			case JT_JumpLT:		AddOpcode(JumpLT); AddShort(0); break;
-			case JT_JumpGE:		AddOpcode(JumpGE); AddShort(0); break;
-			case JT_JumpGT:		AddOpcode(JumpGT); AddShort(0); break;
-			case JT_Switch:		AddShort(0); break;
+			case JumpType::Jump:		AddOpcode(Jump); AddShort(0); break;
+			case JumpType::JumpFalse:	AddOpcode(JumpFalse); AddShort(0); break;
+			case JumpType::JumpNE:		AddOpcode(JumpNE); AddShort(0); break;
+			case JumpType::JumpEQ:		AddOpcode(JumpEQ); AddShort(0); break;
+			case JumpType::JumpLE:		AddOpcode(JumpLE); AddShort(0); break;
+			case JumpType::JumpLT:		AddOpcode(JumpLT); AddShort(0); break;
+			case JumpType::JumpGE:		AddOpcode(JumpGE); AddShort(0); break;
+			case JumpType::JumpGT:		AddOpcode(JumpGT); AddShort(0); break;
+			case JumpType::Switch:		AddShort(0); break;
 			default: assert(false && "Invalid Type");
 				
 		}
@@ -332,7 +332,7 @@ public:
 		{
 			sCase = sCase->getNextCase();
 			AddInt(sCase->getCase());
-			AddJump(JT_Switch, sCase->getLoc());
+			AddJump(JumpType::Switch, sCase->getLoc());
 		}
 		CodePageData[CaseCount] = CodePageData.size() - CaseCount;
 	}
