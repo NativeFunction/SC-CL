@@ -328,13 +328,15 @@ public:
 		AddByte(0);
 
 		assert(sCase && "Empty Switch Statement");
+		uint32_t i = 0;
 		while (sCase->hasNextCase())
 		{
 			sCase = sCase->getNextCase();
 			AddInt(sCase->getCase());
 			AddJump(JumpType::Switch, sCase->getLoc());
+			i++;
 		}
-		CodePageData[CaseCount] = CodePageData.size() - CaseCount;
+		CodePageData[CaseCount] = i;
 	}
 
 	void ParseGeneral(OpcodeKind OK);
