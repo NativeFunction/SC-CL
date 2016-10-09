@@ -13,6 +13,7 @@
 !Compiler.cpp
 !Compiler.h
 !ConstExpr.h
+!OpcodeConsts.h
 !bin/include
 !compiler/
 compiler/XscCompilerRaw (RDR)/obj/
