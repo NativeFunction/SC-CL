@@ -102,26 +102,93 @@ enum OpcodeKind{
 };
 
 class FunctionData;
-struct SwitchCaseStorage;
-struct NativeStorage;
-struct StringStorage;
+
+
+struct SwitchCaseStorage
+{
+private:
+	int _caseVal;
+	string _jumpLoc;
+	SwitchCaseStorage* _next;
+public:
+	SwitchCaseStorage(int caseVal, string jumpLoc) : _caseVal(caseVal), _jumpLoc(jumpLoc), _next(NULL) {}
+	~SwitchCaseStorage()
+	{
+		if (_next)
+			delete _next;
+	}
+	string getLoc()const { return _jumpLoc; }
+	int getCase()const { return _caseVal; }
+	bool hasNextCase()const { return _next; }
+	SwitchCaseStorage *getNextCase()const { return _next; }
+	SwitchCaseStorage **getNextCasePtr() { return &_next; }
+};
+struct StringStorage
+{
+private:
+	char* pointer;
+	int length;
+public:
+	string toString()const
+	{
+		return string(pointer, length);
+	}
+	StringStorage(string str)
+	{
+		length = str.length();
+		pointer = new char[length + 1];
+		memcpy(pointer, str.c_str(), length + 1);
+	}
+	~StringStorage()
+	{
+		delete[] pointer;
+	}
+};
+struct NativeStorage
+{
+private:
+	uint64_t _hash;
+	StringStorage *_name;
+	uint8_t _pCount, _rCount;
+public:
+	NativeStorage(string name, uint64_t hash, uint8_t pCount, uint8_t rCount) :
+		_hash(hash),
+		_name(new StringStorage(name)),
+		_pCount(pCount),
+		_rCount(rCount)
+	{
+	}
+	NativeStorage(string name, uint8_t pCount, uint8_t rCount) :
+		_hash((!strnicmp(name.c_str(), "unk_0x", 6) ? strtoull(name.c_str() + 6, NULL, 16) : Utils::Hashing::Joaat(name.c_str()))),
+		_name(new StringStorage(name)),
+		_pCount(pCount),
+		_rCount(rCount)
+	{
+	}
+	NativeStorage(uint64_t hash, uint8_t pCount, uint8_t rCount) :
+		_hash(hash),
+		_name(NULL),
+		_pCount(pCount),
+		_rCount(rCount)
+	{
+	}
+	~NativeStorage()
+	{
+		if (_name)
+			delete _name;
+	}
+	bool hasName()const { return _name; }
+	string getName()const { if (hasName())return _name->toString(); return string(); }
+	uint64_t getHash()const { return _hash; }
+	uint8_t getParamCount()const { return _pCount; }
+	uint8_t getReturnCount()const { return _rCount; }
+};
+
 
 class Opcode
 {
 	friend class FunctionData;
 	OpcodeKind opcodeKind;
-	union
-	{
-		char u8[sizeof(void*)];
-		uint16_t u16[sizeof(void*)/sizeof(2)];
-		uint16_t i16[sizeof(void*) / sizeof(2)];
-		int32_t i32;
-		uint32_t u32;
-		float f32;
-		SwitchCaseStorage *switchCase;
-		NativeStorage *native;
-		StringStorage *string;
-	}storage = {0,0,0,0};
 #ifdef _DEBUG
 	StringStorage *_comment = NULL;
 #endif
@@ -133,6 +200,19 @@ class Opcode
 	void setUShort(uint16_t value, int offset);
 	void setByte(uint8_t value, int offset);
 public:
+	union
+	{
+		char u8[sizeof(void*)];
+		uint16_t u16[sizeof(void*) / sizeof(2)];
+		uint16_t i16[sizeof(void*) / sizeof(2)];
+		int32_t i32;
+		uint32_t u32;
+		float f32;
+		SwitchCaseStorage *switchCase;
+		NativeStorage *native;
+		StringStorage *string;
+	}storage = { 0,0,0,0 };
+
 	~Opcode();
 	OpcodeKind GetKind() const{ return opcodeKind; }
 	void setComment(string comment);

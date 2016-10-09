@@ -98,9 +98,28 @@ void CompileBase::ParseGeneral(OpcodeKind OK)
 		case OK_ToStack:	AddOpcode(ToStack); break;
 		case OK_FromStack:	AddOpcode(FromStack); break;
 
+		case OK_GetArrayP:	break;
+		case OK_GetArray:	break;
+		case OK_SetArray:	break;
+		case OK_GetFrameP:	break;
+		case OK_GetFrame:	break;
+		case OK_SetFrame:	break;
+		case OK_GetStaticP:	break;
+		case OK_GetStatic:	break;
+		case OK_SetStatic:	break;
+		case OK_GetGlobalP:	break;
+		case OK_GetGlobal:	break;
+		case OK_SetGlobal:	break;
+		case OK_AddImm:	break;
+		case OK_MultImm:	break;
+		case OK_FAddImm:	break;
+		case OK_FMultImm:	break;
+		case OK_GetImmP:	break;
+		case OK_GetImm:	break;
+		case OK_SetImm:	break;
 
-		case OK_Call:		break;//call def| gta4: 4 byte loc | gta5: 3 byte loc | rdr: 2 byte loc (loc or'ed)
 
+		case OK_Call:		Call();  break;//call def| gta4: 4 byte loc | gta5: 3 byte loc | rdr: 2 byte loc (loc or'ed)
 		case OK_Jump:		AddJump(JT_Jump, DATA->getString()); break;//gta 4 needs to override
 		case OK_JumpFalse:	AddJump(JT_JumpFalse, DATA->getString()); break;//gta 4 needs to override
 		case OK_JumpEQ:		AddJump(JT_JumpEQ, DATA->getString()); break;//gta 4 needs to override
