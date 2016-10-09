@@ -1,7 +1,9 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <cassert>
 #include "Utils.h"
+
 using namespace std;
 enum OpcodeKind{
 	OK_Nop,
@@ -152,7 +154,7 @@ public:
 
 class FunctionData
 {
-private:
+public:
 	vector<Opcode *> Instructions;
 	string name;
 	uint32_t hash;
@@ -160,7 +162,7 @@ private:
 	uint16_t stackSize = 2;
 	bool used = false;
 	vector<FunctionData *> usedFuncs;
-public:
+
 	FunctionData(string name, int pcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount)
 	{
 	}
@@ -262,7 +264,6 @@ public:
 	void addOpGetConv(int size, bool isSigned);
 	void addOpSetConv(int size);
 #pragma endregion 
-
 
 	void addOpDup(){ Instructions.push_back(new Opcode(OK_Dup)); }
 	void addOpDrop();
@@ -426,6 +427,7 @@ public:
 	void addOpJumpLT(unsigned int rawEncoding){ addOpJumpLT(to_string(rawEncoding)); }
 	void addOpJumpLE(unsigned int rawEncoding){ addOpJumpLE(to_string(rawEncoding)); }
 #pragma endregion
+	
 	void addOpSwitch(){ Instructions.push_back(new Opcode(OK_Switch)); }//handle adding the cases later
 	void addOpPushString(string str)
 	{

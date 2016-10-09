@@ -8,6 +8,11 @@
 !LoopConvert.cpp
 !Utils.cpp
 !Utils.h
+!ClangUtils.cpp
+!ClangUtils.h
+!Compiler.cpp
+!Compiler.h
+!ConstExpr.h
 !bin/include
 !compiler/
 compiler/XscCompilerRaw (RDR)/obj/

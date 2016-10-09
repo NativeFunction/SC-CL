@@ -1,19 +1,10 @@
-#ifndef UTILS_H_INCLUDED
-#define UTILS_H_INCLUDED
-#include "clang/AST/AST.h"
-#include "clang/AST/ASTConsumer.h"
-#include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/Frontend/ASTConsumers.h"
-#include "clang/Frontend/FrontendActions.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "clang/Tooling/CommonOptionsParser.h"
-#include "clang/Tooling/Tooling.h"
-#include "clang/Rewrite/Core/Rewriter.h"
-#include "llvm/Support/raw_ostream.h"
+#pragma once
+
 #include <iostream>
 #include <stdint.h>
 #include <vector>
 #include "windows.h"
+#include "ConsoleColor.h"
 
 
 #ifdef _MSC_VER
@@ -75,27 +66,11 @@ namespace Utils {
 	{
 		void Pause(string str = "");
 		void Throw(string str);
-		void Throw(string str, int line, int col);
-		void Throw(string str, clang::Rewriter writer, clang::SourceLocation location);
-		void Throw(string str, clang::Rewriter writer, clang::SourceLocation start, clang::SourceLocation end);
-		void Throw(string str, clang::Rewriter writer, clang::SourceRange range);
 		void Warn(string str);
-		void Warn(string str, clang::Rewriter writer, clang::SourceLocation location);
-		void Warn(string str, clang::Rewriter writer, clang::SourceLocation start, clang::SourceLocation end);
-		void Warn(string str, clang::Rewriter writer, clang::SourceRange range);
 	}
 	namespace Math
 	{
 		inline int64_t CeilDivInt(uint32_t a, uint32_t b) { return a == 0 || b == 0 ? 0 : 1 + ((a - 1) / b); }
 		inline int32_t DivInt(uint32_t a, uint32_t b) { return a == 0 || b == 0 ? 0 : a / b; }
 	}
-	namespace ClangUtils
-	{
-		uint32_t GetLineFromLocation(clang::Rewriter writer, clang::SourceLocation location);
-		uint32_t GetColumnFromLocation(clang::Rewriter writer, clang::SourceLocation location);
-		string GetFileFromLocation(clang::Rewriter writer, clang::SourceLocation location);
-		string GetLineStringFromLocation(clang::Rewriter writer, clang::SourceLocation location);
-	}
 }
-
-#endif // UTILS_H_INCLUDED

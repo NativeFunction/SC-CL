@@ -5,9 +5,11 @@
 #include <utility>
 #include <map>
 #include <cmath>
+#include "ClangUtils.h"
 #include "Utils.h"
 #include "FunctionOpcode.h"
 #include "clang/Lex/PreProcessor.h"
+#include "ConstExpr.h"
 
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h)
@@ -141,24 +143,6 @@ struct local_scope
 	}
 
 }LocalVariables;
-#pragma endregion
-
-//Constexpr in visual studio is not fully implemented. When they are put in the hashing namespace in utils it errors.
-#pragma region Constexpr_Helpers
-#pragma warning( disable : 4307 )
-constexpr char ToLowerConst(const char c) { return (c >= 'A' && c <= 'Z') ? c + ('a' - 'A') : c; }
-constexpr uint32_t sumSHL(uint32_t h, uint32_t shift) { return h + (h << shift); }
-constexpr uint32_t sumSHR(uint32_t h, uint32_t shift) { return h + (h >> shift); }
-constexpr uint32_t xorSHR(uint32_t h, uint32_t shift) { return h ^ (h >> shift); }
-constexpr uint32_t hashFinishImpl(uint32_t h) { return sumSHL(xorSHR(sumSHL(h, 3), 11), 15); }
-constexpr uint32_t hashStepImpl(uint32_t h, uint32_t c) { return xorSHR(sumSHL(h + c, 10), 6); }
-constexpr uint32_t casedHashImpl(const char * cstr, uint32_t h) { return (*cstr != 0) ? casedHashImpl(cstr + 1, hashStepImpl(h, *cstr)) : hashFinishImpl(h); }
-constexpr uint32_t hashImpl(const char * cstr, uint32_t h) { return (*cstr != 0) ? hashImpl(cstr + 1, hashStepImpl(h, ToLowerConst(*cstr))) : hashFinishImpl(h); }
-#pragma endregion
-
-#pragma region Global_Constexpr_Functions
-constexpr uint32_t JoaatCasedConst(const char * cstr) { return casedHashImpl(cstr, 0); }
-constexpr uint32_t JoaatConst(const char * cstr) { return hashImpl(cstr, 0); }
 #pragma endregion
 
 #pragma region Global_Inline_Function_Functions
@@ -899,22 +883,15 @@ public:
 							return true;
 						}
 						else
-						{
 							Throw("Integer constant for string max length argument in strcpy must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
-							return false;
-						}
 					}
 					else
-					{
 						Throw("Expected integer constant for string max length argument in strcpy", rewriter, argArray[2]->getSourceRange());
-						return false;
-					}
 				}
 				else
-				{
 					Throw("strcpy must have signature \"extern __intrinsic void strcpy(char* dst, char* src, const byte len);\"", rewriter, callee->getSourceRange());
-					return false;
-				}
+				
+				return false;
 			}
 			break;
 			case JoaatCasedConst("stradd"):
@@ -935,22 +912,15 @@ public:
 							return true;
 						}
 						else
-						{
 							Throw("Integer constant for string max length argument in stradd must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
-							return false;
-						}
 					}
 					else
-					{
 						Throw("Expected integer constant for string max length argument in stradd", rewriter, argArray[2]->getSourceRange());
-						return false;
-					}
 				}
 				else
-				{
 					Throw("stradd must have signature \"extern __intrinsic void stradd(char* dst, char* append, const byte len);\"", rewriter, callee->getSourceRange());
-					return false;
-				}
+				
+				return false;
 			}
 			break;
 			case JoaatCasedConst("straddi"):
@@ -971,22 +941,15 @@ public:
 							return true;
 						}
 						else
-						{
 							Throw("Integer constant for string max length argument in straddi must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
-							return false;
-						}
 					}
 					else
-					{
 						Throw("Expected integer constant for string max length argument in straddi", rewriter, argArray[2]->getSourceRange());
-						return false;
-					}
 				}
 				else
-				{
 					Throw("straddi must have signature \"extern __intrinsic void straddi(char* dst, int append, const byte len);\"", rewriter, callee->getSourceRange());
-					return false;
-				}
+				
+				return false;
 			}
 			break;
 			case JoaatCasedConst("itos"):
@@ -1007,22 +970,15 @@ public:
 							return true;
 						}
 						else
-						{
 							Throw("Integer constant for string max length argument in itos must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
-							return false;
-						}
 					}
 					else
-					{
 						Throw("Expected integer constant for string max length argument in itos", rewriter, argArray[2]->getSourceRange());
-						return false;
-					}
 				}
 				else
-				{
 					Throw("itos must have signature \"extern __intrinsic void itos(char* dst, int value, const byte len);\"", rewriter, callee->getSourceRange());
-					return false;
-				}
+				
+				return false;
 			}
 			break;
 			case JoaatCasedConst("pop"):
@@ -1518,6 +1474,7 @@ public:
 				Throw("pushVector3 must have signature \"extern __intrinsic void pushVector3(vector3 vec3Value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
+			break;
 			case JoaatCasedConst("popFloat"):
 			{
 				ChkHashCol("popFloat");
@@ -1528,6 +1485,7 @@ public:
 				Throw("popFloat must have signature \"extern __intrinsic float pushFloat();\"", rewriter, callee->getSourceRange());
 				return false;
 			}
+			break;
 			case JoaatCasedConst("popInt"):;
 			{
 				ChkHashCol("popInt");
@@ -1538,6 +1496,7 @@ public:
 				Throw("popInt must have signature \"extern __intrinsic int pushInt();\"", rewriter, callee->getSourceRange());
 				return false;
 			}
+			break;
 			case JoaatCasedConst("popVector3"):
 			{
 				ChkHashCol("popVector3");
