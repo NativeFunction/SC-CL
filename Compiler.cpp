@@ -8,41 +8,43 @@ void CompileBase::PushInt()
 		if (value >= -1 && value <= 7) {
 			switch (value)
 			{
-				case -1: AddByte(BaseOpcodes->Push_Neg1); break;
-				case 0: AddByte(BaseOpcodes->Push_0); break;
-				case 1: AddByte(BaseOpcodes->Push_1); break;
-				case 2: AddByte(BaseOpcodes->Push_2); break;
-				case 3: AddByte(BaseOpcodes->Push_3); break;
-				case 4: AddByte(BaseOpcodes->Push_4); break;
-				case 5: AddByte(BaseOpcodes->Push_5); break;
-				case 6: AddByte(BaseOpcodes->Push_6); break;
-				case 7: AddByte(BaseOpcodes->Push_7); break;
+				case -1:AddInt8(BaseOpcodes->Push_Neg1); break;
+				case 0: AddInt8(BaseOpcodes->Push_0); break;
+				case 1: AddInt8(BaseOpcodes->Push_1); break;
+				case 2: AddInt8(BaseOpcodes->Push_2); break;
+				case 3: AddInt8(BaseOpcodes->Push_3); break;
+				case 4: AddInt8(BaseOpcodes->Push_4); break;
+				case 5: AddInt8(BaseOpcodes->Push_5); break;
+				case 6: AddInt8(BaseOpcodes->Push_6); break;
+				case 7: AddInt8(BaseOpcodes->Push_7); break;
 				default: assert(false && "Invalid Push Opcode");
 			}
 		}
 		else if (value > 0 && value < 256)
 		{
-			AddByte(BaseOpcodes->PushB);
-			AddByte(value);
+			AddInt8(BaseOpcodes->PushB);
+			AddInt8(value);
 		}
 		else if (value >= -32768 && value <= 32767)
 		{
-			AddByte(BaseOpcodes->PushS);
-			AddShort(value);
+			AddInt8(BaseOpcodes->PushS);
+			AddInt16(value);
 		}
 		else if (value > 0 && value < 16777216)
 		{
-			AddByte(BaseOpcodes->PushI24);
-			AddTriByte(value);
+			AddInt8(BaseOpcodes->PushI24);
+			AddInt24(value);
 		}
 		else
 		{
-			AddByte(BaseOpcodes->Push);
-			AddInt(value);
+			AddInt8(BaseOpcodes->Push);
+			AddInt32(value);
 		}
 
 
 	}
+
+
 
 void CompileBase::ParseGeneral(OpcodeKind OK)
 {
@@ -139,10 +141,38 @@ void CompileBase::ParseGeneral(OpcodeKind OK)
 		case OK_MemCpy:		MemCopy(); break;//gta4 needs to override
 		case OK_PCall:		pCall(); break;//gta4 needs to override as error
 		case OK_Label:		AddLabel(DATA->getString()); break;
-		case OK_LabelLoc:	AddOpcode(Push); AddInt(GetLabel(DATA->getString())); break;
-		case OK_ShiftLeft:	AddOpcode(CallNative); AddInt(JoaatConst("shift_left")); AddByte(2); AddByte(1); break;
-		case OK_ShiftRight:	AddOpcode(CallNative); AddInt(JoaatConst("shift_right")); AddByte(2); AddByte(1); break;
+		case OK_LabelLoc:	AddOpcode(Push); AddInt32(GetLabel(DATA->getString())); break;
+		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); break;
+		case OK_ShiftRight:	CallNative(JoaatConst("shift_left"), 2, 1); break;
 		case OK_GetHash:	GetHash(); break;//gta5 needs to override
 	}
 }
+
+
+void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount)
+{
+	// rdr 2 byte call loc based on index
+
+	AddOpcode(CallNative);
+	if (hash == -1)
+	{
+		if(DATA->storage.native->getReturnCount() > 1)
+			Throw("Native Calls Can Only Have One Return");
+
+		uint32_t index = NativeHashMap.size();
+		AddNative(hash);
+		AddInt16(SetNewIndex(index, DATA->storage.native->getParamCount(), DATA->storage.native->getReturnCount() == 1));
+	}
+	else
+	{
+		if (returnCount > 1)
+			Throw("Native Calls Can Only Have One Return");
+
+		uint32_t index = NativeHashMap.size();
+		AddNative(hash);
+		AddInt16(SetNewIndex(index, paramCount, returnCount == 1));
+	}
+}
+
+
 

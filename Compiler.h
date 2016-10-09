@@ -9,6 +9,8 @@
 #include "ConstExpr.h"
 
 using namespace Utils::System;
+using namespace Utils::Bitwise;
+using namespace Utils::Hashing;
 
 
 typedef union OpCodes {
@@ -226,17 +228,19 @@ private:
 	};
 
 protected:
-	vector<uint8_t> CodePageData;
+	vector<uint8_t> CodePageData;//opcode data
 	map<string, uint32_t> LabelLocations;//label ,data index
-	vector<JumpData> JumpLocations;
-	OpCodes* BaseOpcodes;
-	vector<FunctionData*> HLData;
+	vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData
+	map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
+
+	OpCodes* BaseOpcodes;//dynamic opcode list
+	vector<FunctionData*> HLData;//data to parse(High Level Data)
 	uint32_t FunctionCount;
 	uint32_t InstructionCount;
 
 public:
 	#define DATA HLData[FunctionCount]->Instructions[InstructionCount]
-	#define AddOpcode(op) AddByte(BaseOpcodes->##op);
+	#define AddOpcode(op) AddInt8(BaseOpcodes->##op);
 
 	CompileBase(OpCodes& Op, vector<FunctionData*> data, uint32_t FC, uint32_t IC)
 	{
@@ -246,21 +250,21 @@ public:
 		InstructionCount = IC;
 	}
 
-	inline void AddByte(uint8_t b)
+	inline void AddInt8(uint8_t b)
 	{
 		CodePageData.push_back(b);
 	}
-	inline void AddShort(int s)
+	inline void AddInt16(int32_t s)
 	{
 		CodePageData.resize(CodePageData.size() + 2);
 		*(short*)(CodePageData.data() + CodePageData.size() - 2) = s;
 	}
-	inline void AddTriByte(int t)
+	inline void AddInt24(int32_t t)
 	{
 		CodePageData.resize(CodePageData.size() + 3);
 		memcpy(CodePageData.data() + CodePageData.size() - 3, (char*)&t + 1, 3);
 	}
-	inline void AddInt(int i)
+	inline void AddInt32(int32_t i)
 	{
 		CodePageData.resize(CodePageData.size() + 4);
 		*(int*)(CodePageData.data() + CodePageData.size() - 4) = i;
@@ -287,35 +291,47 @@ public:
 	{
 		switch (type)
 		{
-			case JumpType::Jump:		AddOpcode(Jump); AddShort(0); break;
-			case JumpType::JumpFalse:	AddOpcode(JumpFalse); AddShort(0); break;
-			case JumpType::JumpNE:		AddOpcode(JumpNE); AddShort(0); break;
-			case JumpType::JumpEQ:		AddOpcode(JumpEQ); AddShort(0); break;
-			case JumpType::JumpLE:		AddOpcode(JumpLE); AddShort(0); break;
-			case JumpType::JumpLT:		AddOpcode(JumpLT); AddShort(0); break;
-			case JumpType::JumpGE:		AddOpcode(JumpGE); AddShort(0); break;
-			case JumpType::JumpGT:		AddOpcode(JumpGT); AddShort(0); break;
-			case JumpType::Switch:		AddShort(0); break;
+			case JumpType::Jump:		AddOpcode(Jump); AddInt16(0); break;
+			case JumpType::JumpFalse:	AddOpcode(JumpFalse); AddInt16(0); break;
+			case JumpType::JumpNE:		AddOpcode(JumpNE); AddInt16(0); break;
+			case JumpType::JumpEQ:		AddOpcode(JumpEQ); AddInt16(0); break;
+			case JumpType::JumpLE:		AddOpcode(JumpLE); AddInt16(0); break;
+			case JumpType::JumpLT:		AddOpcode(JumpLT); AddInt16(0); break;
+			case JumpType::JumpGE:		AddOpcode(JumpGE); AddInt16(0); break;
+			case JumpType::JumpGT:		AddOpcode(JumpGT); AddInt16(0); break;
+			case JumpType::Switch:		AddInt16(0); break;
 			default: assert(false && "Invalid Type");
 				
 		}
 		JumpLocations.push_back({CodePageData.size(), label});
 	}
-		
+	void AddNative(uint32_t hash)
+	{
+		NativeHashMap.insert({hash, NativeHashMap.size() + 1});//native hash map has index start of 1
+	}
+	uint32_t GetNativeIndex(uint32_t hash)
+	{
+
+		if (NativeHashMap[hash] != 0)
+			return NativeHashMap[hash] - 1;
+		else
+			NativeHashMap.erase(hash);
+		return 0;
+	}
 
 	virtual void PushInt();
 	virtual void PushBytes();
 	virtual void PushFloat();
 	virtual void PushString();
-	virtual void CallNative();
+	virtual void CallNative(uint32_t hash = -1, uint8_t paramCount = -1, uint8_t returnCount = -1) { assert(false && "CallNative has to be overridden"); };
 	virtual void Return();
 	virtual void StrCopy();
 	virtual void ItoS();
 	virtual void StrAdd();
 	virtual void StrAddI();
 	virtual void MemCopy();
-	virtual inline void pCall(){ AddOpcode(pCall); }
-	virtual void GetHash();
+	virtual inline void pCall() { AddOpcode(pCall); };
+	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };
 	virtual void Call();
 
 	void Switch()
@@ -325,15 +341,15 @@ public:
 
 		SwitchCaseStorage* sCase = DATA->storage.switchCase;
 		uint32_t CaseCount = CodePageData.size();
-		AddByte(0);
+		AddInt8(0);
 
 		assert(sCase && "Empty Switch Statement");
 		uint32_t i = 0;
 		while (sCase->hasNextCase())
 		{
 			sCase = sCase->getNextCase();
-			AddInt(sCase->getCase());
-			AddJump(JumpType::Switch, sCase->getLoc());
+			AddInt32(sCase->getCase());
+			AddJump(JumpType::Switch, sCase->getLoc());//for gta4 switches override this
 			i++;
 		}
 		CodePageData[CaseCount] = i;
@@ -345,18 +361,33 @@ public:
 
 class CompileRDR : CompileBase
 {
+private:
 	//visual studio plz... designated initializers were added in 1999 get with the times
 	OpCodes RDROpcodes = { RO_Nop, RO_Add, RO_Sub, RO_Mult, RO_Div, RO_Mod, RO_Not, RO_Neg, RO_CmpEq, RO_CmpNe, RO_CmpGt, RO_CmpGe, RO_CmpLt, RO_CmpLe, RO_fAdd, RO_fSub, RO_fMult, RO_fDiv, RO_fMod, RO_fNeg, RO_fCmpEq, RO_fCmpNe, RO_fCmpGt, RO_fCmpGe, RO_fCmpLt, RO_fCmpLe, RO_vAdd, RO_vSub, RO_vMult, RO_vDiv, RO_vNeg, RO_And, RO_Or, RO_Xor, RO_ItoF, RO_FtoI, RO_FtoV, RO_PushB, RO_PushB2, RO_PushB3, RO_Push, RO_PushF, RO_Dup, RO_Drop, RO_CallNative, RO_Function, RO_Return, RO_pGet, RO_pSet, RO_pPeekSet, RO_ToStack, RO_FromStack, RO_GetArrayP1, RO_GetArray1, RO_SetArray1, RO_GetFrameP1, RO_GetFrame1, RO_SetFrame1, RO_GetStaticP1, RO_GetStatic1, RO_SetStatic1, RO_Add1, RO_Mult1, RO_GetImm1, RO_SetImm1, RO_PushS, RO_Add2, RO_Mult2, RO_GetImm2, RO_SetImm2, RO_GetArrayP2, RO_GetArray2, RO_SetArray2, RO_GetFrameP2, RO_GetFrame2, RO_SetFrame2, RO_GetStaticP2, RO_GetStatic2, RO_SetStatic2, RO_GetGlobalP2, RO_GetGlobal2, RO_SetGlobal2, RO_Jump, RO_JumpFalse, RO_JumpNE, RO_JumpEQ, RO_JumpLE, RO_JumpLT, RO_JumpGE, RO_JumpGT, RO_Nop, RO_GetGlobalP3, RO_GetGlobal3, RO_SetGlobal3, RO_PushI24, RO_Switch, RO_PushString, RO_StrCopy, RO_ItoS, RO_StrAdd, RO_StrAddi, RO_MemCopy, RO_Catch, RO_Throw, RO_pCall, RO_Push_Neg1, RO_Push_0, RO_Push_1, RO_Push_2, RO_Push_3, RO_Push_4, RO_Push_5, RO_Push_6, RO_Push_7, RO_PushF_Neg1, RO_PushF_0, RO_PushF_1, RO_PushF_2, RO_PushF_3, RO_PushF_4, RO_PushF_5, RO_PushF_6, RO_PushF_7, RO_Nop, RO_Nop, RO_Nop, RO_Nop, RO_Call2, RO_Call2h1, RO_Call2h2, RO_Call2h3, RO_Call2h4, RO_Call2h5, RO_Call2h6, RO_Call2h7, RO_Call2h8, RO_Call2h9, RO_Call2hA, RO_Call2hB, RO_Call2hC, RO_Call2hD, RO_Call2hE, RO_Call2hF, RO_PushArrayP, RO_ReturnP0R0, RO_ReturnP0R1, RO_ReturnP0R2, RO_ReturnP0R3, RO_ReturnP1R0, RO_ReturnP1R1, RO_ReturnP1R2, RO_ReturnP1R3, RO_ReturnP2R0, RO_ReturnP2R1, RO_ReturnP2R2, RO_ReturnP2R3, RO_ReturnP3R0, RO_ReturnP3R1, RO_ReturnP3R2, RO_ReturnP3R3, RO_PushStringNull };
-		
+
+	#pragma region CallParsing
+	inline uint8_t GetNewCallOpCode(uint32_t needOffset) { return needOffset >= 1048576 ? 255 : 82 + (needOffset >> 16); }
+	inline uint16_t GetNewCallOffset(uint32_t needOffset) { return needOffset - (((needOffset >> 16)) << 16); }
+	inline int32_t GetCallOffset(int32_t readOffset, int32_t opCode) { return readOffset | ((opCode - 82) << 16); }
+	#pragma endregion
+	#pragma region NativeParsing
+	inline int32_t GetArgCountFromIndex(uint16_t* Indblock){ return (((uint8_t*)Indblock)[0] & 0x3e) >> 1; }
+	int32_t GetIndex(uint16_t val) { return (((val & 0xFF) << 2) & 0x300) | ((val >> 8) & 0xFF); }
+	bool FunctionHasReturn(uint16_t* data) { return (((uint8_t*)data)[0] & 1) == 1 ? true : false; }
+	uint16_t SetNewIndex(uint16_t index, int parameterCount, bool ret) { return SwapEndian((uint16_t)(((index & 0xFF00) >> 2) | ((index & 0xFF) << 8) | (ret ? 1 : 0) | (parameterCount << 1))); }
+	#pragma endregion
+
+
+	void CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount) override;
+	void GetHash() override { CallNative(Joaat("string_to_hash"), 1, 1); };
+
+
+public:
 	CompileRDR(vector<FunctionData*> data) : CompileBase(RDROpcodes, data, 0, 0)
 	{
 	}
 
-	void Call() override
-	{
-		AddOpcode(Push);
-	}
-
+	
 };
 
 class CompileGTAV : CompileBase
