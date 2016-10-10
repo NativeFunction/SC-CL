@@ -12,7 +12,7 @@ using namespace Utils::System;
 using namespace Utils::Bitwise;
 using namespace Utils::Hashing;
 
-
+#pragma warning( disable : 4201 )//unnamed struct extention
 typedef union OpCodes {
 	const uint8_t A[164];
 	struct {
@@ -254,7 +254,7 @@ public:
 	{
 		CodePageData.push_back(b);
 	}
-	inline void AddInt16(int32_t s)
+	inline void AddInt16(int16_t s)
 	{
 		CodePageData.resize(CodePageData.size() + 2);
 		*(short*)(CodePageData.data() + CodePageData.size() - 2) = s;
@@ -267,8 +267,19 @@ public:
 	inline void AddInt32(int32_t i)
 	{
 		CodePageData.resize(CodePageData.size() + 4);
-		*(int*)(CodePageData.data() + CodePageData.size() - 4) = i;
+		*(int32_t*)(CodePageData.data() + CodePageData.size() - 4) = i;
 	}
+	inline void AddFloat(float f)
+	{
+		CodePageData.resize(CodePageData.size() + 4);
+		*(float*)(CodePageData.data() + CodePageData.size() - 4) = f;
+	}
+	virtual inline void AddString(string str)//Override: GTAV
+	{
+		CodePageData.resize(CodePageData.size() + str.size() + 1);
+		memcpy(CodePageData.data() + CodePageData.size() - str.size() - 1, str.data(), str.size() + 1);
+	}
+	
 	inline void AddLabel(string label)
 	{
 		if (CodePageData.size() == 0)//label indexing optimising
@@ -305,7 +316,7 @@ public:
 		}
 		JumpLocations.push_back({CodePageData.size(), label});
 	}
-	void AddNative(uint32_t hash)
+	inline void AddNative(uint32_t hash)
 	{
 		NativeHashMap.insert({hash, NativeHashMap.size() + 1});//native hash map has index start of 1
 	}
@@ -319,11 +330,11 @@ public:
 		return 0;
 	}
 
-	virtual void PushInt();
-	virtual void PushBytes();
-	virtual void PushFloat();
-	virtual void PushString();
-	virtual void CallNative(uint32_t hash = -1, uint8_t paramCount = -1, uint8_t returnCount = -1) { assert(false && "CallNative has to be overridden"); };
+	virtual void PushInt();//Override: GTAIV
+	virtual void PushBytes();//Override: GTAIV
+	virtual void PushFloat();//Override: GTAIV
+	virtual void PushString();//Override: GTAV
+	virtual void CallNative(uint32_t hash = -1, uint8_t paramCount = -1, uint8_t returnCount = -1) { assert(false && "CallNative has to be overridden"); };//Override: ALL
 	virtual void Return();
 	virtual void StrCopy();
 	virtual void ItoS();
@@ -333,27 +344,8 @@ public:
 	virtual inline void pCall() { AddOpcode(pCall); };
 	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };
 	virtual void Call();
-
-	void Switch()
-	{
-		AddOpcode(Switch);
-		//AddByte(DATA->getByte());
-
-		SwitchCaseStorage* sCase = DATA->storage.switchCase;
-		uint32_t CaseCount = CodePageData.size();
-		AddInt8(0);
-
-		assert(sCase && "Empty Switch Statement");
-		uint32_t i = 0;
-		while (sCase->hasNextCase())
-		{
-			sCase = sCase->getNextCase();
-			AddInt32(sCase->getCase());
-			AddJump(JumpType::Switch, sCase->getLoc());//for gta4 switches override this
-			i++;
-		}
-		CodePageData[CaseCount] = i;
-	}
+	void Switch();//for gta4 switches override AddJump
+	
 
 	void ParseGeneral(OpcodeKind OK);
 		
@@ -394,7 +386,13 @@ class CompileGTAV : CompileBase
 {
 	OpCodes GTAVOpcodes = { VO_Nop, VO_Add, VO_Sub, VO_Mult, VO_Div, VO_Mod, VO_Not, VO_Neg, VO_CmpEq, VO_CmpNe, VO_CmpGt, VO_CmpGe, VO_CmpLt, VO_CmpLe, VO_fAdd, VO_fSub, VO_fMult, VO_fDiv, VO_fMod, VO_fNeg, VO_fCmpEq, VO_fCmpNe, VO_fCmpGt, VO_fCmpGe, VO_fCmpLt, VO_fCmpLe, VO_vAdd, VO_vSub, VO_vMult, VO_vDiv, VO_vNeg, VO_And, VO_Or, VO_Xor, VO_ItoF, VO_FtoI, VO_FtoV, VO_PushB, VO_PushB2, VO_PushB3, VO_Push, VO_PushF, VO_Dup, VO_Drop, VO_CallNative, VO_Function, VO_Return, VO_pGet, VO_pSet, VO_pPeekSet, VO_ToStack, VO_FromStack, VO_GetArrayP1, VO_GetArray1, VO_SetArray1, VO_GetFrameP1, VO_GetFrame1, VO_SetFrame1, VO_GetStaticP1, VO_GetStatic1, VO_SetStatic1, VO_Add1, VO_Mult1, VO_GetImm1, VO_SetImm1, VO_PushS, VO_Add2, VO_Mult2, VO_GetImm2, VO_SetImm2, VO_GetArrayP2, VO_GetArray2, VO_SetArray2, VO_GetFrameP2, VO_GetFrame2, VO_SetFrame2, VO_GetStaticP2, VO_GetStatic2, VO_SetStatic2, VO_GetGlobalP2, VO_GetGlobal2, VO_SetGlobal2, VO_Jump, VO_JumpFalse, VO_JumpNE, VO_JumpEQ, VO_JumpLE, VO_JumpLT, VO_JumpGE, VO_JumpGT, VO_Call, VO_GetGlobalp3, VO_GetGlobal3, VO_SetGlobal3, VO_PushI24, VO_Switch, VO_PushString, VO_StrCopy, VO_ItoS, VO_StrAdd, VO_StrAddi, VO_Memcopy, VO_Catch, VO_Throw, VO_pCall, VO_Push_Neg1, VO_Push_0, VO_Push_1, VO_Push_2, VO_Push_3, VO_Push_4, VO_Push_5, VO_Push_6, VO_Push_7, VO_PushF_Neg1, VO_PushF_0, VO_PushF_1, VO_PushF_2, VO_PushF_3, VO_PushF_4, VO_PushF_5, VO_PushF_6, VO_PushF_7, VO_GetImmP, VO_GetImmP1, VO_GetImmP2, VO_GetHash };
 
+	void AddString(string str) override;
 
+	void CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount) override;
+	void GetHash() override { CallNative(Joaat("get_hash_key"), 1, 1); };
+	void PushString() override;
+
+public:
 	CompileGTAV(vector<FunctionData*> data) : CompileBase(GTAVOpcodes, data, 0, 0)
 	{
 			

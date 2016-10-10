@@ -5913,6 +5913,9 @@ private:
 #pragma endregion
 
 int main(int argc, const char **argv) {
+
+	cout << FloatConst(1) << endl;
+	Pause();
 	cout << "Starting Clang 3.8.1\r\n";
 
 	CommonOptionsParser op(argc, argv, ToolingSampleCategory);
