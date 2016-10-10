@@ -215,7 +215,7 @@ void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCou
 			Throw("Native Calls Can Only Have One Return");
 
 		uint32_t index = NativeHashMap.size();
-		if (index > 0xFFFF)
+		if (index > 1024)
 			Throw("Native Call Index out of bounds");
 
 		AddNative(hash);
@@ -227,7 +227,7 @@ void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCou
 			Throw("Native Calls Can Only Have One Return");
 
 		uint32_t index = NativeHashMap.size();
-		if (index > 0xFFFF)
+		if (index > 1024)
 			Throw("Native Call Index out of bounds");
 
 		AddNative(hash);
@@ -246,8 +246,8 @@ void CompileGTAV::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCo
 	AddOpcode(CallNative);
 	if (hash == -1)
 	{
-		if (DATA->storage.native->getReturnCount() > 1)
-			Throw("Native Calls Can Only Have One Return");
+		if (DATA->storage.native->getReturnCount() > 3)
+			Throw("Native Calls Can Only Have Three Returns");
 
 		uint32_t index = NativeHashMap.size();
 		if (index > 0xFFFF)
@@ -259,8 +259,8 @@ void CompileGTAV::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCo
 	}
 	else
 	{
-		if (returnCount > 1)
-			Throw("Native Calls Can Only Have One Return");
+		if (returnCount > 3)
+			Throw("Native Calls Can Only Have Three Returns");
 
 		uint32_t index = NativeHashMap.size();
 		if (index > 0xFFFF)

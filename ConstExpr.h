@@ -9,7 +9,7 @@ typedef union IntAndFloat
 };
 
 #pragma region Constexpr_Helpers
-#pragma warning( disable : 4307 )
+#pragma warning( disable : 4307 )//integral constant overflow
 constexpr char ToLowerConst(const char c) { return (c >= 'A' && c <= 'Z') ? c + ('a' - 'A') : c; }
 constexpr uint32_t sumSHL(uint32_t h, uint32_t shift) { return h + (h << shift); }
 constexpr uint32_t sumSHR(uint32_t h, uint32_t shift) { return h + (h >> shift); }
