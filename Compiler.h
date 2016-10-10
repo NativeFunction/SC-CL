@@ -342,7 +342,7 @@ public:
 	virtual void StrAddI();
 	virtual void MemCopy();
 	virtual inline void pCall() { AddOpcode(pCall); };
-	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };
+	virtual inline void GetHash() { assert(false && "GetHash has to be overridden"); };
 	virtual void Call();
 	void Switch();//for gta4 switches override AddJump
 	
@@ -371,7 +371,7 @@ private:
 
 
 	void CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount) override;
-	void GetHash() override { CallNative(Joaat("string_to_hash"), 1, 1); };
+	inline void GetHash() override { CallNative(Joaat("string_to_hash"), 1, 1); };
 
 
 public:
@@ -389,7 +389,7 @@ class CompileGTAV : CompileBase
 	void AddString(string str) override;
 
 	void CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount) override;
-	void GetHash() override { CallNative(Joaat("get_hash_key"), 1, 1); };
+	inline void GetHash() override { CallNative(Joaat("get_hash_key"), 1, 1); };
 	void PushString() override;
 
 public:
