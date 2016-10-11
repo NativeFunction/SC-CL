@@ -103,6 +103,22 @@ void CompileBase::ParseGeneral(OpcodeKind OK)
 		case OK_GetHash:	GetHash(); break;//gta5 needs to override
 	}
 }
+void CompileBase::ParseJump(JumpType type)
+{
+	switch (type)
+	{
+		case JumpType::Jump:		AddOpcode(Jump); AddInt16(0); break;
+		case JumpType::JumpFalse:	AddOpcode(JumpFalse); AddInt16(0); break;
+		case JumpType::JumpNE:		AddOpcode(JumpNE); AddInt16(0); break;
+		case JumpType::JumpEQ:		AddOpcode(JumpEQ); AddInt16(0); break;
+		case JumpType::JumpLE:		AddOpcode(JumpLE); AddInt16(0); break;
+		case JumpType::JumpLT:		AddOpcode(JumpLT); AddInt16(0); break;
+		case JumpType::JumpGE:		AddOpcode(JumpGE); AddInt16(0); break;
+		case JumpType::JumpGT:		AddOpcode(JumpGT); AddInt16(0); break;
+		case JumpType::Switch:		AddInt16(0); break;
+		default: assert(false && "Invalid Type");
+	}
+}
 
 
 void CompileBase::PushInt(bool isLiteral, int32_t Literal)
