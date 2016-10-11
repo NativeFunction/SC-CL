@@ -221,6 +221,7 @@ private:
 		, JumpGE
 		, JumpGT
 		, Switch
+		, LabelLoc
 	};
 	typedef struct JumpData
 	{
@@ -292,21 +293,7 @@ public:
 		else
 			Throw("Cannot add label. Label \"" + label + "\" already exists.");
 	}
-	inline uint32_t GetLabel(string label)
-	{
-		unordered_map<string, uint32_t>::iterator it = LabelLocations.find(label);
-		if (it != LabelLocations.end())
-			return it->second;
-		else
-			Throw("Label \"" + label + "\" not found");
-		return 0;
-	}
-	virtual void ParseJump(JumpType type);//gta 4 needs to override 
-	inline void AddJump(JumpType type, string label)
-	{
-		ParseJump(type);
-		JumpLocations.push_back({CodePageData.size(), label});
-	}
+	virtual void AddJump(JumpType type, string label);//Override: GTAIV
 	inline void AddNative(uint32_t hash)
 	{
 		NativeHashMap.insert({hash, NativeHashMap.size()});
@@ -334,16 +321,23 @@ public:
 	virtual void PushFloat();//Override: GTAIV
 	virtual void PushString();//Override: GTAV
 	virtual void CallNative(uint32_t hash = -1, uint8_t paramCount = -1, uint8_t returnCount = -1) { assert(false && "CallNative has to be overridden"); };//Override: ALL
-	virtual void Return();
-	virtual void StrCopy();
-	virtual void ItoS();
-	virtual void StrAdd();
-	virtual void StrAddI();
-	virtual void MemCopy();
-	virtual void pCall() { AddOpcode(pCall); };
-	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };
-	virtual void Call();
+	virtual void Return();//Override: RDR
+	virtual void StrCopy();//Override: GTAIV
+	virtual void ItoS();//Override: GTAIV
+	virtual void StrAdd();//Override: GTAIV
+	virtual void StrAddI();//Override: GTAIV
+	virtual void MemCopy();//Override: GTAIV
+	virtual void pCall() { AddOpcode(pCall); };//Override: GTAIV
+	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };//Override: All
+	virtual void Call();//Override: All
 	void Switch();//for gta4 switches override AddJump
+	virtual void AddImm();
+	virtual void MultImm();
+	virtual void FAddImm();
+	virtual void FMultImm();
+	virtual void GetImmP();
+	virtual void GetImm();
+	virtual void SetImm();
 	
 
 	void ParseGeneral(OpcodeKind OK);

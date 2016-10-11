@@ -68,13 +68,13 @@ void CompileBase::ParseGeneral(OpcodeKind OK)
 		case OK_GetGlobalP:	break;
 		case OK_GetGlobal:	break;
 		case OK_SetGlobal:	break;
-		case OK_AddImm:	break;
-		case OK_MultImm:	break;
-		case OK_FAddImm:	break;
-		case OK_FMultImm:	break;
-		case OK_GetImmP:	break;
-		case OK_GetImm:	break;
-		case OK_SetImm:	break;
+		case OK_AddImm:		AddImm();	break;
+		case OK_MultImm:	MultImm();	break;
+		case OK_FAddImm:	FAddImm();	break;
+		case OK_FMultImm:	FMultImm(); break;
+		case OK_GetImmP:	GetImmP();	break;
+		case OK_GetImm:		GetImm();	break;
+		case OK_SetImm:		SetImm();	break;
 
 
 		case OK_Call:		Call();  break;//call def| gta4: 4 byte loc | gta5: 3 byte loc | rdr: 2 byte loc (loc or'ed)
@@ -86,9 +86,7 @@ void CompileBase::ParseGeneral(OpcodeKind OK)
 		case OK_JumpGE:		AddJump(JumpType::JumpGE, DATA->getString()); break;//gta 4 needs to override
 		case OK_JumpLT:		AddJump(JumpType::JumpLT, DATA->getString()); break;//gta 4 needs to override
 		case OK_JumpLE:		AddJump(JumpType::JumpLE, DATA->getString()); break;//gta 4 needs to override
-
-		case OK_Switch:		break;
-
+		case OK_Switch:		Switch(); break;
 		case OK_PushString:	PushString(); break;//gta5 needs to override
 		case OK_StrCopy:	StrCopy(); break;//gta4 needs to override
 		case OK_ItoS:		ItoS(); break;//gta4 needs to override
@@ -97,27 +95,31 @@ void CompileBase::ParseGeneral(OpcodeKind OK)
 		case OK_MemCpy:		MemCopy(); break;//gta4 needs to override
 		case OK_PCall:		pCall(); break;//gta4 needs to override as error
 		case OK_Label:		AddLabel(DATA->getString()); break;
-		case OK_LabelLoc:	AddOpcode(Push); AddInt32(GetLabel(DATA->getString())); break;
+		case OK_LabelLoc:	AddJump(JumpType::LabelLoc, DATA->getString()); break;
 		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); break;
 		case OK_ShiftRight:	CallNative(JoaatConst("shift_left"), 2, 1); break;
 		case OK_GetHash:	GetHash(); break;//gta5 needs to override
 	}
 }
-void CompileBase::ParseJump(JumpType type)
+void CompileBase::AddJump(JumpType type, string label)
 {
 	switch (type)
 	{
-		case JumpType::Jump:		AddOpcode(Jump); AddInt16(0); break;
-		case JumpType::JumpFalse:	AddOpcode(JumpFalse); AddInt16(0); break;
-		case JumpType::JumpNE:		AddOpcode(JumpNE); AddInt16(0); break;
-		case JumpType::JumpEQ:		AddOpcode(JumpEQ); AddInt16(0); break;
-		case JumpType::JumpLE:		AddOpcode(JumpLE); AddInt16(0); break;
-		case JumpType::JumpLT:		AddOpcode(JumpLT); AddInt16(0); break;
-		case JumpType::JumpGE:		AddOpcode(JumpGE); AddInt16(0); break;
-		case JumpType::JumpGT:		AddOpcode(JumpGT); AddInt16(0); break;
-		case JumpType::Switch:		AddInt16(0); break;
+		case JumpType::Jump:		DoesOpcodeHaveRoom(3); AddOpcode(Jump); break;
+		case JumpType::JumpFalse:	DoesOpcodeHaveRoom(3); AddOpcode(JumpFalse); break;
+		case JumpType::JumpNE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpNE); break;
+		case JumpType::JumpEQ:		DoesOpcodeHaveRoom(3); AddOpcode(JumpEQ); break;
+		case JumpType::JumpLE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLE); break;
+		case JumpType::JumpLT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLT); break;
+		case JumpType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); break;
+		case JumpType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); break;
+		case JumpType::Switch:		break;
+		case JumpType::LabelLoc:	DoesOpcodeHaveRoom(3); AddOpcode(PushS); break;
+
 		default: assert(false && "Invalid Type");
 	}
+	JumpLocations.push_back({ CodePageData.size(), label });
+	AddInt16(0);
 }
 
 
@@ -220,7 +222,7 @@ void CompileBase::Switch(){
 	{
 		sCase = sCase->getNextCase();
 		AddInt32(sCase->getCase());
-		AddJump(JumpType::Switch, sCase->getLoc());//for gta4 switches override this
+		AddJump(JumpType::Switch, sCase->getLoc());
 		i++;
 	}
 	CodePageData[CaseCount] = i;
