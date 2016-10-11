@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include "Utils.h"
 #include "FunctionOpcode.h"
 #include "OpcodeConsts.h"
@@ -226,12 +227,17 @@ private:
 		uint32_t JumpLocation;
 		string Label;
 	};
+	typedef struct LabelIndex
+	{
+		uint32_t index;
+		string label;
+	};
 
 protected:
 	vector<uint8_t> CodePageData;//opcode data
-	map<string, uint32_t> LabelLocations;//label ,data index
+	unordered_map<string, uint32_t> LabelLocations;//label ,data index
 	vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData
-	map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
+	unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
 
 	OpCodes* BaseOpcodes;//dynamic opcode list
 	vector<FunctionData*> HLData;//data to parse(High Level Data)
@@ -274,26 +280,23 @@ public:
 		CodePageData.resize(CodePageData.size() + 4);
 		*(float*)(CodePageData.data() + CodePageData.size() - 4) = f;
 	}
-	virtual inline void AddString(string str)//Override: GTAV
+	inline void AddString(string str)//Override: GTAV
 	{
 		CodePageData.resize(CodePageData.size() + str.size() + 1);
 		memcpy(CodePageData.data() + CodePageData.size() - str.size() - 1, str.data(), str.size() + 1);
 	}
-	
 	inline void AddLabel(string label)
 	{
-		if (CodePageData.size() == 0)//label indexing optimising
-			AddOpcode(Nop);
-
-		if (LabelLocations[label] == 0)
+		if (LabelLocations.find(label) == LabelLocations.end())
 			LabelLocations.insert({ label, CodePageData.size() });
 		else
-			Throw("Label \"" + label + "\" already exists");
+			Throw("Cannot add label. Label \"" + label + "\" already exists.");
 	}
 	inline uint32_t GetLabel(string label)
 	{
-		if (LabelLocations[label] != 0)
-			return LabelLocations[label];
+		unordered_map<string, uint32_t>::iterator it = LabelLocations.find(label);
+		if (it != LabelLocations.end())
+			return it->second;
 		else
 			Throw("Label \"" + label + "\" not found");
 		return 0;
@@ -318,23 +321,30 @@ public:
 	}
 	inline void AddNative(uint32_t hash)
 	{
-		NativeHashMap.insert({hash, NativeHashMap.size() + 1});//native hash map has index start of 1
+		NativeHashMap.insert({hash, NativeHashMap.size()});
 	}
 	uint32_t GetNativeIndex(uint32_t hash)
 	{
-
-		if (NativeHashMap[hash] != 0)
-			return NativeHashMap[hash] - 1;
+		unordered_map<uint32_t, uint32_t>::iterator it = NativeHashMap.find(hash);
+		if (it != NativeHashMap.cend())
+			return it->second;
 		else
-			NativeHashMap.erase(hash);
+			Throw("Native with hash \""+to_string(hash)+"\" does not exist");
 		return 0;
 	}
+	inline void DoesOpcodeHaveRoom(size_t OpcodeLen)
+	{
+		uint32_t amount = (CodePageData.size() + OpcodeLen) % 16384;
+		if (amount < CodePageData.size() % 16384 && amount != 0)
+			CodePageData.resize(CodePageData.size() + (16384 - (CodePageData.size() % 16384)));
+	}
 
-	virtual void PushInt();//Override: GTAIV
+
+	virtual void PushInt(bool isLiteral = false, int32_t Literal = 0);//Override: GTAIV
 	virtual void PushBytes();//Override: GTAIV
 	virtual void PushFloat();//Override: GTAIV
 	virtual void PushString();//Override: GTAV
-	virtual void CallNative(uint32_t hash = -1, uint8_t paramCount = -1, uint8_t returnCount = -1) { assert(false && "CallNative has to be overridden"); };//Override: ALL
+	virtual inline void CallNative(uint32_t hash = -1, uint8_t paramCount = -1, uint8_t returnCount = -1) { assert(false && "CallNative has to be overridden"); };//Override: ALL
 	virtual void Return();
 	virtual void StrCopy();
 	virtual void ItoS();
@@ -386,10 +396,18 @@ class CompileGTAV : CompileBase
 {
 	OpCodes GTAVOpcodes = { VO_Nop, VO_Add, VO_Sub, VO_Mult, VO_Div, VO_Mod, VO_Not, VO_Neg, VO_CmpEq, VO_CmpNe, VO_CmpGt, VO_CmpGe, VO_CmpLt, VO_CmpLe, VO_fAdd, VO_fSub, VO_fMult, VO_fDiv, VO_fMod, VO_fNeg, VO_fCmpEq, VO_fCmpNe, VO_fCmpGt, VO_fCmpGe, VO_fCmpLt, VO_fCmpLe, VO_vAdd, VO_vSub, VO_vMult, VO_vDiv, VO_vNeg, VO_And, VO_Or, VO_Xor, VO_ItoF, VO_FtoI, VO_FtoV, VO_PushB, VO_PushB2, VO_PushB3, VO_Push, VO_PushF, VO_Dup, VO_Drop, VO_CallNative, VO_Function, VO_Return, VO_pGet, VO_pSet, VO_pPeekSet, VO_ToStack, VO_FromStack, VO_GetArrayP1, VO_GetArray1, VO_SetArray1, VO_GetFrameP1, VO_GetFrame1, VO_SetFrame1, VO_GetStaticP1, VO_GetStatic1, VO_SetStatic1, VO_Add1, VO_Mult1, VO_GetImm1, VO_SetImm1, VO_PushS, VO_Add2, VO_Mult2, VO_GetImm2, VO_SetImm2, VO_GetArrayP2, VO_GetArray2, VO_SetArray2, VO_GetFrameP2, VO_GetFrame2, VO_SetFrame2, VO_GetStaticP2, VO_GetStatic2, VO_SetStatic2, VO_GetGlobalP2, VO_GetGlobal2, VO_SetGlobal2, VO_Jump, VO_JumpFalse, VO_JumpNE, VO_JumpEQ, VO_JumpLE, VO_JumpLT, VO_JumpGE, VO_JumpGT, VO_Call, VO_GetGlobalp3, VO_GetGlobal3, VO_SetGlobal3, VO_PushI24, VO_Switch, VO_PushString, VO_StrCopy, VO_ItoS, VO_StrAdd, VO_StrAddi, VO_Memcopy, VO_Catch, VO_Throw, VO_pCall, VO_Push_Neg1, VO_Push_0, VO_Push_1, VO_Push_2, VO_Push_3, VO_Push_4, VO_Push_5, VO_Push_6, VO_Push_7, VO_PushF_Neg1, VO_PushF_0, VO_PushF_1, VO_PushF_2, VO_PushF_3, VO_PushF_4, VO_PushF_5, VO_PushF_6, VO_PushF_7, VO_GetImmP, VO_GetImmP1, VO_GetImmP2, VO_GetHash };
 
-	void AddString(string str) override;
+	struct StrIndex {
+		uint32_t index;
+		uint32_t len;
+	};
+	vector<uint8_t> StringPageData;
+	vector<StrIndex> StringPageDataIndexing;
+
+
+	uint32_t AddStringToStringPage(string str);
 
 	void CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount) override;
-	inline void GetHash() override { CallNative(Joaat("get_hash_key"), 1, 1); };
+	inline void GetHash() override { AddOpcode(GetHash); };
 	void PushString() override;
 
 public:

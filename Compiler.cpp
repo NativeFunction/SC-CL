@@ -1,7 +1,7 @@
 #include "Compiler.h"
 
 
-
+#pragma region Base
 void CompileBase::ParseGeneral(OpcodeKind OK)
 {
 	switch (OK)
@@ -105,43 +105,47 @@ void CompileBase::ParseGeneral(OpcodeKind OK)
 }
 
 
-void CompileBase::PushInt()
+void CompileBase::PushInt(bool isLiteral, int32_t Literal)
 {
-	int value = DATA->getInt();
+	int32_t value = isLiteral ? Literal : DATA->getInt();
 
 	if (value >= -1 && value <= 7) {
 		switch (value)
 		{
-			case -1:AddInt8(BaseOpcodes->Push_Neg1); break;
-			case 0: AddInt8(BaseOpcodes->Push_0); break;
-			case 1: AddInt8(BaseOpcodes->Push_1); break;
-			case 2: AddInt8(BaseOpcodes->Push_2); break;
-			case 3: AddInt8(BaseOpcodes->Push_3); break;
-			case 4: AddInt8(BaseOpcodes->Push_4); break;
-			case 5: AddInt8(BaseOpcodes->Push_5); break;
-			case 6: AddInt8(BaseOpcodes->Push_6); break;
-			case 7: AddInt8(BaseOpcodes->Push_7); break;
+			case -1:AddOpcode(Push_Neg1); break;
+			case 0: AddOpcode(Push_0); break;
+			case 1: AddOpcode(Push_1); break;
+			case 2: AddOpcode(Push_2); break;
+			case 3: AddOpcode(Push_3); break;
+			case 4: AddOpcode(Push_4); break;
+			case 5: AddOpcode(Push_5); break;
+			case 6: AddOpcode(Push_6); break;
+			case 7: AddOpcode(Push_7); break;
 			default: assert(false && "Invalid Push Opcode");
 		}
 	}
 	else if (value > 0 && value < 256)
 	{
-		AddInt8(BaseOpcodes->PushB);
+		DoesOpcodeHaveRoom(2);
+		AddOpcode(PushB);
 		AddInt8(value);
 	}
 	else if (value >= -32768 && value <= 32767)
 	{
-		AddInt8(BaseOpcodes->PushS);
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(PushS);
 		AddInt16(value);
 	}
 	else if (value > 0 && value < 16777216)
 	{
-		AddInt8(BaseOpcodes->PushI24);
+		DoesOpcodeHaveRoom(4);
+		AddOpcode(PushI24);
 		AddInt24(value);
 	}
 	else
 	{
-		AddInt8(BaseOpcodes->Push);
+		DoesOpcodeHaveRoom(5);
+		AddOpcode(Push);
 		AddInt32(value);
 	}
 
@@ -161,7 +165,7 @@ void CompileBase::PushFloat()
 		case 0x40A00000: AddOpcode(PushF_5); break;
 		case 0x40C00000: AddOpcode(PushF_6); break;
 		case 0x40E00000: AddOpcode(PushF_7); break;
-		default: AddFloat(DATA->getFloat());
+		default: DoesOpcodeHaveRoom(5); AddOpcode(PushF); AddFloat(DATA->getFloat());
 	}
 }
 void CompileBase::PushBytes()
@@ -169,26 +173,28 @@ void CompileBase::PushBytes()
 	switch (DATA->getByte(0))
 	{
 		case 0: assert(false && "Empty PushBytes opcode"); break;
-		case 1: AddOpcode(PushB); AddInt8(DATA->getByte(1)); break;
-		case 2: AddOpcode(PushB2); AddInt8(DATA->getByte(1)); AddInt8(DATA->getByte(2)); break;
-		case 3: AddOpcode(PushB3); AddInt8(DATA->getByte(1)); AddInt8(DATA->getByte(2)); AddInt8(DATA->getByte(3)); break;
+		case 1: DoesOpcodeHaveRoom(2); AddOpcode(PushB); AddInt8(DATA->getByte(1)); break;
+		case 2: DoesOpcodeHaveRoom(3); AddOpcode(PushB2); AddInt8(DATA->getByte(1)); AddInt8(DATA->getByte(2)); break;
+		case 3: DoesOpcodeHaveRoom(4); AddOpcode(PushB3); AddInt8(DATA->getByte(1)); AddInt8(DATA->getByte(2)); AddInt8(DATA->getByte(3)); break;
 		default:
 			assert(false && "Too many bytes in PushBytes opcode");
 	}
 }
 void CompileBase::PushString()
 {
+	DoesOpcodeHaveRoom(DATA->getString().size() + 3);//opcode, len, null terminator
 	AddOpcode(PushString);
 	AddInt8(DATA->getString().size() + 1);//str size + null terminator
 	AddString(DATA->getString());
 }
-
-
-
 void CompileBase::Switch(){
+
+
+	//DoesOpcodeHaveRoom(DATA->getString().size() + 2);//opcode, case count
 	AddOpcode(Switch);
 
 	SwitchCaseStorage* sCase = DATA->storage.switchCase;
+
 	uint32_t CaseCount = CodePageData.size();
 	AddInt8(0);
 
@@ -203,10 +209,14 @@ void CompileBase::Switch(){
 	}
 	CodePageData[CaseCount] = i;
 }
+#pragma endregion
+
+#pragma region RDR
 
 void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount)
 {
 	// rdr 2 byte call loc based on index
+	DoesOpcodeHaveRoom(3);
 
 	AddOpcode(CallNative);
 	if (hash == -1)
@@ -215,7 +225,7 @@ void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCou
 			Throw("Native Calls Can Only Have One Return");
 
 		uint32_t index = NativeHashMap.size();
-		if (index > 1024)
+		if (index >= 1024)
 			Throw("Native Call Index out of bounds");
 
 		AddNative(hash);
@@ -227,7 +237,7 @@ void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCou
 			Throw("Native Calls Can Only Have One Return");
 
 		uint32_t index = NativeHashMap.size();
-		if (index > 1024)
+		if (index >= 1024)
 			Throw("Native Call Index out of bounds");
 
 		AddNative(hash);
@@ -235,13 +245,35 @@ void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCou
 	}
 }
 
+#pragma endregion
+
+#pragma region GTAV
+uint32_t CompileGTAV::AddStringToStringPage(string str)
+{
+	uint32_t len = str.length();
+	uint32_t pos = StringPageData.size();
+
+	//if string is in table
+	for (uint32_t i = 0; i < StringPageDataIndexing.size(); i++)
+	{
+		if (StringPageDataIndexing[i].len == len && strcmp((char*)(StringPageData.data() + StringPageDataIndexing[i].index), str.c_str()) == 0)
+			return StringPageDataIndexing[i].index;
+	}
+
+	if ((pos + len + 1) % 16384 < pos % 16384)
+		StringPageData.resize(16384 - (pos % 16384) + pos);
+
+	StringPageDataIndexing.push_back({ StringPageData.size(), len });
+	StringPageData.resize(pos + len + 1);
+	memcpy(StringPageData.data() + pos, str.data(), len + 1);
+	return pos;
+}
 
 void CompileGTAV::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount)
 {
 	// gta5 1 byte param/return, 2 byte call loc
 
-	//Fix16384(CallNative_L);
-
+	DoesOpcodeHaveRoom(4);
 
 	AddOpcode(CallNative);
 	if (hash == -1)
@@ -271,14 +303,11 @@ void CompileGTAV::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCo
 		AddInt16(index);
 	}
 }
-
-void CompileGTAV::AddString(string str)
-{
-
-}
-
 void CompileGTAV::PushString()
 {
-
+	PushInt(true, AddStringToStringPage(DATA->getString()));
+	AddOpcode(PushString);
 }
 
+
+#pragma endregion

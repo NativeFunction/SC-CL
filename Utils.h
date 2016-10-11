@@ -29,7 +29,9 @@ namespace Utils {
 	namespace Hashing
 	{
 		uint32_t Joaat(const char* key);
+		uint32_t Joaat(string key);
 		uint32_t JoaatCased(const char* key);
+		uint32_t JoaatCased(string key);
 	}
 	namespace DataConversion
 	{
