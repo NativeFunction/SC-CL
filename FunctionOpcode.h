@@ -4,6 +4,33 @@
 #include <cassert>
 #include "Utils.h"
 
+#define USE_OPTIMISATIONS
+
+#ifdef USE_OPTIMISATIONS
+#define SimpleOpCheck(Op, OpName) int i1, i2; \
+if (tryPop2Ints(i1, i2)) \
+{ \
+	addOpPushInt(i1 ##Op i2); \
+} \
+else \
+{ \
+	Instructions.push_back(new Opcode(OK_##OpName)); \
+}
+#define SimpleFloatOpCheck(Op, OpName) float f1, f2; \
+if (tryPop2Floats(f1, f2)) \
+{ \
+	addOpPushFloat(f1 ##Op f2); \
+} \
+else \
+{ \
+	Instructions.push_back(new Opcode(OK_##OpName)); \
+}
+#else
+#define SimpleOpCheck(Op, OpName) Instructions.push_back(new Opcode(OK_##OpName))
+#define SimpleFloatOpCheck(Op, OpName) Instructions.push_back(new Opcode(OK_##OpName))
+#endif
+
+
 using namespace std;
 enum OpcodeKind{
 	OK_Nop,
@@ -199,6 +226,13 @@ class Opcode
 	void setShort(int16_t value, int offset);
 	void setUShort(uint16_t value, int offset);
 	void setByte(uint8_t value, int offset);
+	void setKind(OpcodeKind newKind){ opcodeKind = newKind; }
+	void setPBytesCount(uint8_t count)
+	{
+		assert(opcodeKind == OK_PushBytes && "setPBytesCount can only be called on PushBytes");
+		assert(count == 2 || count == 3 && "setPBytes must be called with 2 or 3 count");
+		setByte(count, 0);
+	}
 public:
 	union
 	{
@@ -214,7 +248,7 @@ public:
 	}storage = { 0,0,0,0 };
 
 	~Opcode();
-	OpcodeKind GetKind() const{ return opcodeKind; }
+	OpcodeKind getKind() const{ return opcodeKind; }
 	void setComment(string comment);
 	string getComment() const;
 	bool hasComment() const;
@@ -224,6 +258,11 @@ public:
 	int16_t getShort(int offset) const;
 	uint16_t getUShort(int offset) const;
 	uint8_t getByte(int offset) const;
+	uint8_t getPBytesCount() const
+	{
+		assert(opcodeKind == OK_PushBytes && "getPBytesCount can only be called on PushBytes");
+		return getByte(0);
+	}
 	int getSizeEstimate() const;
 	string toString() const;
 	friend std::ostream& operator << (std::ostream& stream, const Opcode& opcode) {
@@ -234,6 +273,8 @@ public:
 
 class FunctionData
 {
+	bool tryPop2Ints(int& i1, int& i2);
+	bool tryPop2Floats(float& f1, float& f2);
 public:
 	vector<Opcode *> Instructions;
 	string name;
@@ -249,7 +290,7 @@ public:
 	~FunctionData();
 	void pushComment(string comment);
 	void AddSimpleOp(OpcodeKind operation);
-	bool endsWithReturn() const{ return Instructions.size() && Instructions.back()->GetKind() == OK_Return; }//this will get confused by if else having a return, but it will just return false when there actually is a return so no harm
+	bool endsWithReturn() const{ return Instructions.size() && Instructions.back()->getKind() == OK_Return; }//this will get confused by if else having a return, but it will just return false when there actually is a return so no harm
 	bool endsWithInlineReturn(string position) const;
 	void RemoveLast(){ Instructions.pop_back(); }
 	uint16_t getPCount()const { return pcount; }
@@ -278,37 +319,37 @@ public:
 	void addOpSub();
 	void addOpMult();
 	void addOpDiv(bool *isZeroDivDetected = nullptr);
-	void addOpMod(){ Instructions.push_back(new Opcode(OK_Mod)); }
+	void addOpMod(){ SimpleOpCheck(%, Mod); }
 	void addOpNot();
 	void addOpNeg();
-	void addOpCmpEq(){ Instructions.push_back(new Opcode(OK_CmpEq)); }
-	void addOpCmpNe(){ Instructions.push_back(new Opcode(OK_CmpNe)); }
-	void addOpCmpGt(){ Instructions.push_back(new Opcode(OK_CmpGt)); }
-	void addOpCmpGe(){ Instructions.push_back(new Opcode(OK_CmpGe)); }
-	void addOpCmpLt(){ Instructions.push_back(new Opcode(OK_CmpLt)); }
-	void addOpCmpLe(){ Instructions.push_back(new Opcode(OK_CmpLe)); }
+	void addOpCmpEq(){ SimpleOpCheck(==, CmpEq); }
+	void addOpCmpNe(){ SimpleOpCheck(!= , CmpNe); }
+	void addOpCmpGt(){ SimpleOpCheck(> , CmpGt); }
+	void addOpCmpGe(){ SimpleOpCheck(>= , CmpGe); }
+	void addOpCmpLt(){ SimpleOpCheck(< , CmpLt); }
+	void addOpCmpLe(){ SimpleOpCheck(<= , CmpLe); }
 	void addOpFAdd();
 	void addOpFSub();
 	void addOpFMult();
 	void addOpFDiv(bool *isZeroDivDetected = nullptr);
 	void addOpFMod(){ Instructions.push_back(new Opcode(OK_FMod)); }
 	void addOpFNeg();
-	void addOpFCmpEq(){ Instructions.push_back(new Opcode(OK_FCmpEq)); }
-	void addOpFCmpNe(){ Instructions.push_back(new Opcode(OK_FCmpNe)); }
-	void addOpFCmpGt(){ Instructions.push_back(new Opcode(OK_FCmpGt)); }
-	void addOpFCmpGe(){ Instructions.push_back(new Opcode(OK_FCmpGe)); }
-	void addOpFCmpLt(){ Instructions.push_back(new Opcode(OK_FCmpLt)); }
-	void addOpFCmpLe(){ Instructions.push_back(new Opcode(OK_FCmpLe)); }
+	void addOpFCmpEq(){ SimpleFloatOpCheck(== , FCmpEq); }
+	void addOpFCmpNe(){ SimpleFloatOpCheck(!= , FCmpNe); }
+	void addOpFCmpGt(){ SimpleFloatOpCheck(> , FCmpGt); }
+	void addOpFCmpGe(){ SimpleFloatOpCheck(>= , FCmpGe); }
+	void addOpFCmpLt(){ SimpleFloatOpCheck(< , FCmpLt); }
+	void addOpFCmpLe(){ SimpleFloatOpCheck(<= , FCmpLe); }
 	void addOpVAdd(){ Instructions.push_back(new Opcode(OK_VAdd)); }
 	void addOpVSub(){ Instructions.push_back(new Opcode(OK_VSub)); }
 	void addOpVMult(){ Instructions.push_back(new Opcode(OK_VMult)); }
 	void addOpVDiv(){ Instructions.push_back(new Opcode(OK_VDiv)); }
 	void addOpVNeg(){ Instructions.push_back(new Opcode(OK_VNeg)); }
-	void addOpAnd(){ Instructions.push_back(new Opcode(OK_And)); }
-	void addOpOr(){ Instructions.push_back(new Opcode(OK_Or)); }
-	void addOpXor(){ Instructions.push_back(new Opcode(OK_Xor)); }
-	void addOpItoF(){ Instructions.push_back(new Opcode(OK_ItoF)); }
-	void addOpFtoI(){ Instructions.push_back(new Opcode(OK_FtoI)); }
+	void addOpAnd(){ SimpleOpCheck(& , And); }
+	void addOpOr(){ SimpleOpCheck(|, Or); }
+	void addOpXor(){ SimpleOpCheck(^ , Xor); }
+	void addOpItoF();
+	void addOpFtoI();
 	void addOpFtoV(){ Instructions.push_back(new Opcode(OK_FtoV)); }
 	void addOpPushInt(int immediate);
 	void addOpPushFloat(float immediate)
@@ -317,14 +358,14 @@ public:
 		op->setFloat(immediate);
 		Instructions.push_back(op);
 	}
-	void addOpShiftLeft(){ Instructions.push_back(new Opcode(OK_ShiftLeft)); }
+	void addOpShiftLeft(){ SimpleOpCheck(<< , ShiftLeft); }
 	void addOpShiftLeft(uint8_t shiftCount)
 	{
 		assert(shiftCount >= 0 && shiftCount <= 31 && "shiftCount must be between 0 and 31");
 		addOpPushInt(shiftCount);
 		Instructions.push_back(new Opcode(OK_ShiftLeft));
 	}
-	void addOpShiftRight(){ Instructions.push_back(new Opcode(OK_ShiftRight)); }
+	void addOpShiftRight(){ SimpleOpCheck(>> , ShiftRight); }
 	void addOpShiftRight(uint8_t shiftCount)
 	{
 		assert(shiftCount >= 0 && shiftCount <= 31 && "shiftCount must be between 0 and 31");
@@ -559,3 +600,5 @@ public:
 
 #pragma endregion
 };
+
+#undef SimpleOpCheck
