@@ -210,9 +210,12 @@ typedef union OpCodes {
 class CompileBase
 {
 private:
-	enum class JumpType
+	
+
+protected:
+	enum class JumpInstructionType
 	{
-		  Jump
+		Jump
 		, JumpFalse
 		, JumpNE
 		, JumpEQ
@@ -222,10 +225,19 @@ private:
 		, JumpGT
 		, Switch
 		, LabelLoc
+		, Call
+	};
+	enum class JumpDataType
+	{
+		Int16
+		, Int24
+		, Int32
 	};
 	typedef struct JumpData
 	{
 		uint32_t JumpLocation;
+		JumpDataType DataType;
+		JumpInstructionType InstructionType;
 		string Label;
 	};
 	typedef struct LabelIndex
@@ -234,7 +246,6 @@ private:
 		string label;
 	};
 
-protected:
 	vector<uint8_t> CodePageData;//opcode data
 	unordered_map<string, uint32_t> LabelLocations;//label ,data index
 	vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData
@@ -293,7 +304,18 @@ public:
 		else
 			Throw("Cannot add label. Label \"" + label + "\" already exists.");
 	}
-	virtual void AddJump(JumpType type, string label);//Override: GTAIV
+	inline void AddJumpLoc(JumpDataType LLT, JumpInstructionType it, string label)
+	{
+		JumpLocations.push_back({ CodePageData.size(), LLT, it, label });
+		switch (LLT)
+		{
+			case JumpDataType::Int16:	AddInt16(0); break;
+			case JumpDataType::Int24:	AddInt24(0); break;
+			case JumpDataType::Int32:	AddInt32(0); break;
+			default: assert(false && "Invalid Type");
+		}
+	}
+	virtual void AddJump(JumpInstructionType type, string label);//Override: GTAIV
 	inline void AddNative(uint32_t hash)
 	{
 		NativeHashMap.insert({hash, NativeHashMap.size()});
@@ -315,29 +337,39 @@ public:
 			CodePageData.resize(size + (16384 - (size % 16384)));
 	}
 
-	
 	virtual void PushInt(bool isLiteral = false, int32_t Literal = 0);//Override: GTAIV
 	virtual void PushBytes();//Override: GTAIV
-	virtual void PushFloat();//Override: GTAIV
+	virtual void PushFloat(bool isLiteral = false, float Literal = 0);//Override: GTAIV
 	virtual void PushString();//Override: GTAV
 	virtual void CallNative(uint32_t hash = -1, uint8_t paramCount = -1, uint8_t returnCount = -1) { assert(false && "CallNative has to be overridden"); };//Override: ALL
-	virtual void Return();//Override: RDR
-	virtual void StrCopy();//Override: GTAIV
-	virtual void ItoS();//Override: GTAIV
-	virtual void StrAdd();//Override: GTAIV
-	virtual void StrAddI();//Override: GTAIV
-	virtual void MemCopy();//Override: GTAIV
+	virtual void Return() { DoesOpcodeHaveRoom(3); AddOpcode(Return); AddInt8(DATA->getByte(0)); AddInt8(DATA->getByte(1)); };//Override: RDR
+	virtual void GetArrayP();//Override: GTAIV
+	virtual void GetArray();//Override: GTAIV
+	virtual void SetArray();//Override: GTAIV
+	virtual void GetFrameP();//Override: GTAIV
+	virtual void GetFrame();//Override: GTAIV
+	virtual void SetFrame();//Override: GTAIV
+	virtual void GetStaticP();//Override: GTAIV
+	virtual void GetStatic();//Override: GTAIV
+	virtual void SetStatic();//Override: GTAIV
+	virtual void GetGlobalP();//Override: GTAIV
+	virtual void GetGlobal();//Override: GTAIV
+	virtual void SetGlobal();//Override: GTAIV
+	virtual void StrCopy() { DoesOpcodeHaveRoom(2); AddOpcode(StrCopy); AddInt8(DATA->getByte(0)); };//Override: GTAIV
+	virtual void ItoS() { DoesOpcodeHaveRoom(2); AddOpcode(ItoS); AddInt8(DATA->getByte(0)); };;//Override: GTAIV
+	virtual void StrAdd() { DoesOpcodeHaveRoom(2); AddOpcode(StrAdd); AddInt8(DATA->getByte(0)); };;//Override: GTAIV
+	virtual void StrAddI() { DoesOpcodeHaveRoom(2); AddOpcode(StrAddi); AddInt8(DATA->getByte(0)); };;//Override: GTAIV
 	virtual void pCall() { AddOpcode(pCall); };//Override: GTAIV
-	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };//Override: All
-	virtual void Call();//Override: All
+	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };//Override: ALL
+	virtual void Call() { assert(false && "Call has to be overridden"); };//Override: ALL
 	void Switch();//for gta4 switches override AddJump
-	virtual void AddImm();
-	virtual void MultImm();
-	virtual void FAddImm();
-	virtual void FMultImm();
-	virtual void GetImmP();
-	virtual void GetImm();
-	virtual void SetImm();
+	virtual void AddImm(bool isLiteral = false, int32_t Literal = 0);//Override: GTAIV
+	virtual void MultImm(bool isLiteral = false, int32_t Literal = 0);//Override: GTAIV
+	void FAddImm();
+	void FMultImm();
+	virtual void GetImmP() { MultImm(true, 4); AddOpcode(Add); };//Override: GTAV
+	virtual void GetImm() { assert(false && "GetImm has to be overridden"); };//Override: ALL
+	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
 	
 
 	void ParseGeneral(OpcodeKind OK);
@@ -362,15 +394,16 @@ private:
 	uint16_t SetNewIndex(uint16_t index, int parameterCount, bool ret) { return SwapEndian((uint16_t)(((index & 0xFF00) >> 2) | ((index & 0xFF) << 8) | (ret ? 1 : 0) | (parameterCount << 1))); }
 	#pragma endregion
 
-
 	void CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount) override;
-	inline void GetHash() override { CallNative(Joaat("string_to_hash"), 1, 1); };
+	void Return() override;
+	void GetHash() override { CallNative(Joaat("string_to_hash"), 1, 1); };
+	void Call() override;
+	void GetImm() override;
+	void SetImm() override;
 
 
 public:
-	CompileRDR(vector<FunctionData*> data) : CompileBase(RDROpcodes, data, 0, 0)
-	{
-	}
+	CompileRDR(vector<FunctionData*> data) : CompileBase(RDROpcodes, data, 0, 0) { }
 
 	
 };
@@ -387,16 +420,16 @@ private:
 	vector<uint8_t> StringPageData;
 	vector<StrIndex> StringPageDataIndexing;
 
-
 	uint32_t AddStringToStringPage(string str);
 
 	void CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount) override;
-	inline void GetHash() override { AddOpcode(GetHash); };
+	void GetHash() override { AddOpcode(GetHash); };
+	void Call() override;
 	void PushString() override;
+	void GetImmP() override { AddOpcode(GetImmP); };
+	void GetImm() override;
+	void SetImm() override;
 
 public:
-	CompileGTAV(vector<FunctionData*> data) : CompileBase(GTAVOpcodes, data, 0, 0)
-	{
-			
-	}
+	CompileGTAV(vector<FunctionData*> data) : CompileBase(GTAVOpcodes, data, 0, 0) { }
 };

@@ -56,72 +56,69 @@ void CompileBase::ParseGeneral(OpcodeKind OK)
 		case OK_ToStack:	AddOpcode(ToStack); break;
 		case OK_FromStack:	AddOpcode(FromStack); break;
 
-		case OK_GetArrayP:	break;
-		case OK_GetArray:	break;
-		case OK_SetArray:	break;
-		case OK_GetFrameP:	break;
-		case OK_GetFrame:	break;
-		case OK_SetFrame:	break;
-		case OK_GetStaticP:	break;
-		case OK_GetStatic:	break;
-		case OK_SetStatic:	break;
-		case OK_GetGlobalP:	break;
-		case OK_GetGlobal:	break;
-		case OK_SetGlobal:	break;
-		case OK_AddImm:		AddImm();	break;
-		case OK_MultImm:	MultImm();	break;
-		case OK_FAddImm:	FAddImm();	break;
+		case OK_GetArrayP:	GetArrayP(); break;
+		case OK_GetArray:	GetArray(); break;
+		case OK_SetArray:	SetArray(); break;
+		case OK_GetFrameP:	GetFrameP(); break;
+		case OK_GetFrame:	GetFrame(); break;
+		case OK_SetFrame:	SetFrame(); break;
+		case OK_GetStaticP:	GetStaticP(); break;
+		case OK_GetStatic:	GetStatic(); break;
+		case OK_SetStatic:	SetStatic(); break;
+		case OK_GetGlobalP:	GetGlobalP(); break;
+		case OK_GetGlobal:	GetGlobal(); break;
+		case OK_SetGlobal:	SetGlobal(); break;
+		case OK_AddImm:		AddImm(); break;
+		case OK_MultImm:	MultImm(); break;
+		case OK_FAddImm:	FAddImm(); break;
 		case OK_FMultImm:	FMultImm(); break;
-		case OK_GetImmP:	GetImmP();	break;
-		case OK_GetImm:		GetImm();	break;
-		case OK_SetImm:		SetImm();	break;
+		case OK_GetImmP:	GetImmP(); break;
+		case OK_GetImm:		GetImm(); break;
+		case OK_SetImm:		SetImm(); break;
 
 
 		case OK_Call:		Call();  break;//call def| gta4: 4 byte loc | gta5: 3 byte loc | rdr: 2 byte loc (loc or'ed)
-		case OK_Jump:		AddJump(JumpType::Jump, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpFalse:	AddJump(JumpType::JumpFalse, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpEQ:		AddJump(JumpType::JumpEQ, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpNE:		AddJump(JumpType::JumpNE, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpGT:		AddJump(JumpType::JumpGT, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpGE:		AddJump(JumpType::JumpGE, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpLT:		AddJump(JumpType::JumpLT, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpLE:		AddJump(JumpType::JumpLE, DATA->getString()); break;//gta 4 needs to override
+		case OK_Jump:		AddJump(JumpInstructionType::Jump, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpFalse:	AddJump(JumpInstructionType::JumpFalse, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpEQ:		AddJump(JumpInstructionType::JumpEQ, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpNE:		AddJump(JumpInstructionType::JumpNE, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpGT:		AddJump(JumpInstructionType::JumpGT, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpGE:		AddJump(JumpInstructionType::JumpGE, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpLT:		AddJump(JumpInstructionType::JumpLT, DATA->getString()); break;//gta 4 needs to override
+		case OK_JumpLE:		AddJump(JumpInstructionType::JumpLE, DATA->getString()); break;//gta 4 needs to override
 		case OK_Switch:		Switch(); break;
 		case OK_PushString:	PushString(); break;//gta5 needs to override
 		case OK_StrCopy:	StrCopy(); break;//gta4 needs to override
 		case OK_ItoS:		ItoS(); break;//gta4 needs to override
 		case OK_StrAdd:		StrAdd(); break;//gta4 needs to override
 		case OK_StrAddI:	StrAddI(); break;//gta4 needs to override
-		case OK_MemCpy:		MemCopy(); break;//gta4 needs to override
+		case OK_MemCpy:		AddOpcode(MemCopy); break;
 		case OK_PCall:		pCall(); break;//gta4 needs to override as error
 		case OK_Label:		AddLabel(DATA->getString()); break;
-		case OK_LabelLoc:	AddJump(JumpType::LabelLoc, DATA->getString()); break;
+		case OK_LabelLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); break;
 		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); break;
 		case OK_ShiftRight:	CallNative(JoaatConst("shift_left"), 2, 1); break;
 		case OK_GetHash:	GetHash(); break;//gta5 needs to override
 	}
 }
-void CompileBase::AddJump(JumpType type, string label)
+void CompileBase::AddJump(JumpInstructionType type, string label)
 {
 	switch (type)
 	{
-		case JumpType::Jump:		DoesOpcodeHaveRoom(3); AddOpcode(Jump); break;
-		case JumpType::JumpFalse:	DoesOpcodeHaveRoom(3); AddOpcode(JumpFalse); break;
-		case JumpType::JumpNE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpNE); break;
-		case JumpType::JumpEQ:		DoesOpcodeHaveRoom(3); AddOpcode(JumpEQ); break;
-		case JumpType::JumpLE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLE); break;
-		case JumpType::JumpLT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLT); break;
-		case JumpType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); break;
-		case JumpType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); break;
-		case JumpType::Switch:		break;
-		case JumpType::LabelLoc:	DoesOpcodeHaveRoom(3); AddOpcode(PushS); break;
-
-		default: assert(false && "Invalid Type");
+		case JumpInstructionType::Jump:		DoesOpcodeHaveRoom(3); AddOpcode(Jump); AddJumpLoc(JumpDataType::Int16, type, label); break;
+		case JumpInstructionType::JumpFalse:	DoesOpcodeHaveRoom(3); AddOpcode(JumpFalse); AddJumpLoc(JumpDataType::Int16, type, label); break;
+		case JumpInstructionType::JumpNE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpNE); AddJumpLoc(JumpDataType::Int16, type, label); break;
+		case JumpInstructionType::JumpEQ:		DoesOpcodeHaveRoom(3); AddOpcode(JumpEQ); AddJumpLoc(JumpDataType::Int16, type, label); break;
+		case JumpInstructionType::JumpLE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLE); AddJumpLoc(JumpDataType::Int16, type, label); break;
+		case JumpInstructionType::JumpLT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLT); AddJumpLoc(JumpDataType::Int16, type, label); break;
+		case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); AddJumpLoc(JumpDataType::Int16, type, label); break;
+		case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); AddJumpLoc(JumpDataType::Int16, type, label); break;
+		case JumpInstructionType::Switch:		AddJumpLoc(JumpDataType::Int16, type, label); break;
+		case JumpInstructionType::LabelLoc:	DoesOpcodeHaveRoom(5); AddOpcode(Push); AddJumpLoc(JumpDataType::Int32, type, label); break;
+		case JumpInstructionType::Call:	assert(false && "Call is handled in the call function"); break;
+		default: assert(false && "Invalid JumpInstructionType");
 	}
-	JumpLocations.push_back({ CodePageData.size(), label });
-	AddInt16(0);
 }
-
 
 void CompileBase::PushInt(bool isLiteral, int32_t Literal)
 {
@@ -169,9 +166,9 @@ void CompileBase::PushInt(bool isLiteral, int32_t Literal)
 
 
 }
-void CompileBase::PushFloat()
+void CompileBase::PushFloat(bool isLiteral, float Literal)
 {
-	switch (DATA->getInt())
+	switch (isLiteral ? Utils::DataConversion::FloatToInt(Literal) : DATA->getInt())
 	{
 		case 0xbf800000: AddOpcode(PushF_Neg1); break;
 		case 0x80000000://neg 0
@@ -198,6 +195,96 @@ void CompileBase::PushBytes()
 			assert(false && "Too many bytes in PushBytes opcode");
 	}
 }
+
+#pragma region AddOpcodeB_1or2
+#define AddOpcodeB_1or2(op, errorstr)\
+uint32_t value = DATA->getInt();\
+if (value <= 0xFF)\
+{\
+	DoesOpcodeHaveRoom(2);\
+	AddInt8(BaseOpcodes->##op##1);\
+	AddInt8(value);\
+}\
+else if (value <= 0xFFFF)\
+{\
+	DoesOpcodeHaveRoom(3);\
+	AddInt8(BaseOpcodes->##op##2);\
+	AddInt16(value);\
+}\
+else{\
+assert(false && errorstr);\
+}
+#pragma endregion
+#pragma region AddOpcodeB_2or3
+#define AddOpcodeB_2or3(op, errorstr)\
+uint32_t value = DATA->getInt();\
+if (value <= 0xFFFF)\
+{\
+	DoesOpcodeHaveRoom(3);\
+	AddInt8(BaseOpcodes->##op##2);\
+	AddInt8(value);\
+}\
+else if (value <= 0xFFFFFF)\
+{\
+	DoesOpcodeHaveRoom(4);\
+	AddInt8(BaseOpcodes->##op##3);\
+	AddInt16(value);\
+}\
+else{\
+assert(false && errorstr);\
+}
+#pragma endregion
+
+void CompileBase::GetArrayP()
+{
+	AddOpcodeB_1or2(GetArrayP, "GetArrayP index too high");
+}
+void CompileBase::GetArray()
+{
+	AddOpcodeB_1or2(GetArray, "GetArray index too high");
+}
+void CompileBase::SetArray()
+{
+	AddOpcodeB_1or2(SetArray, "SetArray index too high");
+}
+void CompileBase::GetFrameP()
+{
+	AddOpcodeB_1or2(GetFrameP, "GetFrameP index too high");
+}
+void CompileBase::GetFrame()
+{
+	AddOpcodeB_1or2(GetFrame, "GetFrame index too high");
+}
+void CompileBase::SetFrame()
+{
+	AddOpcodeB_1or2(SetFrame, "SetFrame index too high");
+}
+void CompileBase::GetStaticP()
+{
+	AddOpcodeB_1or2(GetStaticP, "GetStaticP index too high");
+}
+void CompileBase::GetStatic()
+{
+	AddOpcodeB_1or2(GetStatic, "GetStatic index too high");
+}
+void CompileBase::SetStatic()
+{
+	AddOpcodeB_1or2(SetStatic, "SetStatic index too high");
+}
+void CompileBase::GetGlobalP()
+{
+	AddOpcodeB_2or3(GetGlobalP, "GetGlobalP index too high");
+}
+void CompileBase::GetGlobal()
+{
+	AddOpcodeB_2or3(GetGlobal, "GetGlobal index too high");
+}
+void CompileBase::SetGlobal()
+{
+	AddOpcodeB_2or3(SetGlobal, "SetGlobal index too high");
+}
+
+
 void CompileBase::PushString()
 {
 	DoesOpcodeHaveRoom(DATA->getString().size() + 3);//opcode, len, null terminator
@@ -222,11 +309,87 @@ void CompileBase::Switch(){
 	{
 		sCase = sCase->getNextCase();
 		AddInt32(sCase->getCase());
-		AddJump(JumpType::Switch, sCase->getLoc());
+		AddJump(JumpInstructionType::Switch, sCase->getLoc());
 		i++;
 	}
 	CodePageData[CaseCount] = i;
 }
+void CompileBase::AddImm(bool isLiteral, int32_t Literal)
+{
+	int32_t value = isLiteral ? Literal : DATA->getInt();
+
+	if (value > 0 && value < 256)
+	{
+		DoesOpcodeHaveRoom(2);
+		AddOpcode(Add1);
+		AddInt8(DATA->getInt());
+	}
+	else if (value >= -32768 && value < 32768)
+	{
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(Add2);
+		AddInt16(DATA->getInt());
+	}
+	else if (value > 0 && value < 0x1000000)
+	{
+		DoesOpcodeHaveRoom(4);
+		AddOpcode(PushI24);
+		AddInt24(DATA->getInt());
+		AddOpcode(Add);
+	}
+	else
+	{
+		DoesOpcodeHaveRoom(5);
+		AddOpcode(Push);
+		AddInt32(DATA->getInt());
+		AddOpcode(Add);
+	}
+
+}
+void CompileBase::MultImm(bool isLiteral, int32_t Literal)
+{
+	int32_t value = isLiteral ? Literal : DATA->getInt();
+
+	if (value > 0 && value < 256)
+	{
+		DoesOpcodeHaveRoom(2);
+		AddOpcode(Mult1);
+		AddInt8(DATA->getInt());
+	}
+	else if (value >= -32768 && value < 32768)
+	{
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(Mult2);
+		AddInt16(DATA->getInt());
+	}
+	else if (value > 0 && value < 0x1000000)
+	{
+		DoesOpcodeHaveRoom(4);
+		AddOpcode(PushI24);
+		AddInt24(DATA->getInt());
+		AddOpcode(Mult);
+	}
+	else
+	{
+		DoesOpcodeHaveRoom(5);
+		AddOpcode(Push);
+		AddInt32(DATA->getInt());
+		AddOpcode(Mult);
+	}
+
+}
+void CompileBase::FAddImm()
+{
+	PushFloat(true, DATA->getFloat());
+	AddOpcode(fAdd);
+}
+void CompileBase::FMultImm()
+{
+	PushFloat(true, DATA->getFloat());
+	AddOpcode(fMult);
+}
+
+
 #pragma endregion
 
 #pragma region RDR
@@ -260,6 +423,72 @@ void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCou
 
 		AddNative(hash);
 		AddInt16(SetNewIndex(index, paramCount, returnCount == 1));
+	}
+}
+void CompileRDR::Return()
+{
+	uint8_t popParams = DATA->getByte(0);
+	uint8_t returns = DATA->getByte(1);
+
+	if (popParams <= 3 && returns <= 3)
+		AddInt8(RDROpcodes.ReturnP0R0 + (popParams * 4) + returns);
+	else
+	{
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(Return);
+		AddInt8(popParams);
+		AddInt8(returns);
+	}
+}
+void CompileRDR::Call()
+{
+	// rdr: 2 byte loc (loc or'ed)
+	DoesOpcodeHaveRoom(3);
+	AddOpcode(Nop);//call opcode to be set on jump loc pass
+	AddJumpLoc(JumpDataType::Int16, JumpInstructionType::Call, DATA->getString());
+}
+void CompileRDR::GetImm()
+{
+	uint32_t value = DATA->getInt() * 4;
+	if (value <= 0xFF)
+	{
+		DoesOpcodeHaveRoom(2);
+		AddOpcode(GetImm1);
+		AddInt8(value);
+	}
+	else if(value <= 0xFFFF)
+	{
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(GetImm2);
+		AddInt16(value);
+	}
+	else
+	{
+		PushInt(true, value);
+		AddOpcode(Add);
+		AddOpcode(pGet);
+	}
+}
+void CompileRDR::SetImm()
+{
+	uint32_t value = DATA->getInt() * 4;
+	if (value <= 0xFF)
+	{
+		DoesOpcodeHaveRoom(2);
+		AddOpcode(SetImm1);
+		AddInt8(value);
+	}
+	else if (value <= 0xFFFF)
+	{
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(SetImm2);
+		AddInt16(value);
+	}
+	else
+	{
+		PushInt(true, value);
+		AddOpcode(Add);
+		AddOpcode(pSet);
 	}
 }
 
@@ -321,11 +550,62 @@ void CompileGTAV::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCo
 		AddInt16(index);
 	}
 }
+void CompileGTAV::Call()
+{
+	// gta5: 3 byte loc
+	DoesOpcodeHaveRoom(4);
+	AddOpcode(Call);
+	AddJumpLoc(JumpDataType::Int24, JumpInstructionType::Call, DATA->getString());
+}
+
 void CompileGTAV::PushString()
 {
 	PushInt(true, AddStringToStringPage(DATA->getString()));
 	AddOpcode(PushString);
 }
-
+void CompileGTAV::GetImm()
+{
+	uint32_t value = DATA->getInt();
+	if (value <= 0xFF)
+	{
+		DoesOpcodeHaveRoom(2);
+		AddOpcode(GetImm1);
+		AddInt8(value);
+	}
+	else if (value <= 0xFFFF)
+	{
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(GetImm2);
+		AddInt16(value);
+	}
+	else
+	{
+		PushInt(true, value * 4);
+		AddOpcode(Add);
+		AddOpcode(pGet);
+	}
+}
+void CompileGTAV::SetImm()
+{
+	uint32_t value = DATA->getInt();
+	if (value <= 0xFF)
+	{
+		DoesOpcodeHaveRoom(2);
+		AddOpcode(SetImm1);
+		AddInt8(value);
+	}
+	else if (value <= 0xFFFF)
+	{
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(SetImm2);
+		AddInt16(value);
+	}
+	else
+	{
+		PushInt(true, value * 4);
+		AddOpcode(Add);
+		AddOpcode(pSet);
+	}
+}
 
 #pragma endregion
