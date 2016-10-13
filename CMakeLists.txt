@@ -7,6 +7,7 @@ add_clang_executable(loop-convert
   ClangUtils.cpp
   Compiler.cpp
   FunctionOpcode.cpp
+  Script.cpp
   )
 target_link_libraries(loop-convert
   clangTooling

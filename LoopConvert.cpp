@@ -10,33 +10,34 @@
 #include "FunctionOpcode.h"
 #include "clang/Lex/PreProcessor.h"
 #include "ConstExpr.h"
+#include "Script.h"
 
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h)
 #define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4)
 #define STATIC_PADDING_DEBUG 0
-#define AddInstruction(opName, ...) CurrentFunction->addOp##opName(__VA_ARGS__)
+#define AddInstruction(opName, ...) scriptData.getCurrentFunction()->addOp##opName(__VA_ARGS__)
 #ifdef _DEBUG
-#define AddInstructionComment(opName, comment, ...) {CurrentFunction->addOp##opName(__VA_ARGS__); CurrentFunction->pushComment(comment);}
+#define AddInstructionComment(opName, comment, ...) {scriptData.getCurrentFunction()->addOp##opName(__VA_ARGS__); scriptData.getCurrentFunction()->pushComment(comment);}
 #else
-#define AddInstructionComment(opName, comment, ...) CurrentFunction->addOp##opName(__VA_ARGS__)
+#define AddInstructionComment(opName, comment, ...) AddInstruction(opName, __VA_ARGS__)
 #endif
-#define AddFloatingOpCheck(isFlt, opEnum, opEnumFlt) CurrentFunction->AddSimpleOp((isFlt) ? opEnumFlt : opEnum)
-#define AddInstructionCondition(cond, opNameTrue, opNameFalse, ...) {if (cond) CurrentFunction->addOp##opNameTrue(__VA_ARGS__); else CurrentFunction->addOp##opNameFalse(__VA_ARGS__);}
-#define AddInstructionConditionally(cond, opName, ...) {if (cond) CurrentFunction->addOp##opName(__VA_ARGS__);}
+#define AddFloatingOpCheck(isFlt, opEnum, opEnumFlt) scriptData.getCurrentFunction()->AddSimpleOp((isFlt) ? opEnumFlt : opEnum)
+#define AddInstructionCondition(cond, opNameTrue, opNameFalse, ...) {if (cond) scriptData.getCurrentFunction()->addOp##opNameTrue(__VA_ARGS__); else scriptData.getCurrentFunction()->addOp##opNameFalse(__VA_ARGS__);}
+#define AddInstructionConditionally(cond, opName, ...) {if (cond) scriptData.getCurrentFunction()->addOp##opName(__VA_ARGS__);}
 #ifdef _DEBUG
-#define AddInstructionConditionallyComment(cond, opName, comment, ...) {if (cond) {CurrentFunction->addOp##opName(__VA_ARGS__); CurrentFunction->pushComment(comment);}}
+#define AddInstructionConditionallyComment(cond, opName, comment, ...) {if (cond) {scriptData.getCurrentFunction()->addOp##opName(__VA_ARGS__); scriptData.getCurrentFunction()->pushComment(comment);}}
 #else
 #define AddInstructionConditionallyComment(cond, opName, comment, ...) AddInstructionConditionally(cond, opName, __VA_ARGS__)
 #endif
-#define AddJumpInlineCheck(jumpType, loc) CurrentFunction->addOp##jumpType(to_string(loc) + getInlineJumpLabelAppend())
-#define AddJumpInlineCheckStr(jumpType, loc) CurrentFunction->addOp##jumpType((loc) + getInlineJumpLabelAppend())
-#define AddJumpInlineCheckComment(jumpType, comment, loc) {CurrentFunction->addOp##jumpType(to_string(loc) + getInlineJumpLabelAppend()); CurrentFunction->pushComment(comment);}
-#define AddJumpInlineCheckStrComment(jumpType, comment, loc) {CurrentFunction->addOp##jumpType((loc) + getInlineJumpLabelAppend()); CurrentFunction->pushComment(comment);}
-#define AddJumpInlineCheckConditionally(cond, jumpType, loc) {if (cond) CurrentFunction->addOp##jumpType(to_string(loc) + getInlineJumpLabelAppend());}
-#define AddJumpInlineCheckConditionallyStr(cond, jumpType, loc) {if (cond) CurrentFunction->addOp##jumpType((loc) + getInlineJumpLabelAppend());}
+#define AddJumpInlineCheck(jumpType, loc) scriptData.getCurrentFunction()->addOp##jumpType(to_string(loc) + scriptData.getInlineJumpLabelAppend())
+#define AddJumpInlineCheckStr(jumpType, loc) scriptData.getCurrentFunction()->addOp##jumpType((loc) + scriptData.getInlineJumpLabelAppend())
+#define AddJumpInlineCheckComment(jumpType, comment, loc) {scriptData.getCurrentFunction()->addOp##jumpType(to_string(loc) + scriptData.getInlineJumpLabelAppend()); scriptData.getCurrentFunction()->pushComment(comment);}
+#define AddJumpInlineCheckStrComment(jumpType, comment, loc) {scriptData.getCurrentFunction()->addOp##jumpType((loc) + scriptData.getInlineJumpLabelAppend()); scriptData.getCurrentFunction()->pushComment(comment);}
+#define AddJumpInlineCheckConditionally(cond, jumpType, loc) {if (cond) scriptData.getCurrentFunction()->addOp##jumpType(to_string(loc) + scriptData.getInlineJumpLabelAppend());}
+#define AddJumpInlineCheckConditionallyStr(cond, jumpType, loc) {if (cond) scriptData.getCurrentFunction()->addOp##jumpType((loc) + scriptData.getInlineJumpLabelAppend());}
 #ifdef _DEBUG
-#define AddJumpInlineCheckConditionallyComment(cond, jumpType, comment, loc){if (cond) {CurrentFunction->addOp##jumpType(to_string(loc) + getInlineJumpLabelAppend()); CurrentFunction->pushComment(comment);}}
+#define AddJumpInlineCheckConditionallyComment(cond, jumpType, comment, loc){if (cond) {scriptData.getCurrentFunction()->addOp##jumpType(to_string(loc) + scriptData.getInlineJumpLabelAppend()); scriptData.getCurrentFunction()->pushComment(comment);}}
 #else
 #define AddJumpInlineCheckConditionallyComment(cond, jumpType, comment, loc) AddJumpInlineCheckConditionally(cond, jumpType, loc)
 #endif
@@ -56,12 +57,7 @@ static Rewriter rewriter;
 #pragma endregion
 
 #pragma region Global_Function_Data_Decls
-
-vector<FunctionData*> functionsNew;
-FunctionData* CurrentFunction;
-FunctionData Entryfunction("@EntryPoint", 0);
-struct InlineData { uint32_t hash; string name; string inlineLblAppend; };
-vector<InlineData> InlineItems;
+Script scriptData;
 #pragma endregion
 
 #pragma region Global_Var_and_Scope_Decls
@@ -143,43 +139,6 @@ struct local_scope
 	}
 
 }LocalVariables;
-#pragma endregion
-
-#pragma region Global_Inline_Function_Functions
-string getInlineJumpLabelAppend()
-{
-	if (InlineItems.size())
-	{
-		return InlineItems.back().inlineLblAppend;
-	}
-	return "";
-}
-bool isInInline() { return InlineItems.size(); }
-bool isFunctionInInline(string fName)
-{
-	uint32_t hash = Utils::Hashing::Joaat(fName.c_str());
-	for (InlineData data : InlineItems)
-	{
-		if (data.hash == hash)
-		{
-			if (data.name == fName)
-				return true;
-		}
-	}
-	return false;
-}
-bool addFunctionInline(string fName, string returnLoc)
-{
-	if (isFunctionInInline(fName))
-		return false;
-	InlineItems.push_back({ Utils::Hashing::Joaat(fName.c_str()) , fName, getInlineJumpLabelAppend() + "_" + returnLoc });
-	return true;
-}
-void removeFunctionInline(string fName)
-{
-	assert(InlineItems.back().name == fName);
-	InlineItems.pop_back();
-}
 #pragma endregion
 
 #pragma region Global_Size_Functions
@@ -711,22 +670,10 @@ public:
 			if (isAddr || isLtoRValue)
 			{
 				string name = "@" + key;
-				uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
-				uint32_t i = 0;
-				for (i = 0; i < functionsNew.size(); i++)
+				if (!scriptData.addUsedFuncToCurrent(name))
 				{
-					if (functionsNew[i]->getHash() == hash)
-					{
-						if (functionsNew[i]->getName() == name)
-						{
-							CurrentFunction->addUsedFunc(functionsNew[i]);
-							break;
-						}
-					}
-				}
-
-				if (i >= functionsNew.size())
 					Throw("Function pointer \"" + key + "\" not found");
+				}
 
 				AddInstructionComment(LabelLoc, "DeclRefExpr, nothing else, so func it", key);
 
@@ -1989,7 +1936,7 @@ public:
 					LocalVariables.addLevel();
 					parseStatement(Then, breakLoc, continueLoc);
 					LocalVariables.removeLevel();
-					bool ifEndRet = CurrentFunction->endsWithReturn() || (isInInline() && CurrentFunction->endsWithInlineReturn(getInlineJumpLabelAppend()));
+					bool ifEndRet = scriptData.getCurrentFunction()->endsWithReturn() || (scriptData.getInlineCount() && scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()));
 					if (Else)//still parse the else code just incase there are goto labeils in there
 					{
 
@@ -2008,7 +1955,7 @@ public:
 					LocalVariables.addLevel();
 					parseStatement(Then, breakLoc, continueLoc);
 					LocalVariables.removeLevel();
-					bool ifEndRet = CurrentFunction->endsWithReturn() || (isInInline() && CurrentFunction->endsWithInlineReturn(getInlineJumpLabelAppend()));
+					bool ifEndRet = scriptData.getCurrentFunction()->endsWithReturn() || (scriptData.getInlineCount() && scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()));
 					if (Else)
 					{
 						AddJumpInlineCheckConditionallyStr(!ifEndRet, Jump, IfLocEnd);
@@ -2028,7 +1975,7 @@ public:
 				LocalVariables.addLevel();
 				parseStatement(Then, breakLoc, continueLoc);
 				LocalVariables.removeLevel();
-				bool ifEndRet = CurrentFunction->endsWithReturn() || (isInInline() && CurrentFunction->endsWithInlineReturn(getInlineJumpLabelAppend()));
+				bool ifEndRet = scriptData.getCurrentFunction()->endsWithReturn() || (scriptData.getInlineCount() && scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()));
 				AddJumpInlineCheckConditionallyStr(!ifEndRet, Jump, IfLocEnd);//if the last instruction is a return, no point adding a jump
 
 				if (Else) {
@@ -2188,7 +2135,7 @@ public:
 			if (retVal)
 				parseExpression(retVal, false, true);
 
-			if (!isInInline())
+			if (!scriptData.getInlineCount())
 			{
 				int size = 0;
 				if (ret->getRetValue()) {
@@ -2204,7 +2151,7 @@ public:
 			}
 			else
 			{
-				AddInstructionComment(Jump, "Inline return", getInlineJumpLabelAppend());
+				AddInstructionComment(Jump, "Inline return", scriptData.getInlineJumpLabelAppend());
 			}
 
 		}
@@ -2221,7 +2168,7 @@ public:
 		}
 		else if (isa<DefaultStmt>(s)) {
 			DefaultStmt *caseD = cast<DefaultStmt>(s);
-			string labelName = to_string(caseD->getLocEnd().getRawEncoding()) + getInlineJumpLabelAppend();
+			string labelName = to_string(caseD->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend();
 			if (FindBuffer.find(labelName) == FindBuffer.end())
 			{
 				FindBuffer.insert(labelName);
@@ -2236,7 +2183,7 @@ public:
 		else if (isa<CaseStmt>(s)) {
 			CaseStmt *caseS = cast<CaseStmt>(s);
 
-			string labelName = to_string(caseS->getLocEnd().getRawEncoding()) + getInlineJumpLabelAppend();
+			string labelName = to_string(caseS->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend();
 			if (FindBuffer.find(labelName) == FindBuffer.end())
 			{
 				FindBuffer.insert(labelName);
@@ -2272,11 +2219,11 @@ public:
 							int val;
 							if (CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
 							{
-								caseLabels.push({ val, to_string(caseS->getLocEnd().getRawEncoding()) + getInlineJumpLabelAppend() });
+								caseLabels.push({ val, to_string(caseS->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend() });
 							}
 							else
 							{
-								caseLabels.push({ (int)result.Val.getInt().getSExtValue(), to_string(caseS->getLocEnd().getRawEncoding()) + getInlineJumpLabelAppend() });
+								caseLabels.push({ (int)result.Val.getInt().getSExtValue(), to_string(caseS->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend() });
 							}
 						}
 						else if (result.Val.isFloat())
@@ -2323,7 +2270,7 @@ public:
 						AddInstructionComment(GetFrame, "Switch temporary variable", index);
 						AddInstruction(Switch);
 					}
-					CurrentFunction->addSwitchCase(caseLabels.top().val, caseLabels.top().loc);
+					scriptData.getCurrentFunction()->addSwitchCase(caseLabels.top().val, caseLabels.top().loc);
 					caseLabels.pop();
 				}
 				LocalVariables.removeLevel();
@@ -2333,7 +2280,7 @@ public:
 				AddInstruction(Switch);
 				while (caseLabels.size())
 				{
-					CurrentFunction->addSwitchCase(caseLabels.top().val, caseLabels.top().loc);
+					scriptData.getCurrentFunction()->addSwitchCase(caseLabels.top().val, caseLabels.top().loc);
 					caseLabels.pop();
 				}
 			}
@@ -2368,7 +2315,7 @@ public:
 		{
 			GCCAsmStmt *asmstmt = cast<GCCAsmStmt>(s);
 			Throw("Coding in assembley isnt supported", rewriter, s->getSourceRange());//throw an error as the new method of compiling wont support this
-			if (InlineItems.size())
+			if (scriptData.getInlineCount())
 			{
 				Warn("Using a __asm__ statement in an inlined function may lead to undesireable effects\r\nConsider marking the function as __attribute__((__noinline__))", rewriter, asmstmt->getSourceRange());
 			}
@@ -2588,7 +2535,7 @@ public:
 					{
 						string name = dumpName(cast<NamedDecl>(cDecl));
 						string curName = dumpName(cast<NamedDecl>(currFunction));
-						if (cDecl->hasBody() && !isFunctionInInline(name) && curName != name)
+						if (cDecl->hasBody() && !scriptData.isFunctionInInlineStack(name) && curName != name)
 						{
 							CompoundStmt *body = cast<CompoundStmt>(cDecl->getBody());
 							Stmt *subBody = body;
@@ -2622,7 +2569,7 @@ public:
 									if (isRet || isExpr || inlineSpec) //inline it
 									{
 										inlined = true;
-										if (!addFunctionInline(name, to_string(e->getLocEnd().getRawEncoding())))
+										if (!scriptData.addFunctionInline(name, to_string(e->getLocEnd().getRawEncoding())))
 										{
 											assert(false);
 										}
@@ -2654,15 +2601,15 @@ public:
 										else
 										{
 											parseStatement(body, -1, -1);
-											if (CurrentFunction->endsWithInlineReturn(getInlineJumpLabelAppend()))
+											if (scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()))
 											{
-												CurrentFunction->RemoveLast();
+												scriptData.getCurrentFunction()->RemoveLast();
 												//remove the last jump, but keep the label, just incase other places in the function have returns
 											}
-											AddInstruction(Label, getInlineJumpLabelAppend());
+											AddInstruction(Label, scriptData.getInlineJumpLabelAppend());
 										}
 										LocalVariables.removeLevel();
-										removeFunctionInline(name);
+										scriptData.removeFunctionInline(name);
 
 									}
 								}
@@ -2672,18 +2619,7 @@ public:
 					if (!inlined)
 					{
 						string name = parseCast(cast<const CastExpr>(callee));
-						uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
-						uint32_t i = 0;
-						for (; i < functionsNew.size(); i++)
-							if (functionsNew[i]->getHash() == hash)
-							{
-								if (functionsNew[i]->getName() == name)
-								{
-									CurrentFunction->addUsedFunc(functionsNew[i]);
-									break;
-								}
-							}
-						if (i >= functionsNew.size())
+						if (!scriptData.addUsedFuncToCurrent(name))
 							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
 
 						AddInstructionComment(Call, "NumArgs: " + to_string(call->getNumArgs()), name.substr(1));
@@ -4792,33 +4728,15 @@ public:
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i<f->getNumParams(); i++)
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-			{
-				uint32_t hash = Utils::Hashing::JoaatCased(getNameForFunc(f).c_str());
-				size_t i;
-				for (i = 0; i < functionsNew.size(); i++)
-				{
-					if (functionsNew[i]->getHash() == hash)
-					{
-						if (functionsNew[i]->getName() == getNameForFunc(f))
-						{
-							CurrentFunction = functionsNew[i];
-							break;
-						}
-					}
-				}
-				if (i == functionsNew.size())
-				{
-					functionsNew.push_back(new FunctionData(getNameForFunc(f), (paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0))));
-					CurrentFunction = functionsNew.back();
-				}
-			}
-			string name = dumpName(cast<NamedDecl>(f));
+			if (isa<CXXMethodDecl>(f)) paramSize++;
+			
+			auto func = scriptData.createFunction(getNameForFunc(f), paramSize, true);
+			//string name = dumpName(cast<NamedDecl>(f));
 
 			if (f->isMain())
 			{
-				Entryfunction.addUsedFunc(CurrentFunction);
-				QualType type = f->getReturnType();
-				MainRets = Utils::Math::DivInt(getSizeOfType(type.getTypePtr()), 4);
+				scriptData.getEntryFunction()->addUsedFunc(func);
+				MainRets = getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr()));
 			}
 
 			currFunction = f;
@@ -4833,21 +4751,13 @@ public:
 			parseStatement(FuncBody);
 
 			if (f->getReturnType().getTypePtr()->isVoidType()) {
-				int32_t paramSize = 0;
-				for (uint32_t i = 0; i < f->getNumParams(); i++) {
-					paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-				}
-				if (!CurrentFunction->endsWithReturn())
-					AddInstruction(Return, paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), 0);
+				if (!func->endsWithReturn())
+					AddInstruction(Return, paramSize, 0);
 			}
-			else if (f->hasImplicitReturnZero() && !CurrentFunction->endsWithReturn())
+			else if (f->hasImplicitReturnZero() && !func->endsWithReturn())
 			{
-				int32_t paramSize = 0;
-				for (uint32_t i = 0; i < f->getNumParams(); i++) {
-					paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-				}
 				AddInstruction(PushInt, 0);
-				AddInstruction(Return, paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), 1);
+				AddInstruction(Return, paramSize, 1);
 			}
 
 			//Throw(f->getNameAsString() + ": not all control paths return a value", rewriter, f->getLocEnd());
@@ -4857,9 +4767,10 @@ public:
 				Throw("Function \"" + f->getNameAsString() + "\" has a stack size of " + to_string(LocalVariables.maxIndex) + " when the max is 65536", rewriter, f->getLocStart());
 			else
 			{
-				functionsNew.back()->setStackSize(LocalVariables.maxIndex);
+				func->setStackSize(LocalVariables.maxIndex);
 			}
-			CurrentFunction = NULL;
+			func->setProcessed();
+			scriptData.clearCurrentFunction();
 		}
 		else
 		{
@@ -4871,7 +4782,7 @@ public:
 				int32_t paramSize = 0;
 				for (uint32_t i = 0; i<f->getNumParams(); i++)
 					paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-				functionsNew.push_back(new FunctionData(getNameForFunc(f), (paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0))));
+				scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0));
 			}
 		}
 
@@ -5075,9 +4986,7 @@ public:
 
 			out << endl << endl;
 			out << ":" << getLocStart(CS) << endl << ":" << CS->getDeclName().getAsString() << endl << "Function " << CS->getNumParams() + 1 << "//" << getNameForFunc(CS) << endl;
-			FunctionData* ctor = new FunctionData("@" + CS->getDeclName().getAsString(), CS->getNumParams() + 1);
-			functionsNew.push_back(ctor);
-			CurrentFunction = ctor;
+			auto ctor = scriptData.createFunction("@" + CS->getDeclName().getAsString(), CS->getNumParams() + 1, true);
 			currFunction = CS;
 
 			for (auto *PI : CS->params()) {
@@ -5111,10 +5020,13 @@ public:
 			for (uint32_t i = 0; i < currFunction->getNumParams(); i++) {
 				paramSize += getSizeFromBytes(getSizeOfType(currFunction->getParamDecl(i)->getType().getTypePtr()));
 			}
-			if (!CurrentFunction->endsWithReturn())
+			if (!scriptData.getCurrentFunction()->endsWithReturn())
 			{
 				AddInstruction(Return, paramSize + (isa<CXXMethodDecl>(currFunction)), 0);
 			}
+			ctor->setProcessed();
+
+			scriptData.clearCurrentFunction();
 
 			out << "#FuncEnd L " << LocalVariables.getCurrentSize() - (isa<CXXMethodDecl>(CS) ? 1 : 0) << endl << endl;
 			if (d->isPolymorphic()) {
@@ -5234,7 +5146,7 @@ public:
 				else if (isCurrentExprEvaluable)
 					DefaultStaticValues.insert({ oldStaticInc++, to_string((int32_t)resValue) });
 				else
-					Entryfunction.addOpPushInt((int32_t)resValue);
+					scriptData.getEntryFunction()->addOpPushInt((int32_t)resValue);
 
 				return true;
 			}
@@ -5245,7 +5157,7 @@ public:
 				if (isCurrentExprEvaluable)
 					DefaultStaticValues.insert({ oldStaticInc++, to_string(FloatToInt((float)extractAPFloat(result.Val.getFloat()))) });
 				else
-					Entryfunction.addOpPushFloat((float)extractAPFloat(result.Val.getFloat()));
+					scriptData.getEntryFunction()->addOpPushFloat((float)extractAPFloat(result.Val.getFloat()));
 				return true;
 			}
 			else if (result.Val.isComplexFloat())
@@ -5320,7 +5232,7 @@ public:
 				doesCurrentValueNeedSet = false;
 				ParseLiteral(I->getInit(i), false, true);
 				if (doesCurrentValueNeedSet)
-					Entryfunction.addOpSetStatic(oldStaticInc++);
+					scriptData.getEntryFunction()->addOpSetStatic(oldStaticInc++);
 			}
 
 			resetIntIndex();
@@ -5352,7 +5264,7 @@ public:
 					doesCurrentValueNeedSet = true;
 
 					//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
-					Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
+					scriptData.getEntryFunction()->addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
 				}
 				else
 				{
@@ -5373,8 +5285,8 @@ public:
 				if (isa<StringLiteral>(icast->getSubExpr()))//char* x = "hello";
 				{
 					const StringLiteral *literal = cast<const StringLiteral>(icast->getSubExpr());
-					Entryfunction.addOpPushString(literal->getString().str());
-					Entryfunction.addOpSetStatic(oldStaticInc++);
+					scriptData.getEntryFunction()->addOpPushString(literal->getString().str());
+					scriptData.getEntryFunction()->addOpSetStatic(oldStaticInc++);
 				}
 				else if (isa<DeclRefExpr>(icast->getSubExpr()))//int vstack[10] = {1,2,3,4,5,6,7,8,9,10}, *vstack_ptr = vstack;
 				{
@@ -5382,7 +5294,7 @@ public:
 					doesCurrentValueNeedSet = true;
 
 					//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
-					Entryfunction.addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
+					scriptData.getEntryFunction()->addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
 				}
 				else// need to test byte* t = {1,2,3};
 					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getExprLoc());
@@ -5395,20 +5307,10 @@ public:
 					if (isa<FunctionDecl>(declRef->getDecl())) {
 						const FunctionDecl *decl = cast<const FunctionDecl>(declRef->getDecl());
 
-						string name = "@" + decl->getNameAsString();
-						uint32_t hash = Utils::Hashing::JoaatCased(const_cast<char*>(name.c_str()));
-						uint32_t i = 0;
-						for (; i < functionsNew.size(); i++)
+						if (!scriptData.addUsedFuncToEntry("@" + decl->getNameAsString()))
 						{
-							if (functionsNew[i]->getHash() == hash && functionsNew[i]->getName() == name)
-							{
-								Entryfunction.addUsedFunc(functionsNew[i]);
-								break;
-							}
-						}
-
-						if (i >= functionsNew.size())
 							Throw("Static function pointer \"" + decl->getNameAsString() + "\" not found");
+						}
 
 						string funcname = "GetLoc(\"" + decl->getNameAsString() + "\")";
 						DefaultStaticValues.insert({ oldStaticInc++, funcname });
@@ -5487,14 +5389,14 @@ public:
 					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
 					if (bOp->getLHS()->getType()->isFloatingType())
-						Entryfunction.addOpFSub();
+						scriptData.getEntryFunction()->addOpFSub();
 					else
-						Entryfunction.addOpSub();
+						scriptData.getEntryFunction()->addOpSub();
 
 					if (pSize > 1)
 					{
-						Entryfunction.addOpPushInt(pSize);
-						Entryfunction.addOpDiv();
+						scriptData.getEntryFunction()->addOpPushInt(pSize);
+						scriptData.getEntryFunction()->addOpDiv();
 					}
 
 					return -1;
@@ -5515,7 +5417,7 @@ public:
 					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
 					if (pSize > 1)
-						Entryfunction.addOpMultImm(pSize);
+						scriptData.getEntryFunction()->addOpMultImm(pSize);
 				}
 				else
 					Throw("Pointer to literal operation not addition or subtraction \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
@@ -5533,7 +5435,7 @@ public:
 					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
 					if (pSize > 1)
-						Entryfunction.addOpMultImm(pSize);
+						scriptData.getEntryFunction()->addOpMultImm(pSize);
 				}
 				else
 					Throw("Pointer to literal operation not addition or subtraction \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
@@ -5550,8 +5452,8 @@ public:
 
 			switch (op)
 			{
-				case BO_Sub: Entryfunction.addOpSub(); break;
-				case BO_Add: Entryfunction.addOpAdd(); break;
+				case BO_Sub: scriptData.getEntryFunction()->addOpSub(); break;
+				case BO_Add: scriptData.getEntryFunction()->addOpAdd(); break;
 				default:
 				Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
 			}
@@ -5593,7 +5495,7 @@ public:
 					doesCurrentValueNeedSet = true;
 
 					if (!inc)
-						Entryfunction.addOpGetStaticP(statics[declRef->getDecl()->getNameAsString()]);
+						scriptData.getEntryFunction()->addOpGetStaticP(statics[declRef->getDecl()->getNameAsString()]);
 
 					if (!ssize)
 					{
@@ -5601,10 +5503,10 @@ public:
 						if (type->isArrayType())
 							elementSize = getSizeOfType(base->getType()->getArrayElementTypeNoTypeQual());
 
-						Entryfunction.addOpAddImm(iResult.getSExtValue() * elementSize);
+						scriptData.getEntryFunction()->addOpAddImm(iResult.getSExtValue() * elementSize);
 					}
 					else
-						Entryfunction.addOpAddImm(ssize * iResult.getSExtValue());
+						scriptData.getEntryFunction()->addOpAddImm(ssize * iResult.getSExtValue());
 
 					ssize = getSizeOfType(type);
 				}
@@ -5658,7 +5560,7 @@ public:
 							staticInc = oldStaticInc;
 
 						if (doesCurrentValueNeedSet)
-							Entryfunction.addOpSetStatic(oldStaticInc++);
+							scriptData.getEntryFunction()->addOpSetStatic(oldStaticInc++);
 
 					}
 
@@ -5764,13 +5666,9 @@ public:
 
 		if (diagnostics->getClient()->getNumErrors())
 		{
-			for (uint32_t i = 0; i < functionsNew.size(); i++)
-			{
-				delete functionsNew[i];
-			}
 			return;
 		}
-		Entryfunction.setUsed();//build up function usage tree
+		scriptData.getEntryFunction()->setUsed();//build up function usage tree
 
 
 		stringstream header;
@@ -5786,12 +5684,12 @@ public:
 
 		if (Visitor.MainRets != -1)
 		{
-			Entryfunction.addOpCall("main");
+			scriptData.getEntryFunction()->addOpCall("main");
 			for (int i = 0; i < Visitor.MainRets; i++)
 			{
-				Entryfunction.addOpDrop();
+				scriptData.getEntryFunction()->addOpDrop();
 			}
-			Entryfunction.addOpReturn(0, 0);
+			scriptData.getEntryFunction()->addOpReturn(0, 0);
 		}
 		else
 			Throw("Function \"main\" was not found");
@@ -5801,24 +5699,21 @@ public:
 		{
 			header.seekg(0, ios::end);
 			fwrite(header.str().c_str(), 1, header.tellg(), file);
-			string eStr = Entryfunction.toString();
+			string eStr = scriptData.getEntryFunction()->toString();
 			fwrite(eStr.c_str(), 1, eStr.size(), file);
-			for (uint32_t i = 0; i <functionsNew.size(); i++)
+			for (uint32_t i = 0, max = scriptData.getFunctionCount(); i <max; i++)
 			{
-				if (functionsNew[i]->IsUsed())
+				auto func = scriptData.getFunctionFromIndex(i);
+				if (func->IsUsed())
 				{
-					string fStr = functionsNew[i]->toString();
+					assert(func->isProcessed() && "Function Prototype Implementation missing on referenced function");
+					string fStr = func->toString();
 					fwrite(fStr.c_str(), 1, fStr.size(), file);
 				}
 			}
 			fclose(file);
 		}
 		else Throw("Output File Could Not Be Opened");
-
-		for (uint32_t i = 0; i < functionsNew.size(); i++)
-		{
-			delete functionsNew[i];
-		}
 
 	}
 

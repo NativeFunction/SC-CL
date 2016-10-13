@@ -335,6 +335,7 @@ class FunctionData
 	uint16_t pcount;
 	uint16_t stackSize = 2;
 	bool used = false;
+	bool _processed = false;
 	vector<Opcode *> Instructions;
 	vector<FunctionData *> usedFuncs;
 public:
@@ -372,6 +373,8 @@ public:
 	size_t getInstructionCount() const{
 		return Instructions.size();
 	}
+	bool isProcessed()const{ return _processed; }
+	void setProcessed(){ _processed = true; }
 
 #pragma region CreateOpcodes
 	void addOpNop(){ Instructions.push_back(new Opcode(OK_Nop)); }
