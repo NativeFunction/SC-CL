@@ -715,9 +715,9 @@ public:
 				uint32_t i = 0;
 				for (i = 0; i < functionsNew.size(); i++)
 				{
-					if (functionsNew[i]->Hash() == hash)
+					if (functionsNew[i]->getHash() == hash)
 					{
-						if (functionsNew[i]->Name() == name)
+						if (functionsNew[i]->getName() == name)
 						{
 							CurrentFunction->addUsedFunc(functionsNew[i]);
 							break;
@@ -2675,9 +2675,9 @@ public:
 						uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
 						uint32_t i = 0;
 						for (; i < functionsNew.size(); i++)
-							if (functionsNew[i]->Hash() == hash)
+							if (functionsNew[i]->getHash() == hash)
 							{
-								if (functionsNew[i]->Name() == name)
+								if (functionsNew[i]->getName() == name)
 								{
 									CurrentFunction->addUsedFunc(functionsNew[i]);
 									break;
@@ -4797,9 +4797,9 @@ public:
 				size_t i;
 				for (i = 0; i < functionsNew.size(); i++)
 				{
-					if (functionsNew[i]->Hash() == hash)
+					if (functionsNew[i]->getHash() == hash)
 					{
-						if (functionsNew[i]->Name() == getNameForFunc(f))
+						if (functionsNew[i]->getName() == getNameForFunc(f))
 						{
 							CurrentFunction = functionsNew[i];
 							break;
@@ -5400,7 +5400,7 @@ public:
 						uint32_t i = 0;
 						for (; i < functionsNew.size(); i++)
 						{
-							if (functionsNew[i]->Hash() == hash && functionsNew[i]->Name() == name)
+							if (functionsNew[i]->getHash() == hash && functionsNew[i]->getName() == name)
 							{
 								Entryfunction.addUsedFunc(functionsNew[i]);
 								break;

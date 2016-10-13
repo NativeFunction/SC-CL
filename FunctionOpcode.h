@@ -330,15 +330,15 @@ class FunctionData
 {
 	bool tryPop2Ints(int& i1, int& i2);
 	bool tryPop2Floats(float& f1, float& f2);
-public:
-	vector<Opcode *> Instructions;
 	string name;
 	uint32_t hash;
 	uint16_t pcount;
 	uint16_t stackSize = 2;
 	bool used = false;
+	vector<Opcode *> Instructions;
 	vector<FunctionData *> usedFuncs;
-
+public:
+	
 	FunctionData(string name, int pcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount)
 	{
 	}
@@ -356,8 +356,8 @@ public:
 	void setStackSize(uint16_t newSize){
 		stackSize = newSize;
 	}
-	uint32_t Hash()const{ return hash; }
-	string Name()const{ return name; }
+	uint32_t getHash()const{ return hash; }
+	string getName()const{ return name; }
 	void setUsed();
 	bool IsUsed()const{ return used; }
 	friend std::ostream& operator << (std::ostream& stream, const FunctionData& fdata);
@@ -365,7 +365,13 @@ public:
 	void addSwitchCase(int caseVal, string jumpLoc);
 	void addUsedFunc(FunctionData *func);
 	int getSizeEstimate(int incDecl) const;//only to be used when seeing if a function should be inlined
-	
+	const Opcode *getInstruction(size_t index)const{
+		assert(index < Instructions.size() && "Instruction out of range");
+		return Instructions[index];
+	}
+	size_t getInstructionCount() const{
+		return Instructions.size();
+	}
 
 #pragma region CreateOpcodes
 	void addOpNop(){ Instructions.push_back(new Opcode(OK_Nop)); }
