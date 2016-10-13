@@ -279,8 +279,8 @@ class Opcode
 	union
 	{
 		char u8[sizeof(void*)];
-		uint16_t u16[sizeof(void*) / sizeof(2)];
-		uint16_t i16[sizeof(void*) / sizeof(2)];
+		uint16_t u16[sizeof(void*) / 2];
+		int16_t i16[sizeof(void*) / 2];
 		int32_t i32;
 		uint32_t u32;
 		float f32;
