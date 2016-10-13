@@ -63,10 +63,7 @@ Opcode::~Opcode()
 		break;
 	case OK_Switch:
 	{
-		if(SwitchCaseStorage* sCasePtr = storage.switchCase)
-		{
-			delete sCasePtr;
-		}
+		delete storage.switchCase;
 
 		break;
 	}
@@ -381,15 +378,7 @@ int Opcode::getSizeEstimate() const
 		return 6;//PushF Val, FMult		
 	case OK_Switch:
 	{
-		int val = 2;//switch <count>
-		SwitchCaseStorage* sCase = storage.switchCase;
-		val += 6;//<case(4)> <loc(6)>
-		while (sCase->hasNextCase())
-		{
-			sCase = sCase->getNextCase();
-			val += 6;
-		}
-		return val;
+		return 2 + storage.switchCase->getCount() * 6;
 	}
 	case OK_GetHash:
 		if (isRDR)
@@ -682,13 +671,20 @@ string Opcode::toString() const
 	case OK_JumpLT: PrintJump(LT); break;
 	case OK_JumpLE: PrintJump(LE); break;
 	case OK_Switch:{
-		SwitchCaseStorage* sCase = storage.switchCase;
-		assert(sCase && "Empty Switch Statement");
-		current = "Switch [" + to_string(sCase->getCase()) + " @" + sCase->getLoc() + "]";
-		while(sCase->hasNextCase())
+		const SwitchStorage* switchStorage = getSwitch();
+		if (switchStorage->getCount())
 		{
-			sCase = sCase->getNextCase();
-			current += ":[" + to_string(sCase->getCase()) + " @" + sCase->getLoc() + "]";
+			const SwitchCaseStorage* sCase = switchStorage->getFirstCase();
+			current = "Switch [" + to_string(sCase->getCaseValue()) + " @" + sCase->getCaseLocation() + "]";
+			while (sCase->hasNextCase())
+			{
+				sCase = sCase->getNextCase();
+				current += ":[" + to_string(sCase->getCaseValue()) + " @" + sCase->getCaseLocation() + "]";
+			}
+		}
+		else
+		{
+			current = "Switch //Empty Switch";
 		}
 		break;
 	}
@@ -1089,21 +1085,13 @@ void FunctionData::addSwitchCase(int caseVal, string jumpLoc)
 	assert(Instructions.size() && "Instruction stack empty, cant add switch case");
 	Opcode *end = Instructions.back();
 	assert(end->getKind() == OK_Switch && "AddSwitchCase must be called on switches");
-	SwitchCaseStorage** curCasePtr = &(end->storage.switchCase);
-	int count = 0;
-	while(*curCasePtr)
+	if (end->storage.switchCase->getCount() < 255)
 	{
-		curCasePtr = (*curCasePtr)->getNextCasePtr();
-		count++;
-	}
-	if (count < 255)
-	{
-		*curCasePtr = new SwitchCaseStorage(caseVal, jumpLoc);
+		end->storage.switchCase->addCase(caseVal, jumpLoc);
 	}
 	else
 	{
-		addOpSwitch();
-		addSwitchCase(caseVal, jumpLoc);
+		assert(false && "Switch case too large");
 	}
 }
 

@@ -2254,7 +2254,6 @@ public:
 			SwitchStmt *switchStmt = cast<SwitchStmt>(s);
 			FindBuffer.clear();
 			parseExpression(switchStmt->getCond(), false, true);
-			AddInstruction(Switch);
 
 			//Build case switch list first
 			SwitchCase *switchCaseList = switchStmt->getSwitchCaseList();
@@ -2301,15 +2300,44 @@ public:
 					llvm::errs() << "Unexpected Statement: " << switchCaseList->getStmtClassName();
 				switchCaseList = switchCaseList->getNextSwitchCase();
 			}
-			if (!caseLabels.size())
+			int sSize = caseLabels.size();
+			if (!sSize)
 			{
-				Throw("Switch statement contains no cases", rewriter, switchStmt->getSourceRange());
+				Warn("Switch statement contains no cases", rewriter, switchStmt->getSourceRange());
+				AddInstruction(Switch);
 			}
-			while (caseLabels.size())
+			else if (sSize > 255)
 			{
-				CurrentFunction->addSwitchCase(caseLabels.top().val, caseLabels.top().loc);
-				caseLabels.pop();
+				//multiple switch statements needed
+				LocalVariables.addLevel();
+				int index = LocalVariables.addDecl("Switch Temp", 1);
+				AddInstruction(Dup);
+				AddInstructionComment(SetFrame, "Switch temporary variable",index);
+				AddInstruction(Switch);
+				int i = 0;
+				while (caseLabels.size())
+				{
+					if (i++ == 255)
+					{
+						i = 1;
+						AddInstructionComment(GetFrame, "Switch temporary variable", index);
+						AddInstruction(Switch);
+					}
+					CurrentFunction->addSwitchCase(caseLabels.top().val, caseLabels.top().loc);
+					caseLabels.pop();
+				}
+				LocalVariables.removeLevel();
 			}
+			else
+			{
+				AddInstruction(Switch);
+				while (caseLabels.size())
+				{
+					CurrentFunction->addSwitchCase(caseLabels.top().val, caseLabels.top().loc);
+					caseLabels.pop();
+				}
+			}
+			
 
 			if (defaultCase)
 			{

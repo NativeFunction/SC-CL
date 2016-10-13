@@ -294,25 +294,26 @@ void CompileBase::PushString()
 }
 void CompileBase::Switch(){
 
+	const SwitchStorage* switchStore = DATA->getSwitch();
+	uint32_t caseCount = switchStore->getCount();
+	DoesOpcodeHaveRoom(caseCount * 6 + 2);//opcode, case count
 
-	//DoesOpcodeHaveRoom(DATA->getString().size() + 2);//opcode, case count
 	AddOpcode(Switch);
+	AddInt8(caseCount);
 
-	SwitchCaseStorage* sCase = DATA->storage.switchCase;
-
-	uint32_t CaseCount = CodePageData.size();
-	AddInt8(0);
-
-	assert(sCase && "Empty Switch Statement");
-	uint32_t i = 0;
-	while (sCase->hasNextCase())
+	if (caseCount)
 	{
-		sCase = sCase->getNextCase();
-		AddInt32(sCase->getCase());
-		AddJump(JumpInstructionType::Switch, sCase->getLoc());
-		i++;
+		const SwitchCaseStorage* sCase = switchStore->getFirstCase();
+		AddInt32(sCase->getCaseValue());
+		AddJump(JumpInstructionType::Switch, sCase->getCaseLocation());
+		while (sCase->hasNextCase())
+		{
+			sCase = sCase->getNextCase();
+			AddInt32(sCase->getCaseValue());
+			AddJump(JumpInstructionType::Switch, sCase->getCaseLocation());
+		}
 	}
-	CodePageData[CaseCount] = i;
+	
 }
 void CompileBase::AddImm(bool isLiteral, int32_t Literal)
 {
@@ -402,7 +403,7 @@ void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCou
 	AddOpcode(CallNative);
 	if (hash == -1)
 	{
-		if(DATA->storage.native->getReturnCount() > 1)
+		if(DATA->getNative()->getReturnCount() > 1)
 			Throw("Native Calls Can Only Have One Return");
 
 		uint32_t index = NativeHashMap.size();
@@ -410,7 +411,7 @@ void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCou
 			Throw("Native Call Index out of bounds");
 
 		AddNative(hash);
-		AddInt16(SetNewIndex(index, DATA->storage.native->getParamCount(), DATA->storage.native->getReturnCount() == 1));
+		AddInt16(SetNewIndex(index, DATA->getNative()->getParamCount(), DATA->getNative()->getReturnCount() == 1));
 	}
 	else
 	{
@@ -525,7 +526,7 @@ void CompileGTAV::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCo
 	AddOpcode(CallNative);
 	if (hash == -1)
 	{
-		if (DATA->storage.native->getReturnCount() > 3)
+		if (DATA->getNative()->getReturnCount() > 3)
 			Throw("Native Calls Can Only Have Three Returns");
 
 		uint32_t index = NativeHashMap.size();
@@ -533,7 +534,7 @@ void CompileGTAV::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCo
 			Throw("Native Call Index out of bounds");
 
 		AddNative(hash);
-		AddInt8( (DATA->storage.native->getParamCount() << 2) | (DATA->storage.native->getReturnCount() & 0x3));
+		AddInt8( (DATA->getNative()->getParamCount() << 2) | (DATA->getNative()->getReturnCount() & 0x3));
 		AddInt16(index);
 	}
 	else

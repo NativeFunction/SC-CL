@@ -144,11 +144,54 @@ public:
 		if (_next)
 			delete _next;
 	}
-	string getLoc()const { return _jumpLoc; }
-	int getCase()const { return _caseVal; }
+	string getCaseLocation()const { return _jumpLoc; }
+	int getCaseValue()const { return _caseVal; }
 	bool hasNextCase()const { return _next; }
-	SwitchCaseStorage *getNextCase()const { return _next; }
-	SwitchCaseStorage **getNextCasePtr() { return &_next; }
+	const SwitchCaseStorage *getNextCase()const { return _next; }
+	void setNextCase(SwitchCaseStorage* next)
+	{
+		assert(!_next && "Already a next case defined");
+		_next = next;
+	}
+	void setNextCase(int caseVal, string jumpLoc)
+	{
+		assert(!_next && "Already a next case defined");
+		_next = new SwitchCaseStorage(caseVal, jumpLoc);
+	}
+};
+struct SwitchStorage
+{
+private:
+	uint32_t _count;
+	SwitchCaseStorage *_first, *_last;//keep track of last for faster access
+public:
+	SwitchStorage(): _count(0), _first(NULL), _last(NULL){}
+	~SwitchStorage()
+	{
+		if (_first)
+		{
+			delete _first;
+		}
+	}
+
+	void addCase(int caseVal, string caseLoc)
+	{
+		_count++;
+		assert(_count < 256 && "Error switch has too many cases");
+		if (!_first)
+		{
+			_first = new SwitchCaseStorage(caseVal, caseLoc);
+			_last = _first;
+		}else
+		{
+			SwitchCaseStorage* next = new SwitchCaseStorage(caseVal, caseLoc);
+			_last->setNextCase(next);
+			_last = next;
+		}
+	}
+	const SwitchCaseStorage* getFirstCase() const { return _first; }
+	uint32_t getCount() const{ return _count; }
+
 };
 struct StringStorage
 {
@@ -233,7 +276,6 @@ class Opcode
 		assert(count == 2 || count == 3 && "setPBytes must be called with 2 or 3 count");
 		setByte(count, 0);
 	}
-public:
 	union
 	{
 		char u8[sizeof(void*)];
@@ -242,10 +284,11 @@ public:
 		int32_t i32;
 		uint32_t u32;
 		float f32;
-		SwitchCaseStorage *switchCase;
+		SwitchStorage *switchCase;
 		NativeStorage *native;
 		StringStorage *string;
 	}storage = { 0,0,0,0 };
+public:
 
 	~Opcode();
 	OpcodeKind getKind() const{ return opcodeKind; }
@@ -265,6 +308,18 @@ public:
 	}
 	int getSizeEstimate() const;
 	string toString() const;
+
+	const SwitchStorage *getSwitch() const
+	{
+		assert(getKind() == OK_Switch && "getSwitch not called on Switch Opcode");
+		return storage.switchCase;
+	}
+	const NativeStorage *getNative() const
+	{
+		assert(getKind() == OK_Native && "getSwitch not called on Switch Opcode");
+		return storage.native;
+	}
+
 	friend std::ostream& operator << (std::ostream& stream, const Opcode& opcode) {
 		stream << opcode.toString();
 		return stream;
@@ -549,7 +604,12 @@ public:
 	void addOpJumpLE(unsigned int rawEncoding){ addOpJumpLE(to_string(rawEncoding)); }
 #pragma endregion
 	
-	void addOpSwitch(){ Instructions.push_back(new Opcode(OK_Switch)); }//handle adding the cases later
+	void addOpSwitch()
+	{
+		Opcode* op = new Opcode(OK_Switch);
+		op->storage.switchCase = new SwitchStorage();
+		Instructions.push_back(op);
+	}
 	void addOpPushString(string str)
 	{
 		Opcode* op = new Opcode(OK_PushString);
