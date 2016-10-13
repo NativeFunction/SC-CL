@@ -316,7 +316,7 @@ public:
 	}
 	const NativeStorage *getNative() const
 	{
-		assert(getKind() == OK_Native && "getSwitch not called on Switch Opcode");
+		assert(getKind() == OK_Native && "getNative not called on Switch Opcode");
 		return storage.native;
 	}
 
