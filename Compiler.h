@@ -383,15 +383,29 @@ private:
 	const OpCodes RDROpcodes = { RO_Nop, RO_Add, RO_Sub, RO_Mult, RO_Div, RO_Mod, RO_Not, RO_Neg, RO_CmpEq, RO_CmpNe, RO_CmpGt, RO_CmpGe, RO_CmpLt, RO_CmpLe, RO_fAdd, RO_fSub, RO_fMult, RO_fDiv, RO_fMod, RO_fNeg, RO_fCmpEq, RO_fCmpNe, RO_fCmpGt, RO_fCmpGe, RO_fCmpLt, RO_fCmpLe, RO_vAdd, RO_vSub, RO_vMult, RO_vDiv, RO_vNeg, RO_And, RO_Or, RO_Xor, RO_ItoF, RO_FtoI, RO_FtoV, RO_PushB, RO_PushB2, RO_PushB3, RO_Push, RO_PushF, RO_Dup, RO_Drop, RO_CallNative, RO_Function, RO_Return, RO_pGet, RO_pSet, RO_pPeekSet, RO_ToStack, RO_FromStack, RO_GetArrayP1, RO_GetArray1, RO_SetArray1, RO_GetFrameP1, RO_GetFrame1, RO_SetFrame1, RO_GetStaticP1, RO_GetStatic1, RO_SetStatic1, RO_Add1, RO_Mult1, RO_GetImm1, RO_SetImm1, RO_PushS, RO_Add2, RO_Mult2, RO_GetImm2, RO_SetImm2, RO_GetArrayP2, RO_GetArray2, RO_SetArray2, RO_GetFrameP2, RO_GetFrame2, RO_SetFrame2, RO_GetStaticP2, RO_GetStatic2, RO_SetStatic2, RO_GetGlobalP2, RO_GetGlobal2, RO_SetGlobal2, RO_Jump, RO_JumpFalse, RO_JumpNE, RO_JumpEQ, RO_JumpLE, RO_JumpLT, RO_JumpGE, RO_JumpGT, RO_Nop, RO_GetGlobalP3, RO_GetGlobal3, RO_SetGlobal3, RO_PushI24, RO_Switch, RO_PushString, RO_StrCopy, RO_ItoS, RO_StrAdd, RO_StrAddi, RO_MemCopy, RO_Catch, RO_Throw, RO_pCall, RO_Push_Neg1, RO_Push_0, RO_Push_1, RO_Push_2, RO_Push_3, RO_Push_4, RO_Push_5, RO_Push_6, RO_Push_7, RO_PushF_Neg1, RO_PushF_0, RO_PushF_1, RO_PushF_2, RO_PushF_3, RO_PushF_4, RO_PushF_5, RO_PushF_6, RO_PushF_7, RO_Nop, RO_Nop, RO_Nop, RO_Nop, RO_Call2, RO_Call2h1, RO_Call2h2, RO_Call2h3, RO_Call2h4, RO_Call2h5, RO_Call2h6, RO_Call2h7, RO_Call2h8, RO_Call2h9, RO_Call2hA, RO_Call2hB, RO_Call2hC, RO_Call2hD, RO_Call2hE, RO_Call2hF, RO_PushArrayP, RO_ReturnP0R0, RO_ReturnP0R1, RO_ReturnP0R2, RO_ReturnP0R3, RO_ReturnP1R0, RO_ReturnP1R1, RO_ReturnP1R2, RO_ReturnP1R3, RO_ReturnP2R0, RO_ReturnP2R1, RO_ReturnP2R2, RO_ReturnP2R3, RO_ReturnP3R0, RO_ReturnP3R1, RO_ReturnP3R2, RO_ReturnP3R3, RO_PushStringNull };
 
 	#pragma region CallParsing
-	inline const uint8_t GetNewCallOpCode(const uint32_t needOffset) { return needOffset >= 1048576 ? 255 : 82 + (needOffset >> 16); }
-	inline const uint16_t GetNewCallOffset(const uint32_t needOffset) { return needOffset - (((needOffset >> 16)) << 16); }
-	inline const int32_t GetCallOffset(const int32_t readOffset, const int32_t opCode) { return readOffset | ((opCode - 82) << 16); }
+	inline const uint8_t GetNewCallOpCode(const uint32_t needOffset) const { 
+		return needOffset >= 1048576 ? 255 : 82 + (needOffset >> 16); 
+	}
+	inline const uint16_t GetNewCallOffset(const uint32_t needOffset) const { 
+		return needOffset - (((needOffset >> 16)) << 16); 
+	}
+	inline const int32_t GetCallOffset(const int32_t readOffset, const int32_t opCode) const {
+		return readOffset | ((opCode - 82) << 16); 
+	}
 	#pragma endregion
 	#pragma region NativeParsing
-	inline const int32_t GetArgCountFromIndex(const uint16_t* Indblock){ return (((uint8_t*)Indblock)[0] & 0x3e) >> 1; }
-	inline const int32_t GetIndex(const uint16_t val) { return (((val & 0xFF) << 2) & 0x300) | ((val >> 8) & 0xFF); }
-	inline const bool FunctionHasReturn(const uint16_t* data) { return (((uint8_t*)data)[0] & 1) == 1 ? true : false; }
-	inline const uint16_t SetNewIndex(const uint16_t index, const int parameterCount, const bool ret) { return SwapEndian((uint16_t)(((index & 0xFF00) >> 2) | ((index & 0xFF) << 8) | (ret ? 1 : 0) | (parameterCount << 1))); }
+	inline const int32_t GetArgCountFromIndex(const uint16_t* Indblock) const {
+		return (((uint8_t*)Indblock)[0] & 0x3e) >> 1; 
+	}
+	inline const int32_t GetIndex(const uint16_t val) const {
+		return (((val & 0xFF) << 2) & 0x300) | ((val >> 8) & 0xFF);
+	}
+	inline const bool FunctionHasReturn(const uint16_t* data) const { 
+		return (((uint8_t*)data)[0] & 1) == 1 ? true : false; 
+	}
+	inline const uint16_t SetNewIndex(const uint16_t index, const int parameterCount, const bool ret) const { 
+		return SwapEndian((uint16_t)(((index & 0xFF00) >> 2) | ((index & 0xFF) << 8) | (ret ? 1 : 0) | (parameterCount << 1)));
+	}
 	#pragma endregion
 
 	void CallNative(const uint32_t hash, const uint8_t paramCount,const uint8_t returnCount) override;
