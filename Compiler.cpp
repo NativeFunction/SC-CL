@@ -2,7 +2,7 @@
 
 
 #pragma region Base
-void CompileBase::ParseGeneral(OpcodeKind OK)
+void CompileBase::ParseGeneral(const OpcodeKind OK)
 {
 	switch (OK)
 	{
@@ -101,7 +101,7 @@ void CompileBase::ParseGeneral(OpcodeKind OK)
 		case OK_GetHash:	GetHash(); break;//gta5 needs to override
 	}
 }
-void CompileBase::AddJump(JumpInstructionType type, string label)
+void CompileBase::AddJump(const JumpInstructionType type, const string label)
 {
 	switch (type)
 	{
@@ -120,9 +120,9 @@ void CompileBase::AddJump(JumpInstructionType type, string label)
 	}
 }
 
-void CompileBase::PushInt(bool isLiteral, int32_t Literal)
+void CompileBase::PushInt(const bool isLiteral, const int32_t Literal)
 {
-	int32_t value = isLiteral ? Literal : DATA->getInt();
+	const int32_t value = isLiteral ? Literal : DATA->getInt();
 
 	if (value >= -1 && value <= 7) {
 		switch (value)
@@ -166,7 +166,7 @@ void CompileBase::PushInt(bool isLiteral, int32_t Literal)
 
 
 }
-void CompileBase::PushFloat(bool isLiteral, float Literal)
+void CompileBase::PushFloat(const bool isLiteral, const float Literal)
 {
 	switch (isLiteral ? Utils::DataConversion::FloatToInt(Literal) : DATA->getInt())
 	{
@@ -198,7 +198,7 @@ void CompileBase::PushBytes()
 
 #pragma region AddOpcodeB_1or2
 #define AddOpcodeB_1or2(op, errorstr)\
-uint32_t value = DATA->getInt();\
+const uint32_t value = DATA->getInt();\
 if (value <= 0xFF)\
 {\
 	DoesOpcodeHaveRoom(2);\
@@ -217,7 +217,7 @@ assert(false && errorstr);\
 #pragma endregion
 #pragma region AddOpcodeB_2or3
 #define AddOpcodeB_2or3(op, errorstr)\
-uint32_t value = DATA->getInt();\
+const uint32_t value = DATA->getInt();\
 if (value <= 0xFFFF)\
 {\
 	DoesOpcodeHaveRoom(3);\
@@ -295,7 +295,7 @@ void CompileBase::PushString()
 void CompileBase::Switch(){
 
 	const SwitchStorage* switchStore = DATA->getSwitch();
-	uint32_t caseCount = switchStore->getCount();
+	const uint32_t caseCount = switchStore->getCount();
 	DoesOpcodeHaveRoom(caseCount * 6 + 2);//opcode, case count
 
 	AddOpcode(Switch);
@@ -315,7 +315,7 @@ void CompileBase::Switch(){
 	}
 	
 }
-void CompileBase::AddImm(bool isLiteral, int32_t Literal)
+void CompileBase::AddImm(const bool isLiteral, const int32_t Literal)
 {
 	int32_t value = isLiteral ? Literal : DATA->getInt();
 
@@ -347,7 +347,7 @@ void CompileBase::AddImm(bool isLiteral, int32_t Literal)
 	}
 
 }
-void CompileBase::MultImm(bool isLiteral, int32_t Literal)
+void CompileBase::MultImm(const bool isLiteral, const int32_t Literal)
 {
 	int32_t value = isLiteral ? Literal : DATA->getInt();
 
@@ -395,7 +395,7 @@ void CompileBase::FMultImm()
 
 #pragma region RDR
 
-void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount)
+void CompileRDR::CallNative(const uint32_t hash, const uint8_t paramCount, const uint8_t returnCount)
 {
 	// rdr 2 byte call loc based on index
 	DoesOpcodeHaveRoom(3);
@@ -406,7 +406,7 @@ void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCou
 		if(DATA->getNative()->getReturnCount() > 1)
 			Throw("Native Calls Can Only Have One Return");
 
-		uint32_t index = NativeHashMap.size();
+		const uint32_t index = NativeHashMap.size();
 		if (index >= 1024)
 			Throw("Native Call Index out of bounds");
 
@@ -418,7 +418,7 @@ void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCou
 		if (returnCount > 1)
 			Throw("Native Calls Can Only Have One Return");
 
-		uint32_t index = NativeHashMap.size();
+		const uint32_t index = NativeHashMap.size();
 		if (index >= 1024)
 			Throw("Native Call Index out of bounds");
 
@@ -428,8 +428,8 @@ void CompileRDR::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCou
 }
 void CompileRDR::Return()
 {
-	uint8_t popParams = DATA->getByte(0);
-	uint8_t returns = DATA->getByte(1);
+	const uint8_t popParams = DATA->getByte(0);
+	const uint8_t returns = DATA->getByte(1);
 
 	if (popParams <= 3 && returns <= 3)
 		AddInt8(RDROpcodes.ReturnP0R0 + (popParams * 4) + returns);
@@ -450,7 +450,7 @@ void CompileRDR::Call()
 }
 void CompileRDR::GetImm()
 {
-	uint32_t value = DATA->getInt() * 4;
+	const uint32_t value = DATA->getInt() * 4;
 	if (value <= 0xFF)
 	{
 		DoesOpcodeHaveRoom(2);
@@ -472,7 +472,7 @@ void CompileRDR::GetImm()
 }
 void CompileRDR::SetImm()
 {
-	uint32_t value = DATA->getInt() * 4;
+	const uint32_t value = DATA->getInt() * 4;
 	if (value <= 0xFF)
 	{
 		DoesOpcodeHaveRoom(2);
@@ -496,10 +496,10 @@ void CompileRDR::SetImm()
 #pragma endregion
 
 #pragma region GTAV
-uint32_t CompileGTAV::AddStringToStringPage(string str)
+const uint32_t CompileGTAV::AddStringToStringPage(const string str)
 {
-	uint32_t len = str.length();
-	uint32_t pos = StringPageData.size();
+	const uint32_t len = str.length();
+	const uint32_t pos = StringPageData.size();
 
 	//if string is in table
 	for (uint32_t i = 0; i < StringPageDataIndexing.size(); i++)
@@ -517,7 +517,7 @@ uint32_t CompileGTAV::AddStringToStringPage(string str)
 	return pos;
 }
 
-void CompileGTAV::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCount)
+void CompileGTAV::CallNative(const uint32_t hash, const uint8_t paramCount, const uint8_t returnCount)
 {
 	// gta5 1 byte param/return, 2 byte call loc
 
@@ -529,7 +529,7 @@ void CompileGTAV::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCo
 		if (DATA->getNative()->getReturnCount() > 3)
 			Throw("Native Calls Can Only Have Three Returns");
 
-		uint32_t index = NativeHashMap.size();
+		const uint32_t index = NativeHashMap.size();
 		if (index > 0xFFFF)
 			Throw("Native Call Index out of bounds");
 
@@ -542,7 +542,7 @@ void CompileGTAV::CallNative(uint32_t hash, uint8_t paramCount, uint8_t returnCo
 		if (returnCount > 3)
 			Throw("Native Calls Can Only Have Three Returns");
 
-		uint32_t index = NativeHashMap.size();
+		const uint32_t index = NativeHashMap.size();
 		if (index > 0xFFFF)
 			Throw("Native Call Index out of bounds");
 
@@ -566,7 +566,7 @@ void CompileGTAV::PushString()
 }
 void CompileGTAV::GetImm()
 {
-	uint32_t value = DATA->getInt();
+	const uint32_t value = DATA->getInt();
 	if (value <= 0xFF)
 	{
 		DoesOpcodeHaveRoom(2);
@@ -588,7 +588,7 @@ void CompileGTAV::GetImm()
 }
 void CompileGTAV::SetImm()
 {
-	uint32_t value = DATA->getInt();
+	const uint32_t value = DATA->getInt();
 	if (value <= 0xFF)
 	{
 		DoesOpcodeHaveRoom(2);
