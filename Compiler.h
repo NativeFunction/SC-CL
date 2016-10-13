@@ -257,7 +257,7 @@ protected:
 	uint32_t InstructionCount;
 
 public:
-	#define DATA HLData[FunctionCount]->Instructions[InstructionCount]
+	#define DATA HLData[FunctionCount]->getInstruction(InstructionCount)
 	#define AddOpcode(op) AddInt8(BaseOpcodes->##op);
 
 	CompileBase(OpCodes& Op, vector<FunctionData*> data, uint32_t FC, uint32_t IC)
