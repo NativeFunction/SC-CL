@@ -337,9 +337,11 @@ public:
 			CodePageData.resize(size + (16384 - (size % 16384)));
 	}
 
-	virtual void PushInt(const bool isLiteral = false, const int32_t Literal = 0);//Override: GTAIV
+	virtual void PushInt(const int32_t Literal);//Override: GTAIV
+	void PushInt(){ PushInt(DATA->getInt()); }
 	virtual void PushBytes();//Override: GTAIV
-	virtual void PushFloat(const bool isLiteral = false, const float Literal = 0);//Override: GTAIV
+	virtual void PushFloat(const float Literal);//Override: GTAIV
+	void PushFloat(){ PushFloat(DATA->getFloat()); }
 	virtual void PushString();//Override: GTAV
 	virtual void CallNative(const uint32_t hash = -1, const uint8_t paramCount = -1, const uint8_t returnCount = -1) { assert(false && "CallNative has to be overridden"); };//Override: ALL
 	virtual void Return() { DoesOpcodeHaveRoom(3); AddOpcode(Return); AddInt8(DATA->getByte(0)); AddInt8(DATA->getByte(1)); };//Override: RDR
@@ -363,11 +365,13 @@ public:
 	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };//Override: ALL
 	virtual void Call() { assert(false && "Call has to be overridden"); };//Override: ALL
 	void Switch();//for gta4 switches override AddJump
-	virtual void AddImm(const bool isLiteral = false, const int32_t Literal = 0);//Override: GTAIV
-	virtual void MultImm(const bool isLiteral = false, const int32_t Literal = 0);//Override: GTAIV
+	virtual void AddImm(const int32_t Literal);//Override: GTAIV
+	void AddImm(){ AddImm(DATA->getInt()); }
+	virtual void MultImm(const int32_t Literal);//Override: GTAIV
+	void MultImm(){ MultImm(DATA->getInt()); }
 	void FAddImm();
 	void FMultImm();
-	virtual void GetImmP() { MultImm(true, 4); AddOpcode(Add); };//Override: GTAV
+	virtual void GetImmP() { MultImm(4); AddOpcode(Add); };//Override: GTAV
 	virtual void GetImm() { assert(false && "GetImm has to be overridden"); };//Override: ALL
 	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
 	

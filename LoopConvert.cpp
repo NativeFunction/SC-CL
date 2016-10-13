@@ -2583,13 +2583,13 @@ public:
 										}
 										if (paramSize == 1)
 										{
-											AddInstruction(SetFrame, Index);
+											AddInstructionComment(SetFrame, "Inline Argument Setting",Index);
 										}
 										else if (paramSize > 1)
 										{
 											AddInstruction(PushInt, paramSize);
 											AddInstruction(GetFrameP, Index);
-											AddInstruction(FromStack);
+											AddInstructionComment(FromStack, "Inline Argument Setting");
 										}
 										if (isRet) {
 											parseExpression(cast<ReturnStmt>(subBody)->getRetValue(), false, true);
@@ -2606,7 +2606,7 @@ public:
 												scriptData.getCurrentFunction()->RemoveLast();
 												//remove the last jump, but keep the label, just incase other places in the function have returns
 											}
-											AddInstruction(Label, scriptData.getInlineJumpLabelAppend());
+											AddInstructionComment(Label, "Inline return location",scriptData.getInlineJumpLabelAppend());
 										}
 										LocalVariables.removeLevel();
 										scriptData.removeFunctionInline(name);

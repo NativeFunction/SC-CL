@@ -114,18 +114,16 @@ void CompileBase::AddJump(const JumpInstructionType type, const string label)
 		case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); AddJumpLoc(JumpDataType::Int16, type, label); break;
 		case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); AddJumpLoc(JumpDataType::Int16, type, label); break;
 		case JumpInstructionType::Switch:		AddJumpLoc(JumpDataType::Int16, type, label); break;
-		case JumpInstructionType::LabelLoc:	DoesOpcodeHaveRoom(5); AddOpcode(Push); AddJumpLoc(JumpDataType::Int32, type, label); break;
+		case JumpInstructionType::LabelLoc:	DoesOpcodeHaveRoom(4); AddOpcode(PushI24); AddJumpLoc(JumpDataType::Int24, type, label); break;
 		case JumpInstructionType::Call:	assert(false && "Call is handled in the call function"); break;
 		default: assert(false && "Invalid JumpInstructionType");
 	}
 }
 
-void CompileBase::PushInt(const bool isLiteral, const int32_t Literal)
+void CompileBase::PushInt(const int32_t Literal)
 {
-	const int32_t value = isLiteral ? Literal : DATA->getInt();
-
-	if (value >= -1 && value <= 7) {
-		switch (value)
+	if (Literal >= -1 && Literal <= 7) {
+		switch (Literal)
 		{
 			case -1:AddOpcode(Push_Neg1); break;
 			case 0: AddOpcode(Push_0); break;
@@ -139,36 +137,36 @@ void CompileBase::PushInt(const bool isLiteral, const int32_t Literal)
 			default: assert(false && "Invalid Push Opcode");
 		}
 	}
-	else if (value > 0 && value < 256)
+	else if (Literal > 0 && Literal < 256)
 	{
 		DoesOpcodeHaveRoom(2);
 		AddOpcode(PushB);
-		AddInt8(value);
+		AddInt8(Literal);
 	}
-	else if (value >= -32768 && value <= 32767)
+	else if (Literal >= -32768 && Literal <= 32767)
 	{
 		DoesOpcodeHaveRoom(3);
 		AddOpcode(PushS);
-		AddInt16(value);
+		AddInt16(Literal);
 	}
-	else if (value > 0 && value < 16777216)
+	else if (Literal > 0 && Literal < 16777216)
 	{
 		DoesOpcodeHaveRoom(4);
 		AddOpcode(PushI24);
-		AddInt24(value);
+		AddInt24(Literal);
 	}
 	else
 	{
 		DoesOpcodeHaveRoom(5);
 		AddOpcode(Push);
-		AddInt32(value);
+		AddInt32(Literal);
 	}
 
 
 }
-void CompileBase::PushFloat(const bool isLiteral, const float Literal)
+void CompileBase::PushFloat(const float Literal)
 {
-	switch (isLiteral ? Utils::DataConversion::FloatToInt(Literal) : DATA->getInt())
+	switch (Utils::DataConversion::FloatToInt(Literal))
 	{
 		case 0xbf800000: AddOpcode(PushF_Neg1); break;
 		case 0x80000000://neg 0
@@ -180,7 +178,7 @@ void CompileBase::PushFloat(const bool isLiteral, const float Literal)
 		case 0x40A00000: AddOpcode(PushF_5); break;
 		case 0x40C00000: AddOpcode(PushF_6); break;
 		case 0x40E00000: AddOpcode(PushF_7); break;
-		default: DoesOpcodeHaveRoom(5); AddOpcode(PushF); AddFloat(DATA->getFloat());
+		default: DoesOpcodeHaveRoom(5); AddOpcode(PushF); AddFloat(Literal);
 	}
 }
 void CompileBase::PushBytes()
@@ -315,78 +313,93 @@ void CompileBase::Switch(){
 	}
 	
 }
-void CompileBase::AddImm(const bool isLiteral, const int32_t Literal)
+void CompileBase::AddImm(const int32_t Literal)
 {
-	int32_t value = isLiteral ? Literal : DATA->getInt();
-
-	if (value > 0 && value < 256)
+	if (Literal > 0 && Literal < 256)
 	{
 		DoesOpcodeHaveRoom(2);
 		AddOpcode(Add1);
-		AddInt8(DATA->getInt());
+		AddInt8(Literal);
 	}
-	else if (value >= -32768 && value < 32768)
+	else if (Literal >= -32768 && Literal < 32768)
 	{
 		DoesOpcodeHaveRoom(3);
 		AddOpcode(Add2);
-		AddInt16(DATA->getInt());
+		AddInt16(Literal);
 	}
-	else if (value > 0 && value < 0x1000000)
+	else if (Literal > 0 && Literal < 0x1000000)
 	{
 		DoesOpcodeHaveRoom(4);
 		AddOpcode(PushI24);
-		AddInt24(DATA->getInt());
+		AddInt24(Literal);
 		AddOpcode(Add);
 	}
 	else
 	{
 		DoesOpcodeHaveRoom(5);
 		AddOpcode(Push);
-		AddInt32(DATA->getInt());
+		AddInt32(Literal);
 		AddOpcode(Add);
 	}
 
 }
-void CompileBase::MultImm(const bool isLiteral, const int32_t Literal)
+void CompileBase::MultImm(const int32_t Literal)
 {
-	int32_t value = isLiteral ? Literal : DATA->getInt();
-
-	if (value > 0 && value < 256)
+	if (Literal > 0 && Literal < 256)
 	{
 		DoesOpcodeHaveRoom(2);
 		AddOpcode(Mult1);
-		AddInt8(DATA->getInt());
+		AddInt8(Literal);
 	}
-	else if (value >= -32768 && value < 32768)
+	else if (Literal >= -32768 && Literal < 32768)
 	{
 		DoesOpcodeHaveRoom(3);
 		AddOpcode(Mult2);
-		AddInt16(DATA->getInt());
+		AddInt16(Literal);
 	}
-	else if (value > 0 && value < 0x1000000)
+	else if (Literal > 0 && Literal < 0x1000000)
 	{
 		DoesOpcodeHaveRoom(4);
 		AddOpcode(PushI24);
-		AddInt24(DATA->getInt());
+		AddInt24(Literal);
 		AddOpcode(Mult);
 	}
 	else
 	{
 		DoesOpcodeHaveRoom(5);
 		AddOpcode(Push);
-		AddInt32(DATA->getInt());
+		AddInt32(Literal);
 		AddOpcode(Mult);
 	}
 
 }
 void CompileBase::FAddImm()
 {
-	PushFloat(true, DATA->getFloat());
-	AddOpcode(fAdd);
+	switch(DATA->getInt())
+	{
+	case 0xc0e00000:AddOpcode(PushF_7); AddOpcode(fSub); break;
+	case 0xc0c00000:AddOpcode(PushF_6); AddOpcode(fSub); break;
+	case 0xc0a00000:AddOpcode(PushF_5); AddOpcode(fSub); break;
+	case 0xc0800000:AddOpcode(PushF_4); AddOpcode(fSub); break;
+	case 0xc0400000:AddOpcode(PushF_3); AddOpcode(fSub); break;
+	case 0xc0000000:AddOpcode(PushF_2); AddOpcode(fSub); break;
+	case 0xbf800000:AddOpcode(PushF_1); AddOpcode(fSub); break;
+	case 0x80000000://neg 0
+	case 0x00000000: break;
+	case 0x3f800000: AddOpcode(PushF_1); AddOpcode(fAdd); break;
+	case 0x40000000: AddOpcode(PushF_2); AddOpcode(fAdd); break;
+	case 0x40400000: AddOpcode(PushF_3); AddOpcode(fAdd); break;
+	case 0x40800000: AddOpcode(PushF_4); AddOpcode(fAdd); break;
+	case 0x40A00000: AddOpcode(PushF_5); AddOpcode(fAdd); break;
+	case 0x40C00000: AddOpcode(PushF_6); AddOpcode(fAdd); break;
+	case 0x40E00000: AddOpcode(PushF_7); AddOpcode(fAdd); break;
+	default: DoesOpcodeHaveRoom(5); AddOpcode(PushF); AddFloat(DATA->getFloat()); AddOpcode(fAdd); break;
+	}
+	
 }
 void CompileBase::FMultImm()
 {
-	PushFloat(true, DATA->getFloat());
+	PushFloat();
 	AddOpcode(fMult);
 }
 
@@ -465,7 +478,7 @@ void CompileRDR::GetImm()
 	}
 	else
 	{
-		PushInt(true, value);
+		PushInt(value);
 		AddOpcode(Add);
 		AddOpcode(pGet);
 	}
@@ -487,7 +500,7 @@ void CompileRDR::SetImm()
 	}
 	else
 	{
-		PushInt(true, value);
+		PushInt(value);
 		AddOpcode(Add);
 		AddOpcode(pSet);
 	}
@@ -561,7 +574,7 @@ void CompileGTAV::Call()
 
 void CompileGTAV::PushString()
 {
-	PushInt(true, AddStringToStringPage(DATA->getString()));
+	PushInt(AddStringToStringPage(DATA->getString()));
 	AddOpcode(PushString);
 }
 void CompileGTAV::GetImm()
@@ -581,7 +594,7 @@ void CompileGTAV::GetImm()
 	}
 	else
 	{
-		PushInt(true, value * 4);
+		PushInt(value * 4);
 		AddOpcode(Add);
 		AddOpcode(pGet);
 	}
@@ -603,7 +616,7 @@ void CompileGTAV::SetImm()
 	}
 	else
 	{
-		PushInt(true, value * 4);
+		PushInt(value * 4);
 		AddOpcode(Add);
 		AddOpcode(pSet);
 	}
