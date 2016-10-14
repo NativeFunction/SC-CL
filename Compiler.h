@@ -324,18 +324,18 @@ protected:
 	virtual void AddJump(const JumpInstructionType type, const string label);//Override: GTAIV
 	inline uint32_t AddNative(const uint32_t hash)
 	{
-		auto findRes = NativeHashMap.find(hash);
-		uint32_t size = NativeHashMap.size();
-		if (findRes == NativeHashMap.end())
-			NativeHashMap.insert({ hash, size });
+		unordered_map<uint32_t, uint32_t>::iterator findRes = NativeHashMap.find(hash);
+		const uint32_t size = NativeHashMap.size();
+		if (findRes != NativeHashMap.end())
+			return findRes->second;
 		else
-			size = findRes->second;
+			NativeHashMap.insert({ hash, size });
 		return size;
 	}
 	inline uint32_t GetNativeIndex(const uint32_t hash)
 	{
 		unordered_map<uint32_t, uint32_t>::iterator it = NativeHashMap.find(hash);
-		if (it != NativeHashMap.cend())
+		if (it != NativeHashMap.end())
 			return it->second;
 		else
 			Throw("Native with hash \""+to_string(hash)+"\" does not exist");
