@@ -279,7 +279,7 @@ protected:
 		CodePageData.push_back(*(ptr + 1));
 		CodePageData.push_back(*(ptr));
 	}
-	inline void AddInt24(int32_t value)
+	inline void AddInt24(uint32_t value)
 	{
 		if (value > 16777215)
 			value %= 16777215;
