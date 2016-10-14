@@ -56,17 +56,16 @@ Opcode::~Opcode()
 	case OK_JumpLT:
 	case OK_JumpLE:
 	case OK_Label:
+	case OK_LabelLoc:
+	case OK_FuncLoc:
 		delete storage.string;
 		break;
 	case OK_Native:
 		delete storage.native;
 		break;
 	case OK_Switch:
-	{
 		delete storage.switchCase;
-
 		break;
-	}
 	default:
 		break;
 	}
@@ -117,6 +116,7 @@ string Opcode::getString() const
 	case OK_JumpLE:
 	case OK_Label:
 	case OK_LabelLoc:
+	case OK_FuncLoc:
 		return storage.string->toString();
 	default:
 		assert(false && "Get String called on a non string opcode");
@@ -304,7 +304,8 @@ int Opcode::getSizeEstimate() const
 	case OK_Label:
 		return 0;//labels dont take up storage
 	case OK_LabelLoc:
-		return 5;//Just PushInt32
+	case OK_FuncLoc:
+		return 4;//Just PushInt24
 	case OK_AddImm:
 	{
 		int value = getInt();
@@ -702,6 +703,7 @@ string Opcode::toString() const
 	case OK_PCall: current = "PCall"; break;
 	case OK_Label: current = "\r\n:" + getString(); break; //make labels have a line break
 	case OK_LabelLoc: current = "Push GetLoc(\"" + getString() + "\")"; break;
+	case OK_FuncLoc: current = "Push GetFuncLoc(\"" + getString() + "\")"; break;
 	}
 #ifdef _DEBUG
 	if (hasComment())

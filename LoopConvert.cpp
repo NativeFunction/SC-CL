@@ -675,7 +675,7 @@ public:
 					Throw("Function pointer \"" + key + "\" not found");
 				}
 
-				AddInstructionComment(LabelLoc, "DeclRefExpr, nothing else, so func it", key);
+				AddInstructionComment(FuncLoc, "DeclRefExpr, nothing else, so func it", key);
 
 			}
 		}
@@ -2329,6 +2329,13 @@ public:
 			{
 				Warn("Using a __asm__ statement in an inlined function may lead to undesireable effects\r\nConsider marking the function as __attribute__((__noinline__))", rewriter, asmstmt->getSourceRange());
 			}
+		}
+		else if (isa<IndirectGotoStmt>(s))
+		{
+			auto indirectGoto = cast<IndirectGotoStmt>(s);
+			parseExpression(indirectGoto->getTarget(), false, true);
+			AddInstructionComment(Call, "IndirectGoTo Call", "__buiiltin__indirectGoTo");
+			scriptData.addUsedFuncToCurrent("@__buiiltin__indirectGoTo");
 		}
 		else
 			Throw("Undefined statement \"" + string(s->getStmtClassName()) + "\"", rewriter, s->getLocStart());
@@ -4534,7 +4541,11 @@ public:
 		}
 		else if (isa<AddrLabelExpr>(e))
 		{
-			Throw("Address of Label Expressions are not supported", rewriter, e->getSourceRange());
+			if (isLtoRValue)
+			{
+				auto addrOf = cast<AddrLabelExpr>(e);
+				AddJumpInlineCheckStr(LabelLoc, addrOf->getLabel()->getNameAsString());
+			}
 		}
 		else
 			Throw("Unimplemented expression " + string(e->getStmtClassName()), rewriter, e->getExprLoc());
@@ -5288,7 +5299,7 @@ public:
 						if (!scriptData.addUsedFuncToEntry("@" + decl->getNameAsString()))
 							Throw("Static function pointer \"" + decl->getNameAsString() + "\" not found");
 
-						scriptData.getEntryFunction()->addOpLabelLoc(decl->getNameAsString());
+						scriptData.getEntryFunction()->addOpFuncLoc(decl->getNameAsString());
 						scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
 
 					}
@@ -5635,6 +5646,7 @@ public:
 		{
 			return;
 		}
+		scriptData.getEntryFunction()->setProcessed();
 		scriptData.getEntryFunction()->setUsed();//build up function usage tree
 
 		if (Visitor.MainRets != -1)
@@ -5654,8 +5666,6 @@ public:
 		{
 			string StaticData = scriptData.getStaticsAsString();
 			fwrite(StaticData.data(), 1, StaticData.size(), file);
-			string eStr = scriptData.getEntryFunction()->toString();
-			fwrite(eStr.c_str(), 1, eStr.size(), file);
 			for (uint32_t i = 0, max = scriptData.getFunctionCount(); i <max; i++)
 			{
 				auto func = scriptData.getFunctionFromIndex(i);

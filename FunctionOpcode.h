@@ -120,6 +120,7 @@ enum OpcodeKind{
 	OK_PCall,
 	OK_Label, 
 	OK_LabelLoc,
+	OK_FuncLoc,
 	OK_ShiftLeft,
 	OK_ShiftRight,
 	OK_GetHash
@@ -336,6 +337,7 @@ class FunctionData
 	uint16_t stackSize = 2;
 	bool used = false;
 	bool _processed = false;
+	bool _isBuiltIn = false;
 	vector<Opcode *> Instructions;
 	vector<FunctionData *> usedFuncs;
 public:
@@ -375,6 +377,8 @@ public:
 	}
 	bool isProcessed()const{ return _processed; }
 	void setProcessed(){ _processed = true; }
+	bool isBuiltIn()const{ return _isBuiltIn; }
+	void setBuiltIn(){ _isBuiltIn = true; }
 
 #pragma region CreateOpcodes
 	void addOpNop(){ Instructions.push_back(new Opcode(OK_Nop)); }
@@ -662,6 +666,12 @@ public:
 	{
 		Opcode* op = new Opcode(OK_LabelLoc);
 		op->setString(loc);
+		Instructions.push_back(op);
+	}
+	void addOpFuncLoc(string funcName)
+	{
+		Opcode* op = new Opcode(OK_FuncLoc);
+		op->setString(funcName);
 		Instructions.push_back(op);
 	}
 	void addOpLabelLoc(unsigned int rawEncoding){ addOpLabelLoc(to_string(rawEncoding)); }

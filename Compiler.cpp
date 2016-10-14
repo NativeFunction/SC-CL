@@ -96,6 +96,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_PCall:		pCall(); break;//gta4 needs to override as error
 		case OK_Label:		AddLabel(DATA->getString()); break;
 		case OK_LabelLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); break;
+		case OK_FuncLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); break; //needs fixing
 		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); break;
 		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); break;
 		case OK_GetHash:	GetHash(); break;//gta5 needs to override

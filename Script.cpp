@@ -1,6 +1,19 @@
 #include "Script.h"
 #include "Utils.h"
 
+Script::Script() : entryFunction(new FunctionData("@__builtin__entryPoint", 0)), indirectGoTo(new FunctionData("@__buiiltin__indirectGoTo", 1)), currentFunc(NULL)
+{
+	functions.push_back(entryFunction);
+	functions.push_back(indirectGoTo);
+	entryFunction->setBuiltIn();
+	indirectGoTo->addOpGetFrame(0);
+	indirectGoTo->addOpSetFrame(1);
+	indirectGoTo->addOpReturn(1, 0);
+	indirectGoTo->setStackSize(3);
+	indirectGoTo->setProcessed();
+	indirectGoTo->setBuiltIn();
+}
+
 FunctionData * Script::createFunction(string name, int paramCount, bool makeCurrent)
 {
 	uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
@@ -64,7 +77,7 @@ bool Script::addUsedFuncToEntry(string name)
 		FunctionData *func = functions[i];
 		if (hash == func->getHash() && name == func->getName())
 		{
-			entryFunction.addUsedFunc(func);
+			entryFunction->addUsedFunc(func);
 			return true;
 		}
 	}

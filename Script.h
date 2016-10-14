@@ -4,7 +4,8 @@
 #include <map>
 class Script
 {
-	FunctionData entryFunction;
+	FunctionData *entryFunction;
+	FunctionData *indirectGoTo;
 	vector<FunctionData *> functions;
 	FunctionData *currentFunc;
 	vector<int32_t> staticTable;
@@ -12,8 +13,8 @@ class Script
 	vector<InlineData> inlineStack;
 	int staticCount = 0;
 public:
-	Script() : entryFunction("@EntryPoint", 0), currentFunc(NULL){}
-	FunctionData *getEntryFunction() { return &entryFunction; }
+	Script();
+	FunctionData *getEntryFunction() const{ return entryFunction; }
 	FunctionData *getCurrentFunction()const{ return currentFunc; }
 	FunctionData *createFunction(string name, int paramCount, bool makeCurrent = false);
 	void clearCurrentFunction(){ currentFunc = NULL; }
