@@ -460,6 +460,35 @@ void CompileBase::FMultImm()
 
 #pragma region RDR
 
+void CompileRDR::fixFunctionCalls()
+{
+	for (auto CallInfo : CallLocations)
+	{
+		auto it = FuncLocations.find(CallInfo.FuncName);
+		if (it == LabelLocations.end())
+		{
+			Throw("Function \"" + CallInfo.FuncName + "\" not found");
+		}
+		uint32_t pos = it->second;
+		if (pos >= 0x1000000)
+		{
+			Throw("Function \"" + CallInfo.FuncName + "\" out of call range");//realistally this is never going to happen
+		}
+		switch (CallInfo.InstructionType)
+		{
+			case CallInstructionType::FuncLoc:
+			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
+			break;
+			case CallInstructionType::Call:
+			*(CodePageData.data() + CallInfo.CallLocation) = BaseOpcodes->Call2 + (pos >> 16);//any out of range errors already been caught
+			*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = SwapEndian((uint16_t)pos & 0xFFFF);
+			break;
+			default: assert(false && "Invalid Call Instruction"); break;
+		}
+	}
+}
+
+
 void CompileRDR::CallNative(const uint32_t hash, const uint8_t paramCount, const uint8_t returnCount)
 {
 	// rdr 2 byte call loc based on index
@@ -471,11 +500,10 @@ void CompileRDR::CallNative(const uint32_t hash, const uint8_t paramCount, const
 		if(DATA->getNative()->getReturnCount() > 1)
 			Throw("Native Calls Can Only Have One Return");
 
-		const uint32_t index = NativeHashMap.size();
+		const uint32_t index = AddNative(hash);
 		if (index >= 1024)
 			Throw("Native Call Index out of bounds");
 
-		AddNative(hash);
 		AddInt16(SetNewIndex(index, DATA->getNative()->getParamCount(), DATA->getNative()->getReturnCount() == 1));
 	}
 	else
@@ -483,11 +511,10 @@ void CompileRDR::CallNative(const uint32_t hash, const uint8_t paramCount, const
 		if (returnCount > 1)
 			Throw("Native Calls Can Only Have One Return");
 
-		const uint32_t index = NativeHashMap.size();
+		const uint32_t index = AddNative(hash);
 		if (index >= 1024)
 			Throw("Native Call Index out of bounds");
 
-		AddNative(hash);
 		AddInt16(SetNewIndex(index, paramCount, returnCount == 1));
 	}
 }
@@ -557,33 +584,8 @@ void CompileRDR::SetImm()
 		AddOpcode(pSet);
 	}
 }
-void CompileRDR::fixFunctionCalls()
-{
-	for (auto CallInfo : CallLocations)
-	{
-		auto it = FuncLocations.find(CallInfo.FuncName);
-		if (it == LabelLocations.end())
-		{
-			Throw("Function \"" + CallInfo.FuncName + "\" not found");
-		}
-		uint32_t pos = it->second;
-		if (pos >= 0x1000000)
-		{
-			Throw("Function \"" + CallInfo.FuncName + "\" out of call range");//realistally this is never going to happen
-		}
-		switch(CallInfo.InstructionType)
-		{
-			case CallInstructionType::FuncLoc:
-				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
-				break;
-			case CallInstructionType::Call:
-				*(CodePageData.data() + CallInfo.CallLocation) = BaseOpcodes->Call2 + (pos >> 16);//any out of range errors already been caught
-				*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = SwapEndian((uint16_t)pos & 0xFFFF);
-				break;
-			default: assert(false && "Invalid Call Instruction"); break;
-		}
-	}
-}
+
+
 #pragma endregion
 
 #pragma region GTAV
@@ -607,6 +609,33 @@ const uint32_t CompileGTAV::AddStringToStringPage(const string str)
 	memcpy(StringPageData.data() + pos, str.data(), len + 1);
 	return pos;
 }
+void CompileGTAV::fixFunctionCalls()
+{
+	for (auto CallInfo : CallLocations)
+	{
+		auto it = FuncLocations.find(CallInfo.FuncName);
+		if (it == LabelLocations.end())
+		{
+			Throw("Function \"" + CallInfo.FuncName + "\" not found");
+		}
+		uint32_t pos = it->second;
+		if (pos >= 0x1000000)
+		{
+			Throw("Function \"" + CallInfo.FuncName + "\" out of call range");//realistally this is never going to happen
+		}
+		switch (CallInfo.InstructionType)
+		{
+			case CallInstructionType::FuncLoc:
+			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
+			break;
+			case CallInstructionType::Call:
+			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->Call;
+			break;
+			default: assert(false && "Invalid Call Instruction"); break;
+		}
+	}
+}
+
 
 void CompileGTAV::CallNative(const uint32_t hash, const uint8_t paramCount, const uint8_t returnCount)
 {
@@ -620,11 +649,10 @@ void CompileGTAV::CallNative(const uint32_t hash, const uint8_t paramCount, cons
 		if (DATA->getNative()->getReturnCount() > 3)
 			Throw("Native Calls Can Only Have Three Returns");
 
-		const uint32_t index = NativeHashMap.size();
-		if (index > 0xFFFF)
+		const uint32_t index = AddNative(hash);
+		if (index >= 0xFFFF)
 			Throw("Native Call Index out of bounds");
 
-		AddNative(hash);
 		AddInt8( (DATA->getNative()->getParamCount() << 2) | (DATA->getNative()->getReturnCount() & 0x3));
 		AddInt16(index);
 	}
@@ -633,11 +661,10 @@ void CompileGTAV::CallNative(const uint32_t hash, const uint8_t paramCount, cons
 		if (returnCount > 3)
 			Throw("Native Calls Can Only Have Three Returns");
 
-		const uint32_t index = NativeHashMap.size();
-		if (index > 0xFFFF)
+		const uint32_t index = AddNative(hash);
+		if (index >= 0xFFFF)
 			Throw("Native Call Index out of bounds");
 
-		AddNative(hash);
 		AddInt8((paramCount << 2) | (returnCount & 0x3));
 		AddInt16(index);
 	}
@@ -650,7 +677,6 @@ void CompileGTAV::Call()
 	CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getString() });
 	AddInt24(0);
 }
-
 void CompileGTAV::PushString()
 {
 	PushInt(AddStringToStringPage(DATA->getString()));
@@ -701,31 +727,5 @@ void CompileGTAV::SetImm()
 	}
 }
 
-void CompileGTAV::fixFunctionCalls()
-{
-	for (auto CallInfo : CallLocations)
-	{
-		auto it = FuncLocations.find(CallInfo.FuncName);
-		if (it == LabelLocations.end())
-		{
-			Throw("Function \"" + CallInfo.FuncName + "\" not found");
-		}
-		uint32_t pos = it->second;
-		if (pos >= 0x1000000)
-		{
-			Throw("Function \"" + CallInfo.FuncName + "\" out of call range");//realistally this is never going to happen
-		}
-		switch (CallInfo.InstructionType)
-		{
-			case CallInstructionType::FuncLoc:
-				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
-				break;
-			case CallInstructionType::Call:
-				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->Call;
-				break;
-			default: assert(false && "Invalid Call Instruction"); break;
-		}
-	}
-}
 
 #pragma endregion

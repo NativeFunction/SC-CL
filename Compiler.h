@@ -322,9 +322,15 @@ protected:
 		}
 	}
 	virtual void AddJump(const JumpInstructionType type, const string label);//Override: GTAIV
-	inline void AddNative(const uint32_t hash)
+	inline uint32_t AddNative(const uint32_t hash)
 	{
-		NativeHashMap.insert({hash, NativeHashMap.size()});
+		auto findRes = NativeHashMap.find(hash);
+		uint32_t size = NativeHashMap.size();
+		if (findRes == NativeHashMap.end)
+			NativeHashMap.insert({ hash, size });
+		else
+			size = findRes->second;
+		return size;
 	}
 	inline uint32_t GetNativeIndex(const uint32_t hash)
 	{
@@ -422,13 +428,15 @@ private:
 	}
 	#pragma endregion
 
+	void fixFunctionCalls() override;
+
 	void CallNative(const uint32_t hash, const uint8_t paramCount,const uint8_t returnCount) override;
 	void Return() override;
-	void GetHash() override { CallNative(Joaat("string_to_hash"), 1, 1); };
+	void GetHash() override { CallNative(JoaatConst("string_to_hash"), 1, 1); };
 	void Call() override;
 	void GetImm() override;
 	void SetImm() override;	
-	void fixFunctionCalls() override;
+	
 };
 
 class CompileGTAV : CompileBase
@@ -446,6 +454,8 @@ private:
 	vector<StrIndex> StringPageDataIndexing;
 
 	const uint32_t AddStringToStringPage(const string str);
+	void fixFunctionCalls() override;
+
 
 	void CallNative(const uint32_t hash, const uint8_t paramCount, const uint8_t returnCount) override;
 	void GetHash() override { AddOpcode(GetHash); };
@@ -454,5 +464,5 @@ private:
 	void GetImmP() override { AddOpcode(GetImmP); };
 	void GetImm() override;
 	void SetImm() override;
-	void fixFunctionCalls() override;
+	
 };
