@@ -33,13 +33,13 @@ void CompileBase::fixFunctionJumps()
 		}
 		case JumpInstructionType::LabelLoc:
 		{
-			int32_t pos = it->second;
-			if (pos < 0 || pos > 0x1000000)
+			uint32_t pos = it->second;
+			if ( pos >= 0x1000000)
 			{
 				Throw("Get label loc \"" + jumpInfo.Label + "\" out of jump range");
 			}
-			pos |= BaseOpcodes->PushI24 << 24;
-			*(int*)(CodePageData.data() - 1 + jumpInfo.JumpLocation) = pos;
+			
+			*(int*)(CodePageData.data() - 1 + jumpInfo.JumpLocation) = pos | BaseOpcodes->PushI24 << 24;;
 			break;
 		}
 		}
@@ -557,7 +557,33 @@ void CompileRDR::SetImm()
 		AddOpcode(pSet);
 	}
 }
-
+void CompileRDR::fixFunctionCalls()
+{
+	for (auto CallInfo : CallLocations)
+	{
+		auto it = FuncLocations.find(CallInfo.FuncName);
+		if (it == LabelLocations.end())
+		{
+			Throw("Function \"" + CallInfo.FuncName + "\" not found");
+		}
+		uint32_t pos = it->second;
+		if (pos >= 0x1000000)
+		{
+			Throw("Function \"" + CallInfo.FuncName + "\" out of call range");//realistally this is never going to happen
+		}
+		switch(CallInfo.InstructionType)
+		{
+			case CallInstructionType::FuncLoc:
+				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = pos | BaseOpcodes->PushI24 << 24;;
+				break;
+			case CallInstructionType::Call:
+				*(CodePageData.data() + CallInfo.CallLocation) = BaseOpcodes->Call2 + (pos >> 16);//any out of range errors already been caught
+				*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = pos & 0xFFFF;
+				break;
+			default: assert(false && "Invalid Call Instruction"); break;
+		}
+	}
+}
 #pragma endregion
 
 #pragma region GTAV
@@ -672,6 +698,33 @@ void CompileGTAV::SetImm()
 		PushInt(value * 4);
 		AddOpcode(Add);
 		AddOpcode(pSet);
+	}
+}
+
+void CompileGTAV::fixFunctionCalls()
+{
+	for (auto CallInfo : CallLocations)
+	{
+		auto it = FuncLocations.find(CallInfo.FuncName);
+		if (it == LabelLocations.end())
+		{
+			Throw("Function \"" + CallInfo.FuncName + "\" not found");
+		}
+		uint32_t pos = it->second;
+		if (pos >= 0x1000000)
+		{
+			Throw("Function \"" + CallInfo.FuncName + "\" out of call range");//realistally this is never going to happen
+		}
+		switch (CallInfo.InstructionType)
+		{
+			case CallInstructionType::FuncLoc:
+				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = pos | BaseOpcodes->PushI24 << 24;;
+				break;
+			case CallInstructionType::Call:
+				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = pos | BaseOpcodes->Call << 24;
+				break;
+			default: assert(false && "Invalid Call Instruction"); break;
+		}
 	}
 }
 

@@ -383,6 +383,7 @@ protected:
 	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
 	
 	virtual void fixFunctionJumps();
+	virtual void fixFunctionCalls() = 0;
 	void ParseGeneral(const OpcodeKind OK);
 		
 };
@@ -427,6 +428,7 @@ private:
 	void Call() override;
 	void GetImm() override;
 	void SetImm() override;	
+	void fixFunctionCalls() override;
 };
 
 class CompileGTAV : CompileBase
@@ -452,4 +454,5 @@ private:
 	void GetImmP() override { AddOpcode(GetImmP); };
 	void GetImm() override;
 	void SetImm() override;
+	void fixFunctionCalls() override;
 };
