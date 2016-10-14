@@ -39,7 +39,7 @@ void CompileBase::fixFunctionJumps()
 					Throw("Get label loc \"" + jumpInfo.Label + "\" out of jump range");
 				}
 			
-				*(int*)(CodePageData.data() - 1 + jumpInfo.JumpLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;;
+				*(int*)(CodePageData.data() - 1 + jumpInfo.JumpLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
 				break;
 			}
 		}

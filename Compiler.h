@@ -277,12 +277,10 @@ protected:
 		CodePageData.resize(CodePageData.size() + 2, 0);
 		*((int16_t*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
-	inline void AddInt24(uint32_t value)
+	inline void AddInt24(const uint32_t value)
 	{
-		if (value > 16777215)
-			value %= 16777216;
 		CodePageData.resize(CodePageData.size() + 3, 0);
-		*((uint32_t*)(CodePageData.data() + CodePageData.size()) - 1) |= Utils::Bitwise::SwapEndian(value) >> 8;
+		*((uint32_t*)(CodePageData.data() + CodePageData.size()) - 1) |= Utils::Bitwise::SwapEndian(value & 0xFFFFFF);
 	}
 	inline void AddInt32(const int32_t value)
 	{
