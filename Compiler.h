@@ -272,25 +272,40 @@ protected:
 	{
 		CodePageData.push_back(b);
 	}
-	inline void AddInt16(const int16_t s)
+	inline void AddInt16(const int16_t value)
 	{
-		CodePageData.resize(CodePageData.size() + 2);
-		*(short*)(CodePageData.data() + CodePageData.size() - 2) = s;
+		uint8_t* ptr = (uint8_t*)&value;
+		CodePageData.reserve(CodePageData.size() + 2);
+		CodePageData.push_back(*(ptr + 1));
+		CodePageData.push_back(*(ptr));
 	}
-	inline void AddInt24(const int32_t t)
+	inline void AddInt24(int32_t value)
 	{
-		CodePageData.resize(CodePageData.size() + 3);
-		memcpy(CodePageData.data() + CodePageData.size() - 3, (char*)&t + 1, 3);
+		if (value > 16777215)
+			value %= 16777215;
+		uint8_t* ptr = (uint8_t*)&value;
+		CodePageData.reserve(CodePageData.size() + 3);
+		CodePageData.push_back(*(ptr + 2));
+		CodePageData.push_back(*(ptr + 1));
+		CodePageData.push_back(*ptr);
 	}
-	inline void AddInt32(const int32_t i)
+	inline void AddInt32(const int32_t value)
 	{
-		CodePageData.resize(CodePageData.size() + 4);
-		*(int32_t*)(CodePageData.data() + CodePageData.size() - 4) = i;
+		uint8_t* ptr = (uint8_t*)&value;
+		CodePageData.reserve(CodePageData.size() + 4);
+		CodePageData.push_back(*(ptr + 3));
+		CodePageData.push_back(*(ptr + 2));
+		CodePageData.push_back(*(ptr + 1));
+		CodePageData.push_back(*ptr);
 	}
-	inline void AddFloat(const float f)
+	inline void AddFloat(const float value)
 	{
-		CodePageData.resize(CodePageData.size() + 4);
-		*(float*)(CodePageData.data() + CodePageData.size() - 4) = f;
+		uint8_t* ptr = (uint8_t*)&value;
+		CodePageData.reserve(CodePageData.size() + 4);
+		CodePageData.push_back(*(ptr + 3));
+		CodePageData.push_back(*(ptr + 2));
+		CodePageData.push_back(*(ptr + 1));
+		CodePageData.push_back(*ptr);
 	}
 	inline void AddString(const string str)//Override: GTAV
 	{
