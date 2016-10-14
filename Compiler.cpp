@@ -2,6 +2,51 @@
 
 
 #pragma region Base
+void CompileBase::fixFunctionJumps()
+{
+	for (auto jumpInfo : JumpLocations)
+	{
+		auto it = LabelLocations.find(jumpInfo.Label);
+		if (it == LabelLocations.end())
+		{
+			Throw("Jump label \"" + jumpInfo.Label + "\" not found");
+		}
+		switch (jumpInfo.InstructionType)
+		{
+		case JumpInstructionType::Jump:
+		case JumpInstructionType::JumpFalse:
+		case JumpInstructionType::JumpEQ:
+		case JumpInstructionType::JumpNE:
+		case JumpInstructionType::JumpGT:
+		case JumpInstructionType::JumpGE:
+		case JumpInstructionType::JumpLT:
+		case JumpInstructionType::JumpLE:
+		case JumpInstructionType::Switch:
+		{
+			int32_t offset = it->second - jumpInfo.JumpLocation - 2;
+			if (offset < -32768 || offset > 32767)
+			{
+				Throw("Jump label \"" + jumpInfo.Label + "\" out of jump range");
+			}
+			*(short*)(CodePageData.data() + jumpInfo.JumpLocation) = (short)offset;
+			break;
+		}
+		case JumpInstructionType::LabelLoc:
+		{
+			int32_t pos = it->second;
+			if (pos < 0 || pos > 0x1000000)
+			{
+				Throw("Get label loc \"" + jumpInfo.Label + "\" out of jump range");
+			}
+			pos |= BaseOpcodes->PushI24 << 24;
+			*(int*)(CodePageData.data() - 1 + jumpInfo.JumpLocation) = pos;
+			break;
+		}
+		}
+	}
+	JumpLocations.clear();
+	LabelLocations.clear();
+}
 void CompileBase::ParseGeneral(const OpcodeKind OK)
 {
 	switch (OK)
