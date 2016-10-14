@@ -5070,22 +5070,19 @@ public:
 			const Type* type = ivie->getType().getTypePtr();
 			uint32_t size = getSizeFromBytes(getSizeOfType(type));
 
-			#if STATIC_PADDING_DEBUG == 0
-			oldStaticInc += size;
-			#else
-			for (uint32_t i = 0; i < size; i++)
-				DefaultStaticValues.insert({ oldStaticInc++, "0" });
-			#endif
+			scriptData.addStaticInit(0, size);
 			return true;
 		}
 		else if (e->EvaluateAsRValue(result, *context))
 		{
-
+			if (!isLtoRValue)
+			{
+				Warn("Static value was dropped");
+				return -1;
+			}
 			if (result.Val.isInt())
 			{
-				if (!isLtoRValue)
-					return -1;
-
+				
 				int64_t resValue = result.Val.getInt().getSExtValue();
 
 				if (doesInt64FitIntoInt32(resValue))
@@ -5108,43 +5105,26 @@ public:
 				if (type->isCharType())
 				{
 					if (intIndex == 0)
-						DefaultStaticValues.insert({ oldStaticInc, "0x00000000" });
+						scriptData.addStaticInit();
 
-					char buffer[10] = { '0' };
-					itoa(static_cast<char>(resValue), buffer + 1, 16);
-
-					assert(intIndex < 4 && intIndex >= 0);
-					uint32_t len = strlen(buffer + 1);
-					assert(len > 0 && len <= 2);
-					memcpy(const_cast<void*>(static_cast<const void*>(DefaultStaticValues[oldStaticInc].data() + 2 + intIndex * 2)), buffer + len - 1, 2);
+					scriptData.modifyLastInitStaticByte(resValue, intIndex);
 
 					if (++intIndex >= 4)
-					{
 						intIndex = 0;
-						oldStaticInc++;
-					}
 				}
 				else if (type->isSpecificBuiltinType(BuiltinType::Kind::Short) || type->isSpecificBuiltinType(BuiltinType::Kind::UShort))
 				{
 					if (intIndex == 0)
-						DefaultStaticValues.insert({ oldStaticInc, "0x00000000" });
+						scriptData.addStaticInit();
 
-					char buffer[12] = { '0','0','0' };
-					itoa(static_cast<short>(resValue), buffer + 3, 16);
-					assert(intIndex < 4 && intIndex >= 0);
-					uint32_t len = strlen(buffer + 3);
-					assert(len > 0 && len <= 4);
-					memcpy(const_cast<void*>(static_cast<const void*>(DefaultStaticValues[oldStaticInc].data() + 2 + intIndex * 2)), buffer + len - 1, 4);
+					scriptData.modifyLastInitStaticShort(resValue, intIndex);
 
 					intIndex += 2;
 					if (intIndex >= 4)
-					{
 						intIndex = 0;
-						oldStaticInc++;
-					}
 				}
 				else if (isCurrentExprEvaluable)
-					DefaultStaticValues.insert({ oldStaticInc++, to_string((int32_t)resValue) });
+					scriptData.addStaticInit((int32_t)resValue);
 				else
 					scriptData.getEntryFunction()->addOpPushInt((int32_t)resValue);
 
@@ -5152,28 +5132,24 @@ public:
 			}
 			else if (result.Val.isFloat())
 			{
-				if (!isLtoRValue)
-					return -1;
 				if (isCurrentExprEvaluable)
-					DefaultStaticValues.insert({ oldStaticInc++, to_string(FloatToInt((float)extractAPFloat(result.Val.getFloat()))) });
+					scriptData.addStaticInit(FloatToInt((float)extractAPFloat(result.Val.getFloat())));
 				else
 					scriptData.getEntryFunction()->addOpPushFloat((float)extractAPFloat(result.Val.getFloat()));
 				return true;
 			}
 			else if (result.Val.isComplexFloat())
 			{
-				if (!isLtoRValue)
-					return -1;
-				DefaultStaticValues.insert({ oldStaticInc++, to_string(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatReal()))) });
-				DefaultStaticValues.insert({ oldStaticInc++, to_string(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatImag()))) });
+				//can this be unevaluable?
+				scriptData.addStaticInit(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatReal())));
+				scriptData.addStaticInit(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatImag())));
 				return true;
 			}
 			else if (result.Val.isComplexInt())
 			{
-				if (!isLtoRValue)
-					return -1;
-				DefaultStaticValues.insert({ oldStaticInc++, to_string(result.Val.getComplexIntReal().getSExtValue()) });
-				DefaultStaticValues.insert({ oldStaticInc++, to_string(result.Val.getComplexIntImag().getSExtValue()) });
+				//can this be unevaluable?
+				scriptData.addStaticInit(result.Val.getComplexIntReal().getSExtValue());
+				scriptData.addStaticInit(result.Val.getComplexIntImag().getSExtValue());
 				return true;
 			}
 		}
@@ -5193,17 +5169,15 @@ public:
 				{
 					if (b >= 4)
 					{
-						DefaultStaticValues.insert({ oldStaticInc++, to_string(Utils::Bitwise::SwapEndian(buffer)) });
+						scriptData.addStaticInit(Utils::Bitwise::SwapEndian(buffer));
 						b = 0;
 						buffer = 0;
 
-						#if STATIC_PADDING_DEBUG == 0
 						if (i >= (int32_t)strlit.length())
 						{
-							oldStaticInc += Utils::Math::CeilDivInt(strsize - i, 4);
+							scriptData.addStaticInit(0, Utils::Math::CeilDivInt(strsize - i, 4));
 							break;
 						}
-						#endif
 					}
 					if (i >= (int32_t)strlit.length())
 						((uint8_t*)&buffer)[b] = 0;//add padding
@@ -5212,7 +5186,7 @@ public:
 
 				}
 				if (b != 0)
-					DefaultStaticValues.insert({ oldStaticInc++, to_string(Utils::Bitwise::SwapEndian(buffer)) });
+					scriptData.addStaticInit(Utils::Bitwise::SwapEndian(buffer));
 
 			}
 
@@ -5222,7 +5196,7 @@ public:
 		{
 			const InitListExpr *I = cast<const InitListExpr>(e);
 			uint32_t size = getSizeFromBytes(getSizeOfType(I->getType().getTypePtr()));
-			uint32_t SavedStaticInc = oldStaticInc;
+			uint32_t SavedStaticInc = scriptData.getStaticSize();
 
 			resetIntIndex();
 
@@ -5232,24 +5206,19 @@ public:
 				doesCurrentValueNeedSet = false;
 				ParseLiteral(I->getInit(i), false, true);
 				if (doesCurrentValueNeedSet)
-					scriptData.getEntryFunction()->addOpSetStatic(oldStaticInc++);
+					scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
 			}
 
 			resetIntIndex();
 			isCurrentExprEvaluable = true;
 			doesCurrentValueNeedSet = false;
 
-			if (oldStaticInc - SavedStaticInc < size)
+			if (scriptData.getStaticSize() - SavedStaticInc < size)
 			{
 				//cout << "init list size is less adding " << size - (oldStaticInc - SavedStaticInc) << " size: " << size << endl;
 
-				#if STATIC_PADDING_DEBUG == 0
-				oldStaticInc += size - (oldStaticInc - SavedStaticInc);
-				#else
-				uint32_t temp = size - (oldStaticInc - SavedStaticInc);
-				for (uint32_t i = 0; i < temp; i++)
-					DefaultStaticValues.insert({ oldStaticInc++, "0ie added " + to_string(temp) });
-				#endif
+				scriptData.addStaticInit(0, size - (scriptData.getStaticSize() - SavedStaticInc));
+				
 			}
 			return true;
 		}
@@ -5286,7 +5255,7 @@ public:
 				{
 					const StringLiteral *literal = cast<const StringLiteral>(icast->getSubExpr());
 					scriptData.getEntryFunction()->addOpPushString(literal->getString().str());
-					scriptData.getEntryFunction()->addOpSetStatic(oldStaticInc++);
+					scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
 				}
 				else if (isa<DeclRefExpr>(icast->getSubExpr()))//int vstack[10] = {1,2,3,4,5,6,7,8,9,10}, *vstack_ptr = vstack;
 				{
@@ -5308,12 +5277,10 @@ public:
 						const FunctionDecl *decl = cast<const FunctionDecl>(declRef->getDecl());
 
 						if (!scriptData.addUsedFuncToEntry("@" + decl->getNameAsString()))
-						{
 							Throw("Static function pointer \"" + decl->getNameAsString() + "\" not found");
-						}
 
-						string funcname = "GetLoc(\"" + decl->getNameAsString() + "\")";
-						DefaultStaticValues.insert({ oldStaticInc++, funcname });
+						scriptData.getEntryFunction()->addOpLabelLoc(decl->getNameAsString());
+						scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
 
 					}
 					else Throw("Unimplemented CK_FunctionToPointerDecay DeclRefExpr for " + string(declRef->getStmtClassName()));
@@ -5522,7 +5489,6 @@ public:
 			}
 
 		}
-
 		else
 			Throw("Class " + string(e->getStmtClassName()) + " is unimplemented for a static define");
 		return -1;
@@ -5538,35 +5504,33 @@ public:
 
 					resetIntIndex();
 					savedType = nullptr;
-					oldStaticInc = staticInc;
+
 					isCurrentExprEvaluable = true;
 					doesCurrentValueNeedSet = false;
+
 					statics.insert(make_pair(dumpName(cast<NamedDecl>(D)), staticInc));
+
+					scriptData.addStaticDecl(getSizeFromBytes(size));
 					staticInc += getSizeFromBytes(size);
 
 					const Expr *initializer = globalVarDecl->getAnyInitializer();
 
 
 					if (initializer) {
-						//if (isa<CXXConstructExpr>(initializer)) {
-						//	//out << "GetStaticP2 " << oldStaticInc << " //" << varDecl->getName().str() << endl;
-						//	ParseLiteral(initializer, true, false, true, varDecl);
-						//}
 
 						ParseLiteral(initializer, false, true);
 
-
-						if (oldStaticInc > staticInc)//undefined length arrays (should check if it is an undefined length array)
-							staticInc = oldStaticInc;
+						if (scriptData.getStaticSize() > staticInc)//undefined length arrays (should check if it is an undefined length array)
+							staticInc = scriptData.getStaticSize();
 
 						if (doesCurrentValueNeedSet)
-							scriptData.getEntryFunction()->addOpSetStatic(oldStaticInc++);
+							scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
 
 					}
 
 
-					if (oldStaticInc > staticInc)
-						Warn("Static Overflow Old:" + to_string(oldStaticInc) + " New:" + to_string(staticInc));
+					if (scriptData.getStaticSize() > staticInc)
+						Warn("Static Overflow Old:" + to_string(scriptData.getStaticSize()) + " New:" + to_string(staticInc));
 
 
 				}
@@ -5585,23 +5549,17 @@ public:
 		return "";
 	}
 
-	void resetIntIndex()
+	inline void resetIntIndex()
 	{
 		if (intIndex != 0)
-		{
 			intIndex = 0;
-			oldStaticInc++;
-		}
 	}
 
 	VarDecl* globalVarDecl;
-	uint32_t oldStaticInc = 0;
 	uint32_t intIndex = 0;
 	Type* savedType = nullptr;
 	bool isCurrentExprEvaluable = true;
 	bool doesCurrentValueNeedSet = false;
-
-	map<uint32_t, string> DefaultStaticValues;//index, value
 
 private:
 	Rewriter &TheRewriter;
@@ -5670,18 +5628,6 @@ public:
 		}
 		scriptData.getEntryFunction()->setUsed();//build up function usage tree
 
-
-		stringstream header;
-
-		header << "SetStaticsCount " << staticInc << "\r\n";
-		for (map<uint32_t, string>::iterator iterator = GlobalsVisitor.DefaultStaticValues.begin(); iterator != GlobalsVisitor.DefaultStaticValues.end(); iterator++)
-			header << "SetDefaultStatic " << iterator->first << " " << iterator->second << "\r\n";
-
-		//this is not to be used by the high level compiler statics will still be indexed by integers for performance
-		for (map<string, int>::iterator iterator = statics.begin(); iterator != statics.end(); iterator++)
-			header << "SetStaticName " << iterator->second << " " << iterator->first << "\r\n";
-
-
 		if (Visitor.MainRets != -1)
 		{
 			scriptData.getEntryFunction()->addOpCall("main");
@@ -5697,8 +5643,8 @@ public:
 		FILE* file = fopen(Visitor.outfile.c_str(), "wb");
 		if (file != NULL)
 		{
-			header.seekg(0, ios::end);
-			fwrite(header.str().c_str(), 1, header.tellg(), file);
+			string StaticData = scriptData.getStaticsAsString();
+			fwrite(StaticData.data(), 1, StaticData.size(), file);
 			string eStr = scriptData.getEntryFunction()->toString();
 			fwrite(eStr.c_str(), 1, eStr.size(), file);
 			for (uint32_t i = 0, max = scriptData.getFunctionCount(); i <max; i++)

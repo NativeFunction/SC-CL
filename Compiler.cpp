@@ -97,7 +97,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_Label:		AddLabel(DATA->getString()); break;
 		case OK_LabelLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); break;
 		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); break;
-		case OK_ShiftRight:	CallNative(JoaatConst("shift_left"), 2, 1); break;
+		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); break;
 		case OK_GetHash:	GetHash(); break;//gta5 needs to override
 	}
 }
@@ -377,22 +377,22 @@ void CompileBase::FAddImm()
 {
 	switch(DATA->getInt())
 	{
-	case 0xc0e00000:AddOpcode(PushF_7); AddOpcode(fSub); break;
-	case 0xc0c00000:AddOpcode(PushF_6); AddOpcode(fSub); break;
-	case 0xc0a00000:AddOpcode(PushF_5); AddOpcode(fSub); break;
-	case 0xc0800000:AddOpcode(PushF_4); AddOpcode(fSub); break;
-	case 0xc0400000:AddOpcode(PushF_3); AddOpcode(fSub); break;
-	case 0xc0000000:AddOpcode(PushF_2); AddOpcode(fSub); break;
-	case 0xbf800000:AddOpcode(PushF_1); AddOpcode(fSub); break;
-	case 0x80000000://neg 0
-	case 0x00000000: break;
-	case 0x3f800000: AddOpcode(PushF_1); AddOpcode(fAdd); break;
-	case 0x40000000: AddOpcode(PushF_2); AddOpcode(fAdd); break;
-	case 0x40400000: AddOpcode(PushF_3); AddOpcode(fAdd); break;
-	case 0x40800000: AddOpcode(PushF_4); AddOpcode(fAdd); break;
-	case 0x40A00000: AddOpcode(PushF_5); AddOpcode(fAdd); break;
-	case 0x40C00000: AddOpcode(PushF_6); AddOpcode(fAdd); break;
-	case 0x40E00000: AddOpcode(PushF_7); AddOpcode(fAdd); break;
+		case 0xc0e00000: AddOpcode(PushF_7); AddOpcode(fSub); break;
+		case 0xc0c00000: AddOpcode(PushF_6); AddOpcode(fSub); break;
+		case 0xc0a00000: AddOpcode(PushF_5); AddOpcode(fSub); break;
+		case 0xc0800000: AddOpcode(PushF_4); AddOpcode(fSub); break;
+		case 0xc0400000: AddOpcode(PushF_3); AddOpcode(fSub); break;
+		case 0xc0000000: AddOpcode(PushF_2); AddOpcode(fSub); break;
+		case 0xbf800000: AddOpcode(PushF_1); AddOpcode(fSub); break;
+		case 0x80000000: //neg 0
+		case 0x00000000: break;
+		case 0x3f800000: AddOpcode(PushF_1); AddOpcode(fAdd); break;
+		case 0x40000000: AddOpcode(PushF_2); AddOpcode(fAdd); break;
+		case 0x40400000: AddOpcode(PushF_3); AddOpcode(fAdd); break;
+		case 0x40800000: AddOpcode(PushF_4); AddOpcode(fAdd); break;
+		case 0x40A00000: AddOpcode(PushF_5); AddOpcode(fAdd); break;
+		case 0x40C00000: AddOpcode(PushF_6); AddOpcode(fAdd); break;
+		case 0x40E00000: AddOpcode(PushF_7); AddOpcode(fAdd); break;
 	default: DoesOpcodeHaveRoom(5); AddOpcode(PushF); AddFloat(DATA->getFloat()); AddOpcode(fAdd); break;
 	}
 	

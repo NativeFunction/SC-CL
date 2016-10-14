@@ -250,6 +250,7 @@ protected:
 	unordered_map<string, uint32_t> LabelLocations;//label ,data index
 	vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData
 	unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
+	vector<int32_t> StaticData;
 
 	const OpCodes* BaseOpcodes;//dynamic opcode list
 	vector<FunctionData*> HLData;//data to parse(High Level Data)

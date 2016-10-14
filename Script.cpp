@@ -123,32 +123,16 @@ void Script::removeFunctionInline(const FunctionData *fData)
 	inlineStack.pop_back();
 }
 
-int Script::addStaticDecl(string name, int size)
+string Script::getStaticsAsString()
 {
-	assert(size > 0 && "Static size must be at least 1");
-	int index = staticCount;
-	staticIndexes[name] = index;
-	for (int i = 0; i < size; i++)
+	string data;
+	data.reserve(36 * staticTable.size() + 28);
+	data += "SetStaticsCount " + to_string(staticTable.size()) + "\r\n";
+	for (uint32_t i = 0; i < staticTable.size(); i++)
 	{
-		staticTable.push_back(0);//set it to 0 for time being
+		if (staticTable[i] != 0)
+			data += "SetDefaultStatic " + to_string(i) + " " + to_string(staticTable[i]) + "\r\n";
 	}
-	index += size;
-	return index;
-}
-
-int Script::getStaticIndex(string name) const
-{
-	auto it = staticIndexes.find(name);
-	if (it != staticIndexes.end())
-	{
-		return it->second;
-	}
-	assert(false && "Static index doesnt exist");
-	return -1;
-}
-
-void Script::setStaticInit(int index, int val, int offset)
-{
-	assert(index >= 0 && index + offset < staticTable.size() && "Invalid static index");
-	staticTable[index + offset] = val;
+	data.shrink_to_fit();
+	return data;
 }
