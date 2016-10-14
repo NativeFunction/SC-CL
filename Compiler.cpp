@@ -96,7 +96,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_PCall:		pCall(); break;//gta4 needs to override as error
 		case OK_Label:		AddLabel(DATA->getString()); break;
 		case OK_LabelLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); break;
-		case OK_FuncLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); break; //needs fixing
+		case OK_FuncLoc:	AddFuncLoc(DATA->getString()); break;
 		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); break;
 		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); break;
 		case OK_GetHash:	GetHash(); break;//gta5 needs to override
@@ -106,17 +106,16 @@ void CompileBase::AddJump(const JumpInstructionType type, const string label)
 {
 	switch (type)
 	{
-		case JumpInstructionType::Jump:		DoesOpcodeHaveRoom(3); AddOpcode(Jump); AddJumpLoc(JumpDataType::Int16, type, label); break;
-		case JumpInstructionType::JumpFalse:	DoesOpcodeHaveRoom(3); AddOpcode(JumpFalse); AddJumpLoc(JumpDataType::Int16, type, label); break;
-		case JumpInstructionType::JumpNE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpNE); AddJumpLoc(JumpDataType::Int16, type, label); break;
-		case JumpInstructionType::JumpEQ:		DoesOpcodeHaveRoom(3); AddOpcode(JumpEQ); AddJumpLoc(JumpDataType::Int16, type, label); break;
-		case JumpInstructionType::JumpLE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLE); AddJumpLoc(JumpDataType::Int16, type, label); break;
-		case JumpInstructionType::JumpLT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLT); AddJumpLoc(JumpDataType::Int16, type, label); break;
-		case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); AddJumpLoc(JumpDataType::Int16, type, label); break;
-		case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); AddJumpLoc(JumpDataType::Int16, type, label); break;
-		case JumpInstructionType::Switch:		AddJumpLoc(JumpDataType::Int16, type, label); break;
-		case JumpInstructionType::LabelLoc:	DoesOpcodeHaveRoom(4); AddOpcode(PushI24); AddJumpLoc(JumpDataType::Int24, type, label); break;
-		case JumpInstructionType::Call:	assert(false && "Call is handled in the call function"); break;
+		case JumpInstructionType::Jump:		DoesOpcodeHaveRoom(3); AddOpcode(Jump); AddJumpLoc(type, label); break;
+		case JumpInstructionType::JumpFalse:	DoesOpcodeHaveRoom(3); AddOpcode(JumpFalse); AddJumpLoc(type, label); break;
+		case JumpInstructionType::JumpNE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpNE); AddJumpLoc(type, label); break;
+		case JumpInstructionType::JumpEQ:		DoesOpcodeHaveRoom(3); AddOpcode(JumpEQ); AddJumpLoc(type, label); break;
+		case JumpInstructionType::JumpLE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLE); AddJumpLoc(type, label); break;
+		case JumpInstructionType::JumpLT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLT); AddJumpLoc(type, label); break;
+		case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); AddJumpLoc(type, label); break;
+		case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); AddJumpLoc(type, label); break;
+		case JumpInstructionType::Switch:		AddJumpLoc(type, label); break;
+		case JumpInstructionType::LabelLoc:	DoesOpcodeHaveRoom(4); AddOpcode(PushI24); AddJumpLoc(type, label); break;
 		default: assert(false && "Invalid JumpInstructionType");
 	}
 }
@@ -291,6 +290,13 @@ void CompileBase::PushString()
 	AddInt8(DATA->getString().size() + 1);//str size + null terminator
 	AddString(DATA->getString());
 }
+void CompileBase::AddFuncLoc(const string funcName)
+{
+	DoesOpcodeHaveRoom(4);
+	AddOpcode(PushI24);
+	CallLocations.push_back({ CodePageData.size(), CallInstructionType::FuncLoc, funcName });
+	AddInt24(0);
+}
 void CompileBase::Switch(){
 
 	const SwitchStorage* switchStore = DATA->getSwitch();
@@ -459,8 +465,8 @@ void CompileRDR::Call()
 {
 	// rdr: 2 byte loc (loc or'ed)
 	DoesOpcodeHaveRoom(3);
-	AddOpcode(Nop);//call opcode to be set on jump loc pass
-	AddJumpLoc(JumpDataType::Int16, JumpInstructionType::Call, DATA->getString());
+	CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getString()});
+	AddInt24(0);
 }
 void CompileRDR::GetImm()
 {
@@ -570,7 +576,8 @@ void CompileGTAV::Call()
 	// gta5: 3 byte loc
 	DoesOpcodeHaveRoom(4);
 	AddOpcode(Call);
-	AddJumpLoc(JumpDataType::Int24, JumpInstructionType::Call, DATA->getString());
+	CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getString() });
+	AddInt24(0);
 }
 
 void CompileGTAV::PushString()

@@ -213,40 +213,40 @@ class CompileBase
 protected:
 	enum class JumpInstructionType
 	{
-		Jump
-		, JumpFalse
-		, JumpNE
-		, JumpEQ
-		, JumpLE
-		, JumpLT
-		, JumpGE
-		, JumpGT
-		, Switch
-		, LabelLoc
-		, Call
+		Jump, 
+		JumpFalse,
+		JumpEQ,
+		JumpNE,
+		JumpGT,
+		JumpGE,
+		JumpLT,
+		JumpLE,
+		Switch,
+		LabelLoc
 	};
-	enum class JumpDataType
+	enum class CallInstructionType
 	{
-		Int16
-		, Int24
-		, Int32
+		Call,
+		FuncLoc
 	};
-	typedef struct JumpData
+	typedef struct 
 	{
-		uint32_t JumpLocation;
-		const JumpDataType DataType;
+		const uint32_t JumpLocation;
 		const JumpInstructionType InstructionType;
-		string Label;
-	};
-	typedef struct LabelIndex
+		const string Label;
+	}JumpData;
+	typedef struct
 	{
-		uint32_t index;
-		string label;
-	};
+		const uint32_t CallLocation;
+		const CallInstructionType InstructionType;
+		const string FuncName;
+	}CallData;
 
 	vector<uint8_t> CodePageData;//opcode data
 	unordered_map<string, uint32_t> LabelLocations;//label ,data index
-	vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData
+	vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData for a function
+	unordered_map<string, uint32_t> FuncLocations;//call, data index
+	vector<CallData> CallLocations;//CallLocations to fill after building the CodePageData
 	unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
 	vector<int32_t> StaticData;
 
@@ -302,14 +302,20 @@ protected:
 		else
 			Throw("Cannot add label. Label \"" + label + "\" already exists.");
 	}
-	inline void AddJumpLoc(const JumpDataType LLT, const JumpInstructionType it, const string label)
+	inline void AddJumpLoc(const JumpInstructionType it, const string label)
 	{
-		JumpLocations.push_back({ CodePageData.size(), LLT, it, label });
-		switch (LLT)
+		JumpLocations.push_back({ CodePageData.size(), it, label });
+		switch (it)
 		{
-			case JumpDataType::Int16:	AddInt16(0); break;
-			case JumpDataType::Int24:	AddInt24(0); break;
-			case JumpDataType::Int32:	AddInt32(0); break;
+			case JumpInstructionType::Jump:
+			case JumpInstructionType::JumpFalse:
+			case JumpInstructionType::JumpEQ:
+			case JumpInstructionType::JumpNE:
+			case JumpInstructionType::JumpGT:
+			case JumpInstructionType::JumpGE:
+			case JumpInstructionType::JumpLT:
+			case JumpInstructionType::JumpLE:		AddInt16(0); break;
+			case JumpInstructionType::LabelLoc:		AddInt24(0); break;
 			default: assert(false && "Invalid Type");
 		}
 	}
@@ -362,6 +368,7 @@ protected:
 	virtual void pCall() { AddOpcode(pCall); };//Override: GTAIV
 	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };//Override: ALL
 	virtual void Call() { assert(false && "Call has to be overridden"); };//Override: ALL
+	virtual void AddFuncLoc(const string funcName);
 	void Switch();//for gta4 switches override AddJump
 	virtual void AddImm(const int32_t Literal);//Override: GTAIV
 	void AddImm(){ AddImm(DATA->getInt()); }
@@ -373,7 +380,12 @@ protected:
 	virtual void GetImm() { assert(false && "GetImm has to be overridden"); };//Override: ALL
 	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
 	
-
+	void clearFunctionJumpData()
+	{
+		assert(!JumpLocations.size() && "All jumps havent been parsed");
+		JumpLocations.clear();
+		LabelLocations.clear();
+	}
 	void ParseGeneral(const OpcodeKind OK);
 		
 };
