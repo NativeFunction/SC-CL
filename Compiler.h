@@ -274,38 +274,25 @@ protected:
 	}
 	inline void AddInt16(const int16_t value)
 	{
-		uint8_t* ptr = (uint8_t*)&value;
-		CodePageData.reserve(CodePageData.size() + 2);
-		CodePageData.push_back(*(ptr + 1));
-		CodePageData.push_back(*(ptr));
+		CodePageData.resize(CodePageData.size() + 2, 0);
+		*((int16_t*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
 	inline void AddInt24(uint32_t value)
 	{
 		if (value > 16777215)
-			value %= 16777215;
-		uint8_t* ptr = (uint8_t*)&value;
-		CodePageData.reserve(CodePageData.size() + 3);
-		CodePageData.push_back(*(ptr + 2));
-		CodePageData.push_back(*(ptr + 1));
-		CodePageData.push_back(*ptr);
+			value %= 16777216;
+		CodePageData.resize(CodePageData.size() + 3, 0);
+		*((uint32_t*)(CodePageData.data() + CodePageData.size()) - 1) |= Utils::Bitwise::SwapEndian(value) >> 8;
 	}
 	inline void AddInt32(const int32_t value)
 	{
-		uint8_t* ptr = (uint8_t*)&value;
-		CodePageData.reserve(CodePageData.size() + 4);
-		CodePageData.push_back(*(ptr + 3));
-		CodePageData.push_back(*(ptr + 2));
-		CodePageData.push_back(*(ptr + 1));
-		CodePageData.push_back(*ptr);
+		CodePageData.resize(CodePageData.size() + 4, 0);
+		*((int32_t*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
 	inline void AddFloat(const float value)
 	{
-		uint8_t* ptr = (uint8_t*)&value;
-		CodePageData.reserve(CodePageData.size() + 4);
-		CodePageData.push_back(*(ptr + 3));
-		CodePageData.push_back(*(ptr + 2));
-		CodePageData.push_back(*(ptr + 1));
-		CodePageData.push_back(*ptr);
+		CodePageData.resize(CodePageData.size() + 4, 0);
+		*((float*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
 	inline void AddString(const string str)//Override: GTAV
 	{
