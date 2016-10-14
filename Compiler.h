@@ -211,6 +211,7 @@ typedef union OpCodes {
 class CompileBase
 {
 protected:
+	#pragma region CompileBase_TypeDefs
 	enum class JumpInstructionType
 	{
 		Jump, 
@@ -241,6 +242,7 @@ protected:
 		const CallInstructionType InstructionType;
 		const string FuncName;
 	}CallData;
+	#pragma endregion
 
 	vector<uint8_t> CodePageData;//opcode data
 	unordered_map<string, uint32_t> LabelLocations;//label ,data index
