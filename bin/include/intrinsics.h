@@ -28,8 +28,6 @@ extern __intrinsic void stradd(char* dest, char* src, const byte destBufferLen);
 extern __intrinsic void straddi(char* dest, int value, const byte destBufferLen);
 extern __intrinsic void itos(char* dest, int value, const byte destBufferLen);
 extern __intrinsic int getHashKey(char *string);
-
-
 //}
 #pragma endregion
 
@@ -69,6 +67,7 @@ extern __intrinsic vector3 vector3Sub(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Div(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Neg(vector3 vector);
+extern __intrinsic float fMod(float divend, float divisor);
 //}
 #pragma endregion
 
@@ -76,21 +75,21 @@ extern __intrinsic vector3 vector3Neg(vector3 vector);
 //{ Unsafe_Math
 // These perform the operation on the item(or vector) on top of the stack
 // This can lead to dangerous behaviour if you arent sure what is currently on the stack
-extern __intrinsic __asm_unsafe int add(int value);
-extern __intrinsic __asm_unsafe int sub(int value);
-extern __intrinsic __asm_unsafe int div(int value);
-extern __intrinsic __asm_unsafe int mult(int value);
-extern __intrinsic __asm_unsafe int neg();
-extern __intrinsic __asm_unsafe float fadd(float value);
-extern __intrinsic __asm_unsafe float fsub(float value);
-extern __intrinsic __asm_unsafe float fdiv(float value);
-extern __intrinsic __asm_unsafe float fmult(float value);
-extern __intrinsic __asm_unsafe float fneg();
-extern __intrinsic __asm_unsafe vector3 vadd(vector3 value);
-extern __intrinsic __asm_unsafe vector3 vsub(vector3 value);
-extern __intrinsic __asm_unsafe vector3 vdiv(vector3 value);
-extern __intrinsic __asm_unsafe vector3 vmult(vector3 value);
-extern __intrinsic __asm_unsafe vector3 vneg();
+extern __intrinsic __asm_unsafe int stackAdd(int value);
+extern __intrinsic __asm_unsafe int stackSub(int value);
+extern __intrinsic __asm_unsafe int stackMult(int value);
+extern __intrinsic __asm_unsafe int stackDiv(int value);
+extern __intrinsic __asm_unsafe int stackNeg();
+extern __intrinsic __asm_unsafe float stackFAdd(float value);
+extern __intrinsic __asm_unsafe float stackFSub(float value);
+extern __intrinsic __asm_unsafe float stackFMult(float value);
+extern __intrinsic __asm_unsafe float stackFDiv(float value);
+extern __intrinsic __asm_unsafe float stackFNeg();
+extern __intrinsic __asm_unsafe vector3 stackVAdd(vector3 value);
+extern __intrinsic __asm_unsafe vector3 stackVSub(vector3 value);
+extern __intrinsic __asm_unsafe vector3 stackVMult(vector3 value);
+extern __intrinsic __asm_unsafe vector3 stackVDiv(vector3 value);
+extern __intrinsic __asm_unsafe vector3 stackVNeg();
 //}
 #pragma endregion
 
