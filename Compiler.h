@@ -382,12 +382,7 @@ protected:
 	virtual void GetImm() { assert(false && "GetImm has to be overridden"); };//Override: ALL
 	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
 	
-	void clearFunctionJumpData()
-	{
-		assert(!JumpLocations.size() && "All jumps havent been parsed");
-		JumpLocations.clear();
-		LabelLocations.clear();
-	}
+	virtual void fixFunctionJumps();
 	void ParseGeneral(const OpcodeKind OK);
 		
 };
