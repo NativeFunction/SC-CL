@@ -28,7 +28,7 @@ void CompileBase::fixFunctionJumps()
 				{
 					Throw("Jump label \"" + jumpInfo.Label + "\" out of jump range");
 				}
-				*(short*)(CodePageData.data() + jumpInfo.JumpLocation) = (short)offset;
+				*(short*)(CodePageData.data() + jumpInfo.JumpLocation) = SwapEndian((short)offset);
 				break;
 			}
 			case JumpInstructionType::LabelLoc:
@@ -39,7 +39,7 @@ void CompileBase::fixFunctionJumps()
 					Throw("Get label loc \"" + jumpInfo.Label + "\" out of jump range");
 				}
 			
-				*(int*)(CodePageData.data() - 1 + jumpInfo.JumpLocation) = pos | BaseOpcodes->PushI24 << 24;;
+				*(int*)(CodePageData.data() - 1 + jumpInfo.JumpLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;;
 				break;
 			}
 		}
@@ -574,11 +574,11 @@ void CompileRDR::fixFunctionCalls()
 		switch(CallInfo.InstructionType)
 		{
 			case CallInstructionType::FuncLoc:
-				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = pos | BaseOpcodes->PushI24 << 24;;
+				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
 				break;
 			case CallInstructionType::Call:
 				*(CodePageData.data() + CallInfo.CallLocation) = BaseOpcodes->Call2 + (pos >> 16);//any out of range errors already been caught
-				*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = pos & 0xFFFF;
+				*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = SwapEndian((uint16_t)pos & 0xFFFF);
 				break;
 			default: assert(false && "Invalid Call Instruction"); break;
 		}
@@ -718,10 +718,10 @@ void CompileGTAV::fixFunctionCalls()
 		switch (CallInfo.InstructionType)
 		{
 			case CallInstructionType::FuncLoc:
-				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = pos | BaseOpcodes->PushI24 << 24;;
+				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
 				break;
 			case CallInstructionType::Call:
-				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = pos | BaseOpcodes->Call << 24;
+				*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->Call;
 				break;
 			default: assert(false && "Invalid Call Instruction"); break;
 		}
