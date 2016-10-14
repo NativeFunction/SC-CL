@@ -989,47 +989,47 @@ public:
 				return false;
 			}
 			break;
-			case JoaatCasedConst("add"):
+			case JoaatCasedConst("stackAdd"):
 			{
-				ChkHashCol("add");
+				ChkHashCol("stackAdd");
 				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[0], false, true);
 					AddInstruction(Add);//let FunctionOpcode optimise this
 					return true;
 				}
-				Throw("add must have signature \"extern __intrinsic int add(int value);\"", rewriter, callee->getSourceRange());
+				Throw("stackAdd must have signature \"extern __intrinsic int stackAdd(int value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("sub"):
+			case JoaatCasedConst("stackSub"):
 			{
-				ChkHashCol("sub");
+				ChkHashCol("stackSub");
 				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[0], false, true);
 					AddInstruction(Sub);//let FunctionOpcode optimise this
 					return true;
 				}
-				Throw("sub must have signature \"extern __intrinsic int sub(int value);\"", rewriter, callee->getSourceRange());
+				Throw("stackSub must have signature \"extern __intrinsic int stackSub(int value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("mult"):
+			case JoaatCasedConst("stackMult"):
 			{
-				ChkHashCol("mult");
+				ChkHashCol("stackMult");
 				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[0], false, true);
 					AddInstruction(Mult);//let FunctionOpcode optimise this
 				}
-				Throw("mult must have signature \"extern __intrinsic int mult(int value);\"", rewriter, callee->getSourceRange());
+				Throw("stackMult must have signature \"extern __intrinsic int stackMult(int value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("div"):
+			case JoaatCasedConst("stackDiv"):
 			{
-				ChkHashCol("div");
+				ChkHashCol("stackDiv");
 				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[0], false, true);
@@ -1040,19 +1040,19 @@ public:
 					}
 					return true;
 				}
-				Throw("div must have signature \"extern __intrinsic int div(int value);\"", rewriter, callee->getSourceRange());
+				Throw("stackDiv must have signature \"extern __intrinsic int stackDiv(int value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("neg"):
+			case JoaatCasedConst("stackNeg"):
 			{
-				ChkHashCol("neg");
+				ChkHashCol("stackNeg");
 				if (argCount == 0 && callee->getReturnType()->isIntegerType())
 				{
 					AddInstruction(Neg);
 					return true;
 				}
-				Throw("neg must have signature \"extern __intrinsic int neg();\"", rewriter, callee->getSourceRange());
+				Throw("stackNeg must have signature \"extern __intrinsic int stackNeg();\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
@@ -1625,48 +1625,58 @@ public:
 				return false;
 			}
 			break;
-			case JoaatCasedConst("fadd"):
+			case JoaatCasedConst("fMod"):
 			{
-				ChkHashCol("fadd");
+				ChkHashCol("fMod");
+				if (argCount == 2 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType() && argArray[1]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(FMod);
+				}
+			}
+			case JoaatCasedConst("stackFAdd"):
+			{
+				ChkHashCol("stackFAdd");
 				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
 				{
 					parseExpression(argArray[0], false, true);
 					AddInstruction(FAdd);//FunctionOpcode will optimise
 					return true;
 				}
-				Throw("fadd must have signature \"extern __intrinsic float fadd(float value);\"", rewriter, callee->getSourceRange());
+				Throw("stackFAdd must have signature \"extern __intrinsic float stackFAdd(float value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("fsub"):
+			case JoaatCasedConst("stackFSub"):
 			{
-				ChkHashCol("fsub");
+				ChkHashCol("stackFSub");
 				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
 				{
 					parseExpression(argArray[0], false, true);
 					AddInstruction(FSub);//FunctionOpcode will optimise
 					return true;
 				}
-				Throw("fsub must have signature \"extern __intrinsic float fsub(float value);\"", rewriter, callee->getSourceRange());
+				Throw("stackFSub must have signature \"extern __intrinsic float stackFSub(float value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("fmult"):
+			case JoaatCasedConst("stackFMult"):
 			{
-				ChkHashCol("fmult");
+				ChkHashCol("stackFMult");
 				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
 				{
 					parseExpression(argArray[0], false, true);
 					AddInstruction(FMult);//FunctionOpcode will optimise
 					return true;
 				}
-				Throw("fmult must have signature \"extern __intrinsic float fmult(float value);\"", rewriter, callee->getSourceRange());
+				Throw("stackFMult must have signature \"extern __intrinsic float stackFMult(float value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("fdiv"):
+			case JoaatCasedConst("stackFDiv"):
 			{
-				ChkHashCol("fdiv");
+				ChkHashCol("stackFDiv");
 				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
 				{
 					parseExpression(argArray[0], false, true);
@@ -1678,25 +1688,25 @@ public:
 					}
 					return true;
 				}
-				Throw("fdiv must have signature \"extern __intrinsic float fdiv(float value);\"", rewriter, callee->getSourceRange());
+				Throw("stackFDiv must have signature \"extern __intrinsic float stackFDiv(float value);\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("fneg"):
+			case JoaatCasedConst("stackFNeg"):
 			{
-				ChkHashCol("fneg");
+				ChkHashCol("stackFNeg");
 				if (argCount == 0 && callee->getReturnType()->isRealFloatingType())
 				{
 					AddInstruction(FNeg);
 					return true;
 				}
-				Throw("fneg must have signature \"extern __intrinsic float fneg();\"", rewriter, callee->getSourceRange());
+				Throw("stackFNeg must have signature \"extern __intrinsic float stackFNeg();\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("vadd"):
+			case JoaatCasedConst("stackVAdd"):
 			{
-				ChkHashCol("vadd");
+				ChkHashCol("stackVAdd");
 
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
 				{
@@ -1704,13 +1714,13 @@ public:
 					AddInstruction(VAdd);
 					return true;
 				}
-				Throw("vadd must have signature \"extern __intrinsic vector3 vadd(vector3 value)\"", rewriter, callee->getSourceRange());
+				Throw("stackVAdd must have signature \"extern __intrinsic vector3 stackVAdd(vector3 value)\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("vsub"):
+			case JoaatCasedConst("stackVSub"):
 			{
-				ChkHashCol("vsub");
+				ChkHashCol("stackVSub");
 
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
 				{
@@ -1718,13 +1728,13 @@ public:
 					AddInstruction(VSub);
 					return true;
 				}
-				Throw("vsub must have signature \"extern __intrinsic vector3 vsub(vector3 value)\"", rewriter, callee->getSourceRange());
+				Throw("stackVSub must have signature \"extern __intrinsic vector3 stackVSub(vector3 value)\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("vmult"):
+			case JoaatCasedConst("stackVMult"):
 			{
-				ChkHashCol("vmult");
+				ChkHashCol("stackVMult");
 
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
 				{
@@ -1732,13 +1742,13 @@ public:
 					AddInstruction(VMult);
 					return true;
 				}
-				Throw("vmult must have signature \"extern __intrinsic vector3 vmult(vector3 value)\"", rewriter, callee->getSourceRange());
+				Throw("stackVMult must have signature \"extern __intrinsic vector3 stackVMult(vector3 value)\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("vdiv"):
+			case JoaatCasedConst("stackVDiv"):
 			{
-				ChkHashCol("vdiv");
+				ChkHashCol("stackVDiv");
 
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
 				{
@@ -1746,20 +1756,20 @@ public:
 					AddInstruction(VDiv);
 					return true;
 				}
-				Throw("vdiv must have signature \"extern __intrinsic vector3 vdiv(vector3 value)\"", rewriter, callee->getSourceRange());
+				Throw("stackVDiv must have signature \"extern __intrinsic vector3 stackVDiv(vector3 value)\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
-			case JoaatCasedConst("vneg"):
+			case JoaatCasedConst("stackVNeg"):
 			{
-				ChkHashCol("vneg");
+				ChkHashCol("stackVNeg");
 
 				if (argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
 				{
 					AddInstruction(VNeg);
 					return true;
 				}
-				Throw("vneg must have signature \"extern __intrinsic vector3 vneg()\"", rewriter, callee->getSourceRange());
+				Throw("stackVNeg must have signature \"extern __intrinsic vector3 stackVNeg()\"", rewriter, callee->getSourceRange());
 				return false;
 			}
 			break;
@@ -4009,7 +4019,7 @@ public:
 				case BO_MulAssign:  OpAssign(OK_Mult, OK_FMult); break;
 				case BO_OrAssign:  OpAssign(OK_Or); break;
 				case BO_AndAssign:  OpAssign(OK_And); break;
-				case BO_RemAssign:  OpAssign(OK_Mod, OK_FMod); break;
+				case BO_RemAssign:  OpAssign(OK_Mod); break;
 				case BO_XorAssign:  OpAssign(OK_Xor); break;
 				case BO_ShlAssign:	OpAssign(OK_ShiftLeft); break;
 				case BO_ShrAssign: OpAssign(OK_ShiftRight); break;
@@ -4090,7 +4100,6 @@ public:
 									}
 								}
 								break;
-								case BO_Rem: AddInstruction(FMod); break;
 								case BO_Sub:  AddInstruction(FSub); break;
 								case BO_LT: AddInstruction(FCmpLt); break;
 								case BO_GT: AddInstruction(FCmpGt); break;
