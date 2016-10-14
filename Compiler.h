@@ -326,7 +326,7 @@ protected:
 	{
 		auto findRes = NativeHashMap.find(hash);
 		uint32_t size = NativeHashMap.size();
-		if (findRes == NativeHashMap.end)
+		if (findRes == NativeHashMap.end())
 			NativeHashMap.insert({ hash, size });
 		else
 			size = findRes->second;
