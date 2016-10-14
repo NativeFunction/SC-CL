@@ -106,7 +106,7 @@ void CompileBase::AddJump(const JumpInstructionType type, const string label)
 {
 	switch (type)
 	{
-		case JumpInstructionType::Jump:		DoesOpcodeHaveRoom(3); AddOpcode(Jump); AddJumpLoc(JumpDataType::Int16, type, label); break;
+		case JumpInstructionType::Jump:			DoesOpcodeHaveRoom(3); AddOpcode(Jump); AddJumpLoc(JumpDataType::Int16, type, label); break;
 		case JumpInstructionType::JumpFalse:	DoesOpcodeHaveRoom(3); AddOpcode(JumpFalse); AddJumpLoc(JumpDataType::Int16, type, label); break;
 		case JumpInstructionType::JumpNE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpNE); AddJumpLoc(JumpDataType::Int16, type, label); break;
 		case JumpInstructionType::JumpEQ:		DoesOpcodeHaveRoom(3); AddOpcode(JumpEQ); AddJumpLoc(JumpDataType::Int16, type, label); break;
@@ -115,11 +115,12 @@ void CompileBase::AddJump(const JumpInstructionType type, const string label)
 		case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); AddJumpLoc(JumpDataType::Int16, type, label); break;
 		case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); AddJumpLoc(JumpDataType::Int16, type, label); break;
 		case JumpInstructionType::Switch:		AddJumpLoc(JumpDataType::Int16, type, label); break;
-		case JumpInstructionType::LabelLoc:	DoesOpcodeHaveRoom(4); AddOpcode(PushI24); AddJumpLoc(JumpDataType::Int24, type, label); break;
-		case JumpInstructionType::Call:	assert(false && "Call is handled in the call function"); break;
+		case JumpInstructionType::LabelLoc:		DoesOpcodeHaveRoom(4); AddOpcode(PushI24); AddJumpLoc(JumpDataType::Int24, type, label); break;
+		case JumpInstructionType::Call:			assert(false && "Call is handled in the call function"); break;
 		default: assert(false && "Invalid JumpInstructionType");
 	}
 }
+
 
 void CompileBase::PushInt(const int32_t Literal)
 {
@@ -544,7 +545,7 @@ void CompileGTAV::CallNative(const uint32_t hash, const uint8_t paramCount, cons
 			Throw("Native Calls Can Only Have Three Returns");
 
 		const uint32_t index = NativeHashMap.size();
-		if (index > 0xFFFF)
+		if (index >= 0xFFFF)
 			Throw("Native Call Index out of bounds");
 
 		AddNative(hash);
@@ -557,7 +558,7 @@ void CompileGTAV::CallNative(const uint32_t hash, const uint8_t paramCount, cons
 			Throw("Native Calls Can Only Have Three Returns");
 
 		const uint32_t index = NativeHashMap.size();
-		if (index > 0xFFFF)
+		if (index >= 0xFFFF)
 			Throw("Native Call Index out of bounds");
 
 		AddNative(hash);
@@ -572,7 +573,6 @@ void CompileGTAV::Call()
 	AddOpcode(Call);
 	AddJumpLoc(JumpDataType::Int24, JumpInstructionType::Call, DATA->getString());
 }
-
 void CompileGTAV::PushString()
 {
 	PushInt(AddStringToStringPage(DATA->getString()));

@@ -211,6 +211,7 @@ typedef union OpCodes {
 class CompileBase
 {
 protected:
+	#pragma region CompileBase_DataTypes
 	enum class JumpInstructionType
 	{
 		Jump
@@ -243,6 +244,7 @@ protected:
 		uint32_t index;
 		string label;
 	};
+	#pragma endregion
 
 	vector<uint8_t> CodePageData;//opcode data
 	unordered_map<string, uint32_t> LabelLocations;//label ,data index
@@ -412,9 +414,9 @@ private:
 	}
 	#pragma endregion
 
-	void CallNative(const uint32_t hash, const uint8_t paramCount,const uint8_t returnCount) override;
+	void CallNative(const uint32_t hash, const uint8_t paramCount, const uint8_t returnCount) override;
 	void Return() override;
-	void GetHash() override { CallNative(Joaat("string_to_hash"), 1, 1); };
+	void GetHash() override { CallNative(JoaatConst("string_to_hash"), 1, 1); };
 	void Call() override;
 	void GetImm() override;
 	void SetImm() override;	
