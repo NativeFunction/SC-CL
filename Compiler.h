@@ -254,8 +254,8 @@ protected:
 
 	const OpCodes* BaseOpcodes;//dynamic opcode list
 	const Script* HLData;//data to parse(High Level Data)
-	uint32_t FunctionCount;
-	uint32_t InstructionCount;
+	uint32_t FunctionCount = 0;
+	uint32_t InstructionCount = 0;
 
 	#define DATA HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)
 	#define AddOpcode(op) AddInt8(BaseOpcodes->##op);
@@ -429,6 +429,19 @@ private:
 	#pragma endregion
 
 	void fixFunctionCalls() override;
+
+	void Compile()
+	{
+		for (; FunctionCount < HLData->getFunctionCount(); FunctionCount++)
+		{
+			for (; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
+			{
+				ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
+			}
+
+		}
+		fixFunctionCalls();
+	}
 
 	void CallNative(const uint32_t hash, const uint8_t paramCount,const uint8_t returnCount) override;
 	void Return() override;

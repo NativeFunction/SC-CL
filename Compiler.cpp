@@ -477,11 +477,11 @@ void CompileRDR::fixFunctionCalls()
 		switch (CallInfo.InstructionType)
 		{
 			case CallInstructionType::FuncLoc:
-			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
+			*(int32_t*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
 			break;
 			case CallInstructionType::Call:
-			*(CodePageData.data() + CallInfo.CallLocation) = BaseOpcodes->Call2 + (pos >> 16);//any out of range errors already been caught
-			*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = SwapEndian((uint16_t)pos & 0xFFFF);
+			*(CodePageData.data() + CallInfo.CallLocation) = GetNewCallOpCode(pos);//any out of range errors already been caught
+			*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = SwapEndian(GetNewCallOffset((uint16_t)pos));
 			break;
 			default: assert(false && "Invalid Call Instruction"); break;
 		}
