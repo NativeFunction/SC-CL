@@ -250,22 +250,23 @@ protected:
 	unordered_map<string, uint32_t> FuncLocations;//call, data index
 	vector<CallData> CallLocations;//CallLocations to fill after building the CodePageData
 	unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
-	vector<int32_t> StaticData;
-
+	
 	const OpCodes* BaseOpcodes;//dynamic opcode list
 	const Script* HLData;//data to parse(High Level Data)
 	uint32_t FunctionCount = 0;
 	uint32_t InstructionCount = 0;
+	Platform tPlatform;
 
 	#define DATA HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)
 	#define AddOpcode(op) AddInt8(BaseOpcodes->##op);
 
-	CompileBase(const OpCodes& Op, const Script& data, const uint32_t Function_Count, const uint32_t Instruction_Count)
+	CompileBase(const OpCodes& Op, const Script& data, const uint32_t Function_Count, const uint32_t Instruction_Count, Platform tPlat)
 	{
 		BaseOpcodes = &Op;
 		HLData = &data;
 		FunctionCount = Function_Count;
 		InstructionCount = Instruction_Count;
+		tPlatform = tPlat;
 	}
 
 	inline void AddInt8(const uint8_t b)
@@ -391,16 +392,39 @@ protected:
 	virtual void fixFunctionJumps();
 	virtual void fixFunctionCalls() = 0;
 	void ParseGeneral(const OpcodeKind OK);
-		
+	
+	void BuildTables()
+	{
+		for (; FunctionCount < HLData->getFunctionCount(); FunctionCount++)
+		{
+			for (; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
+			{
+				ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
+			}
+			fixFunctionJumps();
+		}
+		fixFunctionCalls();
+	}
 };
 
 class CompileRDR : CompileBase
 {
 public:
-	CompileRDR(Script& data) : CompileBase(RDROpcodes, data, 0, 0) { }
+	CompileRDR(Script& data, Platform tPlatform) : CompileBase(RDROpcodes, data, 0, 0, tPlatform) { }
 private:
 	//visual studio plz... designated initializers were added in 1999 get with the times
 	const OpCodes RDROpcodes = { RO_Nop, RO_Add, RO_Sub, RO_Mult, RO_Div, RO_Mod, RO_Not, RO_Neg, RO_CmpEq, RO_CmpNe, RO_CmpGt, RO_CmpGe, RO_CmpLt, RO_CmpLe, RO_fAdd, RO_fSub, RO_fMult, RO_fDiv, RO_fMod, RO_fNeg, RO_fCmpEq, RO_fCmpNe, RO_fCmpGt, RO_fCmpGe, RO_fCmpLt, RO_fCmpLe, RO_vAdd, RO_vSub, RO_vMult, RO_vDiv, RO_vNeg, RO_And, RO_Or, RO_Xor, RO_ItoF, RO_FtoI, RO_FtoV, RO_PushB, RO_PushB2, RO_PushB3, RO_Push, RO_PushF, RO_Dup, RO_Drop, RO_CallNative, RO_Function, RO_Return, RO_pGet, RO_pSet, RO_pPeekSet, RO_ToStack, RO_FromStack, RO_GetArrayP1, RO_GetArray1, RO_SetArray1, RO_GetFrameP1, RO_GetFrame1, RO_SetFrame1, RO_GetStaticP1, RO_GetStatic1, RO_SetStatic1, RO_Add1, RO_Mult1, RO_GetImm1, RO_SetImm1, RO_PushS, RO_Add2, RO_Mult2, RO_GetImm2, RO_SetImm2, RO_GetArrayP2, RO_GetArray2, RO_SetArray2, RO_GetFrameP2, RO_GetFrame2, RO_SetFrame2, RO_GetStaticP2, RO_GetStatic2, RO_SetStatic2, RO_GetGlobalP2, RO_GetGlobal2, RO_SetGlobal2, RO_Jump, RO_JumpFalse, RO_JumpNE, RO_JumpEQ, RO_JumpLE, RO_JumpLT, RO_JumpGE, RO_JumpGT, RO_Nop, RO_GetGlobalP3, RO_GetGlobal3, RO_SetGlobal3, RO_PushI24, RO_Switch, RO_PushString, RO_StrCopy, RO_ItoS, RO_StrAdd, RO_StrAddi, RO_MemCopy, RO_Catch, RO_Throw, RO_pCall, RO_Push_Neg1, RO_Push_0, RO_Push_1, RO_Push_2, RO_Push_3, RO_Push_4, RO_Push_5, RO_Push_6, RO_Push_7, RO_PushF_Neg1, RO_PushF_0, RO_PushF_1, RO_PushF_2, RO_PushF_3, RO_PushF_4, RO_PushF_5, RO_PushF_6, RO_PushF_7, RO_Nop, RO_Nop, RO_Nop, RO_Nop, RO_Call2, RO_Call2h1, RO_Call2h2, RO_Call2h3, RO_Call2h4, RO_Call2h5, RO_Call2h6, RO_Call2h7, RO_Call2h8, RO_Call2h9, RO_Call2hA, RO_Call2hB, RO_Call2hC, RO_Call2hD, RO_Call2hE, RO_Call2hF, RO_PushArrayP, RO_ReturnP0R0, RO_ReturnP0R1, RO_ReturnP0R2, RO_ReturnP0R3, RO_ReturnP1R0, RO_ReturnP1R1, RO_ReturnP1R2, RO_ReturnP1R3, RO_ReturnP2R0, RO_ReturnP2R1, RO_ReturnP2R2, RO_ReturnP2R3, RO_ReturnP3R0, RO_ReturnP3R1, RO_ReturnP3R2, RO_ReturnP3R3, RO_PushStringNull };
+	enum class Rsc85Flags
+	{
+		F4096 = 0x80
+		, F65536 = 0xC0
+		, F16384 = 0xA0
+		, F8192 = 0x90
+		, Fi4096 = 0x80000000
+		, Fi65536 = 0xC0000000
+		, Fi16384 = 0xA0000000
+		, Fi8192 = 0x90000000
+	};
 
 	#pragma region CallParsing
 	inline const uint8_t GetNewCallOpCode(const uint32_t needOffset) const { 
@@ -427,22 +451,17 @@ private:
 		return SwapEndian((uint16_t)(((index & 0xFF00) >> 2) | ((index & 0xFF) << 8) | (ret ? 1 : 0) | (parameterCount << 1)));
 	}
 	#pragma endregion
-
-	void fixFunctionCalls() override;
-
-	void Compile()
+	#pragma region RSC85Parsing
+	uint32_t GetHeaderFormatFromFlag(uint32_t val);
+	uint32_t GetFlagFromReadbuffer(uint32_t buffer);
+	const uint32_t GetFullFlagWithSize(const uint32_t size, const uint32_t flag)
 	{
-		for (; FunctionCount < HLData->getFunctionCount(); FunctionCount++)
-		{
-			for (; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
-			{
-				ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
-			}
-
-		}
-		fixFunctionCalls();
+		return flag | (size >> 12 & 0xFF) | (size >> 12 & 0xFF00) | (size >> 12 & 0xFF0000);
 	}
-
+	int32_t IntToPointerInt(int32_t x) { return 0x50000000 | x; }
+	#pragma endregion
+	
+	
 	void CallNative(const uint32_t hash, const uint8_t paramCount,const uint8_t returnCount) override;
 	void Return() override;
 	void GetHash() override { CallNative(JoaatConst("string_to_hash"), 1, 1); };
@@ -450,12 +469,18 @@ private:
 	void GetImm() override;
 	void SetImm() override;	
 	
+
+	void fixFunctionCalls() override;
+
+	void XSCWrite(char* path, Platform platform, bool CompressAndEncrypt = true);
+
+
 };
 
 class CompileGTAV : CompileBase
 {
 public:
-	CompileGTAV(Script& data) : CompileBase(GTAVOpcodes, data, 0, 0) { }
+	CompileGTAV(Script& data, Platform tPlatform) : CompileBase(GTAVOpcodes, data, 0, 0, tPlatform) { }
 private:
 	const OpCodes GTAVOpcodes = { VO_Nop, VO_Add, VO_Sub, VO_Mult, VO_Div, VO_Mod, VO_Not, VO_Neg, VO_CmpEq, VO_CmpNe, VO_CmpGt, VO_CmpGe, VO_CmpLt, VO_CmpLe, VO_fAdd, VO_fSub, VO_fMult, VO_fDiv, VO_fMod, VO_fNeg, VO_fCmpEq, VO_fCmpNe, VO_fCmpGt, VO_fCmpGe, VO_fCmpLt, VO_fCmpLe, VO_vAdd, VO_vSub, VO_vMult, VO_vDiv, VO_vNeg, VO_And, VO_Or, VO_Xor, VO_ItoF, VO_FtoI, VO_FtoV, VO_PushB, VO_PushB2, VO_PushB3, VO_Push, VO_PushF, VO_Dup, VO_Drop, VO_CallNative, VO_Function, VO_Return, VO_pGet, VO_pSet, VO_pPeekSet, VO_ToStack, VO_FromStack, VO_GetArrayP1, VO_GetArray1, VO_SetArray1, VO_GetFrameP1, VO_GetFrame1, VO_SetFrame1, VO_GetStaticP1, VO_GetStatic1, VO_SetStatic1, VO_Add1, VO_Mult1, VO_GetImm1, VO_SetImm1, VO_PushS, VO_Add2, VO_Mult2, VO_GetImm2, VO_SetImm2, VO_GetArrayP2, VO_GetArray2, VO_SetArray2, VO_GetFrameP2, VO_GetFrame2, VO_SetFrame2, VO_GetStaticP2, VO_GetStatic2, VO_SetStatic2, VO_GetGlobalP2, VO_GetGlobal2, VO_SetGlobal2, VO_Jump, VO_JumpFalse, VO_JumpNE, VO_JumpEQ, VO_JumpLE, VO_JumpLT, VO_JumpGE, VO_JumpGT, VO_Call, VO_GetGlobalp3, VO_GetGlobal3, VO_SetGlobal3, VO_PushI24, VO_Switch, VO_PushString, VO_StrCopy, VO_ItoS, VO_StrAdd, VO_StrAddi, VO_Memcopy, VO_Catch, VO_Throw, VO_pCall, VO_Push_Neg1, VO_Push_0, VO_Push_1, VO_Push_2, VO_Push_3, VO_Push_4, VO_Push_5, VO_Push_6, VO_Push_7, VO_PushF_Neg1, VO_PushF_0, VO_PushF_1, VO_PushF_2, VO_PushF_3, VO_PushF_4, VO_PushF_5, VO_PushF_6, VO_PushF_7, VO_GetImmP, VO_GetImmP1, VO_GetImmP2, VO_GetHash };
 

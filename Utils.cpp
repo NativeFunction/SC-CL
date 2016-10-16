@@ -185,6 +185,241 @@ namespace Utils {
 		}
 	}
 
-	
+	namespace Compression
+	{
+
+		void xCompress::xCompressInit()
+		{
+			if (!HasxCompressLoaded)
+			{
+				xCompressDLL = LoadLibrary("xcompress32.dll");
+
+				if (xCompressDLL != NULL)
+				{
+					LoadFunction<XMemCreateDecompressionContext_CALL>(&XMemCreateDecompressionContext, "XMemCreateDecompressionContext");
+					LoadFunction<XMemDestroyDecompressionContext_CALL>(&XMemDestroyDecompressionContext, "XMemDestroyDecompressionContext");
+					LoadFunction<XMemDecompress_CALL>(&XMemDecompress, "XMemDecompress");
+					LoadFunction<XMemDecompressStream_CALL>(&XMemDecompressStream, "XMemDecompressStream");
+					LoadFunction<XMemCreateCompressionContext_CALL>(&XMemCreateCompressionContext, "XMemCreateCompressionContext");
+					LoadFunction<XMemDestroyCompressionContext_CALL>(&XMemDestroyCompressionContext, "XMemDestroyCompressionContext");
+					LoadFunction<XMemResetCompressionContext_CALL>(&XMemResetCompressionContext, "XMemResetCompressionContext");
+					LoadFunction<XMemCompress_CALL>(&XMemCompress, "XMemCompress");
+					LoadFunction<XMemCompressStream_CALL>(&XMemCompressStream, "XMemCompressStream");
+					HasxCompressLoaded = true;
+				}
+				else
+					Throw("xCompress Not Found");
+
+
+			}
+		}
+
+		int32_t xCompress::Decompress(uint8_t* compressedData, int32_t compressedLen, uint8_t* decompressedData, int32_t decompressedLen)
+		{
+
+			// Setup our decompression context
+			int32_t DecompressionContext = 0;
+			int32_t hr = XMemCreateDecompressionContext(XMEMCODEC_TYPE::XMEMCODEC_LZX, 0, 0, DecompressionContext);
+
+			try
+			{
+				hr = XMemDecompress(DecompressionContext, decompressedData, decompressedLen, compressedData, compressedLen);
+			}
+			catch (exception ex)
+			{
+				XMemResetDecompressionContext(DecompressionContext);
+				XMemDestroyDecompressionContext(DecompressionContext);
+				return -1;
+			}
+
+
+			XMemResetDecompressionContext(DecompressionContext);
+			XMemDestroyDecompressionContext(DecompressionContext);
+
+			// Return our hr
+			return hr;
+		}
+
+		int32_t xCompress::Compress(uint8_t* Data, int32_t DataLen, uint8_t* CompressedData, int32_t * OutCompressedLen)
+		{
+
+			// Setup our decompression context
+			int32_t CompressionContext = 0;
+
+			int32_t hr = XMemCreateCompressionContext(XMEMCODEC_TYPE::XMEMCODEC_LZX, 0, 0, CompressionContext);
+			int32_t CompressedLen = DataLen;
+
+			try
+			{
+				hr = XMemCompress(CompressionContext, CompressedData, CompressedLen, Data, DataLen);
+			}
+			catch (exception ex)
+			{
+				XMemResetCompressionContext(CompressionContext);
+				XMemDestroyCompressionContext(CompressionContext);
+				return -1;
+			}
+
+			XMemResetCompressionContext(CompressionContext);
+			XMemDestroyCompressionContext(CompressionContext);
+
+			*OutCompressedLen = CompressedLen;
+
+			// Return our hr
+			return hr;
+		}
+
+		void ZLIB_Decompress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t outSize)
+		{
+			z_stream infstream;
+			infstream.zalloc = Z_NULL;
+			infstream.zfree = Z_NULL;
+			infstream.opaque = Z_NULL;
+			// setup "b" as the input and "c" as the compressed output
+			infstream.avail_in = inSize; // size of input
+			infstream.next_in = in; // input char array
+			infstream.avail_out = outSize; // size of output
+			infstream.next_out = out; // output char array
+
+			int32_t res;
+
+			res = inflateInit(&infstream);
+			if (res != Z_OK)
+			{
+				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
+				cout << "Error: " << zError(res) << '\n';
+				Throw("ZLIB InflateInit Failed");
+			}
+			res = inflate(&infstream, Z_NO_FLUSH);
+			if (!(res == Z_STREAM_END || res == Z_OK))
+			{
+				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
+				cout << "Error: " << zError(res) << '\n';
+				Throw("ZLIB Inflate Failed");
+			}
+			res = inflateEnd(&infstream);
+			if (res != Z_OK)
+			{
+				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
+				cout << "Error: " << zError(res) << '\n';
+				Throw("ZLIB InflateEnd Failed");
+			}
+
+
+		}
+		void ZLIB_Compress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize)
+		{
+			z_stream defstream;
+			defstream.zalloc = Z_NULL;
+			defstream.zfree = Z_NULL;
+			defstream.opaque = Z_NULL;
+			// setup "a" as the input and "b" as the compressed output
+			defstream.avail_in = inSize; // size of input
+			defstream.next_in = in; // input char array
+			defstream.avail_out = outSize; // size of output
+			defstream.next_out = out; // output char array
+
+			int32_t res;
+
+			res = deflateInit(&defstream, Z_BEST_COMPRESSION);
+			if (res != Z_OK)
+			{
+				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
+				cout << "Error: " << zError(res) << '\n';
+				Throw("ZLIB DeflateInit Failed");
+			}
+
+			res = deflate(&defstream, Z_FINISH);
+			if (!(res == Z_STREAM_END || res == Z_OK))
+			{
+				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
+				cout << "Error: " << zError(res) << '\n';
+				Throw("ZLIB deflate Failed ");
+			}
+
+			res = deflateEnd(&defstream);
+			if (res != Z_OK)
+			{
+				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
+				cout << "Error: " << zError(res) << '\n';
+				Throw("ZLIB deflateEnd Failed");
+			}
+
+			outSize = defstream.next_out - out;
+
+		}
+		string ZLIB_ErrorCodeToStr(int32_t errorcode)
+		{
+			switch (errorcode)
+			{
+				case Z_OK: return "Z_OK";
+				case Z_STREAM_END: return "Z_STREAM_END";
+				case Z_NEED_DICT: return "Z_NEED_DICT";
+				case Z_ERRNO: return "Z_ERRNO";
+				case Z_STREAM_ERROR: return "Z_STREAM_ERROR";
+				case Z_DATA_ERROR: return "Z_DATA_ERROR";
+				case Z_MEM_ERROR: return "Z_MEM_ERROR";
+				case Z_BUF_ERROR: return "Z_BUF_ERROR";
+				case Z_VERSION_ERROR: return "Z_VERSION_ERROR";
+			}
+			return "UNK_ERR";
+		}
+
+	}
+
+	namespace Crypt
+	{
+		bool AES_Decrypt(uint8_t * data, size_t length)
+		{
+			if (length == 0)
+				return false;
+
+			uint32_t inputCount = length & -16;
+			if (inputCount > 0)
+			{
+
+				aes256_context ctx;
+				uint8_t key[32] = { 0xB7, 0x62, 0xDF, 0xB6, 0xE2, 0xB2, 0xC6, 0xDE, 0xAF, 0x72, 0x2A, 0x32, 0xD2, 0xFB, 0x6F, 0x0C, 0x98, 0xA3, 0x21, 0x74, 0x62, 0xC9, 0xC4, 0xED, 0xAD, 0xAA, 0x2E, 0xD0, 0xDD, 0xF9, 0x2F, 0x10 };
+				aes256_init(&ctx, key);
+
+				for (uint32_t i = 0; i < inputCount; i += 16)
+				{
+					for (uint32_t b = 0; b < 16; b++)
+						aes256_decrypt_ecb(&ctx, data + i);
+				}
+
+				aes256_done(&ctx);
+				return true;
+			}
+			return false;
+		}
+		bool AES_Encrypt(uint8_t * data, size_t length)
+		{
+			if (length == 0)
+				return false;
+
+			uint32_t inputCount = length & -16;
+			if (inputCount > 0)
+			{
+
+				aes256_context ctx;
+				uint8_t key[32] = { 0xB7, 0x62, 0xDF, 0xB6, 0xE2, 0xB2, 0xC6, 0xDE, 0xAF, 0x72, 0x2A, 0x32, 0xD2, 0xFB, 0x6F, 0x0C, 0x98, 0xA3, 0x21, 0x74, 0x62, 0xC9, 0xC4, 0xED, 0xAD, 0xAA, 0x2E, 0xD0, 0xDD, 0xF9, 0x2F, 0x10 };
+				aes256_init(&ctx, key);
+
+				for (uint32_t i = 0; i < inputCount; i += 16)
+				{
+					for (uint32_t b = 0; b < 16; b++)
+						aes256_encrypt_ecb(&ctx, data + i);
+
+				}
+
+				aes256_done(&ctx);
+				return true;
+			}
+			return false;
+		}
+
+	}
+
 
 }

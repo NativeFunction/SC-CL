@@ -85,10 +85,12 @@ public:
 	{
 		return staticTable.capacity() - staticTable.size();
 	}
+	const int32_t* getStaticData() const
+	{
+		return staticTable.data();
+	}
 	string getStaticsAsString();
 	
-
-
 	~Script()
 	{
 		for(auto fData : functions)
@@ -96,5 +98,12 @@ public:
 			delete fData;
 		}
 	}
+};
+
+enum Platform
+{
+	P_XBOX,
+	P_PS3,
+	P_PC
 };
 

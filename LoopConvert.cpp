@@ -5697,12 +5697,6 @@ enum BuildType
 	BT_RDR_SCO,
 	BT_GTAV
 };
-enum Platform
-{
-	P_XBOX,
-	P_PS3,
-	P_PC
-};
 class MyFrontendAction : public ASTFrontendAction {
 public:
 	MyFrontendAction() {}

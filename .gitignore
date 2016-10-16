@@ -18,6 +18,9 @@
 !Script.cpp
 !bin/include
 !compiler/
+!Crypto/
+!Compression/
+!bin/Debug/xcompress32.dll
 compiler/XscCompilerRaw (RDR)/obj/
 compiler/XscCompilerRaw (RDR)/bin/
 compiler/XscCompilerRaw/bin/

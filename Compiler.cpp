@@ -28,7 +28,7 @@ void CompileBase::fixFunctionJumps()
 				{
 					Throw("Jump label \"" + jumpInfo.Label + "\" out of jump range");
 				}
-				*(short*)(CodePageData.data() + jumpInfo.JumpLocation) = SwapEndian((short)offset);
+				*(int16_t*)(CodePageData.data() + jumpInfo.JumpLocation) = SwapEndian((int16_t)offset);
 				break;
 			}
 			case JumpInstructionType::LabelLoc:
@@ -39,7 +39,7 @@ void CompileBase::fixFunctionJumps()
 					Throw("Get label loc \"" + jumpInfo.Label + "\" out of jump range");
 				}
 			
-				*(int*)(CodePageData.data() - 1 + jumpInfo.JumpLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
+				*(uint32_t*)(CodePageData.data() - 1 + jumpInfo.JumpLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
 				break;
 			}
 		}
@@ -477,15 +477,52 @@ void CompileRDR::fixFunctionCalls()
 		switch (CallInfo.InstructionType)
 		{
 			case CallInstructionType::FuncLoc:
-			*(int32_t*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
+				*(int32_t*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
 			break;
 			case CallInstructionType::Call:
-			*(CodePageData.data() + CallInfo.CallLocation) = GetNewCallOpCode(pos);//any out of range errors already been caught
-			*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = SwapEndian(GetNewCallOffset((uint16_t)pos));
+				*(CodePageData.data() + CallInfo.CallLocation) = GetNewCallOpCode(pos);//any out of range errors already been caught
+				*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = SwapEndian(GetNewCallOffset((uint16_t)pos));
 			break;
 			default: assert(false && "Invalid Call Instruction"); break;
 		}
 	}
+}
+
+uint32_t CompileRDR::GetHeaderFormatFromFlag(uint32_t val)
+{
+	uint8_t flags = val >> 24;
+	switch (flags)
+	{
+		///header is at a multiple of 4096 (in rockstar scripts that is always the last 4096)
+		case (int)Rsc85Flags::F4096:
+		return 4096;
+		///header is at a multiple of 65536 (in rockstar scripts that is always 0 because any other 65536 would yield the same result)
+		case (int)Rsc85Flags::F65536:
+		return 0;
+		///header is at a multiple of 16384 (in rockstar scripts that is always the last 16384)
+		case (int)Rsc85Flags::F16384:
+		return 16384;
+		///header is at a multiple of 8192 (in rockstar scripts that is always the last 8192)
+		case (int)Rsc85Flags::F8192:
+		return 8192;
+	}
+	return 0xFFFFFFFF;
+}
+uint32_t CompileRDR::GetFlagFromReadbuffer(uint32_t buffer)
+{
+	switch (buffer)
+	{
+		case 4096:
+		return (int)Rsc85Flags::Fi4096;
+		case 65536:
+		return (int)Rsc85Flags::Fi65536;
+		case 16384:
+		return (int)Rsc85Flags::Fi16384;
+		case 8192:
+		return (int)Rsc85Flags::Fi8192;
+
+	}
+	return 0xFFFFFFFF;
 }
 
 
@@ -583,6 +620,376 @@ void CompileRDR::SetImm()
 		AddOpcode(Add);
 		AddOpcode(pSet);
 	}
+}
+
+void CompileRDR::XSCWrite(char* path, Platform platform, bool CompressAndEncrypt)
+{
+
+	struct PHO//placeHolderOffsets
+	{
+		int32_t CodeBlocks, Unk1, Statics, Natives;
+		vector<uint32_t> CodePagePointers;
+	};
+	PHO SavedOffsets;
+	int32_t headerLocation = 0;
+	uint32_t headerFlag = 0;
+	const uint32_t CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
+	vector<uint8_t> BuildBuffer;
+
+
+	//0: Code blocks ptrs
+	//1: unk1 Ptr
+	//4: statics
+	//2: natives ptr
+
+	#pragma region Delegates
+	#define AddInt32toBuff(value)\
+			BuildBuffer.resize(BuildBuffer.size() + 4, 0);\
+			*((int32_t*)(BuildBuffer.data() + BuildBuffer.size()) - 1) = Utils::Bitwise::SwapEndian(value);
+	#define ChangeInt32inBuff(value, index)\
+			*(int32_t*)(BuildBuffer.data() + index) = Utils::Bitwise::SwapEndian(value);
+
+
+	auto GetSpaceLeft = [&](uint32_t size) -> uint32_t
+	{
+		uint32_t sl = size - (BuildBuffer.size() % size);
+		if (sl == 0)
+			sl = size;
+		return sl;
+	};
+	auto FillPageNops = [&]()
+	{
+		BuildBuffer.resize(BuildBuffer.size() + GetSpaceLeft(16384), 0);
+	};
+	auto FillPageDynamic = [&](uint32_t amount)
+	{
+		BuildBuffer.resize(BuildBuffer.size() + GetSpaceLeft(amount), 0xCD);
+	};
+	auto PadNops = [&]()
+	{
+		int32_t pad = 16 - BuildBuffer.size() % 16;
+		if (pad == 0 || pad == 16)
+			return;
+
+		if (pad > 16384)
+			Throw("Pad Over 16364");
+
+		BuildBuffer.resize(BuildBuffer.size() + pad, 0);
+	};
+	auto GetPadExpectedAmount = [&](int32_t val) -> int32_t
+	{
+		const int32_t pad = 16 - val % 16;
+		if (pad == 0 || pad == 16)
+			return val;
+		return pad + val;
+	};
+	auto Pad = [&]()
+	{
+		int32_t pad = 16 - BuildBuffer.size() % 16;
+		if (pad == 0 || pad == 16)
+			return;
+
+		if (pad > 16384)
+			Throw("Pad Over 16364");
+
+
+		BuildBuffer.resize(BuildBuffer.size() + pad, 0xCD);
+	};
+	auto ForcePad = [&]()
+	{
+		int32_t pad = 16 - BuildBuffer.size() % 16;
+		if (pad == 0 || pad == 16)
+			pad = 16;
+
+		if (pad > 16384)
+			Throw("ForcePad Over 16364");
+
+		BuildBuffer.resize(BuildBuffer.size() + pad, 0xCD);
+	};
+	auto Write16384CodePages = [&]()
+	{
+		SavedOffsets.CodePagePointers.resize(CodePageCount);
+		for (uint32_t i = 0; i < CodePageCount - 1; i++)
+		{
+
+			if (GetSpaceLeft(16384) < 16384)
+				FillPageNops();
+
+			SavedOffsets.CodePagePointers[i] = BuildBuffer.size();
+
+			BuildBuffer.resize(BuildBuffer.size() + 16384);
+			memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, CodePageData.data() + i * 16384, 16384);
+
+			PadNops();
+		}
+
+	};
+	auto WriteFinalCodePage = [&]()
+	{
+		const uint32_t LastCodePageSize = CodePageData.size() % 16384;
+		SavedOffsets.CodePagePointers[CodePageCount - 1] = BuildBuffer.size();
+		BuildBuffer.resize(BuildBuffer.size() + LastCodePageSize);
+		memcpy(BuildBuffer.data() + BuildBuffer.size() - LastCodePageSize, CodePageData.data() + CodePageData.size() - LastCodePageSize, LastCodePageSize);
+		Pad();
+	};
+	auto WriteNatives = [&]()
+	{
+		if (NativeHashMap.size() > 0)
+		{
+			const size_t nativeByteSize = NativeHashMap.size() * 4;
+
+			if (GetSpaceLeft(16384) < nativeByteSize)
+				FillPageDynamic(16384);
+
+			SavedOffsets.Natives = BuildBuffer.size();
+
+			BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
+			for (unordered_map<uint32_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
+			{
+				*(uint32_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second) = it->first;//might have to swap endian
+			}
+
+			Pad();
+		}
+		else
+		{
+			if (GetSpaceLeft(16384) < 16)
+				FillPageDynamic(16384);
+			SavedOffsets.Natives = BuildBuffer.size();
+			ForcePad();
+		}
+
+	};
+	auto WriteStatics = [&]()
+	{
+
+		if (HLData->getStaticSize() > 0)
+		{
+			const size_t staticByteSize = HLData->getStaticSize() * 4;
+
+			if (GetSpaceLeft(16384) < staticByteSize)
+				FillPageDynamic(16384);
+
+			SavedOffsets.Statics = BuildBuffer.size();
+
+			BuildBuffer.resize(BuildBuffer.size() + staticByteSize);
+			memcpy(BuildBuffer.data() + BuildBuffer.size() - staticByteSize, HLData->getStaticData(), staticByteSize);
+
+			Pad();
+
+		}
+		else
+		{
+			if (GetSpaceLeft(16384) < 16)
+				FillPageDynamic(16384);
+			SavedOffsets.Statics = BuildBuffer.size();
+			ForcePad();
+
+		}
+
+	};
+	auto WriteHeader = [&]()
+	{
+		headerLocation = BuildBuffer.size();
+		AddInt32toBuff(0xA8D74300);//Page Base
+		AddInt32toBuff(0); //Unk1 ptr
+		AddInt32toBuff(0); //codeBlocksListOffsetPtr
+		AddInt32toBuff(CodePageData.size());//code length
+		AddInt32toBuff(0);//script ParameterCount (this needs to be implemented)
+		AddInt32toBuff(HLData->getStaticSize());//statics count
+		AddInt32toBuff(0); //Statics offset
+		AddInt32toBuff(0x349D018A);//GlobalsSignature
+		AddInt32toBuff(NativeHashMap.size());//natives count
+		AddInt32toBuff(0); //natives offset
+		Pad();
+	};
+	auto WritePointers = [&]()
+	{
+		//write unk1
+
+		if (GetSpaceLeft(16384) < 4)
+			FillPageDynamic(16384);
+
+		SavedOffsets.Unk1 = BuildBuffer.size();
+		AddInt32toBuff(0);//unkPTRData
+		Pad();
+
+		uint64_t padcount = Utils::Math::CeilDivInt(CodePageCount * 4, 16);
+		for (uint64_t i = 0; i < padcount; i++)
+			ForcePad();
+
+		//Write code page pointers
+		if (GetSpaceLeft(16384) < CodePageCount * 4)
+			FillPageDynamic(16384);
+
+		SavedOffsets.CodeBlocks = BuildBuffer.size();
+
+		for (uint32_t i = 0; i < CodePageCount; i++)
+			AddInt32toBuff(0);
+
+		Pad();
+	};
+	auto WriteNormal = [&](uint32_t datasize, uint32_t bufferflag)
+	{
+		if (datasize < bufferflag)
+		{
+			headerFlag = GetFlagFromReadbuffer(bufferflag);
+			if (headerFlag == 0xFFFFFFFF)
+				Throw("Invalid Read Buffer");
+			Write16384CodePages();
+			WriteFinalCodePage();
+			FillPageDynamic(bufferflag);
+			WriteHeader();
+			WriteNatives();
+			WriteStatics();
+			WritePointers();
+			FillPageDynamic(bufferflag);
+			return true;
+		}
+		return false;
+	};
+	auto WriteSmall = [&](uint32_t datasize, uint32_t bufferflag)
+	{
+		if (datasize < bufferflag)
+		{
+			headerFlag = GetFlagFromReadbuffer(bufferflag);
+			if (headerFlag == 0xFFFFFFFF)
+				Throw("Invalid Read Buffer");
+			Write16384CodePages();
+			WriteHeader();
+			WriteFinalCodePage();
+			WriteNatives();
+			WriteStatics();
+			WritePointers();
+			FillPageDynamic(bufferflag);
+			return true;
+		}
+		return false;
+	};
+
+	#pragma endregion
+
+	#pragma region Write_Pages_and_header
+
+	const uint32_t CodePagePtrsSize = CodePageCount * 4;
+
+	uint32_t TotalData = GetPadExpectedAmount(NativeHashMap.size() * 4) +
+		GetPadExpectedAmount(HLData->getStaticSize() * 4) +
+		GetPadExpectedAmount(16 + CodePagePtrsSize) + //unk1 4 but set as 16 (padded) to avoid miscalculating the pad size
+		GetPadExpectedAmount(40) + //header
+		GetPadExpectedAmount(CodePagePtrsSize);//code page pointers
+
+	uint32_t LastCodePageSize = GetPadExpectedAmount(CodePageData.size() % 16384);//code page pointers * padding for unk1
+
+	//    cout << "Natives: " << GetPadExpectedAmount(Header_XSC.Natives.size() * 4) << '\n';
+	//    cout << "Statics: " << GetPadExpectedAmount(Header_XSC.Statics.size() * 4) << '\n';
+	//    cout << "Unk1: " << GetPadExpectedAmount(16 + CodePagePtrsSize) << '\n';
+	//    cout << "Header: " << GetPadExpectedAmount(40) << '\n';
+	//    cout << "Codepage Ptrs: " << GetPadExpectedAmount(CodePagePtrsSize) << '\n';
+	//    cout << "Last Codepage: " << GetPadExpectedAmount(Header_XSC.CodePages[Header_XSC.CodePages.size() - 1].size()) << '\n';
+	//if(LastCodePageSize +  TotalData > 16384) then write normal but maybe place somethings under last code page if possible
+	//else include last code page in header
+
+	if (LastCodePageSize + TotalData > 16384)
+	{
+		if (WriteNormal(TotalData, 4096));
+		else if (WriteNormal(TotalData, 8192));
+		else if (WriteNormal(TotalData, 16384));
+		else
+		{
+			headerFlag = (int)Rsc85Flags::Fi65536;
+			WriteHeader();
+			WriteNatives();
+			WriteStatics();
+			WritePointers();
+			FillPageDynamic(65536);
+			Write16384CodePages();
+			WriteFinalCodePage();
+			FillPageDynamic(65536);
+		}
+
+	}
+	else
+	{
+		TotalData += LastCodePageSize;
+		if (WriteSmall(TotalData, 4096));
+		else if (WriteSmall(TotalData, 8192));
+		else if (WriteSmall(TotalData, 16384));
+		else
+			Throw("Total Data is Less Then and Greater Then 16384. Impossible.");
+	}
+
+	#pragma endregion
+
+	#pragma region Fix_header_and_other_pointers
+	ChangeInt32inBuff(IntToPointerInt(SavedOffsets.Unk1), headerLocation + 4);
+	ChangeInt32inBuff(IntToPointerInt(SavedOffsets.CodeBlocks), headerLocation + 8);
+	ChangeInt32inBuff(IntToPointerInt(SavedOffsets.Statics), headerLocation + 24);
+	ChangeInt32inBuff(IntToPointerInt(SavedOffsets.Natives), headerLocation + 36);
+
+	for (uint32_t i = 0; i < SavedOffsets.CodePagePointers.size(); i++)
+		ChangeInt32inBuff(IntToPointerInt(SavedOffsets.CodePagePointers[i]), SavedOffsets.CodeBlocks + (i * 4));
+	#pragma endregion
+
+	#pragma region Write_File
+	if (CompressAndEncrypt)
+	{
+
+		// compressing and encrypting
+
+		Utils::Compression::xCompress Compression;
+		Compression.xCompressInit();
+
+		vector<uint8_t> Compressed(BuildBuffer.size() + 8);
+		uint8_t* CompressedData = Compressed.data();
+		int32_t CompressedLen = 0;
+
+		Compression.Compress((uint8_t*)BuildBuffer.data(), BuildBuffer.size(), CompressedData + 8, &CompressedLen);
+
+		if (CompressedLen > 0)
+		{
+			*(uint32_t*)CompressedData = SwapEndian(0x0FF512F1);//LZX Signature?
+			*(uint32_t*)(CompressedData + 4) = SwapEndian(CompressedLen);
+			CompressedLen += 8;
+		}
+		else Throw("Compression Failed");
+
+		if (!Utils::Crypt::AES_Encrypt(CompressedData, CompressedLen))
+			Throw("Encryption Failed");
+
+
+		vector<uint32_t> CSR_Header(4);
+		CSR_Header[0] = SwapEndian(0x85435352);//.CSR
+		CSR_Header[1] = SwapEndian(0x00000002);//Resource Type Script
+		CSR_Header[2] = SwapEndian(0x80000000);//unk int max val (flags1)
+		CSR_Header[3] = SwapEndian(GetFullFlagWithSize(BuildBuffer.size(), headerFlag));//size (flags2)
+
+		FILE* file = fopen(path, "wb");
+		if (file != NULL)
+		{
+			fwrite(CSR_Header.data(), 1, 16, file);//encrypted data
+			fwrite(CompressedData, 1, CompressedLen, file);//encrypted data
+			fclose(file);
+		}
+		else
+			Throw("Could Not Open Output File");
+
+	}
+	else
+	{
+		FILE* file = fopen(path, "wb");
+
+		if (file != NULL)
+		{
+			fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
+			fclose(file);
+		}
+		else
+			Throw("Could Not Open Output File");
+	}
+
+	#pragma endregion
+
 }
 
 
