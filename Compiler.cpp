@@ -9,7 +9,8 @@ void CompileBase::fixFunctionJumps()
 		auto it = LabelLocations.find(jumpInfo.Label);
 		if (it == LabelLocations.end())
 		{
-			Throw("Jump label \"" + jumpInfo.Label + "\" not found");
+			
+			Throw("Jump of type " + to_string((int)jumpInfo.InstructionType) + " to label \"" + jumpInfo.Label + "\" was not found");
 		}
 		switch (jumpInfo.InstructionType)
 		{
@@ -465,7 +466,7 @@ void CompileRDR::fixFunctionCalls()
 	for (auto CallInfo : CallLocations)
 	{
 		auto it = FuncLocations.find(CallInfo.FuncName);
-		if (it == LabelLocations.end())
+		if (it == FuncLocations.end())
 		{
 			Throw("Function \"" + CallInfo.FuncName + "\" not found");
 		}
@@ -881,12 +882,13 @@ void CompileRDR::XSCWrite(char* path, Platform platform, bool CompressAndEncrypt
 
 	uint32_t LastCodePageSize = GetPadExpectedAmount(CodePageData.size() % 16384);//code page pointers * padding for unk1
 
-	//    cout << "Natives: " << GetPadExpectedAmount(Header_XSC.Natives.size() * 4) << '\n';
-	//    cout << "Statics: " << GetPadExpectedAmount(Header_XSC.Statics.size() * 4) << '\n';
-	//    cout << "Unk1: " << GetPadExpectedAmount(16 + CodePagePtrsSize) << '\n';
-	//    cout << "Header: " << GetPadExpectedAmount(40) << '\n';
-	//    cout << "Codepage Ptrs: " << GetPadExpectedAmount(CodePagePtrsSize) << '\n';
-	//    cout << "Last Codepage: " << GetPadExpectedAmount(Header_XSC.CodePages[Header_XSC.CodePages.size() - 1].size()) << '\n';
+	cout << "Natives: " << GetPadExpectedAmount(NativeHashMap.size() * 4) << '\n';
+	cout << "Statics: " << GetPadExpectedAmount(HLData->getStaticSize() * 4) << '\n';
+	cout << "Unk1: " << GetPadExpectedAmount(16 + CodePagePtrsSize) << '\n';
+	cout << "Header: " << GetPadExpectedAmount(40) << '\n';
+	cout << "Codepage Ptrs: " << GetPadExpectedAmount(CodePagePtrsSize) << '\n';
+	cout << "Last Codepage: " << GetPadExpectedAmount(LastCodePageSize) << '\n';
+	cout << "Total: "  << LastCodePageSize + TotalData << "\n";
 	//if(LastCodePageSize +  TotalData > 16384) then write normal but maybe place somethings under last code page if possible
 	//else include last code page in header
 
@@ -1021,7 +1023,7 @@ void CompileGTAV::fixFunctionCalls()
 	for (auto CallInfo : CallLocations)
 	{
 		auto it = FuncLocations.find(CallInfo.FuncName);
-		if (it == LabelLocations.end())
+		if (it == FuncLocations.end())
 		{
 			Throw("Function \"" + CallInfo.FuncName + "\" not found");
 		}

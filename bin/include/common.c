@@ -136,22 +136,22 @@ float acos(float number)
 	{
 		number = -number;
 		pushFloat(-0.0187293f * number);
-		pushFloat(fadd(0.0742610f));
-		pushFloat(fmult(number));
-		pushFloat(fsub(0.2121144f));
-		pushFloat(fmult(number));
-		pushFloat(fadd(1.5707288f));
-		pushFloat(fmult(sqrt(1.0 - number)));
-		pushFloat(fneg());
-		return fadd(3.14159265358979f);
+		pushFloat(stackFAdd(0.0742610f));
+		pushFloat(stackFMult(number));
+		pushFloat(stackFSub(0.2121144f));
+		pushFloat(stackFMult(number));
+		pushFloat(stackFAdd(1.5707288f));
+		pushFloat(stackFMult(sqrt(1.0 - number)));
+		pushFloat(stackFNeg());
+		return stackFAdd(3.14159265358979f);
 	}
 	pushFloat(-0.0187293f * number);
-	pushFloat(fadd(0.0742610f));
-	pushFloat(fmult(number));
-	pushFloat(fsub(0.2121144f));
-	pushFloat(fmult(number));
-	pushFloat(fadd(1.5707288f));
-	return fmult(sqrt(1.0 - number));
+	pushFloat(stackFAdd(0.0742610f));
+	pushFloat(stackFMult(number));
+	pushFloat(stackFSub(0.2121144f));
+	pushFloat(stackFMult(number));
+	pushFloat(stackFAdd(1.5707288f));
+	return stackFMult(sqrt(1.0 - number));
 }
 float asin(float number)
 {
@@ -160,23 +160,23 @@ float asin(float number)
 	{
 		number = -number;
 		pushFloat(-0.0187293f * number);
-		pushFloat(fadd(0.0742610f));
-		pushFloat(fmult(number));
-		pushFloat(fsub(0.2121144f));
-		pushFloat(fmult(number));
-		pushFloat(fadd(1.5707288f));
-		pushFloat(fmult(sqrt(1.0 - number)));
-		return fsub(1.570796326794895f);
+		pushFloat(stackFAdd(0.0742610f));
+		pushFloat(stackFMult(number));
+		pushFloat(stackFSub(0.2121144f));
+		pushFloat(stackFMult(number));
+		pushFloat(stackFAdd(1.5707288f));
+		pushFloat(stackFMult(sqrt(1.0 - number)));
+		return stackFSub(1.570796326794895f);
 	}
 	pushFloat(-0.0187293f * number);
-	pushFloat(fadd(0.0742610f));
-	pushFloat(fmult(number));
-	pushFloat(fsub(0.2121144f));
-	pushFloat(fmult(number));
-	pushFloat(fadd(1.5707288f));
-	pushFloat(fmult(sqrt(1.0 - number)));
-	pushFloat(fneg());
-	return fadd(1.570796326794895f);
+	pushFloat(stackFAdd(0.0742610f));
+	pushFloat(stackFMult(number));
+	pushFloat(stackFSub(0.2121144f));
+	pushFloat(stackFMult(number));
+	pushFloat(stackFAdd(1.5707288f));
+	pushFloat(stackFMult(sqrt(1.0 - number)));
+	pushFloat(stackFNeg());
+	return stackFAdd(1.570796326794895f);
 }
 float StringToFloat(char* str)
 {

@@ -11,6 +11,7 @@
 #include "clang/Lex/PreProcessor.h"
 #include "ConstExpr.h"
 #include "Script.h"
+#include "Compiler.h"
 
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h)
@@ -5679,6 +5680,10 @@ public:
 			fclose(file);
 		}
 		else Throw("Output File Could Not Be Opened");
+
+		CompileRDR c(scriptData, P_XBOX);
+		c.CompileXSC();
+
 
 	}
 
