@@ -156,8 +156,7 @@ void CompileBase::BuildTables()
 	{
 		if (HLData->getFunctionFromIndex(FunctionCount)->IsUsed())
 		{
-			AddFuncLabel(HLData->getFunctionFromIndex(FunctionCount)->getName().data() + 1);
-			AddFunction(HLData->getFunctionFromIndex(FunctionCount)->getPCount(), HLData->getFunctionFromIndex(FunctionCount)->getStackSize());
+			AddFunction(HLData->getFunctionFromIndex(FunctionCount)->getName().substr(1), HLData->getFunctionFromIndex(FunctionCount)->getPCount(), HLData->getFunctionFromIndex(FunctionCount)->getStackSize());
 			for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
 			{
 				ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());

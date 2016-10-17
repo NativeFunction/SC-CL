@@ -366,12 +366,25 @@ protected:
 	#pragma endregion
 
 	#pragma region Opcode_Functions
-	virtual void AddFunction(uint8_t paramCount, uint16_t stackSize)
+	virtual void AddFunction(string name, uint8_t paramCount, uint16_t stackSize)
 	{
+#if _DEBUG
+		DoesOpcodeHaveRoom(5 + name.size());
+		AddFuncLabel(name);
+		AddOpcode(Function);
+		AddInt8(paramCount);
+		AddInt16(stackSize);
+		AddInt8(name.size());
+		CodePageData.resize(CodePageData.size() + name.size());
+		memcpy(CodePageData.data() + CodePageData.size() - name.size(), name.data(), name.size());
+#else
+		DoesOpcodeHaveRoom(5);
+		AddFuncLabel(name);
 		AddOpcode(Function);
 		AddInt8(paramCount);
 		AddInt16(stackSize);
 		AddInt8(0);//unused function name
+#endif
 	}
 	virtual void PushInt(const int32_t Literal);//Override: GTAIV
 	void PushInt(){ PushInt(DATA->getInt()); }
@@ -433,7 +446,7 @@ public:
 	void CompileXSC(string fileName)
 	{
 		BuildTables();
-		XSCWrite(fileName.c_str(), P_XBOX, true);
+		XSCWrite(fileName.c_str(), P_XBOX, false);
 	}
 private:
 	//visual studio plz... designated initializers were added in 1999 get with the times
