@@ -2,6 +2,8 @@
 
 
 #pragma region Base
+
+#pragma region Parse_Functions
 void CompileBase::fixFunctionJumps()
 {
 	for (auto jumpInfo : JumpLocations)
@@ -148,6 +150,26 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_GetHash:	GetHash(); break;//gta5 needs to override
 	}
 }
+void CompileBase::BuildTables()
+{
+	for (FunctionCount = 0; FunctionCount < HLData->getFunctionCount(); FunctionCount++)
+	{
+		if (HLData->getFunctionFromIndex(FunctionCount)->IsUsed())
+		{
+			AddFuncLabel(HLData->getFunctionFromIndex(FunctionCount)->getName().data() + 1);
+			AddFunction(HLData->getFunctionFromIndex(FunctionCount)->getPCount(), HLData->getFunctionFromIndex(FunctionCount)->getStackSize());
+			for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
+			{
+				ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
+			}
+			fixFunctionJumps();
+		}
+	}
+	fixFunctionCalls();
+}
+#pragma endregion
+
+#pragma region Data_Functions
 void CompileBase::AddJump(const JumpInstructionType type, const string label)
 {
 	switch (type)
@@ -165,7 +187,9 @@ void CompileBase::AddJump(const JumpInstructionType type, const string label)
 		default: assert(false && "Invalid JumpInstructionType");
 	}
 }
+#pragma endregion
 
+#pragma region Opcode_Functions
 void CompileBase::PushInt(const int32_t Literal)
 {
 	if (Literal >= -1 && Literal <= 7) {
@@ -455,12 +479,13 @@ void CompileBase::FMultImm()
 	PushFloat();
 	AddOpcode(fMult);
 }
-
+#pragma endregion
 
 #pragma endregion
 
 #pragma region RDR
 
+#pragma region Parse_Functions
 void CompileRDR::fixFunctionCalls()
 {
 	for (auto CallInfo : CallLocations)
@@ -488,7 +513,9 @@ void CompileRDR::fixFunctionCalls()
 		}
 	}
 }
+#pragma endregion
 
+#pragma region RSC85Parsing
 uint32_t CompileRDR::GetHeaderFormatFromFlag(uint32_t val)
 {
 	uint8_t flags = val >> 24;
@@ -525,8 +552,9 @@ uint32_t CompileRDR::GetFlagFromReadbuffer(uint32_t buffer)
 	}
 	return 0xFFFFFFFF;
 }
+#pragma endregion
 
-
+#pragma region Opcode_Functions
 void CompileRDR::CallNative(const uint32_t hash, const uint8_t paramCount, const uint8_t returnCount)
 {
 	// rdr 2 byte call loc based on index
@@ -622,7 +650,9 @@ void CompileRDR::SetImm()
 		AddOpcode(pSet);
 	}
 }
+#pragma endregion
 
+#pragma region Write_Functions
 void CompileRDR::XSCWrite(char* path, Platform platform, bool CompressAndEncrypt)
 {
 
@@ -993,11 +1023,13 @@ void CompileRDR::XSCWrite(char* path, Platform platform, bool CompressAndEncrypt
 	#pragma endregion
 
 }
-
+#pragma endregion
 
 #pragma endregion
 
 #pragma region GTAV
+
+#pragma region Parse_Functions
 const uint32_t CompileGTAV::AddStringToStringPage(const string str)
 {
 	const uint32_t len = str.length();
@@ -1044,8 +1076,9 @@ void CompileGTAV::fixFunctionCalls()
 		}
 	}
 }
+#pragma endregion
 
-
+#pragma region Opcode_Functions
 void CompileGTAV::CallNative(const uint32_t hash, const uint8_t paramCount, const uint8_t returnCount)
 {
 	// gta5 1 byte param/return, 2 byte call loc
@@ -1135,6 +1168,6 @@ void CompileGTAV::SetImm()
 		AddOpcode(pSet);
 	}
 }
-
+#pragma endregion
 
 #pragma endregion
