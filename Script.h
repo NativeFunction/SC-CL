@@ -9,6 +9,7 @@ class Script
 	vector<FunctionData *> functions;
 	FunctionData *currentFunc;
 	vector<int32_t> staticTable;
+	vector<uint32_t> staticTableShortIndexes;//endian for printing has to be swapped. however for shorts we have to Flip2BytesIn4
 	struct InlineData { uint32_t hash; string name; string inlineLblAppend; };
 	vector<InlineData> inlineStack;
 	int staticCount = 0;
@@ -51,6 +52,11 @@ public:
 	}
 	uint32_t addStaticInit(const int32_t val = 0)
 	{
+		staticTable.push_back(Utils::Bitwise::SwapEndian(val));
+		return staticTable.size() - 1;
+	}
+	uint32_t addStaticInitBig(const int32_t val = 0)
+	{
 		staticTable.push_back(val);
 		return staticTable.size() - 1;
 	}
@@ -62,12 +68,15 @@ public:
 	void modifyLastInitStaticByte(const uint8_t byte, const uint8_t index)
 	{
 		assert((index < 4 && index >= 0) && "modifyLastInitStaticByte index out of bounds");
-		*((uint8_t*)&staticTable.back() + 3 - index) = byte;
+		*((uint8_t*)&staticTable.back() + index) = byte;
 	}
 	void modifyLastInitStaticShort(const uint16_t byte, const uint8_t index)
 	{
+		if(staticTableShortIndexes.empty() || staticTableShortIndexes.back() != staticTable.size() - 1)
+			staticTableShortIndexes.push_back(staticTable.size() - 1);
+
 		assert((index == 0 || index == 2) && "modifyLastInitStaticShort index out of bounds");
-		*(uint16_t*)((uint8_t*)&staticTable.back() + 2 - index) = byte;
+		*(uint16_t*)((uint8_t*)&staticTable.back() + index) = byte;
 	}
 	uint32_t getStaticSize() const
 	{

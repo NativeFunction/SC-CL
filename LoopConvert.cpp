@@ -5190,7 +5190,7 @@ public:
 				{
 					if (b >= 4)
 					{
-						scriptData.addStaticInit(Utils::Bitwise::SwapEndian(buffer));
+						scriptData.addStaticInitBig(buffer);
 						b = 0;
 						buffer = 0;
 
@@ -5207,7 +5207,7 @@ public:
 
 				}
 				if (b != 0)
-					scriptData.addStaticInit(Utils::Bitwise::SwapEndian(buffer));
+					scriptData.addStaticInitBig(buffer);
 
 			}
 

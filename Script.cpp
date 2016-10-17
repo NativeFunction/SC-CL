@@ -141,10 +141,19 @@ string Script::getStaticsAsString()
 	string data;
 	data.reserve(36 * staticTable.size() + 28);
 	data += "SetStaticsCount " + to_string(staticTable.size()) + "\r\n";
-	for (uint32_t i = 0; i < staticTable.size(); i++)
+	for (uint32_t i = 0, it = 0; i < staticTable.size(); i++)
 	{
 		if (staticTable[i] != 0)
-			data += "SetDefaultStatic " + to_string(i) + " " + to_string(staticTable[i]) + "\r\n";
+		{
+			if (it < staticTableShortIndexes.size() && staticTableShortIndexes[it] == i)
+			{
+				it++;
+				data += "SetDefaultStatic " + to_string(i) + " " + to_string(Utils::Bitwise::Flip2BytesIn4(staticTable[i])) + "\r\n";
+			}
+			else
+				data += "SetDefaultStatic " + to_string(i) + " " + to_string(Utils::Bitwise::SwapEndian(staticTable[i])) + "\r\n";
+		}
+			
 	}
 	data.shrink_to_fit();
 	return data;
