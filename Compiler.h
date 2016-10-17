@@ -430,10 +430,10 @@ class CompileRDR : CompileBase
 public:
 	CompileRDR(Script& data, Platform tPlatform) : CompileBase(RDROpcodes, data, 0, 0, tPlatform) { }
 
-	void CompileXSC()
+	void CompileXSC(string fileName)
 	{
 		BuildTables();
-		XSCWrite(R"(C:\Users\Rocko\Desktop\out.txt)", P_XBOX, true);
+		XSCWrite(fileName.c_str(), P_XBOX, true);
 	}
 private:
 	//visual studio plz... designated initializers were added in 1999 get with the times
@@ -502,7 +502,7 @@ private:
 	#pragma endregion
 
 	#pragma region Write_Functions
-	void XSCWrite(char* path, Platform platform, bool CompressAndEncrypt = true);
+	void XSCWrite(const char* path, Platform platform, bool CompressAndEncrypt = true);
 	#pragma endregion
 
 };

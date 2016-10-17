@@ -5622,7 +5622,7 @@ private:
 #pragma region HandleASTConsumer
 class MyASTConsumer : public ASTConsumer {
 public:
-	MyASTConsumer(Rewriter &R, ASTContext *context, DiagnosticsEngine *diagnostics, string filename) : Visitor(R, context, filename), GlobalsVisitor(R, context), diagnostics(diagnostics) {}
+	MyASTConsumer(Rewriter &R, ASTContext *context, DiagnosticsEngine *diagnostics, string filename, string buildFileName) : Visitor(R, context, filename), GlobalsVisitor(R, context), diagnostics(diagnostics), BuildFileName(buildFileName) {}
 
 	// Override the method that gets called for each parsed top-level
 	// declaration.
@@ -5682,7 +5682,7 @@ public:
 		else Throw("Output File Could Not Be Opened");
 
 		CompileRDR c(scriptData, P_XBOX);
-		c.CompileXSC();
+		c.CompileXSC(BuildFileName);
 
 
 	}
@@ -5691,6 +5691,7 @@ private:
 	MyASTVisitor Visitor;
 	GlobalsVisitor GlobalsVisitor;
 	DiagnosticsEngine *diagnostics;
+	string BuildFileName;
 };
 #pragma endregion
 
@@ -5722,7 +5723,7 @@ public:
 		{
 			case P_XBOX: return "x";
 			case P_PS3: return "c";
-			case P_PC: return "w";
+			case P_PC: return bType == BT_GTAIV ? "w" : "y";
 		}
 		Throw("No platform selected");
 		return 0;
@@ -5737,6 +5738,17 @@ public:
 			case BT_GTAV: return GetPlatformAbv() + "sa2";
 		}
 		return "asm";
+	}
+	string GetCompiledOutputExt()
+	{
+		switch (bType)
+		{
+			case BT_RDR_SCO:
+			case BT_GTAIV: return "sco";
+			case BT_GTAV:
+			case BT_RDR_XSC: return GetPlatformAbv() + "sc";
+		}
+		return "xsc";
 	}
 	string preDefines;
 	void AddDefines(Preprocessor &PP)
@@ -5798,7 +5810,7 @@ public:
 		string fileName(string(SM.getFileEntryForID(SM.getMainFileID())->getName()));
 		fileName.erase(fileName.find_last_of(".c"));
 
-		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), fileName + GetBuildTypeExt());
+		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), fileName + GetBuildTypeExt(), fileName + GetCompiledOutputExt());
 	}
 
 private:
