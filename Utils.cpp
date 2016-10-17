@@ -134,7 +134,7 @@ namespace Utils {
 		uint32_t Joaat(string key)
 		{
 			uint32_t hash, i;
-			for (hash = i = 0; key[i]; ++i)
+			for (hash = i = 0; i < key.size(); ++i)
 			{
 				hash += tolower(key[i]);
 				hash += (hash << 10);
@@ -162,7 +162,7 @@ namespace Utils {
 		uint32_t JoaatCased(string key)
 		{
 			uint32_t hash, i;
-			for (hash = i = 0; key[i]; ++i)
+			for (hash = i = 0; i < key.size(); ++i)
 			{
 				hash += key[i];
 				hash += (hash << 10);

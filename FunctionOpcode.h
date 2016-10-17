@@ -675,7 +675,7 @@ public:
 		Instructions.push_back(op);
 	}
 	void addOpLabelLoc(unsigned int rawEncoding){ addOpLabelLoc(to_string(rawEncoding)); }
-	void addOpGetHash(){ Instructions.push_back(new Opcode(OK_GetHash)); }
+	void addOpGetHash();
 
 #pragma endregion
 };

@@ -1910,16 +1910,8 @@ public:
 				ChkHashCol("getHashKey");
 				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isCharType())
 				{
-					if (isa<StringLiteral>(argArray[0]->IgnoreParens()->IgnoreCasts()))
-					{
-						string str = cast<StringLiteral>(argArray[0]->IgnoreParens()->IgnoreCasts())->getString().str();
-						AddInstructionComment(PushInt, "getHashKey(\"" + str + "\")", Utils::Hashing::Joaat(str.c_str()));
-					}
-					else
-					{
-						parseExpression(argArray[0], false, true);
-						AddInstruction(GetHash);
-					}
+					parseExpression(argArray[0], false, true);
+					AddInstruction(GetHash);
 					return true;
 				}
 				Throw("getHashKey must have signature \"extern __intrinsic int getHashKey(char *string);\"", rewriter, callee->getSourceRange());

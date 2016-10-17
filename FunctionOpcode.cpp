@@ -2009,6 +2009,25 @@ void FunctionData::addOpJumpFalse(string loc)
 #endif
 }
 
+void FunctionData::addOpGetHash()
+{
+#ifdef USE_OPTIMISATIONS
+	assert(Instructions.size() && "Cannot add OpGetHash to empty instruction stack");
+	if (Instructions.back()->getKind() == OK_PushString)
+	{
+		string str = Instructions.back()->getString();
+		delete Instructions.back();
+		Instructions.pop_back();
+		addOpPushInt(Utils::Hashing::Joaat(str));
+		pushComment("GetHash(\"" + str + "\")");
+	}
+	else
+#endif
+	{
+		Instructions.push_back(new Opcode(OK_GetHash));
+	}
+}
+
 ostream & operator<<(ostream & stream, const FunctionData & fdata)
 {
 	stream << "\r\n:" << fdata.name.substr(1) << "//>\r\nFunction " << fdata.pcount << " " << fdata.stackSize << "\r\n";
