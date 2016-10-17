@@ -5738,10 +5738,18 @@ public:
 		}
 		return "asm";
 	}
-
+	string preDefines;
 	void AddDefines(Preprocessor &PP)
 	{
-		#define AddClangDefine(str) PP.appendDefMacroDirective(PP.getIdentifierInfo(str), PP.AllocateMacroInfo(SourceLocation()));
+		preDefines = PP.getPredefines();
+#define AddClangDefine(str) preDefines += string("\n#define ") + string(str)
+		preDefines += "\n#define defNative(retType, name, args...) extern __attribute((native)) retType name(args)";
+		preDefines += "\n#define defNamedNative(retType, name, hash, args...) extern __attribute((native(hash))) retType name(args)";
+		preDefines += "\n#define defNamedNative64(retType, name, hash, args...) extern __attribute((native(hash & 0xFFFFFFFF, hash >> 32))) retType name(args)";
+		preDefines += "\n#define defIntrinsic(retType, name, args...) extern __attribute((intrinsic)) retType name(args)";
+		preDefines += "\n#define defUnsafeIntrinsic(retType, name, args...) extern __attribute((intrinsic)) retType name(args)";//keep the same for the time being, needs clang changes to add unsafe attribute
+		preDefines += "\n#define __noinline __attribute((noinline))";
+
 		switch(bType)
 		{
 			case BT_GTAIV://it would be cool to support gta 4 at some point but its not a priority
@@ -5761,20 +5769,21 @@ public:
 				AddClangDefine(string("__").append(1, toupper(*GetPlatformAbv().c_str())) + "SC__");
 				break;
 		}
-		#undef AddClangMacro
+		PP.setPredefines(preDefines.data());
+		#undef AddClangDefine
 	}
 	void ModifyClangWarnings(DiagnosticsEngine& DE)
 	{
 		#define DisableClangWarning(str) DE.setSeverityForGroup(diag::Flavor::WarningOrError, str, diag::Severity::Ignored, SourceLocation());
-		#define EvevateClangWarning(str) DE.setSeverityForGroup(diag::Flavor::WarningOrError, str, diag::Severity::Error, SourceLocation());
+		#define ElevateClangWarning(str) DE.setSeverityForGroup(diag::Flavor::WarningOrError, str, diag::Severity::Error, SourceLocation());
 		
 		DisableClangWarning("main-return-type");
 		DisableClangWarning("incompatible-library-redeclaration");
-		EvevateClangWarning("return-type");
-		EvevateClangWarning("dangling-else");
+		ElevateClangWarning("return-type");
+		ElevateClangWarning("dangling-else");
 		
 		#undef DisableClangWarning
-		#undef EvevateClangWarning
+		#undef ElevateClangWarning
 	}
 	
 	
