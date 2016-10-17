@@ -1031,20 +1031,20 @@ void CompileRDR::XSCWrite(const char* path, Platform platform, bool CompressAndE
 #pragma region Parse_Functions
 const uint32_t CompileGTAV::AddStringToStringPage(const string str)
 {
+	//if string is in table
+	auto it = StringPageDataIndexing.find(str);
+	if (it != StringPageDataIndexing.end())
+	{
+		return it->second;
+	}
+
 	const uint32_t len = str.length();
 	const uint32_t pos = StringPageData.size();
-
-	//if string is in table
-	for (uint32_t i = 0; i < StringPageDataIndexing.size(); i++)
-	{
-		if (StringPageDataIndexing[i].len == len && strcmp((char*)(StringPageData.data() + StringPageDataIndexing[i].index), str.c_str()) == 0)
-			return StringPageDataIndexing[i].index;
-	}
 
 	if ((pos + len + 1) % 16384 < pos % 16384)
 		StringPageData.resize(16384 - (pos % 16384) + pos);
 
-	StringPageDataIndexing.push_back({ StringPageData.size(), len });
+	StringPageDataIndexing[str] = StringPageData.size();
 	StringPageData.resize(pos + len + 1);
 	memcpy(StringPageData.data() + pos, str.data(), len + 1);
 	return pos;
