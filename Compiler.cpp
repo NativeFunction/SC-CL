@@ -747,7 +747,7 @@ void CompileRDR::XSCWrite(char* path, Platform platform, bool CompressAndEncrypt
 			BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
 			for (unordered_map<uint32_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
 			{
-				*(uint32_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 4) = Utils::Bitwise::SwapEndian(it->first);//might have to swap endian
+				*(uint32_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 4) = Utils::Bitwise::SwapEndian(it->first);
 			}
 
 			Pad();

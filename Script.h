@@ -76,7 +76,7 @@ public:
 			staticTableShortIndexes.push_back(staticTable.size() - 1);
 
 		assert((index == 0 || index == 2) && "modifyLastInitStaticShort index out of bounds");
-		*(uint16_t*)((uint8_t*)&staticTable.back() + index) = byte;
+		*(uint16_t*)((uint8_t*)&staticTable.back() + index) = Utils::Bitwise::SwapEndian(byte);
 	}
 	uint32_t getStaticSize() const
 	{

@@ -312,7 +312,13 @@ protected:
 		else
 			Throw("Cannot add function. function \"" + label + "\" already exists.");
 	}
-
+	virtual void AddFunction(uint8_t paramCount, uint16_t stackSize)
+	{
+		AddOpcode(Function);
+		AddInt8(paramCount);
+		AddInt16(stackSize);
+		AddInt8(0);//unused function name
+	}
 	inline void AddJumpLoc(const JumpInstructionType it, const string label)
 	{
 		JumpLocations.push_back({ CodePageData.size(), it, label });
@@ -409,6 +415,7 @@ protected:
 			if (HLData->getFunctionFromIndex(FunctionCount)->IsUsed())
 			{
 				AddFuncLabel(HLData->getFunctionFromIndex(FunctionCount)->getName().data() + 1);
+				AddFunction(HLData->getFunctionFromIndex(FunctionCount)->getPCount(), HLData->getFunctionFromIndex(FunctionCount)->getStackSize());
 				for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
 				{
 					ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
@@ -428,7 +435,7 @@ public:
 	void CompileXSC()
 	{
 		BuildTables();
-		XSCWrite(R"(C:\Users\Rocko\Desktop\out.txt)", P_XBOX, false);
+		XSCWrite(R"(C:\Users\Rocko\Desktop\out.txt)", P_XBOX, true);
 	}
 private:
 	//visual studio plz... designated initializers were added in 1999 get with the times

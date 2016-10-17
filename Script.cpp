@@ -139,8 +139,8 @@ void Script::removeFunctionInline(const FunctionData *fData)
 string Script::getStaticsAsString()
 {
 	string data;
-	data.reserve(36 * staticTable.size() + 28);
-	data += "SetStaticsCount " + to_string(staticTable.size()) + "\r\n";
+	data.reserve(73 * staticTable.size() + 28);
+	data += "//> Default Static Information\r\nSetStaticsCount " + to_string(staticTable.size()) + "\r\n";
 	for (uint32_t i = 0, it = 0; i < staticTable.size(); i++)
 	{
 		if (staticTable[i] != 0)
@@ -148,13 +148,18 @@ string Script::getStaticsAsString()
 			if (it < staticTableShortIndexes.size() && staticTableShortIndexes[it] == i)
 			{
 				it++;
-				data += "SetDefaultStatic " + to_string(i) + " " + to_string(Utils::Bitwise::Flip2BytesIn4(staticTable[i])) + "\r\n";
+				int32_t shortData = Utils::Bitwise::Flip2BytesIn4(staticTable[i]);
+				int16_t* shortDataP = (int16_t*)&shortData;
+				*shortDataP = Utils::Bitwise::SwapEndian(*shortDataP);
+				shortDataP++;
+				*shortDataP = Utils::Bitwise::SwapEndian(*shortDataP);
+				data += "SetDefaultStatic " + to_string(i) + " " + to_string(shortData) + "\r\n";
 			}
 			else
 				data += "SetDefaultStatic " + to_string(i) + " " + to_string(Utils::Bitwise::SwapEndian(staticTable[i])) + "\r\n";
 		}
-			
 	}
+	data += "//<\r\n";
 	data.shrink_to_fit();
 	return data;
 }
