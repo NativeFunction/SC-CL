@@ -17,9 +17,7 @@
 *   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 *   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
-#ifndef uint8_t
-#define uint8_t  unsigned char
-#endif
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" { 
