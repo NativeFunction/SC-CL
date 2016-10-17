@@ -795,6 +795,16 @@ public:
 	#pragma endregion
 
 	#pragma region Parse/Visit_Functions
+	bool isPushString(const Expr* e)
+	{
+		const CastExpr *cast;
+		if ((cast = dyn_cast<CastExpr>(e)) && cast->getCastKind() == CK_ArrayToPointerDecay)
+		{
+			return isa<StringLiteral>(cast->getSubExpr());
+		}
+		return false;
+	}
+
 	bool checkIntrinsic(const CallExpr *call) {
 		const FunctionDecl* callee = call->getDirectCallee();
 
@@ -819,6 +829,10 @@ public:
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
+					if (isPushString(argArray[0]))
+					{
+						Throw("strcpy called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+					}
 					parseExpression(argArray[0], false, true);
 
 					llvm::APSInt result;
@@ -848,6 +862,10 @@ public:
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
+					if (isPushString(argArray[0]))
+					{
+						Throw("stradd called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+					}
 					parseExpression(argArray[0], false, true);
 
 					llvm::APSInt result;
@@ -877,6 +895,10 @@ public:
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
+					if (isPushString(argArray[0]))
+					{
+						Throw("straddi called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+					}
 					parseExpression(argArray[0], false, true);
 
 					llvm::APSInt result;
@@ -906,6 +928,10 @@ public:
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
 				{
 					parseExpression(argArray[1], false, true);
+					if (isPushString(argArray[0]))
+					{
+						Throw("itos called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+					}
 					parseExpression(argArray[0], false, true);
 
 					llvm::APSInt result;
@@ -5761,6 +5787,7 @@ public:
 		preDefines += "\n#define defIntrinsic(retType, name, args...) extern __attribute((intrinsic)) retType name(args)";
 		preDefines += "\n#define defUnsafeIntrinsic(retType, name, args...) extern __attribute((intrinsic)) retType name(args)";//keep the same for the time being, needs clang changes to add unsafe attribute
 		preDefines += "\n#define __noinline __attribute((noinline))";
+		preDefines += "\n#define stacksizeof(item) (sizeof(item) + 3 >> 2)";
 
 		switch(bType)
 		{
