@@ -406,12 +406,15 @@ protected:
 	{
 		for (FunctionCount = 0; FunctionCount < HLData->getFunctionCount(); FunctionCount++)
 		{
-			AddFuncLabel(HLData->getFunctionFromIndex(FunctionCount)->getName().data() + 1);
-			for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
+			if (HLData->getFunctionFromIndex(FunctionCount)->IsUsed())
 			{
-				ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
+				AddFuncLabel(HLData->getFunctionFromIndex(FunctionCount)->getName().data() + 1);
+				for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
+				{
+					ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
+				}
+				fixFunctionJumps();
 			}
-			fixFunctionJumps();
 		}
 		fixFunctionCalls();
 	}

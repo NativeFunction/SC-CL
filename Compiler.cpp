@@ -538,7 +538,7 @@ void CompileRDR::CallNative(const uint32_t hash, const uint8_t paramCount, const
 		if(DATA->getNative()->getReturnCount() > 1)
 			Throw("Native Calls Can Only Have One Return");
 
-		const uint32_t index = AddNative(hash);
+		const uint32_t index = AddNative(DATA->getNative()->getHash());
 		if (index >= 1024)
 			Throw("Native Call Index out of bounds");
 
@@ -747,7 +747,7 @@ void CompileRDR::XSCWrite(char* path, Platform platform, bool CompressAndEncrypt
 			BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
 			for (unordered_map<uint32_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
 			{
-				*(uint32_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second) = it->first;//might have to swap endian
+				*(uint32_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 4) = Utils::Bitwise::SwapEndian(it->first);//might have to swap endian
 			}
 
 			Pad();
@@ -1058,7 +1058,7 @@ void CompileGTAV::CallNative(const uint32_t hash, const uint8_t paramCount, cons
 		if (DATA->getNative()->getReturnCount() > 3)
 			Throw("Native Calls Can Only Have Three Returns");
 
-		const uint32_t index = AddNative(hash);
+		const uint32_t index = AddNative(DATA->getNative()->getHash());
 		if (index >= 0xFFFF)
 			Throw("Native Call Index out of bounds");
 
