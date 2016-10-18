@@ -57,10 +57,6 @@ static llvm::cl::OptionCategory ToolingSampleCategory("Tooling Sample");
 static Rewriter rewriter;
 #pragma endregion
 
-#pragma region Global_Function_Data_Decls
-Script scriptData;
-#pragma endregion
-
 #pragma region Global_Var_and_Scope_Decls
 map<string, int> globals;
 map<string, int> statics;
@@ -445,7 +441,7 @@ const DeclRefExpr *getDeclRefExpr(const Expr *e) {
 
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
 public:
-	MyASTVisitor(Rewriter &R, ASTContext *context, string filename) : TheRewriter(R), context(context), outfile(filename) {}
+	MyASTVisitor(Rewriter &R, ASTContext *context, Script& scriptData) : TheRewriter(R), context(context), scriptData(scriptData) {}
 
 	#pragma region Misc_Functions
 	void ComplexToBoolean(bool floating)
@@ -5086,16 +5082,16 @@ public:
 	set<std::string> FindBuffer;
 	Rewriter &TheRewriter;
 	ASTContext *context;
+	stringstream out;//temp until CXX stuff sorted/removed
 
-	stringstream out;
-	string outfile;
 	const FunctionDecl *currFunction;
+	Script& scriptData;
 };
 
 #pragma region GlobalsVisitor
 class GlobalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
 public:
-	GlobalsVisitor(Rewriter &R, ASTContext *context) : TheRewriter(R), context(context) {}
+	GlobalsVisitor(Rewriter &R, ASTContext *context, Script& scriptData) : TheRewriter(R), context(context), scriptData(scriptData) {}
 
 
 	int32_t ParseLiteral(const Expr *e, bool isAddr = false, bool isLtoRValue = false)
@@ -5603,6 +5599,7 @@ public:
 private:
 	Rewriter &TheRewriter;
 	ASTContext *context;
+	Script& scriptData;
 };
 #pragma endregion
 
@@ -5640,7 +5637,7 @@ private:
 #pragma region HandleASTConsumer
 class MyASTConsumer : public ASTConsumer {
 public:
-	MyASTConsumer(Rewriter &R, ASTContext *context, DiagnosticsEngine *diagnostics, string filename, string buildFileName) : Visitor(R, context, filename), GlobalsVisitor(R, context), diagnostics(diagnostics), BuildFileName(buildFileName) {}
+	MyASTConsumer(Rewriter &R, ASTContext *context, DiagnosticsEngine *diagnostics, Script& scriptData, string directory) : Visitor(R, context, scriptData), GlobalsVisitor(R, context, scriptData), diagnostics(diagnostics), scriptData(scriptData), outDir(directory) {}
 
 	// Override the method that gets called for each parsed top-level
 	// declaration.
@@ -5680,7 +5677,7 @@ public:
 		else
 			Throw("Function \"main\" was not found");
 
-		FILE* file = fopen(Visitor.outfile.c_str(), "wb");
+		FILE* file = fopen((outDir + "\\" + scriptData.getASMFileName()).data(), "wb");
 		if (file != NULL)
 		{
 			string StaticData = scriptData.getStaticsAsString();
@@ -5699,8 +5696,8 @@ public:
 		}
 		else Throw("Output File Could Not Be Opened");
 
-		CompileRDR c(scriptData, P_XBOX);
-		c.CompileXSC(BuildFileName);
+		CompileRDR c(scriptData);
+		c.Compile(outDir);
 
 
 	}
@@ -5709,21 +5706,16 @@ private:
 	MyASTVisitor Visitor;
 	GlobalsVisitor GlobalsVisitor;
 	DiagnosticsEngine *diagnostics;
-	string BuildFileName;
+	Script &scriptData;
+	string outDir;
 };
 #pragma endregion
 
 #pragma region CreateASTConsumer
-enum BuildType
-{
-	BT_GTAIV,
-	BT_RDR_XSC,
-	BT_RDR_SCO,
-	BT_GTAV
-};
 class MyFrontendAction : public ASTFrontendAction {
 public:
 	MyFrontendAction() {}
+	~MyFrontendAction(){ if (scriptData){ delete scriptData; } }
 	void EndSourceFileAction() override {
 		//emit source
 
@@ -5733,46 +5725,29 @@ public:
 		// Now emit the rewritten buffer.
 		//TheRewriter.getEditBuffer(SM.getMainFileID()).write(llvm::outs());
 	}
-
-
-	string GetPlatformAbv()
-	{
-		switch (Plat)
-		{
-			case P_XBOX: return "x";
-			case P_PS3: return "c";
-			case P_PC: return bType == BT_GTAIV ? "w" : "y";
-		}
-		Throw("No platform selected");
-		return 0;
-	}
-	string GetBuildTypeExt()
-	{
-		switch (bType)
-		{
-			case BT_GTAIV: return "sca";//it would be cool to support gta 4 at some point but its not a priority
-			case BT_RDR_XSC: return GetPlatformAbv() + "sa";
-			case BT_RDR_SCO: return "sca2";
-			case BT_GTAV: return GetPlatformAbv() + "sa2";
-		}
-		return "asm";
-	}
-	string GetCompiledOutputExt()
-	{
-		switch (bType)
-		{
-			case BT_RDR_SCO:
-			case BT_GTAIV: return "sco";
-			case BT_GTAV:
-			case BT_RDR_XSC: return GetPlatformAbv() + "sc";
-		}
-		return "xsc";
-	}
 	string preDefines;
 	void AddDefines(Preprocessor &PP)
 	{
 		preDefines = PP.getPredefines();
-#define AddClangDefine(str) preDefines += string("\n#define ") + string(str)
+		switch (scriptData->getBuildType())
+		{
+			case BT_GTAIV://it would be cool to support gta 4 at some point but its not a priority
+				preDefines += "\n#define __GTAIV__";
+				preDefines += "\n#define __SCO__";
+				break;
+			case BT_RDR_XSC:
+				preDefines += "\n#define __RDR__";
+				preDefines += "\n#define __" + (char)toupper(*scriptData->getPlatformAbv().c_str()) + string("SC__");
+				break;
+			case BT_RDR_SCO:
+				preDefines += "\n#define __RDR__";
+				preDefines += "\n#define __SCO__";
+				break;
+			case BT_GTAV:
+				preDefines += "\n#define __GTAV__";
+				preDefines += "\n#define __" + (char)toupper(*scriptData->getPlatformAbv().c_str()) + string("SC__");
+				break;
+		}
 		preDefines += "\n#define defNative(retType, name, args...) extern __attribute((native)) retType name(args)";
 		preDefines += "\n#define defNamedNative(retType, name, hash, args...) extern __attribute((native(hash))) retType name(args)";
 		preDefines += "\n#define defNamedNative64(retType, name, hash, args...) extern __attribute((native(hash & 0xFFFFFFFF, hash >> 32))) retType name(args)";
@@ -5781,27 +5756,7 @@ public:
 		preDefines += "\n#define __noinline __attribute((noinline))";
 		preDefines += "\n#define stacksizeof(item) (sizeof(item) + 3 >> 2)";
 
-		switch(bType)
-		{
-			case BT_GTAIV://it would be cool to support gta 4 at some point but its not a priority
-				AddClangDefine("__GTAIV__");
-				AddClangDefine("__SCO__");
-				break;
-			case BT_RDR_XSC:
-				AddClangDefine("__RDR__");
-				AddClangDefine(string("__").append(1, toupper(*GetPlatformAbv().c_str())) + "SC__");
-				break;
-			case BT_RDR_SCO:
-				AddClangDefine("__RDR__");
-				AddClangDefine("__SCO__");
-				break;
-			case BT_GTAV:
-				AddClangDefine("__GTAV__");
-				AddClangDefine(string("__").append(1, toupper(*GetPlatformAbv().c_str())) + "SC__");
-				break;
-		}
 		PP.setPredefines(preDefines.data());
-		#undef AddClangDefine
 	}
 	void ModifyClangWarnings(DiagnosticsEngine& DE)
 	{
@@ -5820,22 +5775,21 @@ public:
 	
 	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
 
-		ModifyClangWarnings(CI.getDiagnostics());
-		AddDefines(CI.getPreprocessor());
 		llvm::errs() << "Compiling: " << file << "\n";
 		TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
 		rewriter = TheRewriter;
 		SourceManager &SM = TheRewriter.getSourceMgr();
 		string fileName(string(SM.getFileEntryForID(SM.getMainFileID())->getName()));
-		fileName.erase(fileName.find_last_of(".c"));
-
-		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), fileName + GetBuildTypeExt(), fileName + GetCompiledOutputExt());
+		fileName.erase(fileName.find_last_of(".c") - 1);
+		scriptData = new Script(fileName.substr(fileName.find_last_of('\\') + 1), BT_RDR_XSC, P_XBOX);
+		ModifyClangWarnings(CI.getDiagnostics());
+		AddDefines(CI.getPreprocessor());
+		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), *scriptData, fileName.substr(0, fileName.find_last_of('\\')));
 	}
 
 private:
+	Script *scriptData = NULL;
 	Rewriter TheRewriter;
-	BuildType bType = BT_RDR_XSC;
-	Platform Plat = P_XBOX;
 };
 #pragma endregion
 

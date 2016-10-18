@@ -652,7 +652,7 @@ void CompileRDR::SetImm()
 #pragma endregion
 
 #pragma region Write_Functions
-void CompileRDR::XSCWrite(const char* path, Platform platform, bool CompressAndEncrypt)
+void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 {
 
 	struct PHO//placeHolderOffsets

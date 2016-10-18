@@ -1,7 +1,23 @@
 #pragma once
 #include "FunctionOpcode.h"
 #include <vector>
-#include <map>
+
+enum Platform
+{
+	P_XBOX,
+	P_PS3,
+	P_PC
+};
+
+enum BuildType
+{
+	BT_GTAIV,
+	BT_RDR_XSC,
+	BT_RDR_SCO,
+	BT_GTAV
+};
+
+
 class Script
 {
 	FunctionData *entryFunction;
@@ -13,8 +29,11 @@ class Script
 	struct InlineData { uint32_t hash; string name; string inlineLblAppend; };
 	vector<InlineData> inlineStack;
 	int staticCount = 0;
+	BuildType _bType;
+	Platform _platform;
+	string _scriptName;
 public:
-	Script();
+	Script(string scriptName, BuildType buildType, Platform platform);
 	FunctionData *getEntryFunction() const{ return entryFunction; }
 	FunctionData *getCurrentFunction()const{ return currentFunc; }
 	FunctionData *createFunction(string name, int paramCount, bool makeCurrent = false);
@@ -99,6 +118,24 @@ public:
 		return staticTable.data();
 	}
 	string getStaticsAsString();
+
+	string getScriptName()const{ return _scriptName; }
+	BuildType getBuildType()const{ return _bType; }
+	Platform getBuildPlatform()const{ return _platform; }
+
+	string getPlatformAbv()const;
+
+	string getBuildTypeExt()const;
+
+	string getCompiledOutputExt()const;
+
+	string getBuildFileName()const{
+		return getScriptName() + "." + getCompiledOutputExt();
+	}
+
+	string getASMFileName()const{
+		return getScriptName() + "." + getBuildTypeExt();
+	}
 	
 	~Script()
 	{
@@ -108,11 +145,3 @@ public:
 		}
 	}
 };
-
-enum Platform
-{
-	P_XBOX,
-	P_PS3,
-	P_PC
-};
-

@@ -1,7 +1,7 @@
 #include "Script.h"
 #include "Utils.h"
 
-Script::Script() : entryFunction(new FunctionData("@__builtin__entryPoint", 0)), indirectGoTo(new FunctionData("@__buiiltin__indirectGoTo", 1)), currentFunc(NULL)
+Script::Script(string scriptName, BuildType buildType, Platform platform) : entryFunction(new FunctionData("@__builtin__entryPoint", 0)), indirectGoTo(new FunctionData("@__buiiltin__indirectGoTo", 1)), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform)
 {
 	functions.push_back(entryFunction);
 	functions.push_back(indirectGoTo);
@@ -163,3 +163,40 @@ string Script::getStaticsAsString()
 	data.shrink_to_fit();
 	return data;
 }
+
+string Script::getPlatformAbv() const
+{
+	switch (getBuildPlatform())
+	{
+		case P_XBOX: return "x";
+		case P_PS3: return "c";
+		case P_PC: return getBuildType() == BT_GTAIV ? "w" : "y";
+	}
+	Utils::System::Throw("No platform selected");
+	return 0;
+}
+
+string Script::getBuildTypeExt() const
+{
+	switch (getBuildType())
+	{
+		case BT_GTAIV: return "sca";//it would be cool to support gta 4 at some point but its not a priority
+		case BT_RDR_XSC: return getPlatformAbv() + "sa";
+		case BT_RDR_SCO: return "sca2";
+		case BT_GTAV: return getPlatformAbv() + "sa2";
+	}
+	return "asm";
+}
+
+string Script::getCompiledOutputExt() const
+{
+	switch (getBuildType())
+	{
+		case BT_RDR_SCO:
+		case BT_GTAIV: return "sco";
+		case BT_GTAV:
+		case BT_RDR_XSC: return getPlatformAbv() + "sc";
+	}
+	return "xsc";
+}
+
