@@ -997,7 +997,7 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 		if (CompressedSize = 0)
 			Throw("SCO Compressed Size Invalid");
 		else if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize))
-			Throw("Decryption Failed");
+			Throw("SCO Encryption Failed");
 
 		vector<uint32_t> SCR_Header(12, 0);
 		SCR_Header[0] = SwapEndian(0x53435202);//SCR.
