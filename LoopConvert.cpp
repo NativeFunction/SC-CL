@@ -812,6 +812,11 @@ public:
 
 		string funcName = dumpName(cast<NamedDecl>(callee));
 
+		if (callee->getAttr<IntrinsicFuncAttr>()->getIsUnsafe() && !scriptData.isUnsafeContext())
+			Warn("Unsafe Intrinsic \"" + funcName + "\" used in an unsafe context. This could lead to crashes", rewriter, call->getSourceRange());
+
+		
+
 		const Expr * const*argArray = call->getArgs();
 		int argCount = call->getNumArgs();
 
@@ -4772,6 +4777,10 @@ public:
 			{
 				scriptData.setMainFunction(func);
 			}
+			if (f->hasAttr<UnsafeFuncAttr>())
+			{
+				func->setUnsafe();
+			}
 
 			currFunction = f;
 			LocalVariables.reset();
@@ -5532,44 +5541,62 @@ public:
 		if (isa<VarDecl>(D)) {
 			globalVarDecl = cast<VarDecl>(D);
 			if (globalVarDecl->hasGlobalStorage()) {
-				if (statics.find(dumpName(cast<NamedDecl>(D))) == statics.end()) {
-
-					auto size = getSizeOfType(globalVarDecl->getType().getTypePtr());
-
-					resetIntIndex();
-					savedType = nullptr;
-
-					isCurrentExprEvaluable = true;
-					doesCurrentValueNeedSet = false;
-
-					statics.insert(make_pair(dumpName(cast<NamedDecl>(D)), staticInc));
-
-					scriptData.addStaticDecl(getSizeFromBytes(size));
-					staticInc += getSizeFromBytes(size);
-
-					const Expr *initializer = globalVarDecl->getAnyInitializer();
-
-
-					if (initializer) {
-
-						ParseLiteral(initializer, false, true);
-
-						if (scriptData.getStaticSize() > staticInc)//undefined length arrays (should check if it is an undefined length array)
-							staticInc = scriptData.getStaticSize();
-
-						if (doesCurrentValueNeedSet)
-							scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
-
+				if (globalVarDecl->hasAttr<GlobalVariableAttr>())
+				{
+					if (globals.find(dumpName(cast<NamedDecl>(D))) == globals.end())
+					{
+						globals.insert(make_pair(dumpName(cast<NamedDecl>(D)), globalVarDecl->getAttr<GlobalVariableAttr>()->getIndex()));
 					}
-
-
-					if (scriptData.getStaticSize() > staticInc)
-						Warn("Static Overflow Old:" + to_string(scriptData.getStaticSize()) + " New:" + to_string(staticInc));
-
-
+					else
+					{
+						Throw("Global Var " + dumpName(cast<NamedDecl>(D)) + " is already defined", rewriter, D->getSourceRange());
+					}
+					if (globalVarDecl->hasInit())
+					{
+						Throw("Global variables cannot be initialised", rewriter, D->getSourceRange());
+					}
 				}
 				else
-					Throw("Var " + dumpName(cast<NamedDecl>(D)) + " is already defined", rewriter, D->getLocStart());
+				{
+					if (statics.find(dumpName(cast<NamedDecl>(D))) == statics.end()) {
+
+						auto size = getSizeOfType(globalVarDecl->getType().getTypePtr());
+
+						resetIntIndex();
+						savedType = nullptr;
+
+						isCurrentExprEvaluable = true;
+						doesCurrentValueNeedSet = false;
+
+						statics.insert(make_pair(dumpName(cast<NamedDecl>(D)), staticInc));
+
+						scriptData.addStaticDecl(getSizeFromBytes(size));
+						staticInc += getSizeFromBytes(size);
+
+						const Expr *initializer = globalVarDecl->getAnyInitializer();
+
+
+						if (initializer) {
+
+							ParseLiteral(initializer, false, true);
+
+							if (scriptData.getStaticSize() > staticInc)//undefined length arrays (should check if it is an undefined length array)
+								staticInc = scriptData.getStaticSize();
+
+							if (doesCurrentValueNeedSet)
+								scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
+
+						}
+
+
+						if (scriptData.getStaticSize() > staticInc)
+							Warn("Static Overflow Old:" + to_string(scriptData.getStaticSize()) + " New:" + to_string(staticInc));
+
+
+					}
+					else
+						Throw("Var " + dumpName(cast<NamedDecl>(D)) + " is already defined", rewriter, D->getLocStart());
+				}
 			}
 		}
 		return true;
@@ -5709,8 +5736,8 @@ public:
 				preDefines += "\n#define __SCO__";
 				break;
 			case BT_RDR_XSC:
-				preDefines += "\n#define __RDR__";
-				preDefines += "\n#define __" + (char)toupper(*scriptData->getPlatformAbv().c_str()) + string("SC__");
+				preDefines += "\n#define __RDR__"; 
+				preDefines += "\n#define __" + scriptData->getPlatformAbvUpper() + string("SC__");
 				break;
 			case BT_RDR_SCO:
 				preDefines += "\n#define __RDR__";
@@ -5718,16 +5745,9 @@ public:
 				break;
 			case BT_GTAV:
 				preDefines += "\n#define __GTAV__";
-				preDefines += "\n#define __" + (char)toupper(*scriptData->getPlatformAbv().c_str()) + string("SC__");
+				preDefines += "\n#define __" + scriptData->getPlatformAbvUpper() + string("SC__");
 				break;
 		}
-		preDefines += "\n#define defNative(retType, name, args...) extern __attribute((native)) retType name(args)";
-		preDefines += "\n#define defNamedNative(retType, name, hash, args...) extern __attribute((native(hash))) retType name(args)";
-		preDefines += "\n#define defNamedNative64(retType, name, hash, args...) extern __attribute((native(hash & 0xFFFFFFFF, hash >> 32))) retType name(args)";
-		preDefines += "\n#define defIntrinsic(retType, name, args...) extern __attribute((intrinsic)) retType name(args)";
-		preDefines += "\n#define defUnsafeIntrinsic(retType, name, args...) extern __attribute((intrinsic)) retType name(args)";//keep the same for the time being, needs clang changes to add unsafe attribute
-		preDefines += "\n#define __noinline __attribute((noinline))";
-		preDefines += "\n#define stacksizeof(item) (sizeof(item) + 3 >> 2)";
 
 		PP.setPredefines(preDefines.data());
 	}
