@@ -22,6 +22,7 @@ class Script
 {
 	FunctionData *entryFunction;
 	FunctionData *indirectGoTo;
+	FunctionData *mainFunction;
 	vector<FunctionData *> functions;
 	FunctionData *currentFunc;
 	vector<int32_t> staticTable;
@@ -36,7 +37,7 @@ public:
 	Script(string scriptName, BuildType buildType, Platform platform);
 	FunctionData *getEntryFunction() const{ return entryFunction; }
 	FunctionData *getCurrentFunction()const{ return currentFunc; }
-	FunctionData *createFunction(string name, int paramCount, bool makeCurrent = false);
+	FunctionData *createFunction(string name, int paramCount, int returnCount, bool makeCurrent = false);
 	void clearCurrentFunction(){ currentFunc = NULL; }
 	const FunctionData *getFunctionFromName(string name)const;
 	unsigned getFunctionCount() const{ return functions.size(); }
@@ -53,8 +54,11 @@ public:
 		return "";
 	}
 
+	void setMainFunction(FunctionData* mainFunc){ assert(mainFunc->getName() == "@main" && "trying to set function not called main to mainFunction"); mainFunction = mainFunc; }
+
 	bool addUsedFuncToCurrent(string name);
 	bool addUsedFuncToEntry(string name);
+	void finaliseEntryFunction();
 
 	bool isFunctionInInlineStack(string name) const;
 	bool isFunctionInInlineStack(const FunctionData *fData) const;
