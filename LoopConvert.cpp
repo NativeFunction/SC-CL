@@ -5021,7 +5021,7 @@ public:
 			out << endl << endl;
 			out << ":" << getLocStart(CS) << endl << ":" << CS->getDeclName().getAsString() << endl << "Function " << CS->getNumParams() + 1 << "//" << getNameForFunc(CS) << endl;
 			uint32_t paramSize = 1;//class
-			for (int i = 0; i < CS->getNumParams();i++)
+			for (uint32_t i = 0; i < CS->getNumParams();i++)
 			{
 				paramSize += getSizeFromBytes(getSizeOfType(CS->getParamDecl(i)->getType().getTypePtr()));
 			}
@@ -5695,7 +5695,7 @@ public:
 		}
 		else Throw("Output File Could Not Be Opened");
 
-		CompileRDR c(*scriptData);
+		CompileGTAV c(*scriptData);
 		c.Compile(outDir);
 	}
 	
@@ -5754,7 +5754,7 @@ public:
 		SourceManager &SM = TheRewriter.getSourceMgr();
 		string fileName(string(SM.getFileEntryForID(SM.getMainFileID())->getName()));
 		fileName.erase(fileName.find_last_of(".c") - 1);
-		scriptData = new Script(fileName.substr(fileName.find_last_of('\\') + 1), BT_RDR_XSC, P_XBOX);
+		scriptData = new Script(fileName.substr(fileName.find_last_of('\\') + 1), BT_GTAV, P_XBOX);
 		ModifyClangWarnings(*diagnostics);
 		AddDefines(CI.getPreprocessor());
 		outDir = fileName.substr(0, fileName.find_last_of('\\'));

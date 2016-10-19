@@ -245,8 +245,9 @@ protected:
 	} CallData;
 	typedef struct 
 	{
-		int32_t CodeBlocks, Unk1, Statics, Natives;
+		int32_t CodeBlocks, Unk1, Statics, Natives, StringBlocks, ScriptName;
 		vector<uint32_t> CodePagePointers;
+		vector<uint32_t> StringPagePointers;
 	} PHO;//placeHolderOffsets
 	#pragma endregion
 
@@ -268,11 +269,12 @@ protected:
 
 	#pragma region Write_Data_Vars
 	
-	PHO SavedOffsets;
+	PHO SavedOffsets = {};
 	int32_t headerLocation = 0;
 	uint32_t headerFlag = 0;
 	uint32_t CodePageCount = 0;
 	vector<uint8_t> BuildBuffer;
+	uint8_t FilePadding = 0;
 	#pragma endregion
 
 
@@ -472,7 +474,7 @@ protected:
 	}
 	void FillPageDynamic(uint32_t amount)
 	{
-		BuildBuffer.resize(BuildBuffer.size() + GetSpaceLeft(amount), 0xCD);
+		BuildBuffer.resize(BuildBuffer.size() + GetSpaceLeft(amount), FilePadding);
 	}
 	void PadNops()
 	{
@@ -497,21 +499,22 @@ protected:
 		else if (pad > 16384)
 			Throw("Pad Over 16364");
 
-		BuildBuffer.resize(BuildBuffer.size() + pad, 0xCD);
+		BuildBuffer.resize(BuildBuffer.size() + pad, FilePadding);
 	}
 	void ForcePad()
 	{
 		const int32_t pad = 16 - BuildBuffer.size() % 16;
 		if (pad == 0 || pad == 16)
 		{
-			BuildBuffer.resize(BuildBuffer.size() + 16, 0xCD);
+			BuildBuffer.resize(BuildBuffer.size() + 16, FilePadding);
 			return;
 		}
 		else if (pad > 16384)
 			Throw("ForcePad Over 16364");
 		else 
-			BuildBuffer.resize(BuildBuffer.size() + pad, 0xCD);
+			BuildBuffer.resize(BuildBuffer.size() + pad, FilePadding);
 	}
+	int32_t IntToPointerInt(int32_t x) { return 0x50000000 | x; }
 
 	void WriteCodePagesNoPadding();
 	void Write16384CodePages();
@@ -520,8 +523,8 @@ protected:
 	void WriteNatives();
 	void WriteStaticsNoPadding();
 	void WriteStatics();
-	void WriteHeader();
-	void WritePointers();
+	virtual void WriteHeader() = 0;
+	virtual void WritePointers() = 0;
 	
 
 	#pragma endregion
@@ -539,7 +542,7 @@ class CompileRDR : CompileBase
 public:
 	CompileRDR(Script& data) : CompileBase(RDROpcodes, data, 0, 0) { }
 
-	void Compile(string outDirectory)override
+	void Compile(string outDirectory) override
 	{
 		BuildTables();
 		switch (HLData->getBuildType())
@@ -605,7 +608,6 @@ private:
 	{
 		return flag | (size >> 12 & 0xFF) | (size >> 12 & 0xFF00) | (size >> 12 & 0xFF0000);
 	}
-	int32_t IntToPointerInt(int32_t x) { return 0x50000000 | x; }
 	#pragma endregion
 	
 	#pragma region Opcode_Functions
@@ -622,6 +624,8 @@ private:
 	#pragma endregion
 
 	#pragma region Write_Functions
+	void WriteHeader() override;
+	void WritePointers() override;
 	bool WriteNormal(uint32_t datasize, uint32_t bufferflag);
 	bool WriteSmall(uint32_t datasize, uint32_t bufferflag);
 	void XSCWrite(const char* path, bool CompressAndEncrypt = true);
@@ -635,8 +639,18 @@ class CompileGTAV : CompileBase
 public:
 	CompileGTAV(Script& data) : CompileBase(GTAVOpcodes, data, 0, 0) { }
 
-	void Compile(string outDirectory)override{
-
+	void Compile(string outDirectory) override
+	{
+		BuildTables();
+		switch (HLData->getBuildType())
+		{
+			case BT_GTAV:
+			XSCWrite((outDirectory + "\\" + HLData->getBuildFileName()).data(), true);
+			break;
+			default:
+			assert(false && "Incompatible build type for GTAV");
+			break;
+		}
 	}
 private:
 	const OpCodes GTAVOpcodes = { VO_Nop, VO_Add, VO_Sub, VO_Mult, VO_Div, VO_Mod, VO_Not, VO_Neg, VO_CmpEq, VO_CmpNe, VO_CmpGt, VO_CmpGe, VO_CmpLt, VO_CmpLe, VO_fAdd, VO_fSub, VO_fMult, VO_fDiv, VO_fMod, VO_fNeg, VO_fCmpEq, VO_fCmpNe, VO_fCmpGt, VO_fCmpGe, VO_fCmpLt, VO_fCmpLe, VO_vAdd, VO_vSub, VO_vMult, VO_vDiv, VO_vNeg, VO_And, VO_Or, VO_Xor, VO_ItoF, VO_FtoI, VO_FtoV, VO_PushB, VO_PushB2, VO_PushB3, VO_Push, VO_PushF, VO_Dup, VO_Drop, VO_CallNative, VO_Function, VO_Return, VO_pGet, VO_pSet, VO_pPeekSet, VO_ToStack, VO_FromStack, VO_GetArrayP1, VO_GetArray1, VO_SetArray1, VO_GetFrameP1, VO_GetFrame1, VO_SetFrame1, VO_GetStaticP1, VO_GetStatic1, VO_SetStatic1, VO_Add1, VO_Mult1, VO_GetImm1, VO_SetImm1, VO_PushS, VO_Add2, VO_Mult2, VO_GetImm2, VO_SetImm2, VO_GetArrayP2, VO_GetArray2, VO_SetArray2, VO_GetFrameP2, VO_GetFrame2, VO_SetFrame2, VO_GetStaticP2, VO_GetStatic2, VO_SetStatic2, VO_GetGlobalP2, VO_GetGlobal2, VO_SetGlobal2, VO_Jump, VO_JumpFalse, VO_JumpNE, VO_JumpEQ, VO_JumpLE, VO_JumpLT, VO_JumpGE, VO_JumpGT, VO_Call, VO_GetGlobalp3, VO_GetGlobal3, VO_SetGlobal3, VO_PushI24, VO_Switch, VO_PushString, VO_StrCopy, VO_ItoS, VO_StrAdd, VO_StrAddi, VO_Memcopy, VO_Catch, VO_Throw, VO_pCall, VO_Push_Neg1, VO_Push_0, VO_Push_1, VO_Push_2, VO_Push_3, VO_Push_4, VO_Push_5, VO_Push_6, VO_Push_7, VO_PushF_Neg1, VO_PushF_0, VO_PushF_1, VO_PushF_2, VO_PushF_3, VO_PushF_4, VO_PushF_5, VO_PushF_6, VO_PushF_7, VO_GetImmP, VO_GetImmP1, VO_GetImmP2, VO_GetHash };
@@ -644,9 +658,11 @@ private:
 	#pragma region Parsed_Data_Vars
 	vector<uint8_t> StringPageData;
 	unordered_map<string, uint32_t> StringPageDataIndexing;
+	uint32_t StringPageCount = 0;
 	#pragma endregion
 
 	#pragma region Parse_Functions
+	
 	const uint32_t AddStringToStringPage(const string str);
 	void fixFunctionCalls() override;
 	#pragma endregion
@@ -659,5 +675,13 @@ private:
 	void GetImmP() override { AddOpcode(GetImmP); };
 	void GetImm() override;
 	void SetImm() override;
+	#pragma endregion
+
+	#pragma region Write_Functions
+	void WriteHeader() override;
+	void WritePointers() override;
+	void Write16384StringPages();
+	void WriteFinalStringPage();
+	void XSCWrite(const char* path, bool CompressAndEncrypt = true);
 	#pragma endregion
 };

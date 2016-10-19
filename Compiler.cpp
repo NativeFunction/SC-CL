@@ -594,47 +594,6 @@ void CompileBase::WriteStatics()
 	}
 
 }
-void CompileBase::WriteHeader()
-{
-	headerLocation = BuildBuffer.size();
-	AddInt32toBuff(0xA8D74300);//Page Base
-	AddInt32toBuff(0); //Unk1 ptr
-	AddInt32toBuff(0); //codeBlocksListOffsetPtr
-	AddInt32toBuff(CodePageData.size());//code length
-	AddInt32toBuff(0);//script ParameterCount (this needs to be implemented)
-	AddInt32toBuff(HLData->getStaticSize());//statics count
-	AddInt32toBuff(0); //Statics offset
-	AddInt32toBuff(0x349D018A);//GlobalsSignature
-	AddInt32toBuff(NativeHashMap.size());//natives count
-	AddInt32toBuff(0); //natives offset
-	Pad();
-}
-void CompileBase::WritePointers()
-{
-	//write unk1
-
-	if (GetSpaceLeft(16384) < 4)
-		FillPageDynamic(16384);
-
-	SavedOffsets.Unk1 = BuildBuffer.size();
-	AddInt32toBuff(0);//unkPTRData
-	Pad();
-
-	uint64_t padcount = Utils::Math::CeilDivInt(CodePageCount * 4, 16);
-	for (uint64_t i = 0; i < padcount; i++)
-		ForcePad();
-
-	//Write code page pointers
-	if (GetSpaceLeft(16384) < CodePageCount * 4)
-		FillPageDynamic(16384);
-
-	SavedOffsets.CodeBlocks = BuildBuffer.size();
-
-	for (uint32_t i = 0; i < CodePageCount; i++)
-		AddInt32toBuff(0);
-
-	Pad();
-}
 #pragma endregion
 
 #pragma endregion
@@ -809,6 +768,46 @@ void CompileRDR::SetImm()
 #pragma endregion
 
 #pragma region Write_Functions
+void CompileRDR::WriteHeader()
+{
+	headerLocation = BuildBuffer.size();
+	AddInt32toBuff(0xA8D74300);//Page Base
+	AddInt32toBuff(0); //Unk1 ptr
+	AddInt32toBuff(0); //codeBlocksListOffsetPtr
+	AddInt32toBuff(CodePageData.size());//code length
+	AddInt32toBuff(0);//script ParameterCount (this needs to be implemented)
+	AddInt32toBuff(HLData->getStaticSize());//statics count
+	AddInt32toBuff(0); //Statics offset
+	AddInt32toBuff(0x349D018A);//GlobalsSignature
+	AddInt32toBuff(NativeHashMap.size());//natives count
+	AddInt32toBuff(0); //natives offset
+	Pad();
+}
+void CompileRDR::WritePointers()
+{
+	//write unk1
+
+	if (GetSpaceLeft(16384) < 4)
+		FillPageDynamic(16384);
+
+	SavedOffsets.Unk1 = BuildBuffer.size();
+	AddInt32toBuff(0);//unkPTRData
+	Pad();
+
+	uint64_t padcount = Utils::Math::CeilDivInt(CodePageCount * 4, 16);
+	for (uint64_t i = 0; i < padcount; i++)
+		ForcePad();
+
+	//Write code page pointers
+	if (GetSpaceLeft(16384) < CodePageCount * 4)
+		FillPageDynamic(16384);
+
+	SavedOffsets.CodeBlocks = BuildBuffer.size();
+	BuildBuffer.resize(BuildBuffer.size() + CodePageCount * 4, 0);
+
+
+	Pad();
+}
 bool CompileRDR::WriteNormal(uint32_t datasize, uint32_t bufferflag)
 {
 	if (datasize < bufferflag)
@@ -848,14 +847,9 @@ bool CompileRDR::WriteSmall(uint32_t datasize, uint32_t bufferflag)
 };
 void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 {
+	FilePadding = 0xCD;
 	ClearWriteVars();
 	CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
-
-
-	//0: Code blocks ptrs
-	//1: unk1 Ptr
-	//4: statics
-	//2: natives ptr
 
 	#pragma region Write_Pages_and_header
 
@@ -982,6 +976,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 }
 void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 {
+	FilePadding = 0xCD;
 	ClearWriteVars();
 	CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
 
@@ -1192,6 +1187,149 @@ void CompileGTAV::SetImm()
 		AddOpcode(Add);
 		AddOpcode(pSet);
 	}
+}
+#pragma endregion
+
+#pragma region Write_Functions
+void CompileGTAV::WriteHeader()
+{
+	headerLocation = BuildBuffer.size();
+
+	AddInt32toBuff(0xB43A4500);//page base
+	AddInt32toBuff(0); //Unk1 ptr
+	AddInt32toBuff(0); //codeBlocksListOffsetPtr
+	AddInt32toBuff(0x11CD39A2);//unk2
+	AddInt32toBuff(CodePageData.size());//code length
+	AddInt32toBuff(0);//script ParameterCount (this needs to be implemented)
+	AddInt32toBuff(HLData->getStaticSize());//statics count
+	AddInt32toBuff(0);//GlobalsSize
+	AddInt32toBuff(NativeHashMap.size());//natives count
+	AddInt32toBuff(0); //Statics offset
+	AddInt32toBuff(0); //Globals ptr, stay 0
+	AddInt32toBuff(0); //native offset
+	AddInt32toBuff(0);//Unk3
+	AddInt32toBuff(0);//Unk4
+	AddInt32toBuff(Utils::Hashing::Joaat(HLData->getScriptName()));
+	AddInt32toBuff(1);//Unk5 typically 1
+	AddInt32toBuff(0); //script name offset
+	AddInt32toBuff(0); //strings offset
+	AddInt32toBuff(StringPageData.size());
+	AddInt32toBuff(0);//Unk6
+
+	//no need to pad as its divisible by 16
+}
+void CompileGTAV::WritePointers()
+{
+	//Write script name
+	const uint32_t StringSize = HLData->getScriptName().size() + 1;
+	if (GetSpaceLeft(16384) < StringSize)
+		FillPageDynamic(16384);
+
+	SavedOffsets.ScriptName = BuildBuffer.size();
+
+	BuildBuffer.resize(BuildBuffer.size() + StringSize);
+	memcpy(BuildBuffer.data() + BuildBuffer.size() - StringSize, HLData->getScriptName().data(), StringSize);
+	Pad();
+
+	//Write code page pointers
+	if (GetSpaceLeft(16384) < CodePageCount * 4)
+		FillPageDynamic(16384);
+
+	SavedOffsets.CodeBlocks = BuildBuffer.size();
+	BuildBuffer.resize(BuildBuffer.size() + CodePageCount * 4, 0);
+	Pad();
+
+	//Write string page pointers
+	if (GetSpaceLeft(16384) < StringPageCount * 4)
+		FillPageDynamic(16384);
+
+	SavedOffsets.StringBlocks = BuildBuffer.size();
+	BuildBuffer.resize(BuildBuffer.size() + StringPageCount * 4, 0);
+	Pad();
+
+	//write unk1
+	if (GetSpaceLeft(16384) < 16)
+		FillPageDynamic(16384);
+	SavedOffsets.Unk1 = BuildBuffer.size();
+	BuildBuffer.resize(BuildBuffer.size() + 16);
+	*(BuildBuffer.data() + BuildBuffer.size() - 16 + 4) = 1;
+
+	FillPageDynamic(16384 / 2);
+}
+void CompileGTAV::Write16384StringPages()
+{
+	SavedOffsets.StringPagePointers.resize(StringPageCount);
+	for (uint32_t i = 0; i < StringPageCount - 1; i++)
+	{
+		if (GetSpaceLeft(16384) < 16384)
+			FillPageDynamic(16384);
+
+		SavedOffsets.StringPagePointers[i] = BuildBuffer.size();
+
+		BuildBuffer.resize(BuildBuffer.size() + 16384);
+		memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, StringPageData.data() + i * 16384, 16384);
+
+		Pad();
+	}
+}
+void CompileGTAV::WriteFinalStringPage()
+{
+	const uint32_t LastStringPageSize = StringPageData.size() % 16384;
+	SavedOffsets.StringPagePointers[StringPageCount - 1] = BuildBuffer.size();
+	BuildBuffer.resize(BuildBuffer.size() + LastStringPageSize);
+	memcpy(BuildBuffer.data() + BuildBuffer.size() - LastStringPageSize, StringPageData.data() + StringPageData.size() - LastStringPageSize, LastStringPageSize);
+	Pad();
+}
+void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
+{
+	FilePadding = 0;
+	ClearWriteVars();
+	CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
+	StringPageCount = Utils::Math::CeilDivInt(StringPageData.size(), 16384);
+
+	WriteHeader();
+	Write16384CodePages();
+	WriteFinalCodePage();
+	Write16384StringPages();
+	WriteFinalStringPage();
+	WriteNatives();
+	WriteStatics();
+	WritePointers();
+
+	#pragma region Fix_header_and_other_pointers
+	ChangeInt32inBuff(IntToPointerInt(SavedOffsets.Unk1), headerLocation + 4);
+	ChangeInt32inBuff(IntToPointerInt(SavedOffsets.CodeBlocks), headerLocation + 8);
+	ChangeInt32inBuff(IntToPointerInt(SavedOffsets.Statics), headerLocation + 36);
+	ChangeInt32inBuff(IntToPointerInt(SavedOffsets.Natives), headerLocation + 44);
+	ChangeInt32inBuff(IntToPointerInt(SavedOffsets.ScriptName), headerLocation + 64);
+	ChangeInt32inBuff(IntToPointerInt(SavedOffsets.StringBlocks), headerLocation + 68);
+
+	for (uint32_t i = 0; i < SavedOffsets.CodePagePointers.size(); i++)
+		ChangeInt32inBuff(IntToPointerInt(SavedOffsets.CodePagePointers[i]), SavedOffsets.CodeBlocks + (i * 4));
+	for (uint32_t i = 0; i < SavedOffsets.StringPagePointers.size(); i++)
+		ChangeInt32inBuff(IntToPointerInt(SavedOffsets.StringPagePointers[i]), SavedOffsets.StringBlocks + (i * 4));
+	#pragma endregion
+
+	FILE* file = fopen(path, "wb");
+
+	#pragma region Write_File
+	if (AddRsc7Header)
+	{
+		vector<uint32_t> rsc7 =
+		{
+			SwapEndian(0x52534337u),
+			SwapEndian(0x00000009u),
+			SwapEndian(0u),//GetFlagFromSize(BuildBuffer.size(), 16384 / 2)
+			SwapEndian(0x90000000u)
+		};
+
+		fwrite(rsc7.data(), 1, 16, file);
+	}
+
+	fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
+	fclose(file);
+	#pragma endregion
+
 }
 #pragma endregion
 
