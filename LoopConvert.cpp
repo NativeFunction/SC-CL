@@ -2001,7 +2001,7 @@ public:
 				parseStatement(Then, breakLoc, continueLoc);
 				LocalVariables.removeLevel();
 				bool ifEndRet = scriptData.getCurrentFunction()->endsWithReturn() || (scriptData.getInlineCount() && scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()));
-				AddJumpInlineCheckConditionallyStr(!ifEndRet, Jump, IfLocEnd);//if the last instruction is a return, no point adding a jump
+				AddJumpInlineCheckConditionallyStr(!ifEndRet && Else, Jump, IfLocEnd);//if the last instruction is a return, no point adding a jump
 
 				if (Else) {
 					AddJumpInlineCheck(Label, Else->getLocStart().getRawEncoding());
@@ -4803,7 +4803,7 @@ public:
 				func->setStackSize(LocalVariables.maxIndex);
 			}
 			func->setProcessed();
-			func->controlFlowConfusion();
+			func->controlFlowConfusion(5, 1);
 			scriptData.clearCurrentFunction();
 		}
 		else

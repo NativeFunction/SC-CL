@@ -1118,8 +1118,11 @@ int FunctionData::getSizeEstimate(int incDecl) const
 	return size;
 }
 
-void FunctionData::controlFlowConfusion()
+void FunctionData::controlFlowConfusion(int maxBlockSize, int minBlockSize, bool keepEndReturn)
 {
+	int randMod = maxBlockSize - minBlockSize;
+	assert(maxBlockSize > minBlockSize && "max block size must be greater than min block size");
+	assert(minBlockSize > 0 && "min block size must be positive");
 	if (getSizeEstimate(0) > 30000)
 	{
 		return;//jumps may be screwed messed up if past 32768 size limit
@@ -1127,29 +1130,34 @@ void FunctionData::controlFlowConfusion()
 	srand(time(NULL));
 	vector<vector<Opcode*>> InstructionBuilder;
 	int labelCounter = 0;
-	for(int i = 0;i < Instructions.size();)
+	int maxSize = Instructions.size();
+	for(int i = 0;i < maxSize;)
 	{
 		vector<Opcode*> block;
 		Opcode* label = new Opcode(OK_Label);
 		label->setString("__builtin__controlFlowObs_" + to_string(labelCounter++));
 		block.push_back(label);
-		int bSize = (rand() % 5) + 1;
-		if (i + bSize >= Instructions.size())
+		int bSize = (rand() % randMod) + minBlockSize;
+		if (i + bSize >= maxSize)
 		{
-			if (i+bSize > Instructions.size())
+			if (i+bSize > maxSize)
 			{
-				bSize = Instructions.size() - i;
+				bSize = maxSize - i;
 			}
 			block.resize(bSize + 1);
 			memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
 		}
 		else
 		{
-			block.resize(bSize + 2);
+			block.reserve(bSize + 2);
+			block.resize(bSize + 1);
 			memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
-			Opcode* jumpNext = new Opcode(OK_Jump);
-			jumpNext->setString("__builtin__controlFlowObs_" + to_string(labelCounter));
-			block.back() = jumpNext;
+			if (block[bSize]->getKind() != OK_Jump)
+			{
+				Opcode* jumpNext = new Opcode(OK_Jump);
+				jumpNext->setString("__builtin__controlFlowObs_" + to_string(labelCounter));
+				block.push_back(jumpNext);
+			}
 		}
 		InstructionBuilder.push_back(block);
 		i += bSize;
@@ -1161,7 +1169,7 @@ void FunctionData::controlFlowConfusion()
 	{
 		randomiseIndexes.push_back(i);
 	}
-	random_shuffle(randomiseIndexes.begin(), randomiseIndexes.end());
+	random_shuffle(randomiseIndexes.begin(), (keepEndReturn ? randomiseIndexes.end() - 1 : randomiseIndexes.end()));
 	if (randomiseIndexes[0] > 0)
 	{
 		Opcode* jumpInit = new Opcode(OK_Jump);
@@ -1187,7 +1195,6 @@ void FunctionData::controlFlowConfusion()
 		Instructions.resize(iSize + size);
 		memcpy(&Instructions[iSize], &InstructionBuilder[randomiseIndexes[i]][0], size * sizeof(Opcode*));
 	}
-
 }
 
 void FunctionData::addOpAdd()

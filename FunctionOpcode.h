@@ -379,7 +379,7 @@ public:
 	bool isBuiltIn()const{ return _isBuiltIn; }
 	void setBuiltIn(){ _isBuiltIn = true; }
 
-	void controlFlowConfusion();
+	void controlFlowConfusion(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true);
 
 #pragma region CreateOpcodes
 	void addOpNop(){ Instructions.push_back(new Opcode(OK_Nop)); }
