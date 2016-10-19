@@ -999,20 +999,21 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 		else if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize))
 			Throw("SCO Encryption Failed");
 
-		vector<uint32_t> SCR_Header(12, 0);
-		SCR_Header[0] = SwapEndian(0x53435202);//SCR.
-		SCR_Header[1] = SwapEndian(0x349D018A);//GlobalsSignature
-		SCR_Header[2] = SwapEndian(CompressedSize);
-		SCR_Header[3] = SwapEndian(-3);//-3 is_crypt?
-		SCR_Header[4] = SwapEndian(BuildBuffer.size());
-		SCR_Header[5] = SwapEndian(HLData->getStaticSize());
-		SCR_Header[6] = SwapEndian(0);//GlobalsCount
-		SCR_Header[7] = SwapEndian(0);//ParameterCount
-		SCR_Header[8] = SwapEndian(NativeHashMap.size());
-		SCR_Header[9] = SwapEndian(0);//unk36
-		SCR_Header[10] = SwapEndian(0);//unk40
-		SCR_Header[11] = SwapEndian(0);//unk44
-
+		vector<uint32_t> SCR_Header//size: 12
+		{ 
+		  SwapEndian(0x53435202u)//SCR.
+		, SwapEndian(0x349D018Au)//GlobalsSignature
+		, SwapEndian(CompressedSize)
+		, SwapEndian(-3u)//-3 is_crypt?
+		, SwapEndian(BuildBuffer.size())
+		, SwapEndian(HLData->getStaticSize())
+		, SwapEndian(0u)//GlobalsCount
+		, SwapEndian(0u)//ParameterCount
+		, SwapEndian(NativeHashMap.size())
+		, SwapEndian(0u)//unk36
+		, SwapEndian(0u)//unk40
+		, SwapEndian(0u)//unk44
+		};
 
 		FILE* file = fopen(path, "wb");
 		if (file != NULL)
