@@ -2172,7 +2172,7 @@ public:
 				for (uint32_t i = 0; i < currFunction->getNumParams(); i++) {
 					paramSize += getSizeFromBytes(getSizeOfType(currFunction->getParamDecl(i)->getType().getTypePtr()));
 				}
-				AddInstruction(Return, paramSize + (isa<CXXMethodDecl>(currFunction) ? 1 : 0), getSizeFromBytes(size));
+				AddInstruction(Return);
 			}
 			else
 			{
@@ -4765,13 +4765,12 @@ public:
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
 			if (isa<CXXMethodDecl>(f)) paramSize++;
 			
-			auto func = scriptData.createFunction(getNameForFunc(f), paramSize, true);
+			auto func = scriptData.createFunction(getNameForFunc(f), paramSize, getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), true);
 			//string name = dumpName(cast<NamedDecl>(f));
 
 			if (f->isMain())
 			{
-				scriptData.getEntryFunction()->addUsedFunc(func);
-				MainRets = getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr()));
+				scriptData.setMainFunction(func);
 			}
 
 			currFunction = f;
@@ -4785,14 +4784,13 @@ public:
 			LocalVariables.addDecl("", 2);//base pointer and return address
 			parseStatement(FuncBody);
 
-			if (f->getReturnType().getTypePtr()->isVoidType()) {
-				if (!func->endsWithReturn())
-					AddInstruction(Return, paramSize, 0);
+			if (f->getReturnType().getTypePtr()->isVoidType() && !func->endsWithReturn()) {
+					AddInstruction(Return);
 			}
 			else if (f->hasImplicitReturnZero() && !func->endsWithReturn())
 			{
 				AddInstruction(PushInt, 0);
-				AddInstruction(Return, paramSize, 1);
+				AddInstruction(Return);
 			}
 
 			//Throw(f->getNameAsString() + ": not all control paths return a value", rewriter, f->getLocEnd());
@@ -4805,6 +4803,7 @@ public:
 				func->setStackSize(LocalVariables.maxIndex);
 			}
 			func->setProcessed();
+			func->controlFlowConfusion();
 			scriptData.clearCurrentFunction();
 		}
 		else
@@ -4817,7 +4816,7 @@ public:
 				int32_t paramSize = 0;
 				for (uint32_t i = 0; i<f->getNumParams(); i++)
 					paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-				scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0));
+				scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())));
 			}
 		}
 
@@ -5021,7 +5020,12 @@ public:
 
 			out << endl << endl;
 			out << ":" << getLocStart(CS) << endl << ":" << CS->getDeclName().getAsString() << endl << "Function " << CS->getNumParams() + 1 << "//" << getNameForFunc(CS) << endl;
-			auto ctor = scriptData.createFunction("@" + CS->getDeclName().getAsString(), CS->getNumParams() + 1, true);
+			uint32_t paramSize = 1;//class
+			for (int i = 0; i < CS->getNumParams();i++)
+			{
+				paramSize += getSizeFromBytes(getSizeOfType(CS->getParamDecl(i)->getType().getTypePtr()));
+			}
+			auto ctor = scriptData.createFunction("@" + CS->getDeclName().getAsString(), paramSize, getSizeFromBytes(getSizeOfType(CS->getReturnType().getTypePtr())), true);
 			currFunction = CS;
 
 			for (auto *PI : CS->params()) {
@@ -5051,13 +5055,9 @@ public:
 
 			parseStatement(CS->getBody());
 
-			int32_t paramSize = 0;
-			for (uint32_t i = 0; i < currFunction->getNumParams(); i++) {
-				paramSize += getSizeFromBytes(getSizeOfType(currFunction->getParamDecl(i)->getType().getTypePtr()));
-			}
 			if (!scriptData.getCurrentFunction()->endsWithReturn())
 			{
-				AddInstruction(Return, paramSize + (isa<CXXMethodDecl>(currFunction)), 0);
+				AddInstruction(Return);
 			}
 			ctor->setProcessed();
 
@@ -5078,7 +5078,6 @@ public:
 	#pragma endregion
 
 public:
-	int32_t MainRets = -1;
 	set<std::string> FindBuffer;
 	Rewriter &TheRewriter;
 	ASTContext *context;
@@ -5637,7 +5636,7 @@ private:
 #pragma region HandleASTConsumer
 class MyASTConsumer : public ASTConsumer {
 public:
-	MyASTConsumer(Rewriter &R, ASTContext *context, DiagnosticsEngine *diagnostics, Script& scriptData, string directory) : Visitor(R, context, scriptData), GlobalsVisitor(R, context, scriptData), diagnostics(diagnostics), scriptData(scriptData), outDir(directory) {}
+	MyASTConsumer(Rewriter &R, ASTContext *context, Script& scriptData) : Visitor(R, context, scriptData), GlobalsVisitor(R, context, scriptData), scriptData(scriptData) {}
 
 	// Override the method that gets called for each parsed top-level
 	// declaration.
@@ -5657,34 +5656,34 @@ public:
 		return true;
 	}
 	~MyASTConsumer() {
+	}
 
+private:
+	MyASTVisitor Visitor;
+	GlobalsVisitor GlobalsVisitor;
+	Script &scriptData;
+};
+#pragma endregion
+
+#pragma region CreateASTConsumer
+class MyFrontendAction : public ASTFrontendAction {
+public:
+	MyFrontendAction() {}
+	~MyFrontendAction(){ if (scriptData){ delete scriptData; } }
+	void EndSourceFileAction() override {
 		if (diagnostics->getClient()->getNumErrors())
 		{
 			return;
 		}
-		scriptData.getEntryFunction()->setProcessed();
-		scriptData.getEntryFunction()->setUsed();//build up function usage tree
-
-		if (Visitor.MainRets != -1)
-		{
-			scriptData.getEntryFunction()->addOpCall("main");
-			for (int i = 0; i < Visitor.MainRets; i++)
-			{
-				scriptData.getEntryFunction()->addOpDrop();
-			}
-			scriptData.getEntryFunction()->addOpReturn(0, 0);
-		}
-		else
-			Throw("Function \"main\" was not found");
-
-		FILE* file = fopen((outDir + "\\" + scriptData.getASMFileName()).data(), "wb");
+		scriptData->finaliseEntryFunction();
+		FILE* file = fopen((outDir + "\\" + scriptData->getASMFileName()).data(), "wb");
 		if (file != NULL)
 		{
-			string StaticData = scriptData.getStaticsAsString();
+			string StaticData = scriptData->getStaticsAsString();
 			fwrite(StaticData.data(), 1, StaticData.size(), file);
-			for (uint32_t i = 0, max = scriptData.getFunctionCount(); i <max; i++)
+			for (uint32_t i = 0, max = scriptData->getFunctionCount(); i <max; i++)
 			{
-				auto func = scriptData.getFunctionFromIndex(i);
+				auto func = scriptData->getFunctionFromIndex(i);
 				if (func->IsUsed())
 				{
 					assert(func->isProcessed() && "Function Prototype Implementation missing on referenced function");
@@ -5696,39 +5695,13 @@ public:
 		}
 		else Throw("Output File Could Not Be Opened");
 
-		CompileRDR c(scriptData);
+		CompileRDR c(*scriptData);
 		c.Compile(outDir);
-
-
 	}
-
-private:
-	MyASTVisitor Visitor;
-	GlobalsVisitor GlobalsVisitor;
-	DiagnosticsEngine *diagnostics;
-	Script &scriptData;
-	string outDir;
-};
-#pragma endregion
-
-#pragma region CreateASTConsumer
-class MyFrontendAction : public ASTFrontendAction {
-public:
-	MyFrontendAction() {}
-	~MyFrontendAction(){ if (scriptData){ delete scriptData; } }
-	void EndSourceFileAction() override {
-		//emit source
-
-		//SourceManager &SM = TheRewriter.getSourceMgr();
-		//llvm::errs() << "** EndSourceFileAction for: " << SM.getFileEntryForID(SM.getMainFileID())->getName() << "\n";
-
-		// Now emit the rewritten buffer.
-		//TheRewriter.getEditBuffer(SM.getMainFileID()).write(llvm::outs());
-	}
-	string preDefines;
+	
 	void AddDefines(Preprocessor &PP)
 	{
-		preDefines = PP.getPredefines();
+		string preDefines = PP.getPredefines();
 		switch (scriptData->getBuildType())
 		{
 			case BT_GTAIV://it would be cool to support gta 4 at some point but its not a priority
@@ -5774,7 +5747,7 @@ public:
 	
 	
 	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
-
+		diagnostics = &CI.getDiagnostics();
 		llvm::errs() << "Compiling: " << file << "\n";
 		TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
 		rewriter = TheRewriter;
@@ -5782,14 +5755,17 @@ public:
 		string fileName(string(SM.getFileEntryForID(SM.getMainFileID())->getName()));
 		fileName.erase(fileName.find_last_of(".c") - 1);
 		scriptData = new Script(fileName.substr(fileName.find_last_of('\\') + 1), BT_RDR_XSC, P_XBOX);
-		ModifyClangWarnings(CI.getDiagnostics());
+		ModifyClangWarnings(*diagnostics);
 		AddDefines(CI.getPreprocessor());
-		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), &CI.getDiagnostics(), *scriptData, fileName.substr(0, fileName.find_last_of('\\')));
+		outDir = fileName.substr(0, fileName.find_last_of('\\'));
+		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), *scriptData);
 	}
 
 private:
+	DiagnosticsEngine* diagnostics = NULL;
 	Script *scriptData = NULL;
 	Rewriter TheRewriter;
+	string outDir;
 };
 #pragma endregion
 

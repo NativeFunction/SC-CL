@@ -333,7 +333,8 @@ class FunctionData
 	bool tryPop2Floats(float& f1, float& f2);
 	string name;
 	uint32_t hash;
-	uint16_t pcount;
+	uint8_t pcount;
+	uint8_t rcount;
 	uint16_t stackSize = 2;
 	bool used = false;
 	bool _processed = false;
@@ -342,7 +343,7 @@ class FunctionData
 	vector<FunctionData *> usedFuncs;
 public:
 	
-	FunctionData(string name, int pcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount)
+	FunctionData(string name, uint8_t pcount, uint8_t rcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount), rcount(rcount)
 	{
 	}
 	~FunctionData();
@@ -351,11 +352,9 @@ public:
 	bool endsWithReturn() const{ return Instructions.size() && Instructions.back()->getKind() == OK_Return; }//this will get confused by if else having a return, but it will just return false when there actually is a return so no harm
 	bool endsWithInlineReturn(string position) const;
 	void RemoveLast(){ Instructions.pop_back(); }
-	uint16_t getPCount()const { return pcount; }
+	uint8_t getParamCount()const { return pcount; }
+	uint8_t getReturnCount()const{ return rcount; }
 	uint16_t getStackSize()const { return stackSize; }
-	void setPCount(uint16_t newSize){
-		pcount = newSize;
-	}
 	void setStackSize(uint16_t newSize){
 		stackSize = newSize;
 	}
@@ -379,6 +378,8 @@ public:
 	void setProcessed(){ _processed = true; }
 	bool isBuiltIn()const{ return _isBuiltIn; }
 	void setBuiltIn(){ _isBuiltIn = true; }
+
+	void controlFlowConfusion();
 
 #pragma region CreateOpcodes
 	void addOpNop(){ Instructions.push_back(new Opcode(OK_Nop)); }
@@ -459,11 +460,11 @@ public:
 	void addOpNative(string name, uint8_t pCount, uint8_t rCount);
 	void addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount);
 	void addOpNative(string name, uint64_t hash, uint8_t pCount, uint8_t rCount);
-	void addOpReturn(uint8_t pCount, uint8_t rCount)
+	void addOpReturn()
 	{
 		Opcode* op = new Opcode(OK_Return);
-		op->setByte(pCount, 0);
-		op->setByte(rCount, 1);
+		op->setByte(pcount, 0);
+		op->setByte(rcount, 1);
 		Instructions.push_back(op);
 	}
 	void addOpPGet();

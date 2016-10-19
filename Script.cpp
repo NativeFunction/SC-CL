@@ -1,20 +1,20 @@
 #include "Script.h"
 #include "Utils.h"
 
-Script::Script(string scriptName, BuildType buildType, Platform platform) : entryFunction(new FunctionData("@__builtin__entryPoint", 0)), indirectGoTo(new FunctionData("@__buiiltin__indirectGoTo", 1)), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform)
+Script::Script(string scriptName, BuildType buildType, Platform platform) : entryFunction(new FunctionData("@__builtin__entryPoint", 0, 0)), indirectGoTo(new FunctionData("@__buiiltin__indirectGoTo", 1, 0)), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform)
 {
 	functions.push_back(entryFunction);
 	functions.push_back(indirectGoTo);
 	entryFunction->setBuiltIn();
 	indirectGoTo->addOpGetFrame(0);
 	indirectGoTo->addOpSetFrame(1);
-	indirectGoTo->addOpReturn(1, 0);
+	indirectGoTo->addOpReturn();
 	indirectGoTo->setStackSize(3);
 	indirectGoTo->setProcessed();
 	indirectGoTo->setBuiltIn();
 }
 
-FunctionData * Script::createFunction(string name, int paramCount, bool makeCurrent)
+FunctionData * Script::createFunction(string name, int paramCount, int returnCount, bool makeCurrent)
 {
 	uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
 	for (int i = 0, max = getFunctionCount(); i<max; i++)
@@ -30,7 +30,7 @@ FunctionData * Script::createFunction(string name, int paramCount, bool makeCurr
 			return func;
 		}
 	}
-	FunctionData *newFunc = new FunctionData(name, paramCount);
+	FunctionData *newFunc = new FunctionData(name, paramCount, returnCount);
 	functions.push_back(newFunc);
 	if (makeCurrent)
 	{
@@ -83,6 +83,27 @@ bool Script::addUsedFuncToEntry(string name)
 	}
 	assert(false && "Function doesnt exist");
 	return false;
+}
+
+void Script::finaliseEntryFunction()
+{
+	if (mainFunction)
+	{
+		entryFunction->addOpCall("main");
+		for (int i = 0; i < mainFunction->getReturnCount(); i++)
+		{
+			entryFunction->addOpDrop();
+			entryFunction->pushComment("dropping main returns");
+		}
+		entryFunction->addOpReturn();
+		entryFunction->addUsedFunc(mainFunction);
+		entryFunction->setProcessed();
+		entryFunction->setUsed();
+	}
+	else
+	{
+		Utils::System::Throw("Main Function not found");
+	}
 }
 
 bool Script::isFunctionInInlineStack(string name) const

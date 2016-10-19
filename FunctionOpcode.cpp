@@ -1,6 +1,8 @@
 #include "FunctionOpcode.h"
 #include <cassert>
 #include <sstream>
+#include <ctime>
+#include <algorithm>
 
 void Opcode::setString(string str)
 {
@@ -1073,7 +1075,7 @@ void FunctionData::setUsed()
 string FunctionData::toString() const
 {
 	stringstream stream;
-	stream << "\r\n:" << name.substr(1) << "//>\r\nFunction " << pcount << " " << stackSize << "\r\n";
+	stream << "\r\n:" << name.substr(1) << "//>\r\nFunction " << (int)pcount << " " << (int)stackSize << "\r\n";
 	for(size_t i = 0; i < Instructions.size(); i++)
 	{
 		stream << *Instructions[i] << "\r\n";
@@ -1114,6 +1116,78 @@ int FunctionData::getSizeEstimate(int incDecl) const
 		size += Instructions[i]->getSizeEstimate();
 	}
 	return size;
+}
+
+void FunctionData::controlFlowConfusion()
+{
+	if (getSizeEstimate(0) > 30000)
+	{
+		return;//jumps may be screwed messed up if past 32768 size limit
+	}
+	srand(time(NULL));
+	vector<vector<Opcode*>> InstructionBuilder;
+	int labelCounter = 0;
+	for(int i = 0;i < Instructions.size();)
+	{
+		vector<Opcode*> block;
+		Opcode* label = new Opcode(OK_Label);
+		label->setString("__builtin__controlFlowObs_" + to_string(labelCounter++));
+		block.push_back(label);
+		int bSize = (rand() % 5) + 1;
+		if (i + bSize >= Instructions.size())
+		{
+			if (i+bSize > Instructions.size())
+			{
+				bSize = Instructions.size() - i;
+			}
+			block.resize(bSize + 1);
+			memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
+		}
+		else
+		{
+			block.resize(bSize + 2);
+			memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
+			Opcode* jumpNext = new Opcode(OK_Jump);
+			jumpNext->setString("__builtin__controlFlowObs_" + to_string(labelCounter));
+			block.back() = jumpNext;
+		}
+		InstructionBuilder.push_back(block);
+		i += bSize;
+	}
+	Instructions.clear();
+	
+	vector<size_t> randomiseIndexes;
+	for (size_t i = 0; i<InstructionBuilder.size();i++)
+	{
+		randomiseIndexes.push_back(i);
+	}
+	random_shuffle(randomiseIndexes.begin(), randomiseIndexes.end());
+	if (randomiseIndexes[0] > 0)
+	{
+		Opcode* jumpInit = new Opcode(OK_Jump);
+		jumpInit->setString("__builtin__controlFlowObs_0");
+		Instructions.push_back(jumpInit);
+	}
+	else
+	{
+		//pop or nop front item
+	}
+	for(int i = 0;i<randomiseIndexes.size();i++)
+	{
+		if (i > 0)
+		{
+			if (randomiseIndexes[i] == randomiseIndexes[i-1]+1)
+			{
+				delete Instructions.back();
+				Instructions.pop_back();
+			}
+		}
+		size_t size = InstructionBuilder[randomiseIndexes[i]].size();
+		size_t iSize = Instructions.size();
+		Instructions.resize(iSize + size);
+		memcpy(&Instructions[iSize], &InstructionBuilder[randomiseIndexes[i]][0], size * sizeof(Opcode*));
+	}
+
 }
 
 void FunctionData::addOpAdd()
@@ -2030,7 +2104,7 @@ void FunctionData::addOpGetHash()
 
 ostream & operator<<(ostream & stream, const FunctionData & fdata)
 {
-	stream << "\r\n:" << fdata.name.substr(1) << "//>\r\nFunction " << fdata.pcount << " " << fdata.stackSize << "\r\n";
+	stream << "\r\n:" << fdata.name.substr(1) << "//>\r\nFunction " << (int)fdata.pcount << " " << (int)fdata.stackSize << "\r\n";
 	for(size_t i = 0; i < fdata.Instructions.size(); i++)
 	{
 		stream << *fdata.Instructions[i] << "\r\n";
