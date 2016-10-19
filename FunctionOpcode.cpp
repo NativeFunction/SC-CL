@@ -400,7 +400,7 @@ int Opcode::getSizeEstimate() const
 string Opcode::toString() const
 {
 #define Check12Op(opcode){uint16_t value = getUShort(0);current = (value > 0xFF ? #opcode "2 " :  #opcode "1 ") + to_string(value); }
-#define Check23Op(opcode){int value = getInt();assert(value < 0 && "value cannot be negative"); current = (value > 0xFFFF ? #opcode "3 " :  #opcode "2 ") + to_string(value); }
+#define Check23Op(opcode){int value = getInt();assert(value >= 0 && "value cannot be negative"); current = (value > 0xFFFF ? #opcode "3 " :  #opcode "2 ") + to_string(value); }
 #define PrintJump(cond){current = "Jump"#cond " @" + getString();}
 	string current;
 	switch(getKind())

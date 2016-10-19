@@ -341,6 +341,7 @@ class FunctionData
 	bool _isBuiltIn = false;
 	vector<Opcode *> Instructions;
 	vector<FunctionData *> usedFuncs;
+	bool allowUnsafe = false;
 public:
 	
 	FunctionData(string name, uint8_t pcount, uint8_t rcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount), rcount(rcount)
@@ -380,6 +381,9 @@ public:
 	void setBuiltIn(){ _isBuiltIn = true; }
 
 	void controlFlowConfusion(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true);
+
+	void setUnsafe(){ allowUnsafe = true; }
+	bool isUnsafe()const{ return allowUnsafe; }
 
 #pragma region CreateOpcodes
 	void addOpNop(){ Instructions.push_back(new Opcode(OK_Nop)); }

@@ -132,7 +132,7 @@ bool Script::addFunctionInline(string name, string returnLoc)
 {
 	if (isFunctionInInlineStack(name))
 		return false;
-	inlineStack.push_back({ Utils::Hashing::Joaat(name.c_str()) , name, getInlineJumpLabelAppend() + "_" + returnLoc });
+	inlineStack.push_back({ Utils::Hashing::Joaat(name.c_str()) , name, getInlineJumpLabelAppend() + "_" + returnLoc, getFunctionFromName(name)->isUnsafe() });
 	return true;
 }
 
@@ -140,7 +140,7 @@ bool Script::addFunctionInline(const FunctionData * fData, string returnLoc)
 {
 	if (isFunctionInInlineStack(fData))
 		return false;
-	inlineStack.push_back({ fData->getHash() , fData->getName(), getInlineJumpLabelAppend() + "_" + returnLoc });
+	inlineStack.push_back({ fData->getHash() , fData->getName(), getInlineJumpLabelAppend() + "_" + returnLoc, fData->isUnsafe() });
 	return true;
 }
 void Script::removeFunctionInline(string name)
@@ -155,6 +155,15 @@ void Script::removeFunctionInline(const FunctionData *fData)
 	assert(inlineStack.size() && "Empty Inline stack");
 	assert(inlineStack.back().name == fData->getName() && "Function isnt at top of Inline Stack");
 	inlineStack.pop_back();
+}
+
+bool Script::isUnsafeContext() const
+{
+	if (inlineStack.size())
+	{
+		return inlineStack.back().unsafe;
+	}
+	return currentFunc->isUnsafe();
 }
 
 string Script::getStaticsAsString()
@@ -196,7 +205,17 @@ string Script::getPlatformAbv() const
 	Utils::System::Throw("No platform selected");
 	return 0;
 }
-
+string Script::getPlatformAbvUpper() const
+{
+	switch (getBuildPlatform())
+	{
+		case P_XBOX: return "X";
+		case P_PS3: return "C";
+		case P_PC: return getBuildType() == BT_GTAIV ? "W" : "Y";
+	}
+	Utils::System::Throw("No platform selected");
+	return 0;
+}
 string Script::getBuildTypeExt() const
 {
 	switch (getBuildType())

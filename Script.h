@@ -27,7 +27,7 @@ class Script
 	FunctionData *currentFunc;
 	vector<int32_t> staticTable;
 	vector<uint32_t> staticTableShortIndexes;//endian for printing has to be swapped. however for shorts we have to Flip2BytesIn4
-	struct InlineData { uint32_t hash; string name; string inlineLblAppend; };
+	struct InlineData { uint32_t hash; string name; string inlineLblAppend; bool unsafe; };
 	vector<InlineData> inlineStack;
 	int staticCount = 0;
 	BuildType _bType;
@@ -68,6 +68,8 @@ public:
 
 	void removeFunctionInline(string name);
 	void removeFunctionInline(const FunctionData *fData);
+
+	bool isUnsafeContext()const;
 
 	void addStaticDecl(const uint32_t size = 1) 
 	{ 
@@ -128,6 +130,8 @@ public:
 	Platform getBuildPlatform()const{ return _platform; }
 
 	string getPlatformAbv()const;
+
+	string getPlatformAbvUpper()const;
 
 	string getBuildTypeExt()const;
 
