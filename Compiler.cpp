@@ -999,7 +999,7 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 		else if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize))
 			Throw("SCO Encryption Failed");
 
-		vector<uint32_t> SCR_Header//size: 12
+		vector<uint32_t> SCR_Header = //size: 12
 		{ 
 		  SwapEndian(0x53435202u)//SCR.
 		, SwapEndian(0x349D018Au)//GlobalsSignature
