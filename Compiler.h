@@ -236,13 +236,18 @@ protected:
 		const uint32_t JumpLocation;
 		const JumpInstructionType InstructionType;
 		const string Label;
-	}JumpData;
+	} JumpData;
 	typedef struct
 	{
 		const uint32_t CallLocation;
 		const CallInstructionType InstructionType;
 		const string FuncName;
-	}CallData;
+	} CallData;
+	typedef struct 
+	{
+		int32_t CodeBlocks, Unk1, Statics, Natives;
+		vector<uint32_t> CodePagePointers;
+	} PHO;//placeHolderOffsets
 	#pragma endregion
 
 	#pragma region Parsed_Data_Vars
@@ -260,6 +265,16 @@ protected:
 	uint32_t FunctionCount = 0;
 	uint32_t InstructionCount = 0;
 	#pragma endregion
+
+	#pragma region Write_Data_Vars
+	
+	PHO SavedOffsets;
+	int32_t headerLocation = 0;
+	uint32_t headerFlag = 0;
+	uint32_t CodePageCount = 0;
+	vector<uint8_t> BuildBuffer;
+	#pragma endregion
+
 
 	#define DATA HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)
 	#define AddOpcode(op) AddInt8(BaseOpcodes->##op);
@@ -429,6 +444,86 @@ protected:
 
 	#pragma region Write_Functions
 
+	void ClearWriteVars()
+	{
+		SavedOffsets = {};
+		headerLocation = 0;
+		headerFlag = 0;
+		CodePageCount = 0;
+		BuildBuffer.clear();
+	}
+	void AddInt32toBuff(int32_t value)
+	{
+		BuildBuffer.resize(BuildBuffer.size() + 4, 0);
+		*((int32_t*)(BuildBuffer.data() + BuildBuffer.size()) - 1) = Utils::Bitwise::SwapEndian(value);
+	}
+	void ChangeInt32inBuff(int32_t value, uint32_t index)
+	{
+		*(int32_t*)(BuildBuffer.data() + index) = Utils::Bitwise::SwapEndian(value);
+	}
+	uint32_t GetSpaceLeft(uint32_t size)
+	{
+		const uint32_t rem = size - (BuildBuffer.size() % size);
+		return rem == 0 ? size : rem;
+	}
+	void FillPageNops()
+	{
+		BuildBuffer.resize(BuildBuffer.size() + GetSpaceLeft(16384), 0);
+	}
+	void FillPageDynamic(uint32_t amount)
+	{
+		BuildBuffer.resize(BuildBuffer.size() + GetSpaceLeft(amount), 0xCD);
+	}
+	void PadNops()
+	{
+		const int32_t pad = 16 - BuildBuffer.size() % 16;
+		if (pad == 0 || pad == 16)
+			return;
+		else if (pad > 16384)
+			Throw("Pad Over 16364");
+
+		BuildBuffer.resize(BuildBuffer.size() + pad, 0);
+	}
+	int32_t GetPadExpectedAmount(int32_t val)
+	{
+		const int32_t pad = 16 - val % 16;
+		return pad == 0 || pad == 16 ? val : pad + val;
+	}
+	void Pad()
+	{
+		const int32_t pad = 16 - BuildBuffer.size() % 16;
+		if (pad == 0 || pad == 16)
+			return;
+		else if (pad > 16384)
+			Throw("Pad Over 16364");
+
+		BuildBuffer.resize(BuildBuffer.size() + pad, 0xCD);
+	}
+	void ForcePad()
+	{
+		const int32_t pad = 16 - BuildBuffer.size() % 16;
+		if (pad == 0 || pad == 16)
+		{
+			BuildBuffer.resize(BuildBuffer.size() + 16, 0xCD);
+			return;
+		}
+		else if (pad > 16384)
+			Throw("ForcePad Over 16364");
+		else 
+			BuildBuffer.resize(BuildBuffer.size() + pad, 0xCD);
+	}
+
+	void WriteCodePagesNoPadding();
+	void Write16384CodePages();
+	void WriteFinalCodePage();
+	void WriteNativesNoPadding();
+	void WriteNatives();
+	void WriteStaticsNoPadding();
+	void WriteStatics();
+	void WriteHeader();
+	void WritePointers();
+	
+
 	#pragma endregion
 
 	#pragma region Parse_Functions
@@ -527,8 +622,10 @@ private:
 	#pragma endregion
 
 	#pragma region Write_Functions
+	bool WriteNormal(uint32_t datasize, uint32_t bufferflag);
+	bool WriteSmall(uint32_t datasize, uint32_t bufferflag);
 	void XSCWrite(const char* path, bool CompressAndEncrypt = true);
-	void SCOWrite(const char* path, bool CompressAndEncrypt = true){}
+	void SCOWrite(const char* path, bool CompressAndEncrypt = true);
 	#pragma endregion
 
 };

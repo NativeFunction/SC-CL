@@ -480,6 +480,163 @@ void CompileBase::FMultImm()
 }
 #pragma endregion
 
+#pragma region Write_Functions
+void CompileBase::WriteCodePagesNoPadding()
+{
+	for (uint32_t i = 0; i < CodePageCount - 1; i++)
+	{	
+		SavedOffsets.CodePagePointers[i] = BuildBuffer.size();
+		BuildBuffer.resize(BuildBuffer.size() + 16384);
+		memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, CodePageData.data() + i * 16384, 16384);
+	}
+	const uint32_t LastCodePageSize = CodePageData.size() % 16384;
+	SavedOffsets.CodePagePointers[CodePageCount - 1] = BuildBuffer.size();
+	BuildBuffer.resize(BuildBuffer.size() + LastCodePageSize);
+	memcpy(BuildBuffer.data() + BuildBuffer.size() - LastCodePageSize, CodePageData.data() + CodePageData.size() - LastCodePageSize, LastCodePageSize);
+};
+void CompileBase::Write16384CodePages()
+{
+	SavedOffsets.CodePagePointers.resize(CodePageCount);
+	for (uint32_t i = 0; i < CodePageCount - 1; i++)
+	{
+
+		if (GetSpaceLeft(16384) < 16384)
+			FillPageNops();
+
+		SavedOffsets.CodePagePointers[i] = BuildBuffer.size();
+
+		BuildBuffer.resize(BuildBuffer.size() + 16384);
+		memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, CodePageData.data() + i * 16384, 16384);
+
+		PadNops();
+	}
+}
+void CompileBase::WriteFinalCodePage()
+{
+	const uint32_t LastCodePageSize = CodePageData.size() % 16384;
+	SavedOffsets.CodePagePointers[CodePageCount - 1] = BuildBuffer.size();
+	BuildBuffer.resize(BuildBuffer.size() + LastCodePageSize);
+	memcpy(BuildBuffer.data() + BuildBuffer.size() - LastCodePageSize, CodePageData.data() + CodePageData.size() - LastCodePageSize, LastCodePageSize);
+	Pad();
+}
+void CompileBase::WriteNativesNoPadding()
+{
+	const size_t nativeByteSize = NativeHashMap.size() * 4;
+	SavedOffsets.Natives = BuildBuffer.size();
+	BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
+	for (unordered_map<uint32_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
+	{
+		*(uint32_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 4) = Utils::Bitwise::SwapEndian(it->first);
+	}
+}
+void CompileBase::WriteNatives()
+{
+	if (NativeHashMap.size() > 0)
+	{
+		const size_t nativeByteSize = NativeHashMap.size() * 4;
+
+		if (GetSpaceLeft(16384) < nativeByteSize)
+			FillPageDynamic(16384);
+
+		SavedOffsets.Natives = BuildBuffer.size();
+
+		BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
+		for (unordered_map<uint32_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
+		{
+			*(uint32_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 4) = Utils::Bitwise::SwapEndian(it->first);
+		}
+
+		Pad();
+	}
+	else
+	{
+		if (GetSpaceLeft(16384) < 16)
+			FillPageDynamic(16384);
+		SavedOffsets.Natives = BuildBuffer.size();
+		ForcePad();
+	}
+
+}
+void CompileBase::WriteStaticsNoPadding()
+{
+	const size_t staticByteSize = HLData->getStaticSize() * 4;
+
+	SavedOffsets.Statics = BuildBuffer.size();
+
+	BuildBuffer.resize(BuildBuffer.size() + staticByteSize);
+	memcpy(BuildBuffer.data() + BuildBuffer.size() - staticByteSize, HLData->getStaticData(), staticByteSize);
+}
+void CompileBase::WriteStatics()
+{
+
+	if (HLData->getStaticSize() > 0)
+	{
+		const size_t staticByteSize = HLData->getStaticSize() * 4;
+
+		if (GetSpaceLeft(16384) < staticByteSize)
+			FillPageDynamic(16384);
+
+		SavedOffsets.Statics = BuildBuffer.size();
+
+		BuildBuffer.resize(BuildBuffer.size() + staticByteSize);
+		memcpy(BuildBuffer.data() + BuildBuffer.size() - staticByteSize, HLData->getStaticData(), staticByteSize);
+
+		Pad();
+
+	}
+	else
+	{
+		if (GetSpaceLeft(16384) < 16)
+			FillPageDynamic(16384);
+		SavedOffsets.Statics = BuildBuffer.size();
+		ForcePad();
+
+	}
+
+}
+void CompileBase::WriteHeader()
+{
+	headerLocation = BuildBuffer.size();
+	AddInt32toBuff(0xA8D74300);//Page Base
+	AddInt32toBuff(0); //Unk1 ptr
+	AddInt32toBuff(0); //codeBlocksListOffsetPtr
+	AddInt32toBuff(CodePageData.size());//code length
+	AddInt32toBuff(0);//script ParameterCount (this needs to be implemented)
+	AddInt32toBuff(HLData->getStaticSize());//statics count
+	AddInt32toBuff(0); //Statics offset
+	AddInt32toBuff(0x349D018A);//GlobalsSignature
+	AddInt32toBuff(NativeHashMap.size());//natives count
+	AddInt32toBuff(0); //natives offset
+	Pad();
+}
+void CompileBase::WritePointers()
+{
+	//write unk1
+
+	if (GetSpaceLeft(16384) < 4)
+		FillPageDynamic(16384);
+
+	SavedOffsets.Unk1 = BuildBuffer.size();
+	AddInt32toBuff(0);//unkPTRData
+	Pad();
+
+	uint64_t padcount = Utils::Math::CeilDivInt(CodePageCount * 4, 16);
+	for (uint64_t i = 0; i < padcount; i++)
+		ForcePad();
+
+	//Write code page pointers
+	if (GetSpaceLeft(16384) < CodePageCount * 4)
+		FillPageDynamic(16384);
+
+	SavedOffsets.CodeBlocks = BuildBuffer.size();
+
+	for (uint32_t i = 0; i < CodePageCount; i++)
+		AddInt32toBuff(0);
+
+	Pad();
+}
+#pragma endregion
+
 #pragma endregion
 
 #pragma region RDR
@@ -652,252 +809,47 @@ void CompileRDR::SetImm()
 #pragma endregion
 
 #pragma region Write_Functions
+bool CompileRDR::WriteNormal(uint32_t datasize, uint32_t bufferflag)
+{
+	if (datasize < bufferflag)
+	{
+		headerFlag = GetFlagFromReadbuffer(bufferflag);
+		if (headerFlag == 0xFFFFFFFF)
+			Throw("Invalid Read Buffer");
+		Write16384CodePages();
+		WriteFinalCodePage();
+		FillPageDynamic(bufferflag);
+		WriteHeader();
+		WriteNatives();
+		WriteStatics();
+		WritePointers();
+		FillPageDynamic(bufferflag);
+		return true;
+	}
+	return false;
+}
+bool CompileRDR::WriteSmall(uint32_t datasize, uint32_t bufferflag)
+{
+	if (datasize < bufferflag)
+	{
+		headerFlag = GetFlagFromReadbuffer(bufferflag);
+		if (headerFlag == 0xFFFFFFFF)
+			Throw("Invalid Read Buffer");
+		Write16384CodePages();
+		WriteHeader();
+		WriteFinalCodePage();
+		WriteNatives();
+		WriteStatics();
+		WritePointers();
+		FillPageDynamic(bufferflag);
+		return true;
+	}
+	return false;
+};
 void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 {
-
-	struct PHO//placeHolderOffsets
-	{
-		int32_t CodeBlocks, Unk1, Statics, Natives;
-		vector<uint32_t> CodePagePointers;
-	};
-	PHO SavedOffsets;
-	int32_t headerLocation = 0;
-	uint32_t headerFlag = 0;
-	const uint32_t CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
-	vector<uint8_t> BuildBuffer;
-
-
-	//0: Code blocks ptrs
-	//1: unk1 Ptr
-	//4: statics
-	//2: natives ptr
-
-	#pragma region Delegates
-	#define AddInt32toBuff(value)\
-			BuildBuffer.resize(BuildBuffer.size() + 4, 0);\
-			*((int32_t*)(BuildBuffer.data() + BuildBuffer.size()) - 1) = Utils::Bitwise::SwapEndian(value);
-	#define ChangeInt32inBuff(value, index)\
-			*(int32_t*)(BuildBuffer.data() + index) = Utils::Bitwise::SwapEndian(value);
-
-
-	auto GetSpaceLeft = [&](uint32_t size) -> uint32_t
-	{
-		uint32_t sl = size - (BuildBuffer.size() % size);
-		if (sl == 0)
-			sl = size;
-		return sl;
-	};
-	auto FillPageNops = [&]()
-	{
-		BuildBuffer.resize(BuildBuffer.size() + GetSpaceLeft(16384), 0);
-	};
-	auto FillPageDynamic = [&](uint32_t amount)
-	{
-		BuildBuffer.resize(BuildBuffer.size() + GetSpaceLeft(amount), 0xCD);
-	};
-	auto PadNops = [&]()
-	{
-		int32_t pad = 16 - BuildBuffer.size() % 16;
-		if (pad == 0 || pad == 16)
-			return;
-
-		if (pad > 16384)
-			Throw("Pad Over 16364");
-
-		BuildBuffer.resize(BuildBuffer.size() + pad, 0);
-	};
-	auto GetPadExpectedAmount = [&](int32_t val) -> int32_t
-	{
-		const int32_t pad = 16 - val % 16;
-		if (pad == 0 || pad == 16)
-			return val;
-		return pad + val;
-	};
-	auto Pad = [&]()
-	{
-		int32_t pad = 16 - BuildBuffer.size() % 16;
-		if (pad == 0 || pad == 16)
-			return;
-
-		if (pad > 16384)
-			Throw("Pad Over 16364");
-
-
-		BuildBuffer.resize(BuildBuffer.size() + pad, 0xCD);
-	};
-	auto ForcePad = [&]()
-	{
-		int32_t pad = 16 - BuildBuffer.size() % 16;
-		if (pad == 0 || pad == 16)
-			pad = 16;
-
-		if (pad > 16384)
-			Throw("ForcePad Over 16364");
-
-		BuildBuffer.resize(BuildBuffer.size() + pad, 0xCD);
-	};
-	auto Write16384CodePages = [&]()
-	{
-		SavedOffsets.CodePagePointers.resize(CodePageCount);
-		for (uint32_t i = 0; i < CodePageCount - 1; i++)
-		{
-
-			if (GetSpaceLeft(16384) < 16384)
-				FillPageNops();
-
-			SavedOffsets.CodePagePointers[i] = BuildBuffer.size();
-
-			BuildBuffer.resize(BuildBuffer.size() + 16384);
-			memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, CodePageData.data() + i * 16384, 16384);
-
-			PadNops();
-		}
-
-	};
-	auto WriteFinalCodePage = [&]()
-	{
-		const uint32_t LastCodePageSize = CodePageData.size() % 16384;
-		SavedOffsets.CodePagePointers[CodePageCount - 1] = BuildBuffer.size();
-		BuildBuffer.resize(BuildBuffer.size() + LastCodePageSize);
-		memcpy(BuildBuffer.data() + BuildBuffer.size() - LastCodePageSize, CodePageData.data() + CodePageData.size() - LastCodePageSize, LastCodePageSize);
-		Pad();
-	};
-	auto WriteNatives = [&]()
-	{
-		if (NativeHashMap.size() > 0)
-		{
-			const size_t nativeByteSize = NativeHashMap.size() * 4;
-
-			if (GetSpaceLeft(16384) < nativeByteSize)
-				FillPageDynamic(16384);
-
-			SavedOffsets.Natives = BuildBuffer.size();
-
-			BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
-			for (unordered_map<uint32_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
-			{
-				*(uint32_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 4) = Utils::Bitwise::SwapEndian(it->first);
-			}
-
-			Pad();
-		}
-		else
-		{
-			if (GetSpaceLeft(16384) < 16)
-				FillPageDynamic(16384);
-			SavedOffsets.Natives = BuildBuffer.size();
-			ForcePad();
-		}
-
-	};
-	auto WriteStatics = [&]()
-	{
-
-		if (HLData->getStaticSize() > 0)
-		{
-			const size_t staticByteSize = HLData->getStaticSize() * 4;
-
-			if (GetSpaceLeft(16384) < staticByteSize)
-				FillPageDynamic(16384);
-
-			SavedOffsets.Statics = BuildBuffer.size();
-
-			BuildBuffer.resize(BuildBuffer.size() + staticByteSize);
-			memcpy(BuildBuffer.data() + BuildBuffer.size() - staticByteSize, HLData->getStaticData(), staticByteSize);
-
-			Pad();
-
-		}
-		else
-		{
-			if (GetSpaceLeft(16384) < 16)
-				FillPageDynamic(16384);
-			SavedOffsets.Statics = BuildBuffer.size();
-			ForcePad();
-
-		}
-
-	};
-	auto WriteHeader = [&]()
-	{
-		headerLocation = BuildBuffer.size();
-		AddInt32toBuff(0xA8D74300);//Page Base
-		AddInt32toBuff(0); //Unk1 ptr
-		AddInt32toBuff(0); //codeBlocksListOffsetPtr
-		AddInt32toBuff(CodePageData.size());//code length
-		AddInt32toBuff(0);//script ParameterCount (this needs to be implemented)
-		AddInt32toBuff(HLData->getStaticSize());//statics count
-		AddInt32toBuff(0); //Statics offset
-		AddInt32toBuff(0x349D018A);//GlobalsSignature
-		AddInt32toBuff(NativeHashMap.size());//natives count
-		AddInt32toBuff(0); //natives offset
-		Pad();
-	};
-	auto WritePointers = [&]()
-	{
-		//write unk1
-
-		if (GetSpaceLeft(16384) < 4)
-			FillPageDynamic(16384);
-
-		SavedOffsets.Unk1 = BuildBuffer.size();
-		AddInt32toBuff(0);//unkPTRData
-		Pad();
-
-		uint64_t padcount = Utils::Math::CeilDivInt(CodePageCount * 4, 16);
-		for (uint64_t i = 0; i < padcount; i++)
-			ForcePad();
-
-		//Write code page pointers
-		if (GetSpaceLeft(16384) < CodePageCount * 4)
-			FillPageDynamic(16384);
-
-		SavedOffsets.CodeBlocks = BuildBuffer.size();
-
-		for (uint32_t i = 0; i < CodePageCount; i++)
-			AddInt32toBuff(0);
-
-		Pad();
-	};
-	auto WriteNormal = [&](uint32_t datasize, uint32_t bufferflag)
-	{
-		if (datasize < bufferflag)
-		{
-			headerFlag = GetFlagFromReadbuffer(bufferflag);
-			if (headerFlag == 0xFFFFFFFF)
-				Throw("Invalid Read Buffer");
-			Write16384CodePages();
-			WriteFinalCodePage();
-			FillPageDynamic(bufferflag);
-			WriteHeader();
-			WriteNatives();
-			WriteStatics();
-			WritePointers();
-			FillPageDynamic(bufferflag);
-			return true;
-		}
-		return false;
-	};
-	auto WriteSmall = [&](uint32_t datasize, uint32_t bufferflag)
-	{
-		if (datasize < bufferflag)
-		{
-			headerFlag = GetFlagFromReadbuffer(bufferflag);
-			if (headerFlag == 0xFFFFFFFF)
-				Throw("Invalid Read Buffer");
-			Write16384CodePages();
-			WriteHeader();
-			WriteFinalCodePage();
-			WriteNatives();
-			WriteStatics();
-			WritePointers();
-			FillPageDynamic(bufferflag);
-			return true;
-		}
-		return false;
-	};
-
-	#pragma endregion
+	ClearWriteVars();
+	CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
 
 	#pragma region Write_Pages_and_header
 
@@ -911,13 +863,13 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 
 	uint32_t LastCodePageSize = GetPadExpectedAmount(CodePageData.size() % 16384);//code page pointers * padding for unk1
 
-	cout << "Natives: " << GetPadExpectedAmount(NativeHashMap.size() * 4) << '\n';
-	cout << "Statics: " << GetPadExpectedAmount(HLData->getStaticSize() * 4) << '\n';
-	cout << "Unk1: " << GetPadExpectedAmount(16 + CodePagePtrsSize) << '\n';
-	cout << "Header: " << GetPadExpectedAmount(40) << '\n';
-	cout << "Codepage Ptrs: " << GetPadExpectedAmount(CodePagePtrsSize) << '\n';
-	cout << "Last Codepage: " << GetPadExpectedAmount(LastCodePageSize) << '\n';
-	cout << "Total: "  << LastCodePageSize + TotalData << "\n";
+	//cout << "Natives: " << GetPadExpectedAmount(NativeHashMap.size() * 4) << '\n';
+	//cout << "Statics: " << GetPadExpectedAmount(HLData->getStaticSize() * 4) << '\n';
+	//cout << "Unk1: " << GetPadExpectedAmount(16 + CodePagePtrsSize) << '\n';
+	//cout << "Header: " << GetPadExpectedAmount(40) << '\n';
+	//cout << "Codepage Ptrs: " << GetPadExpectedAmount(CodePagePtrsSize) << '\n';
+	//cout << "Last Codepage: " << GetPadExpectedAmount(LastCodePageSize) << '\n';
+	//cout << "Total: "  << LastCodePageSize + TotalData << "\n";
 	//if(LastCodePageSize +  TotalData > 16384) then write normal but maybe place somethings under last code page if possible
 	//else include last code page in header
 
@@ -1022,6 +974,73 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 	#pragma endregion
 
 }
+void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
+{
+	ClearWriteVars();
+	CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
+
+	WriteCodePagesNoPadding();
+	WriteNativesNoPadding();
+	WriteStaticsNoPadding();
+
+	#pragma region Write_File
+	if (CompressAndEncrypt)
+	{
+
+		uint32_t CompressedSize = BuildBuffer.size();
+
+		vector<uint8_t> CompressedData(BuildBuffer.size(), 0);
+
+		Utils::Compression::ZLIB_Compress(BuildBuffer.data(), BuildBuffer.size(), CompressedData.data(), CompressedSize);
+		//fix length of compressed data
+
+		if (CompressedSize = 0)
+			Throw("SCO Compressed Size Invalid");
+		else if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize))
+			Throw("Decryption Failed");
+
+		vector<uint32_t> SCR_Header(12, 0);
+		SCR_Header[0] = SwapEndian(0x53435202);//SCR.
+		SCR_Header[1] = SwapEndian(0x349D018A);//GlobalsSignature
+		SCR_Header[2] = SwapEndian(CompressedSize);
+		SCR_Header[3] = SwapEndian(-3);//-3 is_crypt?
+		SCR_Header[4] = SwapEndian(BuildBuffer.size());
+		SCR_Header[5] = SwapEndian(HLData->getStaticSize());
+		SCR_Header[6] = SwapEndian(0);//GlobalsCount
+		SCR_Header[7] = SwapEndian(0);//ParameterCount
+		SCR_Header[8] = SwapEndian(NativeHashMap.size());
+		SCR_Header[9] = SwapEndian(0);//unk36
+		SCR_Header[10] = SwapEndian(0);//unk40
+		SCR_Header[11] = SwapEndian(0);//unk44
+
+
+		FILE* file = fopen(path, "wb");
+		if (file != NULL)
+		{
+			fwrite(SCR_Header.data(), 1, 48, file);//encrypted data
+			fwrite(CompressedData.data(), 1, CompressedSize, file);//encrypted data
+			fclose(file);
+		}
+		else
+			Throw("Could Not Open Output File");
+	}
+	else
+	{
+		FILE* file = fopen(path, "wb");
+
+		if (file != NULL)
+		{
+			fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
+			fclose(file);
+		}
+		else
+			Throw("Could Not Open Output File");
+	}
+
+	#pragma endregion
+
+}
+
 #pragma endregion
 
 #pragma endregion
