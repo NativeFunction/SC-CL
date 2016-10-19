@@ -851,6 +851,12 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 	ClearWriteVars();
 	CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
 
+
+	//0: Code blocks ptrs
+	//1: unk1 Ptr
+	//4: statics
+	//2: natives ptr
+
 	#pragma region Write_Pages_and_header
 
 	const uint32_t CodePagePtrsSize = CodePageCount * 4;
