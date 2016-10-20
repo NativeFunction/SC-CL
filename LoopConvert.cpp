@@ -2657,7 +2657,7 @@ public:
 					{
 						string name = parseCast(cast<const CastExpr>(callee));
 						if (!scriptData.addUsedFuncToCurrent(name))
-							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
+							Throw("Function \"" + name.substr(1) + "\" not found", rewriter, call->getExprLoc());
 
 						AddInstructionComment(Call, "NumArgs: " + to_string(call->getNumArgs()), name.substr(1));
 					}

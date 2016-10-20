@@ -65,7 +65,6 @@ bool Script::addUsedFuncToCurrent(string name)
 			return true;
 		}
 	}
-	assert(false && "Function doesnt exist");
 	return false;
 }
 
