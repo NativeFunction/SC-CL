@@ -1240,12 +1240,23 @@ void CompileGTAV::WritePointers()
 	Pad();
 
 	//Write string page pointers
-	if (GetSpaceLeft(16384) < StringPageCount * 4)
-		FillPageDynamic(16384);
+	
+	if (StringPageCount)
+	{
+		if (GetSpaceLeft(16384) < StringPageCount * 4)
+			FillPageDynamic(16384);
 
-	SavedOffsets.StringBlocks = BuildBuffer.size();
-	BuildBuffer.resize(BuildBuffer.size() + StringPageCount * 4, 0);
-	Pad();
+		SavedOffsets.StringBlocks = BuildBuffer.size();
+		BuildBuffer.resize(BuildBuffer.size() + StringPageCount * 4, 0);
+		Pad();
+	}
+	else
+	{
+		if (GetSpaceLeft(16384) < 16)
+			FillPageDynamic(16384);
+		SavedOffsets.StringBlocks = BuildBuffer.size();
+		ForcePad();
+	}
 
 	//write unk1
 	if (GetSpaceLeft(16384) < 16)
@@ -1258,27 +1269,33 @@ void CompileGTAV::WritePointers()
 }
 void CompileGTAV::Write16384StringPages()
 {
-	SavedOffsets.StringPagePointers.resize(StringPageCount);
-	for (uint32_t i = 0; i < StringPageCount - 1; i++)
+	if (StringPageCount)
 	{
-		if (GetSpaceLeft(16384) < 16384)
-			FillPageDynamic(16384);
+		SavedOffsets.StringPagePointers.resize(StringPageCount);
+		for (uint32_t i = 0; i < StringPageCount - 1; i++)
+		{
+			if (GetSpaceLeft(16384) < 16384)
+				FillPageDynamic(16384);
 
-		SavedOffsets.StringPagePointers[i] = BuildBuffer.size();
+			SavedOffsets.StringPagePointers[i] = BuildBuffer.size();
 
-		BuildBuffer.resize(BuildBuffer.size() + 16384);
-		memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, StringPageData.data() + i * 16384, 16384);
+			BuildBuffer.resize(BuildBuffer.size() + 16384);
+			memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, StringPageData.data() + i * 16384, 16384);
 
-		Pad();
+			Pad();
+		}
 	}
 }
 void CompileGTAV::WriteFinalStringPage()
 {
-	const uint32_t LastStringPageSize = StringPageData.size() % 16384;
-	SavedOffsets.StringPagePointers[StringPageCount - 1] = BuildBuffer.size();
-	BuildBuffer.resize(BuildBuffer.size() + LastStringPageSize);
-	memcpy(BuildBuffer.data() + BuildBuffer.size() - LastStringPageSize, StringPageData.data() + StringPageData.size() - LastStringPageSize, LastStringPageSize);
-	Pad();
+	if (StringPageCount)
+	{
+		const uint32_t LastStringPageSize = StringPageData.size() % 16384;
+		SavedOffsets.StringPagePointers[StringPageCount - 1] = BuildBuffer.size();
+		BuildBuffer.resize(BuildBuffer.size() + LastStringPageSize);
+		memcpy(BuildBuffer.data() + BuildBuffer.size() - LastStringPageSize, StringPageData.data() + StringPageData.size() - LastStringPageSize, LastStringPageSize);
+		Pad();
+	}
 }
 void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 {
@@ -1290,11 +1307,8 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 	WriteHeader();
 	Write16384CodePages();
 	WriteFinalCodePage();
-	if (StringPageCount)
-	{
-		Write16384StringPages();
-		WriteFinalStringPage();
-	}
+	Write16384StringPages();
+	WriteFinalStringPage();
 	WriteNatives();
 	WriteStatics();
 	WritePointers();
