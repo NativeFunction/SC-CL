@@ -5589,16 +5589,15 @@ public:
 						}
 						else
 						{
-							for (int i = scriptData.getStaticSize(); i < staticInc; i++)
-							{
-								scriptData.addStaticInit();
-							}
+							scriptData.fillStaticCapacity();
 						}
 
 
 						if (scriptData.getStaticSize() > staticInc)
 							Warn("Static Overflow Old:" + to_string(scriptData.getStaticSize()) + " New:" + to_string(staticInc));
 
+						if (scriptData.getStaticSize() != scriptData.getStaticCapacity())
+							Throw("not all values in static decl were initialized");
 
 					}
 					else
