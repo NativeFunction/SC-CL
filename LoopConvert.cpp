@@ -5587,6 +5587,13 @@ public:
 								scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
 
 						}
+						else
+						{
+							for (int i = scriptData.getStaticSize(); i < staticInc; i++)
+							{
+								scriptData.addStaticInit();
+							}
+						}
 
 
 						if (scriptData.getStaticSize() > staticInc)
@@ -5708,6 +5715,22 @@ public:
 		{
 			string StaticData = scriptData->getStaticsAsString();
 			fwrite(StaticData.data(), 1, StaticData.size(), file);
+			struct items
+			{
+				int index; string name; 
+				bool operator<(const items &rhs) const { return index < rhs.index; }
+			};
+			vector<items> foundIndexes;
+			for (auto item : statics)
+			{
+				foundIndexes.push_back({ item.second, item.first });
+			}
+			sort(foundIndexes.begin(), foundIndexes.end());
+			for (auto item : foundIndexes)
+			{
+				string str = "SetStaticName " + to_string(item.index) + " " + item.name + "\r\n";
+				fwrite(str.data(), 1, str.size(), file);
+			}
 			for (uint32_t i = 0, max = scriptData->getFunctionCount(); i <max; i++)
 			{
 				auto func = scriptData->getFunctionFromIndex(i);
