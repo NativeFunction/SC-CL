@@ -5587,6 +5587,13 @@ public:
 								scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
 
 						}
+						else
+						{
+							for (int i = scriptData.getStaticSize(); i < staticInc; i++)
+							{
+								scriptData.addStaticInit();
+							}
+						}
 
 
 						if (scriptData.getStaticSize() > staticInc)
@@ -5708,6 +5715,22 @@ public:
 		{
 			string StaticData = scriptData->getStaticsAsString();
 			fwrite(StaticData.data(), 1, StaticData.size(), file);
+			struct items
+			{
+				int index; string name; 
+				bool operator<(const items &rhs) const { return index < rhs.index; }
+			};
+			vector<items> foundIndexes;
+			for (auto item : statics)
+			{
+				foundIndexes.push_back({ item.second, item.first });
+			}
+			sort(foundIndexes.begin(), foundIndexes.end());
+			for (auto item : foundIndexes)
+			{
+				string str = "SetStaticName " + to_string(item.index) + " " + item.name + "\r\n";
+				fwrite(str.data(), 1, str.size(), file);
+			}
 			for (uint32_t i = 0, max = scriptData->getFunctionCount(); i <max; i++)
 			{
 				auto func = scriptData->getFunctionFromIndex(i);
@@ -5722,8 +5745,44 @@ public:
 		}
 		else Throw("Output File Could Not Be Opened");
 
-		CompileGTAV c(*scriptData);
-		c.Compile(outDir);
+		switch(scriptData->getBuildType())
+		{
+			case BT_RDR_XSC:
+			case BT_RDR_SCO:
+			{
+				switch (scriptData->getBuildPlatform())
+				{
+					case P_XBOX:
+					case P_PS3:
+					{
+						CompileRDR c(*scriptData);
+						c.Compile(outDir);
+					}
+					break;
+					default:
+						Throw("Red dead redemption only supported on Xbox360 and PS3");
+				}
+			}
+			break;
+			case BT_GTAV:
+			{
+				switch(scriptData->getBuildPlatform())
+				{
+					case P_XBOX:
+					case P_PS3:
+					{
+						CompileGTAV c(*scriptData);
+						c.Compile(outDir);
+					}
+						break;
+					default:
+						Throw("GTA V only supported on Xbox360 and PS3");
+				}
+			}
+			default:
+				Throw("Unsupported Build Platfom");
+		}
+	
 	}
 	
 	void AddDefines(Preprocessor &PP)
