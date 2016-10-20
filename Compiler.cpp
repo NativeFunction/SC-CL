@@ -1290,8 +1290,11 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 	WriteHeader();
 	Write16384CodePages();
 	WriteFinalCodePage();
-	Write16384StringPages();
-	WriteFinalStringPage();
+	if (StringPageCount)
+	{
+		Write16384StringPages();
+		WriteFinalStringPage();
+	}
 	WriteNatives();
 	WriteStatics();
 	WritePointers();
