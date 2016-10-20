@@ -5745,8 +5745,44 @@ public:
 		}
 		else Throw("Output File Could Not Be Opened");
 
-		CompileGTAV c(*scriptData);
-		c.Compile(outDir);
+		switch(scriptData->getBuildType())
+		{
+			case BT_RDR_XSC:
+			case BT_RDR_SCO:
+			{
+				switch (scriptData->getBuildPlatform())
+				{
+					case P_XBOX:
+					case P_PS3:
+					{
+						CompileRDR c(*scriptData);
+						c.Compile(outDir);
+					}
+					break;
+					default:
+						Throw("Red dead redemption only supported on Xbox360 and PS3");
+				}
+			}
+			break;
+			case BT_GTAV:
+			{
+				switch(scriptData->getBuildPlatform())
+				{
+					case P_XBOX:
+					case P_PS3:
+					{
+						CompileGTAV c(*scriptData);
+						c.Compile(outDir);
+					}
+						break;
+					default:
+						Throw("GTA V only supported on Xbox360 and PS3");
+				}
+			}
+			default:
+				Throw("Unsupported Build Platfom");
+		}
+	
 	}
 	
 	void AddDefines(Preprocessor &PP)
