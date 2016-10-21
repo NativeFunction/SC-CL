@@ -144,10 +144,11 @@ typedef union OpCodes {
 			, PushF_7
 
 			///Extra GTAV Opcodes
-			, GetHash
-			, GetImmP2
 			, GetImmP
 			, GetImmP1
+			, GetImmP2
+			, GetHash
+			
 
 			///Extra RDR Opcodes
 			, Call2
