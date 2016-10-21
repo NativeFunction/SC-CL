@@ -800,6 +800,41 @@ bool FunctionData::tryPop2Ints(int & i1, int & i2)
 	}
 }
 
+bool FunctionData::tryPopInt(int& result)
+{
+	if (Instructions.size())
+	{
+		Opcode* back = Instructions.back();
+		switch(back->getKind())
+		{
+			case OK_PushInt:
+				result = back->getInt();
+				Instructions.pop_back();
+				delete back;
+				return true;
+			case OK_PushBytes:
+				switch(back->getPBytesCount())
+				{
+					case 2:
+						Instructions.pop_back();
+						addOpPushInt(back->getByte(1));
+						result = back->getByte(2);
+						delete back;
+						return true;
+					case 3:
+						result = back->getByte(3);
+						back->setPBytesCount(2);
+						return true;
+					default:
+						assert(false && "Unexpected PushBytes count");
+				}
+			default:
+				return false;
+		}
+	}
+	return false;
+}
+
 bool FunctionData::tryPop2Floats(float & f1, float & f2)
 {
 	int size = Instructions.size();

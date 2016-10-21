@@ -330,6 +330,7 @@ public:
 class FunctionData
 {
 	bool tryPop2Ints(int& i1, int& i2);
+	bool tryPopInt(int& result);
 	bool tryPop2Floats(float& f1, float& f2);
 	string name;
 	uint32_t hash;
@@ -447,12 +448,56 @@ public:
 	}
 	void addOpIsBitSet(uint8_t bitIndex)
 	{
-		//treat it as 2 instructions to simplify compiling
 		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
+		int temp;
+		if (tryPopInt(temp))
+		{
+			addOpPushInt((temp & (1 << bitIndex)) != 0);
+		}
+		else
+		{
+			Opcode* op = new Opcode(OK_PushInt);
+			op->setInt((int)(1 << bitIndex));
+			Instructions.push_back(op);
+			Instructions.push_back(new Opcode(OK_And));
+			addOpIsNotZero();
+		}
+	}
+	void addOpBitSet(uint8_t bitIndex)
+	{
+		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
+		Instructions.push_back(new Opcode(OK_Dup));
+		Instructions.push_back(new Opcode(OK_PGet));
 		Opcode* op = new Opcode(OK_PushInt);
 		op->setInt((int)(1 << bitIndex));
 		Instructions.push_back(op);
+		Instructions.push_back(new Opcode(OK_Or));
+		Instructions.push_back(new Opcode(OK_PeekSet));
+		Instructions.push_back(new Opcode(OK_Drop));
+	}
+	void addOpBitReset(uint8_t bitIndex)
+	{
+		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
+		Instructions.push_back(new Opcode(OK_Dup));
+		Instructions.push_back(new Opcode(OK_PGet));
+		Opcode* op = new Opcode(OK_PushInt);
+		op->setInt(~((int)(1 << bitIndex)));
+		Instructions.push_back(op);
 		Instructions.push_back(new Opcode(OK_And));
+		Instructions.push_back(new Opcode(OK_PeekSet));
+		Instructions.push_back(new Opcode(OK_Drop));
+	}
+	void addOpBitFlip(uint8_t bitIndex)
+	{
+		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
+		Instructions.push_back(new Opcode(OK_Dup));
+		Instructions.push_back(new Opcode(OK_PGet));
+		Opcode* op = new Opcode(OK_PushInt);
+		op->setInt((int)(1 << bitIndex));
+		Instructions.push_back(op);
+		Instructions.push_back(new Opcode(OK_Xor));
+		Instructions.push_back(new Opcode(OK_PeekSet));
+		Instructions.push_back(new Opcode(OK_Drop));
 	}
 	void addOpIsNotZero();
 	void addOpGetConv(int size, bool isSigned);

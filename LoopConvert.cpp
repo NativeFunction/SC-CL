@@ -1904,6 +1904,86 @@ public:
 				return false;
 			}
 			break;
+			case JoaatCasedConst("bit_test"):
+			{
+				ChkHashCol("bit_test");
+				if (argCount == 2 && callee->getReturnType()->isBooleanType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
+				{
+					llvm::APSInt result;
+					if (argArray[1]->EvaluateAsInt(result, *context))
+					{
+						auto iResult = result.getSExtValue();
+						if (iResult < 32 && iResult >= 0)
+						{
+							parseExpression(argArray[0], false, true);
+							AddInstruction(IsBitSet, (uint8_t)iResult);
+							return true;
+						}
+					}
+					Throw("bitIndex argument for bit_test must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
+				}
+				Throw("bit_test must have signature \"extern __intrinsic bool bit_test(int value, const byte bitIndex);\"", rewriter, callee->getSourceRange());
+			}
+			case JoaatCasedConst("bit_set"):
+			{
+				ChkHashCol("bit_set");
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
+				{
+					llvm::APSInt result;
+					if (argArray[1]->EvaluateAsInt(result, *context))
+					{
+						auto iResult = result.getSExtValue();
+						if (iResult < 32 && iResult >= 0)
+						{
+							parseExpression(argArray[0], false, true);
+							AddInstruction(BitSet, (uint8_t)iResult);
+							return true;
+						}
+					}
+					Throw("bitIndex argument for bit_set must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
+				}
+				Throw("bit_set must have signature \"extern __intrinsic bool bit_set(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
+			}
+			case JoaatCasedConst("bit_reset"):
+			{
+				ChkHashCol("bit_reset");
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
+				{
+					llvm::APSInt result;
+					if (argArray[1]->EvaluateAsInt(result, *context))
+					{
+						auto iResult = result.getSExtValue();
+						if (iResult < 32 && iResult >= 0)
+						{
+							parseExpression(argArray[0], false, true);
+							AddInstruction(BitReset, (uint8_t)iResult);
+							return true;
+						}
+					}
+					Throw("bitIndex argument for bit_reset must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
+				}
+				Throw("bit_reset must have signature \"extern __intrinsic bool bit_reset(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
+			}
+			case JoaatCasedConst("bit_flip"):
+			{
+				ChkHashCol("bit_flip");
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
+				{
+					llvm::APSInt result;
+					if (argArray[1]->EvaluateAsInt(result, *context))
+					{
+						auto iResult = result.getSExtValue();
+						if (iResult < 32 && iResult >= 0)
+						{
+							parseExpression(argArray[0], false, true);
+							AddInstruction(BitFlip, (uint8_t)iResult);
+							return true;
+						}
+					}
+					Throw("bitIndex argument for bit_flip must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
+				}
+				Throw("bit_flip must have signature \"extern __intrinsic bool bit_flip(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
+			}
 			default:
 		_IntrinsicNotFound:
 			Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
@@ -5763,6 +5843,7 @@ public:
 						Throw("GTA V only supported on Xbox360 and PS3");
 				}
 			}
+			break;
 			default:
 				Throw("Unsupported Build Platfom");
 		}
