@@ -1,5 +1,8 @@
 #pragma once
 
+#define __global(index) __attribute((scriptglobal(index)))
+#define __noinline __attribute((noinline))
+
 //calculation range is -2,147,483,648 to 2,147,483,647
 //any value above or below that will be automatically cast to a signed int
 typedef unsigned int uint;
@@ -7,6 +10,17 @@ typedef unsigned char byte;
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef _Bool bool;
+
+typedef int player;
+typedef int entity;
+typedef entity ped;
+typedef entity vehicle;
+typedef entity object;
+
+typedef struct vector2
+{
+	float X, Y;
+} Point, Size, vector2;
 
 typedef union vector3
 {
@@ -19,6 +33,26 @@ typedef union quaternion
 	struct { float x, y, z, w; };
 	float v[4];
 } quaternion;
+
+typedef struct RGBA
+{//Colour struct where values range from 0 - 255
+	int Red, Green, Blue, Alpha;
+} RGBA;
+
+typedef struct RGB
+{//Colour struct where values range from 0 - 255
+	int Red, Green, Blue;
+} RGB;
+
+typedef struct FloatRGBA
+{
+	float Red, Green, Blue, Alpha;//Colour struct where values range from 0.0 - 1.0
+} FloatRGBA;
+
+typedef struct FloatRGB
+{
+	float Red, Green, Blue;//Colour struct where values range from 0.0 - 1.0
+} FloatRGB;
 
 typedef union any
 {
@@ -36,6 +70,15 @@ typedef union any
 	char CharArray[4];
 	short ShortArray[2];
 } any;
+
+
+//poor mans constructors
+#define RGBA(R,G,B,A) (RGBA){R,G,B,A}
+#define FloatRGBA(R,G,B,A) (FloatRGBA){R,G,B,A}
+#define Point(x, y) (Point){x, y}
+#define Size(w, h) (Size){w, h}
+#define vector2(x, y) (vector2){x, y}
+#define vector3(x,y,z) (vector3){x,y,z}
 
 
 typedef void* sizedarrayp;
