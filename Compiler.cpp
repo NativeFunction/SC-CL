@@ -721,9 +721,13 @@ void CompileRDR::Call()
 	CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getString()});
 	AddInt24(0);
 }
+void CompileRDR::GetImmP()
+{
+	AddImm((uint32_t)DATA->getUShort(0) * 4);
+}
 void CompileRDR::GetImm()
 {
-	const uint32_t value = DATA->getInt() * 4;
+	const uint32_t value = (uint32_t)DATA->getUShort(0) * 4;
 	if (value <= 0xFF)
 	{
 		DoesOpcodeHaveRoom(2);
@@ -745,7 +749,7 @@ void CompileRDR::GetImm()
 }
 void CompileRDR::SetImm()
 {
-	const uint32_t value = DATA->getInt() * 4;
+	const uint32_t value = (uint32_t)DATA->getUShort(0) * 4;
 	if (value <= 0xFF)
 	{
 		DoesOpcodeHaveRoom(2);
@@ -1144,48 +1148,52 @@ void CompileGTAV::PushString()
 	PushInt(AddStringToStringPage(DATA->getString()));
 	AddOpcode(PushString);
 }
+void CompileGTAV::GetImmP()
+{
+	const uint16_t value = DATA->getUShort(0);
+	if (value <= 0xFF)
+	{
+		DoesOpcodeHaveRoom(2);
+		AddOpcode(GetImmP1);
+		AddInt8(value);
+	}
+	else
+	{
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(GetImmP2);
+		AddInt16(value);
+	}
+}
 void CompileGTAV::GetImm()
 {
-	const uint32_t value = DATA->getInt();
+	const uint16_t value = DATA->getUShort(0);
 	if (value <= 0xFF)
 	{
 		DoesOpcodeHaveRoom(2);
 		AddOpcode(GetImm1);
 		AddInt8(value);
 	}
-	else if (value <= 0xFFFF)
+	else
 	{
 		DoesOpcodeHaveRoom(3);
 		AddOpcode(GetImm2);
 		AddInt16(value);
 	}
-	else
-	{
-		PushInt(value * 4);
-		AddOpcode(Add);
-		AddOpcode(pGet);
-	}
 }
 void CompileGTAV::SetImm()
 {
-	const uint32_t value = DATA->getInt();
+	const uint16_t value = DATA->getUShort(0);
 	if (value <= 0xFF)
 	{
 		DoesOpcodeHaveRoom(2);
 		AddOpcode(SetImm1);
 		AddInt8(value);
 	}
-	else if (value <= 0xFFFF)
+	else
 	{
 		DoesOpcodeHaveRoom(3);
 		AddOpcode(SetImm2);
 		AddInt16(value);
-	}
-	else
-	{
-		PushInt(value * 4);
-		AddOpcode(Add);
-		AddOpcode(pSet);
 	}
 }
 #pragma endregion
