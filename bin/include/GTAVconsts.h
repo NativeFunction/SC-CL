@@ -1,6 +1,6 @@
 #pragma once
 
-typedef enum eFont
+typedef enum eFont : unsigned int
 {
 	FONT_Chalet_LondonNineteenSixty = 0,
 	FONT_SignPainter_HouseScript = 1,
@@ -13,7 +13,7 @@ typedef enum eFont
 } eFont;
 
 #ifdef __YSC__
-typedef enum eInput
+typedef enum eInput : unsigned int
 {
 	INPUT_NEXT_CAMERA = 0,
 	INPUT_LOOK_LR = 1,
@@ -356,7 +356,7 @@ typedef enum eInput
 } eInput;
 #else
 	
-typedef enum eInput
+typedef enum eInput : unsigned int
 {
 	INPUT_NEXT_CAMERA = 0,
 	INPUT_LOOK_LR = 1,
@@ -624,7 +624,7 @@ typedef enum eInput
 	INPUT_REPLAY_PREVIEW = 263
 } eInput;
 
-typedef enum eWeapon
+typedef enum eWeapon : unsigned int
 {
 	WEAPON_UNARMED = 0xA2719263,
 	WEAPON_ANIMAL = 0xF9FBAEBE,
@@ -712,13 +712,13 @@ typedef enum eWeapon
 	WEAPON_KNUCKLE = 0xD8DF3C3C
 } eWeapon;
 
-typedef enum eGadget
+typedef enum eGadget : unsigned int
 {
 	GADGET_NIGHTVISION = 0xA720365C,
 	GADGET_PARACHUTE = 0xFBAB5776
 } eGadget;
 
-typedef enum eVehicleWeapon
+typedef enum eVehicleWeapon : unsigned int
 {
 	VEHICLE_WEAPON_ROTORS = 0xB1205A4E,
 	VEHICLE_WEAPON_TANK = 0x73F7C04B,
@@ -739,7 +739,7 @@ typedef enum eVehicleWeapon
 	VEHICLE_WEAPON_PLAYER_SAVAGE = 0x61A31349
 } eVehicleWeapon;
 
-typedef enum eExplosion
+typedef enum eExplosion : unsigned int
 {
 	EXPLOSION_GRENADE,
 	EXPLOSION_GRENADELAUNCHER,
@@ -782,7 +782,7 @@ typedef enum eExplosion
 	EXPLOSION_VALKYRIE_CANNON
 } eExplosion;
 
-typedef enum ePickup
+typedef enum ePickup : unsigned int
 {
 	PICKUP_WEAPON_BULLPUPSHOTGUN = 0x6E4E65C2,
 	PICKUP_WEAPON_ASSAULTSMG = 0x741C684A,
@@ -891,7 +891,7 @@ typedef enum ePickup
 	PICKUP_WEAPON_MARKSMANPISTOL = 0x8ADDEC75
 } ePickup;
 
-typedef enum eVehicleColor
+typedef enum eVehicleColor : unsigned int
 {
 	VEHICLE_COLOR_METALLIC_BLACK,
 	VEHICLE_COLOR_METALLIC_GRAPHITE_BLACK,
@@ -967,7 +967,7 @@ typedef enum eVehicleColor
 	VEHICLE_COLOR_METALLIC_PURPLE_BLUE,
 	VEHICLE_COLOR_METALLIC_SPINNAKER_BLUE,
 	VEHICLE_COLOR_METALLIC_ULTRA_BLUE,
-	VEHICLE_COLOR_METALLIC_BRIGHT_BLUE,
+	VEHICLE_COLOR_METALLIC_BRIGHT_BLUE2,
 	VEHICLE_COLOR_UTIL_DARK_BLUE,
 	VEHICLE_COLOR_UTIL_MIDNIGHT_BLUE,
 	VEHICLE_COLOR_UTIL_BLUE,
@@ -1057,7 +1057,7 @@ typedef enum eVehicleColor
 
 } eVehicleColor;
 
-typedef enum eVehicleARGB
+typedef enum eVehicleARGB : unsigned int
 {
 	VEHICLE_ARGB_METALLIC_BLACK = 0XFF080808,
 	VEHICLE_ARGB_METALLIC_GRAPHITE_BLACK = 0XFF0F0F0F,
@@ -1133,7 +1133,7 @@ typedef enum eVehicleARGB
 	VEHICLE_ARGB_METALLIC_PURPLE_BLUE = 0XFF1A182E,
 	VEHICLE_ARGB_METALLIC_SPINNAKER_BLUE = 0XFF161629,
 	VEHICLE_ARGB_METALLIC_ULTRA_BLUE = 0XFF0E316D,
-	VEHICLE_ARGB_METALLIC_BRIGHT_BLUE_ = 0XFF395A83,
+	VEHICLE_ARGB_METALLIC_BRIGHT_BLUE2 = 0XFF395A83,
 	VEHICLE_ARGB_UTIL_DARK_BLUE = 0XFF09142E,
 	VEHICLE_ARGB_UTIL_MIDNIGHT_BLUE = 0XFF0F1021,
 	VEHICLE_ARGB_UTIL_BLUE = 0XFF152A52,
@@ -1224,7 +1224,7 @@ typedef enum eVehicleARGB
 
 } eVehicleARGB;
 
-typedef enum ePed
+typedef enum ePed : unsigned int
 {
 	/**
 	Letter 1 directory definition:
