@@ -440,7 +440,7 @@ protected:
 	void MultImm(){ MultImm(DATA->getInt()); }
 	void FAddImm();
 	void FMultImm();
-	virtual void GetImmP() { assert(false && "GetImm has to be overridden"); };//Override: GTAV
+	virtual void GetImmP() { AddImm((uint32_t)DATA->getUShort(0) * 4); };//Override: GTAV
 	virtual void GetImm() { assert(false && "GetImm has to be overridden"); };//Override: ALL
 	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
 	#pragma endregion
@@ -616,7 +616,6 @@ private:
 	void Return() override;
 	void GetHash() override { CallNative(JoaatConst("string_to_hash"), 1, 1); };
 	void Call() override;
-	void GetImmP() override;
 	void GetImm() override;
 	void SetImm() override;	
 	#pragma endregion

@@ -1215,7 +1215,7 @@ void FunctionData::controlFlowConfusion(int maxBlockSize, int minBlockSize, bool
 	{
 		//pop or nop front item
 	}
-	for(int i = 0;i<randomiseIndexes.size();i++)
+	for(uint32_t i = 0; i < randomiseIndexes.size(); i++)
 	{
 		if (i > 0)
 		{

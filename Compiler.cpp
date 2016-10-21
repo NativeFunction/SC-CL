@@ -721,10 +721,6 @@ void CompileRDR::Call()
 	CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getString()});
 	AddInt24(0);
 }
-void CompileRDR::GetImmP()
-{
-	AddImm((uint32_t)DATA->getUShort(0) * 4);
-}
 void CompileRDR::GetImm()
 {
 	const uint32_t value = (uint32_t)DATA->getUShort(0) * 4;
@@ -742,8 +738,7 @@ void CompileRDR::GetImm()
 	}
 	else
 	{
-		PushInt(value);
-		AddOpcode(Add);
+		AddImm(value);
 		AddOpcode(pGet);
 	}
 }
@@ -764,8 +759,7 @@ void CompileRDR::SetImm()
 	}
 	else
 	{
-		PushInt(value);
-		AddOpcode(Add);
+		AddImm(value);
 		AddOpcode(pSet);
 	}
 }
