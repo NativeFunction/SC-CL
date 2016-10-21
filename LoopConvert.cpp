@@ -1559,21 +1559,6 @@ public:
 				return false;
 			}
 			break;
-			case JoaatCasedConst("makeVector3"):
-			{
-				ChkHashCol("makeVector3");
-
-				if (argCount == 3 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && argArray[0]->getType()->isRealFloatingType() && argArray[1]->getType()->isRealFloatingType() && argArray[2]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					parseExpression(argArray[1], false, true);
-					parseExpression(argArray[2], false, true);
-					return true;
-				}
-				Throw("makeVector3 must have signature \"extern __intrinsic vector3 makeVector3(float x, float y, float z)\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
 			case JoaatCasedConst("vector3Add"):
 			{
 				ChkHashCol("vector3Add");
