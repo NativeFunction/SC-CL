@@ -440,7 +440,7 @@ protected:
 	void MultImm(){ MultImm(DATA->getInt()); }
 	void FAddImm();
 	void FMultImm();
-	virtual void GetImmP() { MultImm(4); AddOpcode(Add); };//Override: GTAV
+	virtual void GetImmP() { assert(false && "GetImm has to be overridden"); };//Override: GTAV
 	virtual void GetImm() { assert(false && "GetImm has to be overridden"); };//Override: ALL
 	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
 	#pragma endregion
@@ -616,6 +616,7 @@ private:
 	void Return() override;
 	void GetHash() override { CallNative(JoaatConst("string_to_hash"), 1, 1); };
 	void Call() override;
+	void GetImmP() override;
 	void GetImm() override;
 	void SetImm() override;	
 	#pragma endregion
@@ -646,7 +647,7 @@ public:
 		switch (HLData->getBuildType())
 		{
 			case BT_GTAV:
-			XSCWrite((outDirectory + "\\" + HLData->getBuildFileName()).data(), true);
+			XSCWrite((outDirectory + "\\" + HLData->getBuildFileName()).data());
 			break;
 			default:
 			assert(false && "Incompatible build type for GTAV");
@@ -673,7 +674,7 @@ private:
 	void GetHash() override { AddOpcode(GetHash); };
 	void Call() override;
 	void PushString() override;
-	void GetImmP() override { AddOpcode(GetImmP); };
+	void GetImmP() override;
 	void GetImm() override;
 	void SetImm() override;
 	#pragma endregion

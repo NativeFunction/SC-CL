@@ -4300,11 +4300,7 @@ public:
 				}
 			}
 
-			int size = getSizeFromBytes(offset);
-
-			if (size > 0) {
-				AddInstructionComment(AddImm, "." + ND->getName().str(), size * 4);
-			}
+			AddInstructionComment(GetImmP, "." + ND->getName().str(), getSizeFromBytes(offset));
 			if (isLtoRValue)
 			{
 				AddInstructionCondition(typeSize > 1, ToStack, PGet);
