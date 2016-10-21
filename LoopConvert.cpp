@@ -2611,15 +2611,20 @@ public:
 						Throw("Natives should be defined with the 'extern' keyword", rewriter, call->getDirectCallee()->getLocation());
 					}
 					const QualType type = call->getDirectCallee()->getReturnType();
+					int pCount = 0;
+					for (unsigned i = 0; i < call->getDirectCallee()->getNumParams();i++)
+					{
+						pCount += getSizeFromBytes(getSizeOfType(call->getDirectCallee()->getParamDecl(i)->getType().getTypePtr()));
+					}
 					if (attr->getX64HiDwordHash() || attr->getHash())
 					{
 						//clang attribute arguments cannot be 64bits wide, so using 2 32 bit args can manually joining them is the nicest way to support pc
 						//when using 32 bit(xbox/ps3) the hi dword would be 0 so can be neglected
-						AddInstruction(Native, parseCast(cast<const CastExpr>(callee)).substr(1), ((uint64_t)attr->getX64HiDwordHash() << 32) | attr->getHash(), call->getNumArgs(), getSizeFromBytes(getSizeOfType(type.getTypePtr())));
+						AddInstruction(Native, parseCast(cast<const CastExpr>(callee)).substr(1), ((uint64_t)attr->getX64HiDwordHash() << 32) | attr->getHash(), pCount, getSizeFromBytes(getSizeOfType(type.getTypePtr())));
 					}
 					else
 					{
-						AddInstruction(Native, parseCast(cast<const CastExpr>(callee)).substr(1), call->getNumArgs(), getSizeFromBytes(getSizeOfType(type.getTypePtr())));
+						AddInstruction(Native, parseCast(cast<const CastExpr>(callee)).substr(1), pCount, getSizeFromBytes(getSizeOfType(type.getTypePtr())));
 					}
 
 				}
