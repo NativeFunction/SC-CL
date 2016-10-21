@@ -2035,6 +2035,18 @@ void FunctionData::addOpGetImmP(uint16_t index)
 	if (index != 0)
 #endif
 	{
+		assert(Instructions.size() && "Cannot add GetImmP to empty instruction stack");
+		switch(Instructions.back()->getKind())
+		{
+			case OK_GetFrameP:
+			case OK_GetStaticP:
+			case OK_GetGlobalP:
+			case OK_GetImmP:
+				Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
+				return;
+			default:
+				break;
+		}
 		Opcode* op = new Opcode(OK_GetImmP);
 		op->setUShort(index, 0);
 		Instructions.push_back(op);
@@ -2046,6 +2058,19 @@ void FunctionData::addOpGetImm(uint16_t index)
 #ifdef USE_OPTIMISATIONS
 	if (index != 0)
 	{
+		assert(Instructions.size() && "Cannot add GetImm to empty instruction stack");
+		switch (Instructions.back()->getKind())
+		{
+			case OK_GetFrameP:
+			case OK_GetStaticP:
+			case OK_GetGlobalP:
+			case OK_GetImmP:
+				Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
+				addOpPGet();//pget will turn these
+				return;
+			default:
+				break;
+		}
 		Opcode* op = new Opcode(OK_GetImm);
 		op->setUShort(index, 0);
 		Instructions.push_back(op);
@@ -2066,6 +2091,19 @@ void FunctionData::addOpSetImm(uint16_t index)
 #ifdef USE_OPTIMISATIONS
 	if (index != 0)
 	{
+		assert(Instructions.size() && "Cannot add SetImm to empty instruction stack");
+		switch (Instructions.back()->getKind())
+		{
+			case OK_GetFrameP:
+			case OK_GetStaticP:
+			case OK_GetGlobalP:
+			case OK_GetImmP:
+				Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
+				addOpPSet();
+				return;
+			default:
+				break;
+		}
 		Opcode* op = new Opcode(OK_SetImm);
 		op->setUShort(index, 0);
 		Instructions.push_back(op);
