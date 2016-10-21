@@ -4254,6 +4254,12 @@ public:
 			const MemberExpr *E = cast<const MemberExpr>(e);
 			Expr *BaseExpr = E->getBase();
 
+			int typeSize = getSizeFromBytes(getSizeOfType(E->getType().getTypePtr()));
+			if (isLtoRValue || !isAddr && typeSize > 1)
+			{
+				AddInstructionComment(PushInt, "Type Size", typeSize);
+			}
+
 
 			if (E->isArrow()) {
 				parseExpression(BaseExpr, false, true);
@@ -4301,7 +4307,7 @@ public:
 			}
 			if (isLtoRValue)
 			{
-				AddInstruction(PGet);
+				AddInstructionCondition(typeSize > 1, ToStack, PGet);
 			}
 			else if (isAddr)
 			{
@@ -4309,7 +4315,7 @@ public:
 			}
 			else
 			{
-				AddInstruction(PSet);
+				AddInstructionCondition(typeSize > 1, FromStack, PSet);
 			}
 
 			return 1;
