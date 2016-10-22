@@ -954,7 +954,7 @@ void FunctionData::addOpSetConv(int size)
 	if (!(size == 1 || size == 2))
 		return;
 
-	const uint32_t modSize = size == 1 ? 256 : size == 2 ? 65536 : 0xFFFFFFFF;
+	const uint32_t andSize = size == 1 ? 255 : size == 2 ? 65535 : 0xFFFFFFFF;
 	const uint32_t shiftSize = size == 1 ? 24 : size == 2 ? 16 : 0;
 	const string type = size == 1 ? "Char Type" : size == 2 ? "Short Type" : "";
 
@@ -964,14 +964,14 @@ void FunctionData::addOpSetConv(int size)
 	if (last->getKind() == OK_PushInt)
 	{
 		Instructions.pop_back();
-		addOpPushInt((last->getInt() & modSize) << shiftSize);
+		addOpPushInt((last->getInt() & andSize) << shiftSize);
 		delete last;
 	}
 	else if (last->getKind() == OK_PushBytes)
 	{
 		int count = last->getPBytesCount();
 		assert(count > 1 && count < 4 && "PushBytes opcode has invalid number of bytes");
-		int val = (last->getByte(count) & modSize) << shiftSize;
+		int val = (last->getByte(count) & andSize) << shiftSize;
 		if (count == 3)
 		{
 			last->setPBytesCount(2);//undefine the last push byte, just incase new value is outside range of pushB
@@ -993,7 +993,7 @@ void FunctionData::addOpSetConv(int size)
 	else
 		#endif
 	{
-		addOpPushInt(modSize);
+		addOpPushInt(andSize);
 		addOpAnd();
 		addOpShiftLeft(shiftSize);
 		pushComment(type);
