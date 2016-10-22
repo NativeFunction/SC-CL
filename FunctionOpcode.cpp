@@ -1159,7 +1159,7 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 		return;
 	int randMod = 1 + maxBlockSize - minBlockSize;
 	assert(maxBlockSize > minBlockSize && "max block size must be greater than min block size");
-	assert(minBlockSize > 0 && "min block size must be positive");
+	assert(minBlockSize >= 0 && "min block size must be positive");
 	if (getSizeEstimate(0) > 30000)
 	{
 		return;//jumps may be screwed messed up if past 32768 size limit
@@ -1188,7 +1188,8 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 		{
 			block.reserve(bSize + 2);
 			block.resize(bSize + 1);
-			memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
+			if (bSize)
+				memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
 			if (block[bSize]->getKind() != OK_Jump)
 			{
 				Opcode* jumpNext = new Opcode(OK_Jump);
