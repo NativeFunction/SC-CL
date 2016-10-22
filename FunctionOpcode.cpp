@@ -964,14 +964,14 @@ void FunctionData::addOpSetConv(int size)
 	if (last->getKind() == OK_PushInt)
 	{
 		Instructions.pop_back();
-		addOpPushInt(last->getInt() % modSize << shiftSize);
+		addOpPushInt((last->getInt() & modSize) << shiftSize);
 		delete last;
 	}
 	else if (last->getKind() == OK_PushBytes)
 	{
 		int count = last->getPBytesCount();
 		assert(count > 1 && count < 4 && "PushBytes opcode has invalid number of bytes");
-		int val = last->getByte(count) % modSize << shiftSize;
+		int val = (last->getByte(count) & modSize) << shiftSize;
 		if (count == 3)
 		{
 			last->setPBytesCount(2);//undefine the last push byte, just incase new value is outside range of pushB
@@ -994,7 +994,7 @@ void FunctionData::addOpSetConv(int size)
 		#endif
 	{
 		addOpPushInt(modSize);
-		addOpMod();
+		addOpAnd();
 		addOpShiftLeft(shiftSize);
 		pushComment(type);
 	}
