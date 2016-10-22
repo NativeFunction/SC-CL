@@ -19,8 +19,7 @@
 #define BITSET(integer, index) (integer | (1 << index))
 #define BITCLEAR(integer, index) (integer & ~(1 << index))
 
-#pragma region String
-//{ String
+#pragma region String //{
 extern __intrinsic void memset(void* dest, byte value, size_t len);
 extern __intrinsic void memcpy(void* dest, void* src, size_t len);
 extern __intrinsic void strcpy(char* dest, char* src, const byte destBufferLen);
@@ -28,17 +27,13 @@ extern __intrinsic void stradd(char* dest, char* src, const byte destBufferLen);
 extern __intrinsic void straddi(char* dest, int value, const byte destBufferLen);
 extern __intrinsic void itos(char* dest, int value, const byte destBufferLen);
 extern __intrinsic int getHashKey(char *string);
-//}
-#pragma endregion
+#pragma endregion //}
 
-#pragma region Misc_Opcodes
-//{ Misc_Opcodes
+#pragma region Misc_Opcodes //{
 extern __intrinsic __asm_unsafe void pcall(void* funcAddr, ...);//params with types like floats must be implicitly set (1.0f)
-//}
-#pragma endregion
+#pragma endregion //}
 
-#pragma region Stack_Operations
-//{ Stack_Operations
+#pragma region Stack_Operations //{
 extern __intrinsic __asm_unsafe any stacktop();
 extern __intrinsic __asm_unsafe void pop();
 extern __intrinsic __asm_unsafe void popMult(const uint count);
@@ -53,11 +48,9 @@ extern __intrinsic __asm_unsafe void exchange(const int structStackSize);
 extern __intrinsic __asm_unsafe int popInt();
 extern __intrinsic __asm_unsafe float popFloat();
 extern __intrinsic __asm_unsafe vector3 popVector3();
-//}
-#pragma endregion
+#pragma endregion //}
 
-#pragma region Math/Conversions
-//{ Math/Conversions
+#pragma region Math/Conversions //{
 extern __intrinsic float reinterpretIntToFloat(int intValue);
 extern __intrinsic int reinterpretFloatToInt(float floatValue);
 extern __intrinsic vector3 toVector3(float value);
@@ -68,11 +61,9 @@ extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Div(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Neg(vector3 vector);
 extern __intrinsic float fMod(float divend, float divisor);
-//}
-#pragma endregion
+#pragma endregion //}
 
-#pragma region Unsafe_Math
-//{ Unsafe_Math
+#pragma region Unsafe_Math //{
 // These perform the operation on the item(or vector) on top of the stack
 // This can lead to dangerous behaviour if you arent sure what is currently on the stack
 extern __intrinsic __asm_unsafe int stackAdd(int value);
@@ -90,19 +81,16 @@ extern __intrinsic __asm_unsafe vector3 stackVSub(vector3 value);
 extern __intrinsic __asm_unsafe vector3 stackVMult(vector3 value);
 extern __intrinsic __asm_unsafe vector3 stackVDiv(vector3 value);
 extern __intrinsic __asm_unsafe vector3 stackVNeg();
-//}
-#pragma endregion
+#pragma endregion //}
 
-#pragma region Variables
-//{ Variables
+#pragma region Variables //{
 extern __intrinsic __asm_unsafe void setframe(const uint index);
 extern __intrinsic int getframe(const uint index);
 extern __intrinsic int getframep(const uint index);
 extern __intrinsic void setglobal(const uint index, int value);
 extern __intrinsic int getglobal(const uint index);
 extern __intrinsic int getglobalp(const uint index);
-//}
-#pragma endregion
+#pragma endregion //}
 
 #undef __asm_unsafe
 #undef __intrinsic

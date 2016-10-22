@@ -18,6 +18,8 @@
 !Script.cpp
 !bin/
 !bin/include/
+!RDR/
+!GTAV/
 !compiler/
 !Crypto/
 !Compression/

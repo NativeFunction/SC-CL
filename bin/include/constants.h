@@ -12,12 +12,12 @@
 
 #ifdef __RDR__
 
-#include "RDRconsts.h"
+#include "RDR/consts.h"
 
 #else
 #ifdef	__GTAV__
 
-#include "GTAVconsts.h"
+#include "GTAV/consts.h"
 
 #endif
 #endif

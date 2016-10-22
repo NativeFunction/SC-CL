@@ -129,6 +129,8 @@ vector3 RotationLookAtPoint(vector3 pos, vector3 endpos)
 	};
 	return out;
 }
+
+#ifndef __GTAV__
 float acos(float number)
 {
 	//this works fine for floats as negitive ints and floats both have msb set
@@ -178,6 +180,8 @@ float asin(float number)
 	pushFloat(stackFNeg());
 	return stackFAdd(1.570796326794895f);
 }
+#endif
+
 float StringToFloat(char* str)
 {
 	float rez = 0, fact = 1;

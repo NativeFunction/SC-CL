@@ -11,11 +11,31 @@ typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef _Bool bool;
 
-typedef int player;
-typedef int entity;
-typedef entity ped;
-typedef entity vehicle;
-typedef entity object;
+typedef int Player;
+typedef int Entity;
+typedef Entity Ped;
+typedef Entity Vehicle;
+typedef Entity Object;
+typedef uint Hash;
+typedef int Cam;
+typedef int FireId;
+typedef int CarGenerator;
+typedef int Group;
+typedef int Train;
+typedef int Pickup;
+typedef int Object;
+typedef int Weapon;
+typedef int Interior;
+typedef int Blip;
+typedef int Texture;
+typedef int TextureDict;
+typedef int CoverPoint;
+typedef int Camera;
+typedef int TaskSequence;
+typedef int ColourIndex;
+typedef int Sphere;
+typedef int ScrHandle;
+
 
 typedef struct vector2
 {
