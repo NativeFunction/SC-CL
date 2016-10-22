@@ -76,26 +76,47 @@ typedef enum eWeapon : unsigned int
 	WEAPON_RUN_OVER_BY_CAR = 0xA36D413E,
 	WEAPON_HELI_CRASH = 0x145F1012,
 	WEAPON_FIRE = 0xDF8E89EB,
+	
+	//Beach Bum Update
+	WEAPON_SNSPISTOL = 0xBFD21232,
 	WEAPON_BOTTLE = 0xF9E6AA4B,
-	//DLC Weapons
+	
+	//Valentine's Day Massacre Special
 	WEAPON_GUSENBERG = 0x61012683,
+	
+	//Business Update
 	WEAPON_SPECIALCARBINE = 0xC0A3098D,
 	WEAPON_HEAVYPISTOL = 0xD205520E,
-	WEAPON_SNSPISTOL = 0xBFD21232,
+	
+	//High Life Update
 	WEAPON_BULLPUPRIFLE = 0x7F229F94,
+	
+	//"I'm Not a Hipster" Update
 	WEAPON_DAGGER = 0x92A27487,
 	WEAPON_VINTAGEPISTOL = 0x083839C4,
+	
+	//Independence Day Special
 	WEAPON_FIREWORK = 0x7F7497E5,
 	WEAPON_MUSKET = 0xA89CB99E,
+	
+	//Last Team Standing Update
 	WEAPON_HEAVYSHOTGUN = 0x3AABBBAA,
 	WEAPON_MARKSMANRIFLE = 0xC734385A,
+	
+	//Festive Surprise
 	WEAPON_HOMINGLAUNCHER = 0x63AB0442,
 	WEAPON_PROXMINE = 0xAB564B93,
 	WEAPON_SNOWBALL = 0x787F0BB,
+	
+	//Heists Update
 	WEAPON_FLAREGUN = 0x47757124,
 	WEAPON_GARBAGEBAG = 0xE232C28C,
 	WEAPON_HANDCUFFS = 0xD04C944D,
+	
+	//Ill-Gotten Gains Part 1
 	WEAPON_COMBATPDW = 0x0A3D4D34,
+	
+	//Ill-Gotten Gains Part 2
 	WEAPON_MARKSMANPISTOL = 0xDC4DB296,
 	WEAPON_KNUCKLE = 0xD8DF3C3C
 } eWeapon;
@@ -2056,12 +2077,23 @@ typedef enum eInput : unsigned int
 
 typedef enum eWeaponPC : unsigned int
 {
+	//Enhanced edition
 	WEAPON_HATCHET = 0xF9DCBF2D,
 	WEAPON_RAILGUN = 0x6D544C99
+	
+	//Lowriders
+	
+	//Executives and Other Criminals
+	
+	//Lowriders: Custom Classics
+	
+	//Bikers
+	
 } eWeaponPC;
 
 typedef enum eVehiclePC : unsigned int
 {
+	//Enhanced edition
 	VEHICLE_SUBMERSIBLE2 = 0xC07107EE,//(Kraken)
 	VEHICLE_DUKES = 0X2B26F456,
 	VEHICLE_DUKES2 = 0XEC8F7094,//(Duke O'Death)
@@ -2075,6 +2107,27 @@ typedef enum eVehiclePC : unsigned int
 	VEHICLE_STALION2 = 0XE80F67EE,//(Burger Shot Stallion)
 	VEHICLE_BLISTA2 = 0X3DEE5EDA,//(Blista Compact)
 	VEHICLE_BLISTA3 = 0XDCBC1C3B//(Go Go Monkey Blista)
+	
+	//Lowriders
+	
+	//Halloween Surprise
+	
+	//Executives and Other Criminals
+	
+	//Festive Surprise 2015
+	
+	//January 2016 Update
+	
+	//Be My Valentine
+	
+	//Lowriders: Custom Classics
+	
+	//Further Adventures in Finance and Felony
+	
+	//Cunning Stunts
+	
+	//Bikers
+	
 } eVehiclePC;
 
 #else
