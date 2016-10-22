@@ -611,18 +611,25 @@ void CompileRDR::fixFunctionCalls()
 			Throw("Function \"" + CallInfo.FuncName + "\" not found");
 		}
 		uint32_t pos = it->second;
-		if (pos > 1048575)
-		{
+		if (pos >= 0x1000000)
 			Throw("Function \"" + CallInfo.FuncName + "\" out of call range");
-		}
+		
 		switch (CallInfo.InstructionType)
 		{
 			case CallInstructionType::FuncLoc:
 				*(int32_t*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
 			break;
 			case CallInstructionType::Call:
-				*(CodePageData.data() + CallInfo.CallLocation) = GetNewCallOpCode(pos);//any out of range errors already been caught
-				*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = SwapEndian(GetNewCallOffset((uint16_t)pos));
+				if (pos > 1048575)
+				{
+					*(int32_t*)(CodePageData.data() + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
+					*(CodePageData.data() + CallInfo.CallLocation + 4) = RDROpcodes.pCall;
+				}
+				else
+				{
+					*(CodePageData.data() + CallInfo.CallLocation) = GetNewCallOpCode(pos);//any out of range errors already been caught
+					*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = SwapEndian(GetNewCallOffset((uint16_t)pos));
+				}
 			break;
 			default: assert(false && "Invalid Call Instruction"); break;
 		}
@@ -717,9 +724,30 @@ void CompileRDR::Return()
 void CompileRDR::Call()
 {
 	// rdr: 2 byte loc (loc or'ed)
-	DoesOpcodeHaveRoom(3);
-	CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getString()});
-	AddInt24(0);
+	auto it = FuncLocations.find(DATA->getString());
+	if (it == FuncLocations.end())
+	{
+		DoesOpcodeHaveRoom(4);//4 because pcall can be separate
+		CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getString() });
+		AddInt24(0);//call, int16 loc / pushi24, int16 loc part
+		AddInt16(0);//int16 loc part 2, pcall
+	}
+	else
+	{
+		if (it->second > 1048575)
+		{
+			PushInt(it->second);
+			AddOpcode(pCall);
+		}
+		else
+		{
+			DoesOpcodeHaveRoom(3);
+			AddInt8(GetNewCallOpCode(it->second));
+			AddInt16(SwapEndian(GetNewCallOffset((uint16_t)it->second)));
+		}
+	}
+
+	
 }
 void CompileRDR::GetImm()
 {
