@@ -41,13 +41,15 @@ FunctionData * Script::createFunction(string name, int paramCount, int returnCou
 
 const FunctionData * Script::getFunctionFromName(string name) const
 {
-	uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
-	for (int i = 0, max = getFunctionCount(); i<max;i++)
+	name = "@" + name;
+	uint32_t hash = Utils::Hashing::JoaatCased(name);
+	for (int i = 0, max = getFunctionCount(); i < max;i++)
 	{
 		const FunctionData *func = getFunctionFromIndex(i);
 		if (hash == func->getHash() && name == func->getName())
 			return functions[i];
 	}
+	Utils::System::Warn("Function \"" + name + "\" does not exist");
 	assert(false && "Function doesnt exist");
 	return NULL;
 }

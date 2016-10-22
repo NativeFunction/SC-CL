@@ -2,7 +2,7 @@
 #include "types.h"
 #include "constants.h"
 
-#define __intrinsic __attribute__((__intrinsic__))
+#define __intrinsic __attribute((intrinsic(false)))
 
 #define __intrinsic_advanced_user true
 #if __intrinsic_advanced_user == false
