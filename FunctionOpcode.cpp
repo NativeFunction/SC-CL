@@ -1155,7 +1155,9 @@ int FunctionData::getSizeEstimate(int incDecl) const
 
 void FunctionData::controlFlowConfusion(int maxBlockSize, int minBlockSize, bool keepEndReturn)
 {
-	int randMod = maxBlockSize - minBlockSize;
+	if (isBuiltIn())
+		return;
+	int randMod = 1 + maxBlockSize - minBlockSize;
 	assert(maxBlockSize > minBlockSize && "max block size must be greater than min block size");
 	assert(minBlockSize > 0 && "min block size must be positive");
 	if (getSizeEstimate(0) > 30000)
