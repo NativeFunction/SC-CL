@@ -381,7 +381,7 @@ public:
 	bool isBuiltIn()const{ return _isBuiltIn; }
 	void setBuiltIn(){ _isBuiltIn = true; }
 
-	void controlFlowConfusion(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true);
+	void codeLayoutRandomisation(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true);
 
 	void setUnsafe(){ allowUnsafe = true; }
 	bool isUnsafe()const{ return allowUnsafe; }

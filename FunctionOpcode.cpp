@@ -1153,7 +1153,7 @@ int FunctionData::getSizeEstimate(int incDecl) const
 	return size;
 }
 
-void FunctionData::controlFlowConfusion(int maxBlockSize, int minBlockSize, bool keepEndReturn)
+void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, bool keepEndReturn)
 {
 	if (isBuiltIn())
 		return;
@@ -2152,6 +2152,47 @@ void FunctionData::addOpJumpFalse(string loc)
 		op->setKind(OK_JumpGT);
 		op->setString(loc);
 		return;
+	case OK_PushInt:
+		if (op->getInt())
+		{
+			delete op;//JumpFalse on something not zero never gets executed
+			Instructions.pop_back();
+		}
+		else
+		{
+			delete op;//JumpFalse on zero always branches
+			op = new Opcode(OK_Jump);
+			op->setString(loc);
+			Instructions.back() = op;
+		}
+	case OK_PushBytes:
+		switch(op->getPBytesCount())
+		{
+			case 2:
+			{
+				uint8_t val = op->getByte(2);//store val
+				op->setInt(op->getByte(1));//change pushBytes into PushInt
+				op->setKind(OK_PushInt);
+				if (!val)
+				{
+					op = new Opcode(OK_Jump);
+					op->setString(loc);
+					Instructions.back() = op;
+				}
+				break;
+			}
+			case 3:
+				op->setPBytesCount(2);//pop the 3rd pushByte
+				if (!op->getByte(3))//if popped byte is 0 add a jump
+				{
+					op = new Opcode(OK_Jump);
+					op->setString(loc);
+					Instructions.back() = op;
+				}
+				break;
+			default:
+				assert(false && "Invalid PushBytes count");
+		}
 	default:
 		op = new Opcode(OK_JumpFalse);
 		op->setString(loc);

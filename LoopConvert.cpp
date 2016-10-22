@@ -4884,7 +4884,7 @@ public:
 				func->setStackSize(LocalVariables.maxIndex);
 			}
 			func->setProcessed();
-			//func->controlFlowConfusion(5, 1);
+			//func->codeLayoutRandomisation(5, 1);
 			scriptData.clearCurrentFunction();
 		}
 		else
