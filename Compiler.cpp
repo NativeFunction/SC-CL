@@ -611,9 +611,9 @@ void CompileRDR::fixFunctionCalls()
 			Throw("Function \"" + CallInfo.FuncName + "\" not found");
 		}
 		uint32_t pos = it->second;
-		if (pos >= 0x1000000)
+		if (pos > 1048575)
 		{
-			Throw("Function \"" + CallInfo.FuncName + "\" out of call range");//realistally this is never going to happen
+			Throw("Function \"" + CallInfo.FuncName + "\" out of call range");
 		}
 		switch (CallInfo.InstructionType)
 		{

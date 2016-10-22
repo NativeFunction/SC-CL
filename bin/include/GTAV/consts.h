@@ -2133,7 +2133,6 @@ typedef enum eVehicleWeaponPC : unsigned int
 	
 } eVehicleWeaponPC;
 
-
 typedef enum eVehiclePC : unsigned int
 {
 	//Enhanced edition
