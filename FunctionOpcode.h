@@ -545,12 +545,7 @@ public:
 		op->setUShort(index, 0);
 		Instructions.push_back(op);
 	}
-	void addOpGetFrame(uint16_t index)
-	{
-		Opcode* op = new Opcode(OK_GetFrame);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
-	}
+	void addOpGetFrame(uint16_t index);
 	void addOpSetFrame(uint16_t index)
 	{
 		Opcode* op = new Opcode(OK_SetFrame);
@@ -563,12 +558,7 @@ public:
 		op->setUShort(index, 0);
 		Instructions.push_back(op);
 	}
-	void addOpGetStatic(uint16_t index)
-	{
-		Opcode* op = new Opcode(OK_GetStatic);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
-	}
+	void addOpGetStatic(uint16_t index);
 	void addOpSetStatic(uint16_t index)
 	{
 		Opcode* op = new Opcode(OK_SetStatic);
@@ -581,12 +571,7 @@ public:
 		op->setInt(index);
 		Instructions.push_back(op);
 	}
-	void addOpGetGlobal(int index)
-	{
-		Opcode* op = new Opcode(OK_GetGlobal);
-		op->setInt(index);
-		Instructions.push_back(op);
-	}
+	void addOpGetGlobal(int index);
 	void addOpSetGlobal(int index)
 	{
 		Opcode* op = new Opcode(OK_SetGlobal);

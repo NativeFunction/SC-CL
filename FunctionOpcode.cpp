@@ -1799,22 +1799,31 @@ void FunctionData::addOpPGet()
 {
 #ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Cannot add PGet to empty instruction stack");
-	switch (Instructions.back()->getKind())
+	Opcode* op = Instructions.back();
+	switch (op->getKind())
 	{
 	case OK_GetArrayP:
 		Instructions.back()->setKind(OK_GetArray);
 		return;
 	case OK_GetFrameP:
-		Instructions.back()->setKind(OK_GetFrame);
+		Instructions.pop_back();
+		addOpGetFrame(op->getUShort(0));
+		delete op;
 		return;
 	case OK_GetGlobalP:
-		Instructions.back()->setKind(OK_GetGlobal);
+		Instructions.pop_back();
+		addOpGetGlobal(op->getInt());
+		delete op;
 		return;
 	case OK_GetStaticP:
-		Instructions.back()->setKind(OK_GetStatic);
+		Instructions.pop_back();
+		addOpGetStatic(op->getUShort(0));
+		delete op;
 		return;
 	case OK_GetImmP:
-		Instructions.back()->setKind(OK_GetImm);
+		Instructions.pop_back();
+		addOpGetImm(op->getUShort(0));
+		delete op;
 		return;
 	default:
 		Instructions.push_back(new Opcode(OK_PGet));
@@ -1853,6 +1862,120 @@ void FunctionData::addOpPSet()
 #else
 	Instructions.push_back(new Opcode(OK_PSet));
 #endif
+}
+
+void FunctionData::addOpGetFrame(uint16_t index)
+{
+#ifdef USE_OPTIMISATIONS
+	if (Instructions.size())
+	{
+		Opcode *back = Instructions.back();
+		if (back->getKind() == OK_GetFrame && back->getUShort(0) == index - 1)
+		{
+			delete back;
+			Instructions.pop_back();
+			addOpPushInt(2);
+			addOpGetFrameP(index - 1);
+			addOpToStack();
+			return;
+		}
+		else if (back->getKind() == OK_ToStack)
+		{
+			size_t size = Instructions.size();
+			assert(size > 2 && "To Stack called with invalid args");
+			Opcode* ptrOp = Instructions[size - 2],* sizeOp = Instructions[size - 3];
+			if (ptrOp->getKind() == OK_GetFrameP && sizeOp->getKind() == OK_PushInt)
+			{
+				if (index - ptrOp->getUShort(0) == sizeOp->getInt())
+				{
+					sizeOp->setInt(sizeOp->getInt() + 1);
+					return;
+				}
+			}
+		}
+	}
+#endif
+
+	Opcode* op = new Opcode(OK_GetFrame);
+	op->setUShort(index, 0);
+	Instructions.push_back(op);
+
+}
+
+void FunctionData::addOpGetStatic(uint16_t index)
+{
+#ifdef USE_OPTIMISATIONS
+	if (Instructions.size())
+	{
+		Opcode *back = Instructions.back();
+		if (back->getKind() == OK_GetStatic && back->getUShort(0) == index - 1)
+		{
+			delete back;
+			Instructions.pop_back();
+			addOpPushInt(2);
+			addOpGetStaticP(index - 1);
+			addOpToStack();
+			return;
+		}
+		else if (back->getKind() == OK_ToStack)
+		{
+			size_t size = Instructions.size();
+			assert(size > 2 && "To Stack called with invalid args");
+			Opcode* ptrOp = Instructions[size - 2], *sizeOp = Instructions[size - 3];
+			if (ptrOp->getKind() == OK_GetStaticP && sizeOp->getKind() == OK_PushInt)
+			{
+				if (index - ptrOp->getUShort(0) == sizeOp->getInt())
+				{
+					sizeOp->setInt(sizeOp->getInt() + 1);
+					return;
+				}
+			}
+		}
+	}
+#endif
+	{
+		Opcode* op = new Opcode(OK_GetStatic);
+		op->setUShort(index, 0);
+		Instructions.push_back(op);
+	}
+}
+
+void FunctionData::addOpGetGlobal(int index)
+{
+#ifdef USE_OPTIMISATIONS
+	if (Instructions.size())
+	{
+		Opcode *back = Instructions.back();
+		if (back->getKind() == OK_GetGlobal && back->getInt() == index - 1)
+		{
+			delete back;
+			Instructions.pop_back();
+			addOpPushInt(2);
+			addOpGetGlobalP(index - 1);
+			addOpToStack();
+			return;
+		}
+		else if (back->getKind() == OK_ToStack)
+		{
+			size_t size = Instructions.size();
+			assert(size > 2 && "To Stack called with invalid args");
+			Opcode* ptrOp = Instructions[size - 2], *sizeOp = Instructions[size - 3];
+			if (ptrOp->getKind() == OK_GetGlobalP && sizeOp->getKind() == OK_PushInt)
+			{
+				if (index - ptrOp->getInt() == sizeOp->getInt())
+				{
+					sizeOp->setInt(sizeOp->getInt() + 1);
+					return;
+				}
+			}
+		}
+	}
+#endif
+	{
+		Opcode* op = new Opcode(OK_GetGlobal);
+		op->setInt(index);
+		Instructions.push_back(op);
+	}
 }
 
 void FunctionData::addOpAddImm(int immediate)
