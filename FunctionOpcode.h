@@ -271,12 +271,6 @@ class Opcode
 	void setUShort(uint16_t value, int offset);
 	void setByte(uint8_t value, int offset);
 	void setKind(OpcodeKind newKind){ opcodeKind = newKind; }
-	void setPBytesCount(uint8_t count)
-	{
-		assert(opcodeKind == OK_PushBytes && "setPBytesCount can only be called on PushBytes");
-		assert(count == 2 || count == 3 && "setPBytes must be called with 2 or 3 count");
-		setByte(count, 0);
-	}
 	union
 	{
 		char u8[sizeof(void*)];
@@ -302,11 +296,6 @@ public:
 	int16_t getShort(int offset) const;
 	uint16_t getUShort(int offset) const;
 	uint8_t getByte(int offset) const;
-	uint8_t getPBytesCount() const
-	{
-		assert(opcodeKind == OK_PushBytes && "getPBytesCount can only be called on PushBytes");
-		return getByte(0);
-	}
 	int getSizeEstimate() const;
 	string toString() const;
 
@@ -377,7 +366,11 @@ public:
 		return Instructions.size();
 	}
 	bool isProcessed()const{ return _processed; }
-	void setProcessed(){ _processed = true; }
+	void setProcessed()
+	{
+		_processed = true;
+		optimisePushBytes();
+	}
 	bool isBuiltIn()const{ return _isBuiltIn; }
 	void setBuiltIn(){ _isBuiltIn = true; }
 
@@ -385,6 +378,7 @@ public:
 
 	void setUnsafe(){ allowUnsafe = true; }
 	bool isUnsafe()const{ return allowUnsafe; }
+	void optimisePushBytes();
 
 #pragma region CreateOpcodes
 	void addOpNop(){ Instructions.push_back(new Opcode(OK_Nop)); }

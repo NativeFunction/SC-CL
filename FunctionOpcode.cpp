@@ -226,7 +226,7 @@ int Opcode::getSizeEstimate() const
 	return 5;//Push Val
 
 	case OK_PushBytes:
-		switch (getPBytesCount())
+		switch (getByte(0))
 		{
 		case 0:
 			assert(false && "Empty PushBytes opcode");
@@ -468,7 +468,7 @@ string Opcode::toString() const
 	}
 	case OK_PushBytes:
 	{
-		switch(getPBytesCount())
+		switch(getByte(0))
 		{
 		case 0:
 			assert(false && "Empty PushBytes opcode");
@@ -723,82 +723,20 @@ string Opcode::toString() const
 bool FunctionData::tryPop2Ints(int & i1, int & i2)
 {
 	int size = Instructions.size();
-	if (!size)
+	if (size > 2)
 	{
-		return false;
-	}
-	Opcode *last = Instructions.back();
-	switch(last->getKind())
-	{
-	case OK_PushInt:
-	{
-		if (size == 1)
+		Opcode *last = Instructions[size - 1], *prev = Instructions[size - 2];
+		if (last->getKind() == OK_PushInt && prev->getKind() == OK_PushInt)
 		{
-			return false;//only 1 item on stack
-		}
-		Opcode* prev = *(&Instructions.back() - 1);
-		switch (prev->getKind())
-		{
-		case OK_PushInt:
 			i1 = prev->getInt();
+			delete prev;
 			i2 = last->getInt();
-			delete last;
 			delete prev;
 			Instructions._Pop_back_n(2);
 			return true;
-		case OK_PushBytes:
-		{
-			switch (prev->getPBytesCount())
-			{
-			case 2:
-				i1 = prev->getByte(2);
-				i2 = last->getInt();
-				delete last;
-				Instructions._Pop_back_n(2);
-				addOpPushInt(prev->getByte(1));
-				delete prev;
-				return true;
-			case 3:
-				i1 = prev->getByte(3);
-				i2 = last->getInt();
-				delete last;
-				Instructions.pop_back();
-				prev->setPBytesCount(2);
-				return true;
-			default:
-				assert(false && "Unexpected pushBytes count");
-				return false;
-			}
-		}
-		default:
-			return false;
 		}
 	}
-	case OK_PushBytes:
-	{
-		switch (last->getPBytesCount())
-		{
-		case 2:
-			i1 = last->getByte(1);
-			i2 = last->getByte(2);
-			delete last;
-			Instructions.pop_back();
-			return true;
-		case 3:
-			i1 = last->getByte(2);
-			i2 = last->getByte(3);
-			Instructions.pop_back();
-			addOpPushInt(last->getByte(1));
-			delete last;
-			return true;
-		default:
-			assert(false && "Unexpected push byte count");
-			return false;
-		}
-	}
-	default:
-		return false;
-	}
+	return false;
 }
 
 bool FunctionData::tryPopInt(int& result)
@@ -806,31 +744,12 @@ bool FunctionData::tryPopInt(int& result)
 	if (Instructions.size())
 	{
 		Opcode* back = Instructions.back();
-		switch(back->getKind())
+		if (back->getKind() == OK_PushInt)
 		{
-			case OK_PushInt:
 				result = back->getInt();
 				Instructions.pop_back();
 				delete back;
 				return true;
-			case OK_PushBytes:
-				switch(back->getPBytesCount())
-				{
-					case 2:
-						Instructions.pop_back();
-						addOpPushInt(back->getByte(1));
-						result = back->getByte(2);
-						delete back;
-						return true;
-					case 3:
-						result = back->getByte(3);
-						back->setPBytesCount(2);
-						return true;
-					default:
-						assert(false && "Unexpected PushBytes count");
-				}
-			default:
-				return false;
 		}
 	}
 	return false;
@@ -881,29 +800,8 @@ void FunctionData::addOpIsNotZero()
 	switch (last->getKind())
 	{
 		case OK_PushInt:
-		{
-			int val = last->getInt();
-			delete last;
-			Instructions.pop_back();
-			addOpPushInt(val != 0);
+			last->setInt(last->getInt() != 0);
 			return;
-		}
-		case OK_PushBytes:
-		{
-			int count = last->getPBytesCount();
-			switch (count)
-			{
-			case 2:
-			case 3:
-				last->setByte(last->getByte(count) != 0, count);
-				return;
-			default:
-				assert(false && "Unexpected PushBytes count");
-				addOpPushInt(0);
-				addOpCmpNe();
-				return;
-			}
-		}
 		case OK_CmpEq:
 		case OK_CmpNe:
 		case OK_CmpGt:
@@ -964,32 +862,7 @@ void FunctionData::addOpSetConv(int size)
 	Opcode *last = Instructions.back();
 	if (last->getKind() == OK_PushInt)
 	{
-		Instructions.pop_back();
-		addOpPushInt((last->getInt() & andSize) << shiftSize);
-		delete last;
-	}
-	else if (last->getKind() == OK_PushBytes)
-	{
-		int count = last->getPBytesCount();
-		assert(count > 1 && count < 4 && "PushBytes opcode has invalid number of bytes");
-		int val = (last->getByte(count) & andSize) << shiftSize;
-		if (count == 3)
-		{
-			last->setPBytesCount(2);//undefine the last push byte, just incase new value is outside range of pushB
-			addOpPushInt(val);
-		}
-		else if (count == 2)
-		{
-			//treat last instruction as pushint
-			//if new value >0 & < 0x100 it will be made back in pushBytes
-			last->setInt(last->getByte(1));
-			last->setKind(OK_PushInt);
-			addOpPushInt(val);
-		}
-		else
-		{
-			assert(false && "This shouldn't happen");
-		}
+		last->setInt((last->getInt() & andSize) << shiftSize);
 	}
 	else
 		#endif
@@ -1113,7 +986,17 @@ string FunctionData::toString() const
 	stream << "\r\n:" << name.substr(1) << "//>\r\nFunction " << (int)pcount << " " << (int)stackSize << "\r\n";
 	for(size_t i = 0; i < Instructions.size(); i++)
 	{
-		stream << *Instructions[i] << "\r\n";
+		if (Instructions[i]->getKind() == OK_Nop)
+		{
+			if (Instructions[i]->hasComment())
+			{
+				stream << "//" + Instructions[i]->getComment() << "\r\n";
+			}
+		}
+		else
+		{
+			stream << *Instructions[i] << "\r\n";
+		}
 	}
 	stream << "//<\r\n";
 	return stream.str();
@@ -1235,11 +1118,56 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 	}
 }
 
+void FunctionData::optimisePushBytes()
+{
+	size_t size = Instructions.size(), max = size - 1, max2 = size - 2;
+	for (size_t i = 0; i < max;i++)
+	{
+		Opcode* op = Instructions[i], *next, *next2;
+		if (op->getKind() == OK_PushInt)
+		{
+			int val = op->getInt(), nextVal, next2Val;
+			if (val >= 0 && val <= 0xFF)
+			{
+				if ((next = Instructions[i + 1], next->getKind()) == OK_PushInt && (nextVal = next->getInt(), nextVal >= 0 && nextVal <= 0xFF))
+				{
+					if (i < max2 && (next2 = Instructions[i + 2], next2->getKind() == OK_PushInt) && (next2Val = next2->getInt(), next2Val >= 0 && next2Val <= 0xFF))
+					{
+						//PushBytes3
+						op->setKind(OK_PushBytes);
+						op->setByte(3, 0);
+						op->setByte(val, 1);
+						op->setByte(nextVal, 2);
+						op->setByte(next2Val, 3);
+						//nop the next 2 opcodes as they have been handled
+						next->setKind(OK_Nop);
+						next2->setKind(OK_Nop);
+						//skip the next 2 in Instructions in the next iteration
+						i += 2;
+					}
+					else
+					{
+						//PushBytes2
+						op->setKind(OK_PushBytes);
+						op->setByte(2, 0);
+						op->setByte(val, 1);
+						op->setByte(nextVal, 2);
+						//nop the next opcode as it has been handled
+						next->setKind(OK_Nop);
+						//skip the next instruction
+						i++;
+					}
+				}
+			}
+		}
+	}
+}
+
 void FunctionData::addOpAdd()
 {
 #ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add Add Instruction");
-	if (Instructions.back()->getKind() == OK_PushInt)//no need to worry about the PushBytes, 0 + 1 etc would never happen
+	if (Instructions.back()->getKind() == OK_PushInt)
 	{
 		if (Instructions.back()->getInt() == 0)
 		{
@@ -1416,18 +1344,6 @@ void FunctionData::addOpNot()
 	case OK_PushInt:
 		back->setInt(Instructions.back()->getInt() == 0);
 		return;
-	case OK_PushBytes:
-		switch(back->getPBytesCount())
-		{
-		case 2:
-		case 3:
-			back->setByte(back->getByte(back->getByte(0)) == 0, back->getByte(0));
-			return;
-		default:
-			assert(false && "Invalid PushBytes count");
-			Instructions.push_back(new Opcode(OK_Not));
-			return;
-		}
 	default:
 		Instructions.push_back(new Opcode(OK_Not));
 		return;
@@ -1442,7 +1358,7 @@ void FunctionData::addOpNeg()
 #ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add Neg Instruction");
 	Opcode *back = Instructions.back();
-	if (back->getKind() == OK_PushInt || back->getKind() == OK_MultImm)//treat pushInt and MultImm as the same, ignore pushBytes as they cant be negated
+	if (back->getKind() == OK_PushInt || back->getKind() == OK_MultImm)//treat pushInt and MultImm as the same
 	{
 		back->setInt(-back->getInt());
 	}
@@ -1584,29 +1500,9 @@ void FunctionData::addOpItoF()
 	switch(last->getKind())
 	{
 	case OK_PushInt:
-		Instructions.pop_back();
-		addOpPushFloat((float)last->getInt());
-		delete last;
+		last->setKind(OK_PushFloat);
+		last->setFloat((float)last->getInt());
 		return;
-	case OK_PushBytes:
-		switch(last->getPBytesCount())
-		{
-		case 2:
-		{
-			int prev = last->getByte(1);
-			int val = last->getByte(2);
-			last->setKind(OK_PushInt);
-			last->setInt(prev);
-			addOpPushFloat((float)val);
-		}
-		return;
-		case 3:
-			last->setPBytesCount(2);
-			addOpPushFloat((float)(int)last->getByte(3));
-			return;
-		default:
-			assert(false && "Unexpected PushBytes count");
-		}
 	default:
 		Instructions.push_back(new Opcode(OK_ItoF));
 	}
@@ -1621,9 +1517,8 @@ void FunctionData::addOpFtoI()
 	assert(Instructions.size() && "Cannot add ItoF to empty instruction stack");
 	Opcode* last = Instructions.back();
 	if (last->getKind() == OK_PushFloat){
-		Instructions.pop_back();
-		addOpPushInt((int)last->getFloat());
-		delete last;
+		last->setKind(OK_PushInt);
+		last->setInt((int)last->getFloat());
 	}
 	else
 #endif
@@ -1632,42 +1527,6 @@ void FunctionData::addOpFtoI()
 
 void FunctionData::addOpPushInt(int immediate)
 {
-#ifdef USE_OPTIMISATIONS
-	if ((immediate & 0xFF) == immediate && Instructions.size())
-	{
-		Opcode* op = Instructions.back();
-		switch (op->getKind())
-		{
-		case OK_PushBytes:
-		{
-			int count = op->getPBytesCount();
-			if (count >= 3)//full pushBytes
-				goto setAsPushInt;
-			op->setPBytesCount(count + 1);
-			op->setByte(immediate & 0xFF, count + 1);
-			return;
-		}
-		case OK_PushInt:
-		{
-			int iVal = op->getInt();
-			if ((iVal & 0xFF) != iVal)
-				goto setAsPushInt;
-			op->setKind(OK_PushBytes);
-			op->setPBytesCount(2);
-			op->setByte(iVal & 0xFF, 1);
-			op->setByte(immediate & 0xFF, 2);
-			return;
-		}
-
-		default:
-		setAsPushInt:
-			op = new Opcode(OK_PushInt);
-			op->setInt(immediate);
-			Instructions.push_back(op);
-			return;
-		}
-	}
-#endif
 	Opcode* op = new Opcode(OK_PushInt);
 	op->setInt(immediate);
 	Instructions.push_back(op);
@@ -1692,24 +1551,6 @@ void FunctionData::addOpDrop()
 		//delete instrucions that just push a value to the stack
 		delete Instructions.back();
 		Instructions.pop_back();
-		break;
-	case OK_PushBytes:
-		switch(Instructions.back()->getPBytesCount())
-		{
-		case 2:
-		{
-			int val = Instructions.back()->getByte(1);
-			delete Instructions.back();
-			Instructions.pop_back();
-			addOpPushInt(val);
-		}
-			break;
-		case 3:
-			Instructions.back()->setPBytesCount(2);
-			break;
-		default:
-			assert(false && "Unexpected PushBytes item count");
-		}
 		break;
 	case OK_FtoV:
 		//this case would only ever come up if you have
@@ -1872,9 +1713,8 @@ void FunctionData::addOpGetFrame(uint16_t index)
 		Opcode *back = Instructions.back();
 		if (back->getKind() == OK_GetFrame && back->getUShort(0) == index - 1)
 		{
-			delete back;
-			Instructions.pop_back();
-			addOpPushInt(2);
+			back->setKind(OK_PushInt);
+			back->setInt(2);
 			addOpGetFrameP(index - 1);
 			addOpToStack();
 			return;
@@ -1910,9 +1750,8 @@ void FunctionData::addOpGetStatic(uint16_t index)
 		Opcode *back = Instructions.back();
 		if (back->getKind() == OK_GetStatic && back->getUShort(0) == index - 1)
 		{
-			delete back;
-			Instructions.pop_back();
-			addOpPushInt(2);
+			back->setKind(OK_PushInt);
+			back->setInt(2);
 			addOpGetStaticP(index - 1);
 			addOpToStack();
 			return;
@@ -1948,9 +1787,8 @@ void FunctionData::addOpGetGlobal(int index)
 		Opcode *back = Instructions.back();
 		if (back->getKind() == OK_GetGlobal && back->getInt() == index - 1)
 		{
-			delete back;
-			Instructions.pop_back();
-			addOpPushInt(2);
+			back->setKind(OK_PushInt);
+			back->setInt(2);
 			addOpGetGlobalP(index - 1);
 			addOpToStack();
 			return;
@@ -1985,32 +1823,7 @@ void FunctionData::addOpAddImm(int immediate)
 	Opcode *last = Instructions.back();
 	if (last->getKind() == OK_PushInt)
 	{
-		Instructions.pop_back();
-		addOpPushInt(last->getInt() + immediate);
-		delete last;//let addOpPushInt worry about PushBytes etc
-	}
-	else if (last->getKind() == OK_PushBytes)
-	{
-		int count = last->getPBytesCount();
-		assert(count > 1 && count < 4 && "PushBytes opcode has invalid number of bytes");
-		int val = last->getByte(count) + immediate;
-		if (count == 3)
-		{
-			last->setPBytesCount(2);//undefine the last push byte, just incase new value is outside range of pushB
-			addOpPushInt(val);
-		}
-		else if (count == 2)
-		{
-			//treat last instruction as pushint
-			//if new value >0 & < 0x100 it will be made back in pushBytes
-			last->setInt(last->getByte(1));
-			last->setKind(OK_PushInt);
-			addOpPushInt(val);
-		}
-		else
-		{
-			assert(false && "This shouldn't happen");
-		}
+		last->setInt(last->getInt() + immediate);
 	}
 	else if (last->getKind() == OK_AddImm)
 	{
@@ -2035,32 +1848,7 @@ void FunctionData::addOpMultImm(int immediate)
 	Opcode *last = Instructions.back();
 	if (last->getKind() == OK_PushInt)
 	{
-		Instructions.pop_back();
-		addOpPushInt(last->getInt() * immediate);
-		delete last;//let addOpPushInt worry about PushBytes etc
-	}
-	else if (last->getKind() == OK_PushBytes)
-	{
-		int count = last->getPBytesCount();
-		assert(count > 1 && count < 4 && "PushBytes opcode has invalid number of bytes");
-		int val = last->getByte(count) * immediate;
-		if (count == 3)
-		{
-			last->setPBytesCount(2);//undefine the last push byte, just incase new value is outside range of pushB
-			addOpPushInt(val);
-		}
-		else if (count == 2)
-		{
-			//treat last instruction as pushint
-			//if new value >0 & < 0x100 it will be made back in pushBytes
-			last->setInt(last->getByte(1));
-			last->setKind(OK_PushInt);
-			addOpPushInt(val);
-		}
-		else
-		{
-			assert(false && "This shouldn't happen");
-		}
+		last->setInt(last->getInt() * immediate);
 	}
 	else if (last->getKind() == OK_MultImm)
 	{
@@ -2071,11 +1859,11 @@ void FunctionData::addOpMultImm(int immediate)
 	}
 	else if (immediate == -1)
 	{
-		Instructions.push_back(new Opcode(OK_Neg));
+		addOpNeg();
 	}
 	else if (immediate == 0)
 	{
-		Instructions.push_back(new Opcode(OK_Drop));
+		addOpDrop();
 		addOpPushInt(0);
 	}
 	else if (immediate != 1)
@@ -2289,34 +2077,6 @@ void FunctionData::addOpJumpFalse(string loc)
 			op->setString(loc);
 			Instructions.back() = op;
 		}
-	case OK_PushBytes:
-		switch(op->getPBytesCount())
-		{
-			case 2:
-			{
-				uint8_t val = op->getByte(2);//store val
-				op->setInt(op->getByte(1));//change pushBytes into PushInt
-				op->setKind(OK_PushInt);
-				if (!val)
-				{
-					op = new Opcode(OK_Jump);
-					op->setString(loc);
-					Instructions.back() = op;
-				}
-				break;
-			}
-			case 3:
-				op->setPBytesCount(2);//pop the 3rd pushByte
-				if (!op->getByte(3))//if popped byte is 0 add a jump
-				{
-					op = new Opcode(OK_Jump);
-					op->setString(loc);
-					Instructions.back() = op;
-				}
-				break;
-			default:
-				assert(false && "Invalid PushBytes count");
-		}
 	default:
 		op = new Opcode(OK_JumpFalse);
 		op->setString(loc);
@@ -2354,7 +2114,17 @@ ostream & operator<<(ostream & stream, const FunctionData & fdata)
 	stream << "\r\n:" << fdata.name.substr(1) << "//>\r\nFunction " << (int)fdata.pcount << " " << (int)fdata.stackSize << "\r\n";
 	for(size_t i = 0; i < fdata.Instructions.size(); i++)
 	{
-		stream << *fdata.Instructions[i] << "\r\n";
+		if (fdata.Instructions[i]->getKind() == OK_Nop)
+		{
+			if (fdata.Instructions[i]->hasComment())
+			{
+				stream << "//" + fdata.Instructions[i]->getComment() << "\r\n";
+			}
+		}
+		else
+		{
+			stream << *fdata.Instructions[i] << "\r\n";
+		}
 	}
 	stream << "//<\r\n";
 	return stream;
