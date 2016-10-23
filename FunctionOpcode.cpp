@@ -160,6 +160,7 @@ int Opcode::getSizeEstimate() const
 	switch (getKind())
 	{
 	case OK_Nop:
+		return 0;
 	case OK_Add:
 	case OK_Sub:
 	case OK_Mult:
@@ -405,7 +406,7 @@ string Opcode::toString() const
 	string current;
 	switch(getKind())
 	{
-	case OK_Nop: current = "Nop"; break;
+	case OK_Nop: break;
 	case OK_Add: current = "Add"; break;
 	case OK_Sub: current = "Sub"; break;
 	case OK_Mult: current = "Mult"; break;
@@ -1049,7 +1050,6 @@ void FunctionData::AddSimpleOp(OpcodeKind operation)
 	case OK_PSet:
 		addOpPSet();
 		break;
-	case OK_Nop:
 	case OK_Mod:
 	case OK_CmpEq:
 	case OK_CmpNe:
