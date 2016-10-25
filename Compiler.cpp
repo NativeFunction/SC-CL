@@ -6,6 +6,11 @@
 #pragma region Parse_Functions
 void CompileBase::fixFunctionJumps()
 {
+	/* 
+	jump back is set on jump
+	jump forward is set on label def
+
+
 	for (auto jumpInfo : JumpLocations)
 	{
 		auto it = LabelLocations.find(jumpInfo.Label);
@@ -47,14 +52,16 @@ void CompileBase::fixFunctionJumps()
 			}
 		}
 	}
-	JumpLocations.clear();
+	*/
+	//JumpLocations.clear();
 	LabelLocations.clear();
+	
 }
 void CompileBase::ParseGeneral(const OpcodeKind OK)
 {
 	switch (OK)
 	{
-		case OK_Nop:		AddOpcode(Nop); break;
+		case OK_Nop:		break;
 		case OK_Add:		AddOpcode(Add); break;
 		case OK_Sub:		AddOpcode(Sub); break;
 		case OK_Mult:		AddOpcode(Mult); break;
@@ -149,6 +156,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); break;
 		case OK_GetHash:	GetHash(); break;//gta5 needs to override
 	}
+	CheckJumps();
 }
 void CompileBase::BuildTables()
 {
@@ -171,20 +179,98 @@ void CompileBase::BuildTables()
 #pragma region Data_Functions
 void CompileBase::AddJump(const JumpInstructionType type, const string label)
 {
-	switch (type)
+	auto it = LabelLocations.find(label);
+	if (it == LabelLocations.end() || !it->second.isSet)
 	{
-		case JumpInstructionType::Jump:		DoesOpcodeHaveRoom(3); AddOpcode(Jump); AddJumpLoc(type, label); break;
-		case JumpInstructionType::JumpFalse:	DoesOpcodeHaveRoom(3); AddOpcode(JumpFalse); AddJumpLoc(type, label); break;
-		case JumpInstructionType::JumpNE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpNE); AddJumpLoc(type, label); break;
-		case JumpInstructionType::JumpEQ:		DoesOpcodeHaveRoom(3); AddOpcode(JumpEQ); AddJumpLoc(type, label); break;
-		case JumpInstructionType::JumpLE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLE); AddJumpLoc(type, label); break;
-		case JumpInstructionType::JumpLT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLT); AddJumpLoc(type, label); break;
-		case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); AddJumpLoc(type, label); break;
-		case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); AddJumpLoc(type, label); break;
-		case JumpInstructionType::Switch:		AddJumpLoc(type, label); break;
-		case JumpInstructionType::LabelLoc:	DoesOpcodeHaveRoom(4); AddOpcode(PushI24); AddJumpLoc(type, label); break;
-		default: assert(false && "Invalid JumpInstructionType");
+		//jump forward
+		switch (type)
+		{
+			case JumpInstructionType::Jump:			DoesOpcodeHaveRoom(3); AddOpcode(Jump); AddJumpLoc(type, label); return;
+			case JumpInstructionType::JumpFalse:	DoesOpcodeHaveRoom(3); AddOpcode(JumpFalse); AddJumpLoc(type, label); return;
+			case JumpInstructionType::JumpNE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpNE); AddJumpLoc(type, label); return;
+			case JumpInstructionType::JumpEQ:		DoesOpcodeHaveRoom(3); AddOpcode(JumpEQ); AddJumpLoc(type, label); return;
+			case JumpInstructionType::JumpLE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLE); AddJumpLoc(type, label); return;
+			case JumpInstructionType::JumpLT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLT); AddJumpLoc(type, label); return;
+			case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); AddJumpLoc(type, label); return;
+			case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); AddJumpLoc(type, label); return;
+			case JumpInstructionType::Switch:		AddJumpLoc(type, label); return;
+			case JumpInstructionType::LabelLoc:	DoesOpcodeHaveRoom(4); AddOpcode(PushI24); AddJumpLoc(type, label); return;
+			default: assert(false && "Invalid JumpInstructionType"); return;
+		}
 	}
+	else
+	{
+		//jump backward
+		int32_t offset = it->second.LabelLocation - BuildBuffer.size() - 3;
+		if (offset >= -32768 || offset <= 32767)
+		{
+			switch (type)
+			{
+				case JumpInstructionType::Jump:			DoesOpcodeHaveRoom(3); AddOpcode(Jump); AddInt16(offset); return;
+				case JumpInstructionType::JumpFalse:	DoesOpcodeHaveRoom(3); AddOpcode(JumpFalse); AddInt16(offset); return;
+				case JumpInstructionType::JumpNE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpNE); AddInt16(offset); return;
+				case JumpInstructionType::JumpEQ:		DoesOpcodeHaveRoom(3); AddOpcode(JumpEQ); AddInt16(offset); return;
+				case JumpInstructionType::JumpLE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLE); AddInt16(offset); return;
+				case JumpInstructionType::JumpLT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLT); AddInt16(offset); return;
+				case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); AddInt16(offset); return;
+				case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); AddInt16(offset); return;
+				case JumpInstructionType::Switch:		AddInt16(it->second.LabelLocation - BuildBuffer.size() - 2); return;
+				case JumpInstructionType::LabelLoc:	PushInt(it->second.LabelLocation); return;
+				default: assert(false && "Invalid JumpInstructionType"); return;
+			}
+		}
+		else
+		{
+			Throw("unimplemented long jump func call");
+			//long jump func call
+		}
+		
+	}
+	
+}
+void CompileBase::CheckJumps()
+{
+	if (!UpdateJumpLocationsToFar())
+		return;
+
+	int32_t offset = (CodePageData.size() + 3) - JumpLocations[JumpLocationsToFarInc].JumpLocation - 2;
+	if (offset > 30000)//to make this easier im going on the assumption that the max size of an opcode is 1532 (nothing can be added that is 2767)
+	{
+		//jump to jump code
+
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(Jump);
+		uint32_t JumpOverOffset = CodePageData.size();
+		AddInt16(0);
+
+		//need to update jumps of same label that are out of bounds to jumps that are already added. instead of adding another jump to jump.
+
+		offset = CodePageData.size() - JumpLocations[JumpLocationsToFarInc].JumpLocation - 2;
+
+		do
+		{
+			if (offset > 32767)
+				Throw("Jump label \"" + JumpLocations[JumpLocationsToFarInc].Label + "\" out of jump range on jump to jump " + to_string(offset));
+
+			*(int16_t*)(CodePageData.data() + JumpLocations[JumpLocationsToFarInc].JumpLocation) = SwapEndian((int16_t)offset);
+			JumpLocations[JumpLocationsToFarInc].isSet = true;
+			cout << "fixed label " + JumpLocations[JumpLocationsToFarInc].Label << " at index " << JumpLocationsToFarInc << endl;
+
+			DoesOpcodeHaveRoom(3);
+			AddOpcode(Jump);
+			AddJumpLoc(JumpInstructionType::Jump, JumpLocations[JumpLocationsToFarInc].Label);
+
+			if (!UpdateJumpLocationsToFar())
+				return;
+
+			offset = CodePageData.size() - JumpLocations[JumpLocationsToFarInc].JumpLocation - 2;
+		} while (offset > 30000);
+
+
+		//set jump over jump
+		*(int16_t*)(CodePageData.data() + JumpOverOffset) = SwapEndian((int16_t)(CodePageData.size() - JumpOverOffset - 2));
+	}
+
 }
 #pragma endregion
 

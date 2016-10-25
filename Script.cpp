@@ -170,7 +170,7 @@ bool Script::isUnsafeContext() const
 string Script::getStaticsAsString()
 {
 	string data;
-	data.reserve(73 * staticTable.size() + 28);
+	data.reserve(40 * staticTable.size() + 28 + 37);
 	data += "//> Default Static Information\r\nSetStaticsCount " + to_string(staticTable.size()) + "\r\n";
 	for (uint32_t i = 0, it = 0; i < staticTable.size(); i++)
 	{

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <queue>
 #include <unordered_map>
 #include "Utils.h"
 #include "FunctionOpcode.h"
@@ -237,7 +238,14 @@ protected:
 		const uint32_t JumpLocation;
 		const JumpInstructionType InstructionType;
 		const string Label;
+		bool isSet;
 	} JumpData;
+	typedef struct
+	{
+		uint32_t LabelLocation;
+		bool isSet;
+		vector<uint32_t> JumpIndexes;
+	} LabelData;
 	typedef struct
 	{
 		const uint32_t CallLocation;
@@ -254,8 +262,9 @@ protected:
 
 	#pragma region Parsed_Data_Vars
 	vector<uint8_t> CodePageData;//opcode data
-	unordered_map<string, uint32_t> LabelLocations;//label ,data index
+	unordered_map<string, LabelData> LabelLocations;//label ,data index
 	vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData for a function
+	uint32_t JumpLocationsToFarInc = 0;
 	unordered_map<string, uint32_t> FuncLocations;//call, data index
 	vector<CallData> CallLocations;//CallLocations to fill after building the CodePageData
 	unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
@@ -267,6 +276,7 @@ protected:
 	uint32_t FunctionCount = 0;
 	uint32_t InstructionCount = 0;
 	#pragma endregion
+
 
 	#pragma region Write_Data_Vars
 	
@@ -325,8 +335,42 @@ protected:
 	}
 	inline void AddLabel(const string label)
 	{
-		if (LabelLocations.find(label) == LabelLocations.end())
-			LabelLocations.insert({ label, CodePageData.size() });
+		auto it = LabelLocations.find(label);
+		if (it == LabelLocations.end())
+		{
+			LabelLocations.insert({ label, {CodePageData.size(), true} });
+		}
+		else if(!it->second.isSet)
+		{
+			it->second.isSet = true;
+			it->second.LabelLocation = CodePageData.size();
+			for (uint32_t i = 0; i < it->second.JumpIndexes.size(); i++)
+			{
+				//Fix jump forwards that are in range. Out of range jumps should have already been fixed.
+				
+				if (!JumpLocations[it->second.JumpIndexes[i]].isSet)
+				{
+					if (JumpLocations[it->second.JumpIndexes[i]].InstructionType != JumpInstructionType::LabelLoc)
+					{
+						const int32_t offset = it->second.LabelLocation - JumpLocations[it->second.JumpIndexes[i]].JumpLocation - 2;
+
+						if (offset < -32768 || offset > 32767)
+							Throw("Jump label \"" + label + "\" out of jump range");
+
+						*(int16_t*)(CodePageData.data() + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = SwapEndian((int16_t)offset);
+						JumpLocations[it->second.JumpIndexes[i]].isSet = true;
+					}
+					else
+					{
+						if (it->second.LabelLocation >= 0x1000000)
+							Throw("Get label loc \"" + label + "\" out of jump range");
+
+						*(uint32_t*)(CodePageData.data() - 1 + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = SwapEndian(it->second.LabelLocation) | BaseOpcodes->PushI24;
+						JumpLocations[it->second.JumpIndexes[i]].isSet = true;
+					}
+				}
+			}
+		}
 		else
 			Throw("Cannot add label. Label \"" + label + "\" already exists.");
 	}
@@ -339,7 +383,9 @@ protected:
 	}
 	inline void AddJumpLoc(const JumpInstructionType it, const string label)
 	{
-		JumpLocations.push_back({ CodePageData.size(), it, label });
+		// this should only be called on jump forward
+		JumpLocations.push_back({ CodePageData.size(), it, label, false });
+		LabelLocations[label].JumpIndexes.push_back(JumpLocations.size() - 1);
 		switch (it)
 		{
 			case JumpInstructionType::Switch:
@@ -379,8 +425,17 @@ protected:
 	{
 		size_t size = CodePageData.size();
 		uint32_t amount = (size + OpcodeLen) % 16384;
-		if (amount < size % 16384 && amount != 0)
+		if (amount < size % 16384 && amount != 0) 
+		{
 			CodePageData.resize(size + (16384 - (size % 16384)));
+			CheckJumps();
+		}
+	}
+	void CheckJumps();
+	inline bool UpdateJumpLocationsToFar()
+	{
+		for (; JumpLocationsToFarInc < JumpLocations.size() && (JumpLocations[JumpLocationsToFarInc].InstructionType == JumpInstructionType::LabelLoc || JumpLocations[JumpLocationsToFarInc].isSet);  JumpLocationsToFarInc++);
+		return JumpLocationsToFarInc < JumpLocations.size();
 	}
 	#pragma endregion
 
