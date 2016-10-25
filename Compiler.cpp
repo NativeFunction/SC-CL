@@ -180,6 +180,47 @@ void CompileBase::BuildTables()
 #pragma endregion
 
 #pragma region Data_Functions
+void CompileBase::AddLabel(const string label)
+{
+	auto it = LabelLocations.find(label);
+	if (it == LabelLocations.end())
+	{
+		LabelLocations.insert({ label,{ CodePageData.size(), true } });
+	}
+	else if (!it->second.isSet)
+	{
+		it->second.isSet = true;
+		it->second.LabelLocation = CodePageData.size();
+		for (uint32_t i = 0; i < it->second.JumpIndexes.size(); i++)
+		{
+			//Fix jump forwards that are in range. Out of range jumps should have already been fixed.
+
+			if (!JumpLocations[it->second.JumpIndexes[i]].isSet)
+			{
+				if (JumpLocations[it->second.JumpIndexes[i]].InstructionType != JumpInstructionType::LabelLoc)
+				{
+					const int32_t offset = it->second.LabelLocation - JumpLocations[it->second.JumpIndexes[i]].JumpLocation - 2;
+
+					if (offset < -32768 || offset > 32767)
+						Utils::System::Throw("Jump label \"" + label + "\" out of jump range");
+
+					*(int16_t*)(CodePageData.data() + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = SwapEndian((int16_t)offset);
+					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
+				}
+				else
+				{
+					if (it->second.LabelLocation >= 0x1000000)
+						Utils::System::Throw("Get label loc \"" + label + "\" out of jump range");
+
+					*(uint32_t*)(CodePageData.data() - 1 + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = SwapEndian(it->second.LabelLocation) | BaseOpcodes->PushI24;
+					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
+				}
+			}
+		}
+	}
+	else
+		Utils::System::Throw("Cannot add label. Label \"" + label + "\" already exists.");
+}
 void CompileBase::AddJump(const JumpInstructionType type, const string label)
 {
 	auto it = LabelLocations.find(label);

@@ -239,7 +239,7 @@ protected:
 	{
 		uint32_t LabelLocation;
 		bool isSet;
-		vector<uint32_t> JumpIndexes;
+		std::vector<uint32_t> JumpIndexes;
 	} LabelData;
 	typedef struct
 	{
@@ -257,10 +257,10 @@ protected:
 
 	#pragma region Parsed_Data_Vars
 	std::vector<uint8_t> CodePageData;//opcode data
-	std::unordered_map<string, uint32_t> LabelLocations;//label ,data index
+	std::unordered_map<std::string, uint32_t> LabelLocations;//label ,data index
 	std::vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData for a function
 	uint32_t JumpLocationsToFarInc = 0;
-	std::unordered_map<string, uint32_t> FuncLocations;//call, data index
+	std::unordered_map<std::string, uint32_t> FuncLocations;//call, data index
 	std::vector<CallData> CallLocations;//CallLocations to fill after building the CodePageData
 	std::unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
 	#pragma endregion
@@ -327,47 +327,7 @@ protected:
 		CodePageData.resize(CodePageData.size() + str.size() + 1);
 		memcpy(CodePageData.data() + CodePageData.size() - str.size() - 1, str.data(), str.size() + 1);
 	}
-	inline void AddLabel(const std::string label)
-	{
-		auto it = LabelLocations.find(label);
-		if (it == LabelLocations.end())
-		{
-			LabelLocations.insert({ label, {CodePageData.size(), true} });
-		}
-		else if(!it->second.isSet)
-		{
-			it->second.isSet = true;
-			it->second.LabelLocation = CodePageData.size();
-			for (uint32_t i = 0; i < it->second.JumpIndexes.size(); i++)
-			{
-				//Fix jump forwards that are in range. Out of range jumps should have already been fixed.
-				
-				if (!JumpLocations[it->second.JumpIndexes[i]].isSet)
-				{
-					if (JumpLocations[it->second.JumpIndexes[i]].InstructionType != JumpInstructionType::LabelLoc)
-					{
-						const int32_t offset = it->second.LabelLocation - JumpLocations[it->second.JumpIndexes[i]].JumpLocation - 2;
-
-						if (offset < -32768 || offset > 32767)
-							Utils::System::Throw("Jump label \"" + label + "\" out of jump range");
-
-						*(int16_t*)(CodePageData.data() + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = SwapEndian((int16_t)offset);
-						JumpLocations[it->second.JumpIndexes[i]].isSet = true;
-					}
-					else
-					{
-						if (it->second.LabelLocation >= 0x1000000)
-							Utils::System::Throw("Get label loc \"" + label + "\" out of jump range");
-
-						*(uint32_t*)(CodePageData.data() - 1 + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = SwapEndian(it->second.LabelLocation) | BaseOpcodes->PushI24;
-						JumpLocations[it->second.JumpIndexes[i]].isSet = true;
-					}
-				}
-			}
-		}
-		else
-			Utils::System::Throw("Cannot add label. Label \"" + label + "\" already exists.");
-	}
+	void AddLabel(const std::string label);
 	inline void AddFuncLabel(const std::string label)
 	{
 		if (FuncLocations.find(label) == FuncLocations.end())
