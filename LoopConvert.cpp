@@ -4255,7 +4255,7 @@ public:
 			Expr *BaseExpr = E->getBase();
 
 			int typeSize = getSizeFromBytes(getSizeOfType(E->getType().getTypePtr()));
-			if (isLtoRValue || !isAddr && typeSize > 1)
+			if ((isLtoRValue || !isAddr) && typeSize > 1)
 			{
 				AddInstructionComment(PushInt, "Type Size", typeSize);
 			}

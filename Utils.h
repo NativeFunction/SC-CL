@@ -17,9 +17,6 @@
 
 #define STREAMSIZE_MAX 9223372036854775807
 
-using namespace std;
-
-
 namespace Utils {
 
 	struct DLX {
@@ -31,9 +28,9 @@ namespace Utils {
 	namespace Hashing
 	{
 		uint32_t Joaat(const char* key);
-		uint32_t Joaat(string key);
+		uint32_t Joaat(std::string key);
 		uint32_t JoaatCased(const char* key);
-		uint32_t JoaatCased(string key);
+		uint32_t JoaatCased(std::string key);
 	}
 	namespace DataConversion
 	{
@@ -41,15 +38,17 @@ namespace Utils {
 		inline int32_t FloatToInt(float x) { return *(int32_t*)&x; }
 		inline float UIntToFloat(uint32_t x) { return *(float*)&x; }
 		inline float IntToFloat(int32_t x) { return *(float*)&x; }
-		string IntToHex(uint32_t val);
+
+		std::string IntToHex(uint32_t val);
 		inline int32_t IntToPointerInt(int32_t x) { return 0x50000000 | x; }
 		struct NamedUint32
 		{
 			const char* str;
 			uint32_t val;
 		};
-		vector<NamedUint32> ReorderUint32Vector_SmallToBig(vector<uint32_t> vec, vector<const char*> name);
-		void ArrayReverse(vector<uint8_t> InArr, vector<uint8_t>& OutArr);
+
+		std::vector<NamedUint32> ReorderUint32Vector_SmallToBig(std::vector<uint32_t> vec, std::vector<const char*> name);
+		void ArrayReverse(std::vector<uint8_t> InArr, std::vector<uint8_t>& OutArr);
 	}
 	namespace Bitwise
 	{
@@ -68,9 +67,9 @@ namespace Utils {
 	}
 	namespace System
 	{
-		void Pause(string str = "");
-		void Throw(string str);
-		void Warn(string str);
+		void Pause(std::string str = "");
+		void Throw(std::string str);
+		void Warn(std::string str);
 	}
 	namespace Math
 	{
@@ -144,7 +143,7 @@ namespace Utils {
 			//}
 			//{ Template Functions
 			template<typename T>
-			void LoadFunction(T* ptr, string str)
+			void LoadFunction(T* ptr, std::string str)
 			{
 				*ptr = (T)GetProcAddress(xCompressDLL, str.c_str());
 				if (!*ptr)
@@ -165,7 +164,7 @@ namespace Utils {
 
 		void ZLIB_Decompress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t outSize);
 		void ZLIB_Compress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize);
-		string ZLIB_ErrorCodeToStr(int32_t errorcode);
+		std::string ZLIB_ErrorCodeToStr(int32_t errorcode);
 	}
 
 	namespace Crypt

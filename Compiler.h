@@ -1,19 +1,14 @@
 #pragma once
+#include "FunctionOpcode.h"
 #include <cassert>
 #include <string>
 #include <vector>
-#include <map>
-#include <queue>
+
 #include <unordered_map>
 #include "Utils.h"
-#include "FunctionOpcode.h"
 #include "OpcodeConsts.h"
 #include "ConstExpr.h"
 #include "Script.h"
-
-using namespace Utils::System;
-using namespace Utils::Bitwise;
-using namespace Utils::Hashing;
 
 #pragma warning( disable : 4201 )//unnamed struct extention
 typedef union OpCodes {
@@ -237,7 +232,7 @@ protected:
 	{
 		const uint32_t JumpLocation;
 		const JumpInstructionType InstructionType;
-		const string Label;
+		const std::string Label;
 		bool isSet;
 	} JumpData;
 	typedef struct
@@ -250,24 +245,24 @@ protected:
 	{
 		const uint32_t CallLocation;
 		const CallInstructionType InstructionType;
-		const string FuncName;
+		const std::string FuncName;
 	} CallData;
 	typedef struct 
 	{
 		int32_t CodeBlocks, Unk1, Statics, Natives, StringBlocks, ScriptName;
-		vector<uint32_t> CodePagePointers;
-		vector<uint32_t> StringPagePointers;
+		std::vector<uint32_t> CodePagePointers;
+		std::vector<uint32_t> StringPagePointers;
 	} PHO;//placeHolderOffsets
 	#pragma endregion
 
 	#pragma region Parsed_Data_Vars
-	vector<uint8_t> CodePageData;//opcode data
-	unordered_map<string, LabelData> LabelLocations;//label ,data index
-	vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData for a function
+	std::vector<uint8_t> CodePageData;//opcode data
+	std::unordered_map<string, uint32_t> LabelLocations;//label ,data index
+	std::vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData for a function
 	uint32_t JumpLocationsToFarInc = 0;
-	unordered_map<string, uint32_t> FuncLocations;//call, data index
-	vector<CallData> CallLocations;//CallLocations to fill after building the CodePageData
-	unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
+	std::unordered_map<string, uint32_t> FuncLocations;//call, data index
+	std::vector<CallData> CallLocations;//CallLocations to fill after building the CodePageData
+	std::unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
 	#pragma endregion
 
 	#pragma region Parse_Data_Vars
@@ -277,14 +272,13 @@ protected:
 	uint32_t InstructionCount = 0;
 	#pragma endregion
 
-
 	#pragma region Write_Data_Vars
 	
 	PHO SavedOffsets = {};
 	int32_t headerLocation = 0;
 	uint32_t headerFlag = 0;
 	uint32_t CodePageCount = 0;
-	vector<uint8_t> BuildBuffer;
+	std::vector<uint8_t> BuildBuffer;
 	uint8_t FilePadding = 0;
 	#pragma endregion
 
@@ -301,7 +295,7 @@ protected:
 	}
 	virtual ~CompileBase(){}
 
-	virtual void Compile(string outDirectory) = 0;
+	virtual void Compile(std::string outDirectory) = 0;
 
 	#pragma region Data_Functions
 	inline void AddInt8(const uint8_t b)
@@ -328,12 +322,12 @@ protected:
 		CodePageData.resize(CodePageData.size() + 4, 0);
 		*((float*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
-	inline void AddString(const string str)//Override: GTAV
+	inline void AddString(const std::string str)//Override: GTAV
 	{
 		CodePageData.resize(CodePageData.size() + str.size() + 1);
 		memcpy(CodePageData.data() + CodePageData.size() - str.size() - 1, str.data(), str.size() + 1);
 	}
-	inline void AddLabel(const string label)
+	inline void AddLabel(const std::string label)
 	{
 		auto it = LabelLocations.find(label);
 		if (it == LabelLocations.end())
@@ -355,7 +349,7 @@ protected:
 						const int32_t offset = it->second.LabelLocation - JumpLocations[it->second.JumpIndexes[i]].JumpLocation - 2;
 
 						if (offset < -32768 || offset > 32767)
-							Throw("Jump label \"" + label + "\" out of jump range");
+							Utils::System::Throw("Jump label \"" + label + "\" out of jump range");
 
 						*(int16_t*)(CodePageData.data() + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = SwapEndian((int16_t)offset);
 						JumpLocations[it->second.JumpIndexes[i]].isSet = true;
@@ -363,7 +357,7 @@ protected:
 					else
 					{
 						if (it->second.LabelLocation >= 0x1000000)
-							Throw("Get label loc \"" + label + "\" out of jump range");
+							Utils::System::Throw("Get label loc \"" + label + "\" out of jump range");
 
 						*(uint32_t*)(CodePageData.data() - 1 + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = SwapEndian(it->second.LabelLocation) | BaseOpcodes->PushI24;
 						JumpLocations[it->second.JumpIndexes[i]].isSet = true;
@@ -372,16 +366,16 @@ protected:
 			}
 		}
 		else
-			Throw("Cannot add label. Label \"" + label + "\" already exists.");
+			Utils::System::Throw("Cannot add label. Label \"" + label + "\" already exists.");
 	}
-	inline void AddFuncLabel(const string label)
+	inline void AddFuncLabel(const std::string label)
 	{
 		if (FuncLocations.find(label) == FuncLocations.end())
 			FuncLocations.insert({ label, CodePageData.size() });
 		else
-			Throw("Cannot add function. function \"" + label + "\" already exists.");
+			Utils::System::Throw("Cannot add function. function \"" + label + "\" already exists.");
 	}
-	inline void AddJumpLoc(const JumpInstructionType it, const string label)
+	inline void AddJumpLoc(const JumpInstructionType it, const std::string label)
 	{
 		// this should only be called on jump forward
 		JumpLocations.push_back({ CodePageData.size(), it, label, false });
@@ -401,10 +395,10 @@ protected:
 			default: assert(false && "Invalid Type");
 		}
 	}
-	virtual void AddJump(const JumpInstructionType type, const string label);//Override: GTAIV
+	virtual void AddJump(const JumpInstructionType type, const std::string label);//Override: GTAIV
 	inline uint32_t AddNative(const uint32_t hash)
 	{
-		unordered_map<uint32_t, uint32_t>::iterator findRes = NativeHashMap.find(hash);
+		std::unordered_map<uint32_t, uint32_t>::iterator findRes = NativeHashMap.find(hash);
 		const uint32_t size = NativeHashMap.size();
 		if (findRes != NativeHashMap.end())
 			return findRes->second;
@@ -414,11 +408,11 @@ protected:
 	}
 	inline uint32_t GetNativeIndex(const uint32_t hash)
 	{
-		unordered_map<uint32_t, uint32_t>::iterator it = NativeHashMap.find(hash);
+		std::unordered_map<uint32_t, uint32_t>::iterator it = NativeHashMap.find(hash);
 		if (it != NativeHashMap.end())
 			return it->second;
 		else
-			Throw("Native with hash \""+to_string(hash)+"\" does not exist");
+			Utils::System::Throw("Native with hash \""+ std::to_string(hash)+"\" does not exist");
 		return 0;
 	}
 	inline void DoesOpcodeHaveRoom(const size_t OpcodeLen)
@@ -440,7 +434,7 @@ protected:
 	#pragma endregion
 
 	#pragma region Opcode_Functions
-	virtual void AddFunction(string name, uint8_t paramCount, uint16_t stackSize)
+	virtual void AddFunction(std::string name, uint8_t paramCount, uint16_t stackSize)
 	{
 #if _DEBUG
 		DoesOpcodeHaveRoom(5 + name.size());
@@ -487,7 +481,7 @@ protected:
 	virtual void pCall() { AddOpcode(pCall); };//Override: GTAIV
 	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };//Override: ALL
 	virtual void Call() { assert(false && "Call has to be overridden"); };//Override: ALL
-	virtual void AddFuncLoc(const string funcName);
+	virtual void AddFuncLoc(const std::string funcName);
 	void Switch();//for gta4 switches override AddJump
 	virtual void AddImm(const int32_t Literal);//Override: GTAIV
 	void AddImm(){ AddImm(DATA->getInt()); }
@@ -538,7 +532,7 @@ protected:
 		if (pad == 0 || pad == 16)
 			return;
 		else if (pad > 16384)
-			Throw("Pad Over 16364");
+			Utils::System::Throw("Pad Over 16364");
 
 		BuildBuffer.resize(BuildBuffer.size() + pad, 0);
 	}
@@ -553,7 +547,7 @@ protected:
 		if (pad == 0 || pad == 16)
 			return;
 		else if (pad > 16384)
-			Throw("Pad Over 16364");
+			Utils::System::Throw("Pad Over 16364");
 
 		BuildBuffer.resize(BuildBuffer.size() + pad, FilePadding);
 	}
@@ -566,7 +560,7 @@ protected:
 			return;
 		}
 		else if (pad > 16384)
-			Throw("ForcePad Over 16364");
+			Utils::System::Throw("ForcePad Over 16364");
 		else 
 			BuildBuffer.resize(BuildBuffer.size() + pad, FilePadding);
 	}
@@ -598,7 +592,7 @@ class CompileRDR : CompileBase
 public:
 	CompileRDR(Script& data) : CompileBase(RDROpcodes, data, 0, 0) { }
 
-	void Compile(string outDirectory) override
+	void Compile(std::string outDirectory) override
 	{
 		BuildTables();
 		switch (HLData->getBuildType())
@@ -654,7 +648,7 @@ private:
 		return (((uint8_t*)data)[0] & 1) == 1 ? true : false; 
 	}
 	inline const uint16_t SetNewIndex(const uint16_t index, const int parameterCount, const bool ret) const { 
-		return SwapEndian((uint16_t)(((index & 0xFF00) >> 2) | ((index & 0xFF) << 8) | (ret ? 1 : 0) | (parameterCount << 1)));
+		return Utils::Bitwise::SwapEndian((uint16_t)(((index & 0xFF00) >> 2) | ((index & 0xFF) << 8) | (ret ? 1 : 0) | (parameterCount << 1)));
 	}
 	#pragma endregion
 	#pragma region RSC85Parsing
@@ -695,7 +689,7 @@ class CompileGTAV : CompileBase
 public:
 	CompileGTAV(Script& data) : CompileBase(GTAVOpcodes, data, 0, 0) { }
 
-	void Compile(string outDirectory) override
+	void Compile(std::string outDirectory) override
 	{
 		BuildTables();
 		switch (HLData->getBuildType())
@@ -712,14 +706,14 @@ private:
 	const OpCodes GTAVOpcodes = { VO_Nop, VO_Add, VO_Sub, VO_Mult, VO_Div, VO_Mod, VO_Not, VO_Neg, VO_CmpEq, VO_CmpNe, VO_CmpGt, VO_CmpGe, VO_CmpLt, VO_CmpLe, VO_fAdd, VO_fSub, VO_fMult, VO_fDiv, VO_fMod, VO_fNeg, VO_fCmpEq, VO_fCmpNe, VO_fCmpGt, VO_fCmpGe, VO_fCmpLt, VO_fCmpLe, VO_vAdd, VO_vSub, VO_vMult, VO_vDiv, VO_vNeg, VO_And, VO_Or, VO_Xor, VO_ItoF, VO_FtoI, VO_FtoV, VO_PushB, VO_PushB2, VO_PushB3, VO_Push, VO_PushF, VO_Dup, VO_Drop, VO_CallNative, VO_Function, VO_Return, VO_pGet, VO_pSet, VO_pPeekSet, VO_ToStack, VO_FromStack, VO_GetArrayP1, VO_GetArray1, VO_SetArray1, VO_GetFrameP1, VO_GetFrame1, VO_SetFrame1, VO_GetStaticP1, VO_GetStatic1, VO_SetStatic1, VO_Add1, VO_Mult1, VO_GetImm1, VO_SetImm1, VO_PushS, VO_Add2, VO_Mult2, VO_GetImm2, VO_SetImm2, VO_GetArrayP2, VO_GetArray2, VO_SetArray2, VO_GetFrameP2, VO_GetFrame2, VO_SetFrame2, VO_GetStaticP2, VO_GetStatic2, VO_SetStatic2, VO_GetGlobalP2, VO_GetGlobal2, VO_SetGlobal2, VO_Jump, VO_JumpFalse, VO_JumpNE, VO_JumpEQ, VO_JumpLE, VO_JumpLT, VO_JumpGE, VO_JumpGT, VO_Call, VO_GetGlobalp3, VO_GetGlobal3, VO_SetGlobal3, VO_PushI24, VO_Switch, VO_PushString, VO_StrCopy, VO_ItoS, VO_StrAdd, VO_StrAddi, VO_Memcopy, VO_Catch, VO_Throw, VO_pCall, VO_Push_Neg1, VO_Push_0, VO_Push_1, VO_Push_2, VO_Push_3, VO_Push_4, VO_Push_5, VO_Push_6, VO_Push_7, VO_PushF_Neg1, VO_PushF_0, VO_PushF_1, VO_PushF_2, VO_PushF_3, VO_PushF_4, VO_PushF_5, VO_PushF_6, VO_PushF_7, VO_GetImmP, VO_GetImmP1, VO_GetImmP2, VO_GetHash };
 
 	#pragma region Parsed_Data_Vars
-	vector<uint8_t> StringPageData;
-	unordered_map<string, uint32_t> StringPageDataIndexing;
+	std::vector<uint8_t> StringPageData;
+	std::unordered_map<std::string, uint32_t> StringPageDataIndexing;
 	uint32_t StringPageCount = 0;
 	#pragma endregion
 
 	#pragma region Parse_Functions
 	
-	const uint32_t AddStringToStringPage(const string str);
+	const uint32_t AddStringToStringPage(const std::string str);
 	void fixFunctionCalls() override;
 	#pragma endregion
 
