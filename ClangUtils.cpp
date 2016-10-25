@@ -1,5 +1,7 @@
 #include "ClangUtils.h"
 
+using namespace std;
+
 namespace Utils {
 
 	namespace System

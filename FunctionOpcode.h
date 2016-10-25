@@ -1,8 +1,10 @@
 #pragma once
+#include <llvm/ADT/StringRef.h>
 #include <string>
 #include <vector>
 #include <cassert>
 #include "Utils.h"
+
 
 #define USE_OPTIMISATIONS
 
@@ -30,8 +32,6 @@ else \
 #define SimpleFloatOpCheck(Op, OpName) Instructions.push_back(new Opcode(OK_##OpName))
 #endif
 
-
-using namespace std;
 enum OpcodeKind{
 	OK_Nop,
 	OK_Add,
@@ -136,16 +136,17 @@ struct SwitchCaseStorage
 {
 private:
 	int _caseVal;
-	string _jumpLoc;
+	std::string _jumpLoc;
 	SwitchCaseStorage* _next;
 public:
-	SwitchCaseStorage(int caseVal, string jumpLoc) : _caseVal(caseVal), _jumpLoc(jumpLoc), _next(NULL) {}
+	SwitchCaseStorage(int caseVal, std::string jumpLoc) : _caseVal(caseVal), _jumpLoc(jumpLoc), _next(NULL) {}
 	~SwitchCaseStorage()
 	{
 		if (_next)
 			delete _next;
 	}
-	string getCaseLocation()const { return _jumpLoc; }
+
+	std::string getCaseLocation()const { return _jumpLoc; }
 	int getCaseValue()const { return _caseVal; }
 	bool hasNextCase()const { return _next; }
 	const SwitchCaseStorage *getNextCase()const { return _next; }
@@ -154,7 +155,7 @@ public:
 		assert(!_next && "Already a next case defined");
 		_next = next;
 	}
-	void setNextCase(int caseVal, string jumpLoc)
+	void setNextCase(int caseVal, std::string jumpLoc)
 	{
 		assert(!_next && "Already a next case defined");
 		_next = new SwitchCaseStorage(caseVal, jumpLoc);
@@ -175,7 +176,7 @@ public:
 		}
 	}
 
-	void addCase(int caseVal, string caseLoc)
+	void addCase(int caseVal, std::string caseLoc)
 	{
 		_count++;
 		assert(_count < 256 && "Error switch has too many cases");
@@ -198,21 +199,43 @@ struct StringStorage
 {
 private:
 	char* pointer;
-	int length;
+	size_t length;
 public:
-	string toString()const
+	std::string toString()const
 	{
-		return string(pointer, length);
+		return std::string(pointer, length);
 	}
-	StringStorage(string str)
+	/*llvm::StringRef toStringRef()const
+	{
+		return llvm::StringRef(pointer, length);
+	}*/
+	StringStorage(std::string str)
 	{
 		length = str.length();
 		pointer = new char[length + 1];
 		memcpy(pointer, str.c_str(), length + 1);
 	}
+	StringStorage(llvm::StringRef stringRef)
+	{
+		length = stringRef.size();
+		pointer = new char[length + 1];
+		memcpy(pointer, stringRef.data(), length + 1);
+	}
+	const char *data() const
+	{
+		return pointer;
+	}
+	size_t size()const
+	{
+		return length;
+	}
 	~StringStorage()
 	{
 		delete[] pointer;
+	}
+	friend std::ostream& operator << (std::ostream& stream, const StringStorage& string) {
+		stream.write(string.pointer, string.size());
+		return stream;
 	}
 };
 struct NativeStorage
@@ -222,14 +245,14 @@ private:
 	StringStorage *_name;
 	uint8_t _pCount, _rCount;
 public:
-	NativeStorage(string name, uint64_t hash, uint8_t pCount, uint8_t rCount) :
+	NativeStorage(std::string name, uint64_t hash, uint8_t pCount, uint8_t rCount) :
 		_hash(hash),
 		_name(new StringStorage(name)),
 		_pCount(pCount),
 		_rCount(rCount)
 	{
 	}
-	NativeStorage(string name, uint8_t pCount, uint8_t rCount) :
+	NativeStorage(std::string name, uint8_t pCount, uint8_t rCount) :
 		_hash((!strnicmp(name.c_str(), "unk_0x", 6) ? strtoull(name.c_str() + 6, NULL, 16) : Utils::Hashing::Joaat(name.c_str()))),
 		_name(new StringStorage(name)),
 		_pCount(pCount),
@@ -249,7 +272,7 @@ public:
 			delete _name;
 	}
 	bool hasName()const { return _name; }
-	string getName()const { if (hasName())return _name->toString(); return string(); }
+	std::string getName()const { if (hasName())return _name->toString(); return std::string(); }
 	uint64_t getHash()const { return _hash; }
 	uint8_t getParamCount()const { return _pCount; }
 	uint8_t getReturnCount()const { return _rCount; }
@@ -264,7 +287,7 @@ class Opcode
 	StringStorage *_comment = NULL;
 #endif
 	Opcode(OpcodeKind kind) : opcodeKind(kind){ }
-	void setString(string str);
+	void setString(std::string str);
 	void setInt(int value);
 	void setFloat(float value);
 	void setShort(int16_t value, int offset);
@@ -287,17 +310,17 @@ public:
 
 	~Opcode();
 	OpcodeKind getKind() const{ return opcodeKind; }
-	void setComment(string comment);
-	string getComment() const;
+	void setComment(std::string comment);
+	std::string getComment() const;
 	bool hasComment() const;
-	string getString() const;
+	std::string getString() const;
 	int getInt() const;
 	float getFloat() const;
 	int16_t getShort(int offset) const;
 	uint16_t getUShort(int offset) const;
 	uint8_t getByte(int offset) const;
 	int getSizeEstimate() const;
-	string toString() const;
+	std::string toString() const;
 
 	const SwitchStorage *getSwitch() const
 	{
@@ -321,7 +344,7 @@ class FunctionData
 	bool tryPop2Ints(int& i1, int& i2);
 	bool tryPopInt(int& result);
 	bool tryPop2Floats(float& f1, float& f2);
-	string name;
+	std::string name;
 	uint32_t hash;
 	uint8_t pcount;
 	uint8_t rcount;
@@ -329,19 +352,19 @@ class FunctionData
 	bool used = false;
 	bool _processed = false;
 	bool _isBuiltIn = false;
-	vector<Opcode *> Instructions;
-	vector<FunctionData *> usedFuncs;
+	std::vector<Opcode *> Instructions;
+	std::vector<FunctionData *> usedFuncs;
 	bool allowUnsafe = false;
 public:
 	
-	FunctionData(string name, uint8_t pcount, uint8_t rcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount), rcount(rcount)
+	FunctionData(std::string name, uint8_t pcount, uint8_t rcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount), rcount(rcount)
 	{
 	}
 	~FunctionData();
-	void pushComment(string comment);
+	void pushComment(std::string comment);
 	void AddSimpleOp(OpcodeKind operation);
 	bool endsWithReturn() const{ return Instructions.size() && Instructions.back()->getKind() == OK_Return; }//this will get confused by if else having a return, but it will just return false when there actually is a return so no harm
-	bool endsWithInlineReturn(string position) const;
+	bool endsWithInlineReturn(std::string position) const;
 	void RemoveLast(){ Instructions.pop_back(); }
 	uint8_t getParamCount()const { return pcount; }
 	uint8_t getReturnCount()const{ return rcount; }
@@ -350,12 +373,12 @@ public:
 		stackSize = newSize;
 	}
 	uint32_t getHash()const{ return hash; }
-	string getName()const{ return name; }
+	std::string getName()const{ return name; }
 	void setUsed();
 	bool IsUsed()const{ return used; }
 	friend std::ostream& operator << (std::ostream& stream, const FunctionData& fdata);
-	string toString() const;
-	void addSwitchCase(int caseVal, string jumpLoc);
+	std::string toString() const;
+	void addSwitchCase(int caseVal, std::string jumpLoc);
 	void addUsedFunc(FunctionData *func);
 	int getSizeEstimate(int incDecl) const;//only to be used when seeing if a function should be inlined
 	const Opcode *getInstruction(size_t index)const{
@@ -500,9 +523,9 @@ public:
 
 	void addOpDup(){ Instructions.push_back(new Opcode(OK_Dup)); }
 	void addOpDrop();
-	void addOpNative(string name, uint8_t pCount, uint8_t rCount);
+	void addOpNative(std::string name, uint8_t pCount, uint8_t rCount);
 	void addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount);
-	void addOpNative(string name, uint64_t hash, uint8_t pCount, uint8_t rCount);
+	void addOpNative(std::string name, uint64_t hash, uint8_t pCount, uint8_t rCount);
 	void addOpReturn()
 	{
 		Opcode* op = new Opcode(OK_Return);
@@ -580,70 +603,70 @@ public:
 	void addOpGetImm(uint16_t index);
 	void addOpSetImm(uint16_t index);
 
-	void addOpCall(string fName)
+	void addOpCall(std::string fName)
 	{
 		Opcode* op = new Opcode(OK_Call);
 		op->setString(fName);
 		Instructions.push_back(op);
 	}
 #pragma region Jumps
-	void addOpJump(string loc)
+	void addOpJump(std::string loc)
 	{
 		Opcode* op = new Opcode(OK_Jump);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpTrue(string loc)
+	void addOpJumpTrue(std::string loc)
 	{
 		addOpNot();
 		addOpJumpFalse(loc);
 	}
-	void addOpJumpFalse(string loc);
-	void addOpJumpEQ(string loc)
+	void addOpJumpFalse(std::string loc);
+	void addOpJumpEQ(std::string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpEQ);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpNE(string loc)
+	void addOpJumpNE(std::string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpNE);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpGT(string loc)
+	void addOpJumpGT(std::string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpGT);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpGE(string loc)
+	void addOpJumpGE(std::string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpGE);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpLT(string loc)
+	void addOpJumpLT(std::string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpLT);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpLE(string loc)
+	void addOpJumpLE(std::string loc)
 	{
 		Opcode* op = new Opcode(OK_JumpLE);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJump(unsigned int rawEncoding){ addOpJump(to_string(rawEncoding)); }
-	void addOpJumpTrue(unsigned int rawEncoding){ addOpJumpTrue(to_string(rawEncoding)); }
-	void addOpJumpFalse(unsigned int rawEncoding){ addOpJumpFalse(to_string(rawEncoding)); }
-	void addOpJumpEQ(unsigned int rawEncoding){ addOpJumpEQ(to_string(rawEncoding)); }
-	void addOpJumpNE(unsigned int rawEncoding){ addOpJumpNE(to_string(rawEncoding)); }
-	void addOpJumpGT(unsigned int rawEncoding){ addOpJumpGT(to_string(rawEncoding)); }
-	void addOpJumpGE(unsigned int rawEncoding){ addOpJumpGE(to_string(rawEncoding)); }
-	void addOpJumpLT(unsigned int rawEncoding){ addOpJumpLT(to_string(rawEncoding)); }
-	void addOpJumpLE(unsigned int rawEncoding){ addOpJumpLE(to_string(rawEncoding)); }
+	void addOpJump(unsigned int rawEncoding){ addOpJump(std::to_string(rawEncoding)); }
+	void addOpJumpTrue(unsigned int rawEncoding){ addOpJumpTrue(std::to_string(rawEncoding)); }
+	void addOpJumpFalse(unsigned int rawEncoding){ addOpJumpFalse(std::to_string(rawEncoding)); }
+	void addOpJumpEQ(unsigned int rawEncoding){ addOpJumpEQ(std::to_string(rawEncoding)); }
+	void addOpJumpNE(unsigned int rawEncoding){ addOpJumpNE(std::to_string(rawEncoding)); }
+	void addOpJumpGT(unsigned int rawEncoding){ addOpJumpGT(std::to_string(rawEncoding)); }
+	void addOpJumpGE(unsigned int rawEncoding){ addOpJumpGE(std::to_string(rawEncoding)); }
+	void addOpJumpLT(unsigned int rawEncoding){ addOpJumpLT(std::to_string(rawEncoding)); }
+	void addOpJumpLE(unsigned int rawEncoding){ addOpJumpLE(std::to_string(rawEncoding)); }
 #pragma endregion
 	
 	void addOpSwitch()
@@ -652,7 +675,7 @@ public:
 		op->storage.switchCase = new SwitchStorage();
 		Instructions.push_back(op);
 	}
-	void addOpPushString(string str)
+	void addOpPushString(std::string str)
 	{
 		Opcode* op = new Opcode(OK_PushString);
 		op->setString(str);
@@ -684,26 +707,26 @@ public:
 	}
 	void addOpMemCopy(){ Instructions.push_back(new Opcode(OK_MemCpy)); }
 	void addOpPCall(){ Instructions.push_back(new Opcode(OK_PCall)); }
-	void addOpLabel(string loc)
+	void addOpLabel(std::string loc)
 	{
 		Opcode* op = new Opcode(OK_Label);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpLabel(unsigned int rawEncoding){ addOpLabel(to_string(rawEncoding)); }
-	void addOpLabelLoc(string loc)
+	void addOpLabel(unsigned int rawEncoding){ addOpLabel(std::to_string(rawEncoding)); }
+	void addOpLabelLoc(std::string loc)
 	{
 		Opcode* op = new Opcode(OK_LabelLoc);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpFuncLoc(string funcName)
+	void addOpFuncLoc(std::string funcName)
 	{
 		Opcode* op = new Opcode(OK_FuncLoc);
 		op->setString(funcName);
 		Instructions.push_back(op);
 	}
-	void addOpLabelLoc(unsigned int rawEncoding){ addOpLabelLoc(to_string(rawEncoding)); }
+	void addOpLabelLoc(unsigned int rawEncoding){ addOpLabelLoc(std::to_string(rawEncoding)); }
 	void addOpGetHash();
 
 #pragma endregion

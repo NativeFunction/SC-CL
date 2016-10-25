@@ -4,6 +4,8 @@
 #include <ctime>
 #include <algorithm>
 
+using namespace std;
+
 void Opcode::setString(string str)
 {
 	storage.string = new StringStorage(str);

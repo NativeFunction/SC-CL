@@ -23,29 +23,29 @@ class Script
 	FunctionData *entryFunction;
 	FunctionData *indirectGoTo;
 	FunctionData *mainFunction;
-	vector<FunctionData *> functions;
+	std::vector<FunctionData *> functions;
 	FunctionData *currentFunc;
-	vector<int32_t> staticTable;
-	vector<uint32_t> staticTableShortIndexes;//endian for printing has to be swapped. however for shorts we have to Flip2BytesIn4
-	struct InlineData { uint32_t hash; string name; string inlineLblAppend; bool unsafe; };
-	vector<InlineData> inlineStack;
+	std::vector<int32_t> staticTable;
+	std::vector<uint32_t> staticTableShortIndexes;//endian for printing has to be swapped. however for shorts we have to Flip2BytesIn4
+	struct InlineData { uint32_t hash; std::string name; std::string inlineLblAppend; bool unsafe; };
+	std::vector<InlineData> inlineStack;
 	int staticCount = 0;
 	BuildType _bType;
 	Platform _platform;
-	string _scriptName;
+	std::string _scriptName;
 public:
-	Script(string scriptName, BuildType buildType, Platform platform);
+	Script(std::string scriptName, BuildType buildType, Platform platform);
 	FunctionData *getEntryFunction() const{ return entryFunction; }
 	FunctionData *getCurrentFunction()const{ return currentFunc; }
-	FunctionData *createFunction(string name, int paramCount, int returnCount, bool makeCurrent = false);
+	FunctionData *createFunction(std::string name, int paramCount, int returnCount, bool makeCurrent = false);
 	void clearCurrentFunction(){ currentFunc = NULL; }
-	const FunctionData *getFunctionFromName(string name)const;
+	const FunctionData *getFunctionFromName(std::string name)const;
 	unsigned getFunctionCount() const{ return functions.size(); }
 	const FunctionData *getFunctionFromIndex(unsigned index)const{ assert(index < getFunctionCount() && index >= 0 && "Function index out of range"); return functions[index]; }
 
 	unsigned getInlineCount() const{ return inlineStack.size(); }
 
-	string getInlineJumpLabelAppend() const
+	std::string getInlineJumpLabelAppend() const
 	{
 		if (inlineStack.size())
 		{
@@ -56,17 +56,17 @@ public:
 
 	void setMainFunction(FunctionData* mainFunc){ assert(mainFunc->getName() == "@main" && "trying to set function not called main to mainFunction"); mainFunction = mainFunc; }
 
-	bool addUsedFuncToCurrent(string name);
-	bool addUsedFuncToEntry(string name);
+	bool addUsedFuncToCurrent(std::string name);
+	bool addUsedFuncToEntry(std::string name);
 	void finaliseEntryFunction();
 
-	bool isFunctionInInlineStack(string name) const;
+	bool isFunctionInInlineStack(std::string name) const;
 	bool isFunctionInInlineStack(const FunctionData *fData) const;
 
-	bool addFunctionInline(string name, string returnLoc);
-	bool addFunctionInline(const FunctionData *fData, string returnLoc);
+	bool addFunctionInline(std::string name, std::string returnLoc);
+	bool addFunctionInline(const FunctionData *fData, std::string returnLoc);
 
-	void removeFunctionInline(string name);
+	void removeFunctionInline(std::string name);
 	void removeFunctionInline(const FunctionData *fData);
 
 	bool isUnsafeContext()const;
@@ -123,25 +123,25 @@ public:
 	{
 		return staticTable.data();
 	}
-	string getStaticsAsString();
+	std::string getStaticsAsString();
 
-	string getScriptName()const{ return _scriptName; }
+	std::string getScriptName()const{ return _scriptName; }
 	BuildType getBuildType()const{ return _bType; }
 	Platform getBuildPlatform()const{ return _platform; }
 
-	string getPlatformAbv()const;
+	std::string getPlatformAbv()const;
 
-	string getPlatformAbvUpper()const;
+	std::string getPlatformAbvUpper()const;
 
-	string getBuildTypeExt()const;
+	std::string getBuildTypeExt()const;
 
-	string getCompiledOutputExt()const;
+	std::string getCompiledOutputExt()const;
 
-	string getBuildFileName()const{
+	std::string getBuildFileName()const{
 		return getScriptName() + "." + getCompiledOutputExt();
 	}
 
-	string getASMFileName()const{
+	std::string getASMFileName()const{
 		return getScriptName() + "." + getBuildTypeExt();
 	}
 	

@@ -1,5 +1,8 @@
 #include "Compiler.h"
 
+using namespace std;
+using namespace Utils::System;
+using namespace Utils::Bitwise;
 
 #pragma region Base
 
@@ -1022,24 +1025,24 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 		//fix length of compressed data
 
 		if (CompressedSize = 0)
-			Throw("SCO Compressed Size Invalid");
+			Utils::System::Throw("SCO Compressed Size Invalid");
 		else if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize))
-			Throw("SCO Encryption Failed");
+			Utils::System::Throw("SCO Encryption Failed");
 
 		vector<uint32_t> SCR_Header = //size: 12
 		{ 
-		  SwapEndian(0x53435202u)//SCR.
-		, SwapEndian(0x349D018Au)//GlobalsSignature
-		, SwapEndian(CompressedSize)
-		, SwapEndian(-3u)//-3 is_crypt?
-		, SwapEndian(BuildBuffer.size())
-		, SwapEndian(HLData->getStaticSize())
-		, SwapEndian(0u)//GlobalsCount
-		, SwapEndian(0u)//ParameterCount
-		, SwapEndian(NativeHashMap.size())
-		, SwapEndian(0u)//unk36
-		, SwapEndian(0u)//unk40
-		, SwapEndian(0u)//unk44
+		  Utils::Bitwise::SwapEndian(0x53435202u)//SCR.
+		, Utils::Bitwise::SwapEndian(0x349D018Au)//GlobalsSignature
+		, Utils::Bitwise::SwapEndian(CompressedSize)
+		, Utils::Bitwise::SwapEndian(-3u)//-3 is_crypt?
+		, Utils::Bitwise::SwapEndian(BuildBuffer.size())
+		, Utils::Bitwise::SwapEndian(HLData->getStaticSize())
+		, Utils::Bitwise::SwapEndian(0u)//GlobalsCount
+		, Utils::Bitwise::SwapEndian(0u)//ParameterCount
+		, Utils::Bitwise::SwapEndian(NativeHashMap.size())
+		, Utils::Bitwise::SwapEndian(0u)//unk36
+		, Utils::Bitwise::SwapEndian(0u)//unk40
+		, Utils::Bitwise::SwapEndian(0u)//unk44
 		};
 
 		FILE* file = fopen(path, "wb");
@@ -1050,7 +1053,7 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 			fclose(file);
 		}
 		else
-			Throw("Could Not Open Output File");
+			Utils::System::Throw("Could Not Open Output File");
 	}
 	else
 	{
@@ -1062,7 +1065,7 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 			fclose(file);
 		}
 		else
-			Throw("Could Not Open Output File");
+			Utils::System::Throw("Could Not Open Output File");
 	}
 
 	#pragma endregion
@@ -1103,20 +1106,20 @@ void CompileGTAV::fixFunctionCalls()
 		auto it = FuncLocations.find(CallInfo.FuncName);
 		if (it == FuncLocations.end())
 		{
-			Throw("Function \"" + CallInfo.FuncName + "\" not found");
+			Utils::System::Throw("Function \"" + CallInfo.FuncName + "\" not found");
 		}
 		uint32_t pos = it->second;
 		if (pos >= 0x1000000)
 		{
-			Throw("Function \"" + CallInfo.FuncName + "\" out of call range");//realistally this is never going to happen
+			Utils::System::Throw("Function \"" + CallInfo.FuncName + "\" out of call range");//realistally this is never going to happen
 		}
 		switch (CallInfo.InstructionType)
 		{
 			case CallInstructionType::FuncLoc:
-			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
+			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = Utils::Bitwise::SwapEndian(pos) | BaseOpcodes->PushI24;
 			break;
 			case CallInstructionType::Call:
-			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->Call;
+			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = Utils::Bitwise::SwapEndian(pos) | BaseOpcodes->Call;
 			break;
 			default: assert(false && "Invalid Call Instruction"); break;
 		}
@@ -1135,11 +1138,11 @@ void CompileGTAV::CallNative(const uint32_t hash, const uint8_t paramCount, cons
 	if (hash == -1)
 	{
 		if (DATA->getNative()->getReturnCount() > 3)
-			Throw("Native Calls Can Only Have Three Returns");
+			Utils::System::Throw("Native Calls Can Only Have Three Returns");
 
 		const uint32_t index = AddNative(DATA->getNative()->getHash());
 		if (index >= 0xFFFF)
-			Throw("Native Call Index out of bounds");
+			Utils::System::Throw("Native Call Index out of bounds");
 
 		AddInt8( (DATA->getNative()->getParamCount() << 2) | (DATA->getNative()->getReturnCount() & 0x3));
 		AddInt16(index);
@@ -1147,11 +1150,11 @@ void CompileGTAV::CallNative(const uint32_t hash, const uint8_t paramCount, cons
 	else
 	{
 		if (returnCount > 3)
-			Throw("Native Calls Can Only Have Three Returns");
+			Utils::System::Throw("Native Calls Can Only Have Three Returns");
 
 		const uint32_t index = AddNative(hash);
 		if (index >= 0xFFFF)
-			Throw("Native Call Index out of bounds");
+			Utils::System::Throw("Native Call Index out of bounds");
 
 		AddInt8((paramCount << 2) | (returnCount & 0x3));
 		AddInt16(index);
@@ -1364,10 +1367,10 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 	{
 		vector<uint32_t> rsc7 =
 		{
-			SwapEndian(0x52534337u),
-			SwapEndian(0x00000009u),
-			SwapEndian(0u),//GetFlagFromSize(BuildBuffer.size(), 16384 / 2)
-			SwapEndian(0x90000000u)
+			Utils::Bitwise::SwapEndian(0x52534337u),
+			Utils::Bitwise::SwapEndian(0x00000009u),
+			Utils::Bitwise::SwapEndian(0u),//GetFlagFromSize(BuildBuffer.size(), 16384 / 2)
+			Utils::Bitwise::SwapEndian(0x90000000u)
 		};
 
 		fwrite(rsc7.data(), 1, 16, file);
