@@ -1,12 +1,12 @@
 #pragma once
 #include <stdint.h>
 
-typedef union IntAndFloat
+typedef union 
 {
 	float fvalue;
 	uint32_t uivalue;
 	int32_t ivalue;
-};
+}IntAndFloat;
 
 #pragma region Constexpr_Helpers
 #pragma warning( disable : 4307 )//integral constant overflow
