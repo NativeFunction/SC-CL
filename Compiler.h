@@ -257,7 +257,7 @@ protected:
 
 	#pragma region Parsed_Data_Vars
 	std::vector<uint8_t> CodePageData;//opcode data
-	std::unordered_map<std::string, uint32_t> LabelLocations;//label ,data index
+	std::unordered_map<std::string, LabelData> LabelLocations;//label ,data index
 	std::vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData for a function
 	uint32_t JumpLocationsToFarInc = 0;
 	std::unordered_map<std::string, uint32_t> FuncLocations;//call, data index
