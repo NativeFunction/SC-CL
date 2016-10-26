@@ -692,6 +692,10 @@ string Opcode::toString() const
 		{
 			current = "Switch //Empty Switch";
 		}
+		if (switchStorage->hasDefaultJumpLoc())
+		{
+			current += "\nJump @" + switchStorage->getDefaultJumpLoc()->toString();
+		}
 		break;
 	}
 	case OK_PushString:
@@ -1017,6 +1021,14 @@ void FunctionData::addSwitchCase(int caseVal, string jumpLoc)
 	{
 		assert(false && "Switch case too large");
 	}
+}
+
+void FunctionData::setSwitchDefaultCaseLoc(string jumpLoc)
+{
+	assert(Instructions.size() && "Instruction stack empty, cant add switch case");
+	Opcode *end = Instructions.back();
+	assert(end->getKind() == OK_Switch && "AddSwitchCase must be called on switches");
+	end->storage.switchCase->setDefaultJumpLoc(jumpLoc);
 }
 
 void FunctionData::addUsedFunc(FunctionData * func)

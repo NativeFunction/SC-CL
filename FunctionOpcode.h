@@ -131,6 +131,49 @@ enum OpcodeKind{
 
 class FunctionData;
 
+struct StringStorage
+{
+private:
+	char* pointer;
+	size_t length;
+public:
+	std::string toString()const
+	{
+		return std::string(pointer, length);
+	}
+	/*llvm::StringRef toStringRef()const
+	{
+	return llvm::StringRef(pointer, length);
+	}*/
+	StringStorage(std::string str)
+	{
+		length = str.length();
+		pointer = new char[length + 1];
+		memcpy(pointer, str.c_str(), length + 1);
+	}
+	StringStorage(llvm::StringRef stringRef)
+	{
+		length = stringRef.size();
+		pointer = new char[length + 1];
+		memcpy(pointer, stringRef.data(), length + 1);
+	}
+	const char *data() const
+	{
+		return pointer;
+	}
+	size_t size()const
+	{
+		return length;
+	}
+	~StringStorage()
+	{
+		delete[] pointer;
+	}
+	friend std::ostream& operator << (std::ostream& stream, const StringStorage& string) {
+		stream.write(string.pointer, string.size());
+		return stream;
+	}
+};
 
 struct SwitchCaseStorage
 {
@@ -166,8 +209,9 @@ struct SwitchStorage
 private:
 	uint32_t _count;
 	SwitchCaseStorage *_first, *_last;//keep track of last for faster access
+	StringStorage* _defaultJumpLoc;//to be set at the end of the switch
 public:
-	SwitchStorage(): _count(0), _first(NULL), _last(NULL){}
+	SwitchStorage(): _count(0), _first(NULL), _last(NULL), _defaultJumpLoc(NULL){}
 	~SwitchStorage()
 	{
 		if (_first)
@@ -193,51 +237,21 @@ public:
 	}
 	const SwitchCaseStorage* getFirstCase() const { return _first; }
 	uint32_t getCount() const{ return _count; }
+	void setDefaultJumpLoc(std::string defCase)
+	{
+		assert(!_defaultJumpLoc && "Default jump case alread specified");
+		_defaultJumpLoc = new StringStorage(defCase);
+	}
+	void setDefaultJumpLoc(llvm::StringRef defCase)
+	{
+		assert(!_defaultJumpLoc && "Default jump case alread specified");
+		_defaultJumpLoc = new StringStorage(defCase);
+	}
+	bool hasDefaultJumpLoc()const{ return _defaultJumpLoc; }//only would occur when you have a switch statement with > 255 cases
+	const StringStorage* getDefaultJumpLoc()const{ return _defaultJumpLoc; }
 
 };
-struct StringStorage
-{
-private:
-	char* pointer;
-	size_t length;
-public:
-	std::string toString()const
-	{
-		return std::string(pointer, length);
-	}
-	/*llvm::StringRef toStringRef()const
-	{
-		return llvm::StringRef(pointer, length);
-	}*/
-	StringStorage(std::string str)
-	{
-		length = str.length();
-		pointer = new char[length + 1];
-		memcpy(pointer, str.c_str(), length + 1);
-	}
-	StringStorage(llvm::StringRef stringRef)
-	{
-		length = stringRef.size();
-		pointer = new char[length + 1];
-		memcpy(pointer, stringRef.data(), length + 1);
-	}
-	const char *data() const
-	{
-		return pointer;
-	}
-	size_t size()const
-	{
-		return length;
-	}
-	~StringStorage()
-	{
-		delete[] pointer;
-	}
-	friend std::ostream& operator << (std::ostream& stream, const StringStorage& string) {
-		stream.write(string.pointer, string.size());
-		return stream;
-	}
-};
+
 struct NativeStorage
 {
 private:
@@ -379,6 +393,7 @@ public:
 	friend std::ostream& operator << (std::ostream& stream, const FunctionData& fdata);
 	std::string toString() const;
 	void addSwitchCase(int caseVal, std::string jumpLoc);
+	void setSwitchDefaultCaseLoc(std::string jumpLoc);
 	void addUsedFunc(FunctionData *func);
 	int getSizeEstimate(int incDecl) const;//only to be used when seeing if a function should be inlined
 	const Opcode *getInstruction(size_t index)const{

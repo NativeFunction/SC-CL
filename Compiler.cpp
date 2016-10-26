@@ -517,6 +517,10 @@ void CompileBase::Switch(){
 			AddJump(JumpInstructionType::Switch, sCase->getCaseLocation());
 		}
 	}
+	if (switchStore->hasDefaultJumpLoc())
+	{
+		AddJump(JumpInstructionType::Jump, switchStore->getDefaultJumpLoc()->toString());
+	}
 	
 }
 void CompileBase::AddImm(const int32_t Literal)
