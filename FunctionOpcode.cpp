@@ -384,7 +384,7 @@ int Opcode::getSizeEstimate() const
 		return 6;//PushF Val, FMult		
 	case OK_Switch:
 	{
-		return 2 + storage.switchCase->getCount() * 6;
+		return 2 + storage.switchCase->getCount() * 6 + (storage.switchCase->hasDefaultJumpLoc() ? 3 : 0);
 	}
 	case OK_GetHash:
 		if (isRDR)

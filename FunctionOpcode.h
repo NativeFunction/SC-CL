@@ -218,6 +218,10 @@ public:
 		{
 			delete _first;
 		}
+		if (_defaultJumpLoc)
+		{
+			delete _defaultJumpLoc;
+		}
 	}
 
 	void addCase(int caseVal, std::string caseLoc)
