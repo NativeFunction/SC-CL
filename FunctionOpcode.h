@@ -123,7 +123,8 @@ enum OpcodeKind{
 	OK_FuncLoc,
 	OK_ShiftLeft,
 	OK_ShiftRight,
-	OK_GetHash
+	OK_GetHash,
+	OK_JumpTable //Gets compiled as a PushString(V)/PushArrayP(RDR)
 	//do these really need including
 	//OK_Catch
 	//OK_Throw
@@ -131,6 +132,49 @@ enum OpcodeKind{
 
 class FunctionData;
 
+struct StringStorage
+{
+private:
+	char* pointer;
+	size_t length;
+public:
+	std::string toString()const
+	{
+		return std::string(pointer, length);
+	}
+	/*llvm::StringRef toStringRef()const
+	{
+	return llvm::StringRef(pointer, length);
+	}*/
+	StringStorage(std::string str)
+	{
+		length = str.length();
+		pointer = new char[length + 1];
+		memcpy(pointer, str.c_str(), length + 1);
+	}
+	StringStorage(llvm::StringRef stringRef)
+	{
+		length = stringRef.size();
+		pointer = new char[length + 1];
+		memcpy(pointer, stringRef.data(), length + 1);
+	}
+	const char *data() const
+	{
+		return pointer;
+	}
+	size_t size()const
+	{
+		return length;
+	}
+	~StringStorage()
+	{
+		delete[] pointer;
+	}
+	friend std::ostream& operator << (std::ostream& stream, const StringStorage& string) {
+		stream.write(string.pointer, string.size());
+		return stream;
+	}
+};
 
 struct SwitchCaseStorage
 {
@@ -166,13 +210,18 @@ struct SwitchStorage
 private:
 	uint32_t _count;
 	SwitchCaseStorage *_first, *_last;//keep track of last for faster access
+	StringStorage* _defaultJumpLoc;//to be set at the end of the switch
 public:
-	SwitchStorage(): _count(0), _first(NULL), _last(NULL){}
+	SwitchStorage(): _count(0), _first(NULL), _last(NULL), _defaultJumpLoc(NULL){}
 	~SwitchStorage()
 	{
 		if (_first)
 		{
 			delete _first;
+		}
+		if (_defaultJumpLoc)
+		{
+			delete _defaultJumpLoc;
 		}
 	}
 
@@ -193,51 +242,21 @@ public:
 	}
 	const SwitchCaseStorage* getFirstCase() const { return _first; }
 	uint32_t getCount() const{ return _count; }
+	void setDefaultJumpLoc(std::string defCase)
+	{
+		assert(!_defaultJumpLoc && "Default jump case alread specified");
+		_defaultJumpLoc = new StringStorage(defCase);
+	}
+	void setDefaultJumpLoc(llvm::StringRef defCase)
+	{
+		assert(!_defaultJumpLoc && "Default jump case alread specified");
+		_defaultJumpLoc = new StringStorage(defCase);
+	}
+	bool hasDefaultJumpLoc()const{ return _defaultJumpLoc; }//only would occur when you have a switch statement with > 255 cases
+	const StringStorage* getDefaultJumpLoc()const{ return _defaultJumpLoc; }
 
 };
-struct StringStorage
-{
-private:
-	char* pointer;
-	size_t length;
-public:
-	std::string toString()const
-	{
-		return std::string(pointer, length);
-	}
-	/*llvm::StringRef toStringRef()const
-	{
-		return llvm::StringRef(pointer, length);
-	}*/
-	StringStorage(std::string str)
-	{
-		length = str.length();
-		pointer = new char[length + 1];
-		memcpy(pointer, str.c_str(), length + 1);
-	}
-	StringStorage(llvm::StringRef stringRef)
-	{
-		length = stringRef.size();
-		pointer = new char[length + 1];
-		memcpy(pointer, stringRef.data(), length + 1);
-	}
-	const char *data() const
-	{
-		return pointer;
-	}
-	size_t size()const
-	{
-		return length;
-	}
-	~StringStorage()
-	{
-		delete[] pointer;
-	}
-	friend std::ostream& operator << (std::ostream& stream, const StringStorage& string) {
-		stream.write(string.pointer, string.size());
-		return stream;
-	}
-};
+
 struct NativeStorage
 {
 private:
@@ -278,6 +297,35 @@ public:
 	uint8_t getReturnCount()const { return _rCount; }
 };
 
+struct JumpTableStorage
+{
+private:
+	std::vector<StringStorage*> jumpLocs;
+public:
+	JumpTableStorage(){}
+	uint32_t getByteSize()const{ return jumpLocs.size() << 2; }
+	uint32_t getItemCount()const{ return jumpLocs.size(); }
+	void addJumpLoc(std::string jumpLoc){ jumpLocs.push_back(new StringStorage(jumpLoc)); }
+	void addJumpLoc(llvm::StringRef jumpLoc){ jumpLocs.push_back(new StringStorage(jumpLoc)); }
+	void addJumpLoc(StringStorage* jumpLoc){ jumpLocs.push_back(jumpLoc); }
+	const StringStorage* getJumpLoc(unsigned index)
+	{
+		assert(index >= 0 && index < jumpLocs.size() && "Index out of range for jump table");
+		return jumpLocs[index];
+	}
+	std::string getJumpLocAsString(unsigned index)
+	{
+		assert(index >= 0 && index < jumpLocs.size() && "Index out of range for jump table");
+		return jumpLocs[index]->toString();
+	}
+	~JumpTableStorage()
+	{
+		for(auto item : jumpLocs)
+		{
+			delete item;
+		}
+	}
+};
 
 class Opcode
 {
@@ -305,6 +353,7 @@ class Opcode
 		SwitchStorage *switchCase;
 		NativeStorage *native;
 		StringStorage *string;
+		JumpTableStorage *jTable;
 	}storage = { 0,0,0,0 };
 public:
 
@@ -379,6 +428,7 @@ public:
 	friend std::ostream& operator << (std::ostream& stream, const FunctionData& fdata);
 	std::string toString() const;
 	void addSwitchCase(int caseVal, std::string jumpLoc);
+	void setSwitchDefaultCaseLoc(std::string jumpLoc);
 	void addUsedFunc(FunctionData *func);
 	int getSizeEstimate(int incDecl) const;//only to be used when seeing if a function should be inlined
 	const Opcode *getInstruction(size_t index)const{
@@ -728,6 +778,22 @@ public:
 	}
 	void addOpLabelLoc(unsigned int rawEncoding){ addOpLabelLoc(std::to_string(rawEncoding)); }
 	void addOpGetHash();
+	void addOpJumpTable()
+	{
+		Opcode* op = new Opcode(OK_JumpTable);
+		op->storage.jTable = new JumpTableStorage();
+		Instructions.push_back(op);
+	}
+	void addJumpTableLoc(std::string jumpLoc)
+	{
+		assert(Instructions.size() && Instructions.back()->getKind() == OK_JumpTable && "Cannot add a jump table case when last instruction isnt a jump table");
+		Instructions.back()->storage.jTable->addJumpLoc(jumpLoc);
+	}
+	void addJumpTableLoc(llvm::StringRef jumpLoc)
+	{
+		assert(Instructions.size() && Instructions.back()->getKind() == OK_JumpTable && "Cannot add a jump table case when last instruction isnt a jump table");
+		Instructions.back()->storage.jTable->addJumpLoc(jumpLoc);
+	}
 
 #pragma endregion
 };

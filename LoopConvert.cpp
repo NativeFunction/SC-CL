@@ -2383,11 +2383,11 @@ public:
 
 			if (defaultCase)
 			{
-				AddJumpInlineCheckComment(Jump, "Switch Default Jump", defaultCase->getLocEnd().getRawEncoding());
+				scriptData.getCurrentFunction()->setSwitchDefaultCaseLoc(to_string(defaultCase->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
 			}
 			else
 			{
-				AddJumpInlineCheckComment(Jump, "Switch End Jump", switchStmt->getLocEnd().getRawEncoding());
+				scriptData.getCurrentFunction()->setSwitchDefaultCaseLoc(to_string(switchStmt->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
 			}
 
 			//parse all

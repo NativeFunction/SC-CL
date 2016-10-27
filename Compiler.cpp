@@ -642,6 +642,10 @@ void CompileBase::Switch(){
 			*(int16_t*)(CodePageData.data() + JumpOverOffset) = SwapEndian((int16_t)(CodePageData.size() - JumpOverOffset - 2));
 		}
 	}
+	if (switchStore->hasDefaultJumpLoc())
+	{
+		AddJump(JumpInstructionType::Jump, switchStore->getDefaultJumpLoc()->toString());
+	}
 	
 }
 void CompileBase::AddImm(const int32_t Literal)
