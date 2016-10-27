@@ -243,6 +243,11 @@ protected:
 	} LabelData;
 	typedef struct
 	{
+		JumpData JumpInfo;
+		LabelData LabelInfo;
+	} JumpLabelData;
+	typedef struct
+	{
 		const uint32_t CallLocation;
 		const CallInstructionType InstructionType;
 		const std::string FuncName;
@@ -259,7 +264,7 @@ protected:
 	std::vector<uint8_t> CodePageData;//opcode data
 	std::unordered_map<std::string, LabelData> LabelLocations;//label ,data index
 	std::vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData for a function
-	uint32_t JumpLocationsToFarInc = 0;
+	uint32_t SignedJumpLocationInc = 0, UnsignedJumpLocationInc = 0;
 	std::unordered_map<std::string, uint32_t> FuncLocations;//call, data index
 	std::vector<CallData> CallLocations;//CallLocations to fill after building the CodePageData
 	std::unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
@@ -356,6 +361,7 @@ protected:
 		}
 	}
 	virtual void AddJump(const JumpInstructionType type, const std::string label);//Override: GTAIV
+	virtual JumpLabelData AddSwitchJump(const JumpInstructionType type, const std::string label);
 	inline uint32_t AddNative(const uint32_t hash)
 	{
 		std::unordered_map<uint32_t, uint32_t>::iterator findRes = NativeHashMap.find(hash);
@@ -382,14 +388,23 @@ protected:
 		if (amount < size % 16384 && amount != 0) 
 		{
 			CodePageData.resize(size + (16384 - (size % 16384)));
-			CheckJumps();
+			CheckSignedJumps();
+			CheckUnsignedJumps();
 		}
 	}
-	void CheckJumps();
-	inline bool UpdateJumpLocationsToFar()
+	void CheckSignedJumps();
+	void CheckUnsignedJumps();
+	inline bool FindNextSignedJumpLocation()
 	{
-		for (; JumpLocationsToFarInc < JumpLocations.size() && (JumpLocations[JumpLocationsToFarInc].InstructionType == JumpInstructionType::LabelLoc || JumpLocations[JumpLocationsToFarInc].isSet);  JumpLocationsToFarInc++);
-		return JumpLocationsToFarInc < JumpLocations.size();
+		for (; SignedJumpLocationInc < JumpLocations.size() && (JumpLocations[SignedJumpLocationInc].isSet || JumpLocations[SignedJumpLocationInc].InstructionType == JumpInstructionType::LabelLoc || JumpLocations[SignedJumpLocationInc].InstructionType == JumpInstructionType::Switch);  SignedJumpLocationInc++);
+
+		return SignedJumpLocationInc < JumpLocations.size();
+	}
+	inline bool FindNextUnsignedJumpLocation()
+	{
+		for (; UnsignedJumpLocationInc < JumpLocations.size() && (JumpLocations[UnsignedJumpLocationInc].isSet || JumpLocations[UnsignedJumpLocationInc].InstructionType != JumpInstructionType::Switch); UnsignedJumpLocationInc++);
+
+		return UnsignedJumpLocationInc < JumpLocations.size();
 	}
 	#pragma endregion
 
