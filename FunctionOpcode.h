@@ -123,7 +123,8 @@ enum OpcodeKind{
 	OK_FuncLoc,
 	OK_ShiftLeft,
 	OK_ShiftRight,
-	OK_GetHash
+	OK_GetHash,
+	OK_JumpTable //Gets compiled as a PushString(V)/PushArrayP(RDR)
 	//do these really need including
 	//OK_Catch
 	//OK_Throw
@@ -296,6 +297,35 @@ public:
 	uint8_t getReturnCount()const { return _rCount; }
 };
 
+struct JumpTableStorage
+{
+private:
+	std::vector<StringStorage*> jumpLocs;
+public:
+	JumpTableStorage(){}
+	uint32_t getByteSize()const{ return jumpLocs.size() << 2; }
+	uint32_t getItemCount()const{ return jumpLocs.size(); }
+	void addJumpLoc(std::string jumpLoc){ jumpLocs.push_back(new StringStorage(jumpLoc)); }
+	void addJumpLoc(llvm::StringRef jumpLoc){ jumpLocs.push_back(new StringStorage(jumpLoc)); }
+	void addJumpLoc(StringStorage* jumpLoc){ jumpLocs.push_back(jumpLoc); }
+	const StringStorage* getJumpLoc(unsigned index)
+	{
+		assert(index >= 0 && index < jumpLocs.size() && "Index out of range for jump table");
+		return jumpLocs[index];
+	}
+	std::string getJumpLocAsString(unsigned index)
+	{
+		assert(index >= 0 && index < jumpLocs.size() && "Index out of range for jump table");
+		return jumpLocs[index]->toString();
+	}
+	~JumpTableStorage()
+	{
+		for(auto item : jumpLocs)
+		{
+			delete item;
+		}
+	}
+};
 
 class Opcode
 {
@@ -323,6 +353,7 @@ class Opcode
 		SwitchStorage *switchCase;
 		NativeStorage *native;
 		StringStorage *string;
+		JumpTableStorage *jTable;
 	}storage = { 0,0,0,0 };
 public:
 
@@ -747,6 +778,22 @@ public:
 	}
 	void addOpLabelLoc(unsigned int rawEncoding){ addOpLabelLoc(std::to_string(rawEncoding)); }
 	void addOpGetHash();
+	void addOpJumpTable()
+	{
+		Opcode* op = new Opcode(OK_JumpTable);
+		op->storage.jTable = new JumpTableStorage();
+		Instructions.push_back(op);
+	}
+	void addJumpTableLoc(std::string jumpLoc)
+	{
+		assert(Instructions.size() && Instructions.back()->getKind() == OK_JumpTable && "Cannot add a jump table case when last instruction isnt a jump table");
+		Instructions.back()->storage.jTable->addJumpLoc(jumpLoc);
+	}
+	void addJumpTableLoc(llvm::StringRef jumpLoc)
+	{
+		assert(Instructions.size() && Instructions.back()->getKind() == OK_JumpTable && "Cannot add a jump table case when last instruction isnt a jump table");
+		Instructions.back()->storage.jTable->addJumpLoc(jumpLoc);
+	}
 
 #pragma endregion
 };
