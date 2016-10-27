@@ -707,7 +707,7 @@ string Opcode::toString() const
 		}
 		if (switchStorage->hasDefaultJumpLoc())
 		{
-			current += "\nJump @" + switchStorage->getDefaultJumpLoc()->toString();
+			current += "\r\nJump @" + switchStorage->getDefaultJumpLoc()->toString();
 		}
 		break;
 	}
