@@ -33,6 +33,7 @@ else \
 #endif
 
 enum OpcodeKind{
+	OK_Null,
 	OK_Nop,
 	OK_Add,
 	OK_Sub,
@@ -454,7 +455,13 @@ public:
 	void optimisePushBytes();
 
 #pragma region CreateOpcodes
-	void addOpNop(){ Instructions.push_back(new Opcode(OK_Nop)); }
+	void addOpNop(uint16_t nopCount)
+	{
+		assert(nopCount > 0 && nopCount <= 4096 && "Nop Count out of range");
+		Opcode* op = new Opcode(OK_Nop);
+		op->setUShort(nopCount, 0);
+		Instructions.push_back(op);
+	}
 #pragma region MathOpcodes
 	void addOpAdd();
 	void addOpSub();

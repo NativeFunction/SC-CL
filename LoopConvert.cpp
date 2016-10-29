@@ -824,6 +824,30 @@ public:
 
 		switch (JoaatCased(const_cast<char*>(funcName.c_str())))
 		{
+			case JoaatCasedConst("nop"):
+			{
+				ChkHashCol("nop");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
+				{
+					llvm::APSInt result;
+					
+					if (argArray[0]->EvaluateAsInt(result, *context) && result.getSExtValue() > 0 && result.getSExtValue() <= 4096)
+					{
+						AddInstruction(Nop, result.getSExtValue());
+					}
+					else
+					{
+						Throw("nopCount argument must be a constant integer between 1 and 4096", rewriter, argArray[0]->getSourceRange());
+					}
+					
+					return true;
+				}
+				else
+				{
+					Throw("nop must have signature \"extern __intrinsic void nop(const int nopCount);\"", rewriter, callee->getSourceRange());
+				}
+			}
+			break;
 			case JoaatCasedConst("strcpy"):
 			{
 				ChkHashCol("strcpy");

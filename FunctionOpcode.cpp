@@ -164,8 +164,10 @@ int Opcode::getSizeEstimate() const
 	bool isRDR = false;
 	switch (getKind())
 	{
-		case OK_Nop:
+		case OK_Null:
 			return 0;
+		case OK_Nop:
+			return getUShort(0);
 		case OK_Add:
 		case OK_Sub:
 		case OK_Mult:
@@ -421,7 +423,8 @@ string Opcode::toString() const
 	string current;
 	switch(getKind())
 	{
-	case OK_Nop: break;
+	case OK_Null: break;
+	case OK_Nop: current = "Nop"; for (int i = getUShort(0); --i;){ current += "\r\nNop"; } break;
 	case OK_Add: current = "Add"; break;
 	case OK_Sub: current = "Sub"; break;
 	case OK_Mult: current = "Mult"; break;
@@ -1018,7 +1021,7 @@ string FunctionData::toString() const
 	stream << "\r\n:" << name.substr(1) << "//>\r\nFunction " << (int)pcount << " " << (int)stackSize << "\r\n";
 	for(size_t i = 0; i < Instructions.size(); i++)
 	{
-		if (Instructions[i]->getKind() == OK_Nop)
+		if (Instructions[i]->getKind() == OK_Null)
 		{
 			if (Instructions[i]->hasComment())
 			{
@@ -1078,6 +1081,9 @@ int FunctionData::getSizeEstimate(int incDecl) const
 
 void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, bool keepEndReturn)
 {
+	int maxSize = Instructions.size();
+	if (!maxSize)
+		return;//sanity check
 	if (isBuiltIn())
 		return;
 	int randMod = 1 + maxBlockSize - minBlockSize;
@@ -1090,8 +1096,10 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 	srand(time(NULL));
 	vector<vector<Opcode*>> InstructionBuilder;
 	int labelCounter = 0;
-	int maxSize = Instructions.size();
-	for(int i = 0;i < maxSize;)
+	
+	Opcode* first = Instructions[0];
+	bool isFirstNop = first->getKind() == OK_Nop;
+	for(int i = (isFirstNop ? 1 : 0);i < maxSize;)
 	{
 		vector<Opcode*> block;
 		Opcode* label = new Opcode(OK_Label);
@@ -1124,7 +1132,7 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 		i += bSize;
 	}
 	Instructions.clear();
-	
+	if (isFirstNop)Instructions.push_back(first);
 	vector<size_t> randomiseIndexes;
 	for (size_t i = 0; i<InstructionBuilder.size();i++)
 	{
@@ -1180,8 +1188,8 @@ void FunctionData::optimisePushBytes()
 						op->setByte(nextVal, 2);
 						op->setByte(next2Val, 3);
 						//nop the next 2 opcodes as they have been handled
-						next->setKind(OK_Nop);
-						next2->setKind(OK_Nop);
+						next->setKind(OK_Null);
+						next2->setKind(OK_Null);
 						//skip the next 2 in Instructions in the next iteration
 						i += 2;
 					}
@@ -1193,7 +1201,7 @@ void FunctionData::optimisePushBytes()
 						op->setByte(val, 1);
 						op->setByte(nextVal, 2);
 						//nop the next opcode as it has been handled
-						next->setKind(OK_Nop);
+						next->setKind(OK_Null);
 						//skip the next instruction
 						i++;
 					}
@@ -2154,7 +2162,7 @@ ostream & operator<<(ostream & stream, const FunctionData & fdata)
 	stream << "\r\n:" << fdata.name.substr(1) << "//>\r\nFunction " << (int)fdata.pcount << " " << (int)fdata.stackSize << "\r\n";
 	for(size_t i = 0; i < fdata.Instructions.size(); i++)
 	{
-		if (fdata.Instructions[i]->getKind() == OK_Nop)
+		if (fdata.Instructions[i]->getKind() == OK_Null)
 		{
 			if (fdata.Instructions[i]->hasComment())
 			{

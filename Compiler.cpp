@@ -67,7 +67,8 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 {
 	switch (OK)
 	{
-		case OK_Nop:		break;
+		case OK_Null:		break;
+		case OK_Nop:		for (int i = DATA->getUShort(0); i--;){ AddOpcode(Nop); }break;
 		case OK_Add:		AddOpcode(Add); break;
 		case OK_Sub:		AddOpcode(Sub); break;
 		case OK_Mult:		AddOpcode(Mult); break;
