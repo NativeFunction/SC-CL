@@ -1304,7 +1304,8 @@ public:
 					}
 					else
 					{
-						uint32_t loopLblCount = __COUNTER__;
+						static uint32_t loopLblCount = -1;
+						loopLblCount++;
 
 						LocalVariables.addLevel();
 
@@ -1364,8 +1365,8 @@ public:
 				ChkHashCol("memset");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isCharType() && argArray[2]->getType()->isIntegerType())
 				{
-					uint32_t loopLblCount = __COUNTER__;
-
+					static uint32_t loopLblCount = -1;
+					loopLblCount++;
 					LocalVariables.addLevel();
 
 					int destIndex = LocalVariables.addDecl("__memset-loop-dest", 1);
@@ -1402,7 +1403,7 @@ public:
 
 					AddInstruction(AddImm, 1);
 					AddInstruction(Jump, "__memset-loop-" + to_string(loopLblCount));
-					AddInstruction(Label, "memset-loopend-" + to_string(loopLblCount));
+					AddInstruction(Label, "__memset-loopend-" + to_string(loopLblCount));
 					AddInstruction(Drop);
 					LocalVariables.removeLevel();
 
