@@ -2263,12 +2263,7 @@ public:
 		}
 		else if (isa<DefaultStmt>(s)) {
 			DefaultStmt *caseD = cast<DefaultStmt>(s);
-			string labelName = to_string(caseD->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend();
-			if (FindBuffer.find(labelName) == FindBuffer.end())
-			{
-				FindBuffer.insert(labelName);
-				AddInstruction(Label, labelName);
-			}
+			AddInstruction(Label, to_string(caseD->getLocStart().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
 			LocalVariables.addLevel();
 
 			if (caseD->getSubStmt())
@@ -2277,13 +2272,8 @@ public:
 		}
 		else if (isa<CaseStmt>(s)) {
 			CaseStmt *caseS = cast<CaseStmt>(s);
+			AddInstruction(Label, to_string(caseS->getLocStart().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
 
-			string labelName = to_string(caseS->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend();
-			if (FindBuffer.find(labelName) == FindBuffer.end())
-			{
-				FindBuffer.insert(labelName);
-				AddInstruction(Label, labelName);
-			}
 			LocalVariables.addLevel();
 			if (caseS->getRHS())
 				parseExpression(caseS->getRHS());
@@ -2294,7 +2284,6 @@ public:
 		}
 		else if (isa<SwitchStmt>(s)) {
 			SwitchStmt *switchStmt = cast<SwitchStmt>(s);
-			FindBuffer.clear();
 			parseExpression(switchStmt->getCond(), false, true);
 
 			//Build case switch list first
@@ -2314,17 +2303,17 @@ public:
 							int val;
 							if (CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
 							{
-								caseLabels.push({ val, to_string(caseS->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend() });
+								caseLabels.push({ val, to_string(caseS->getLocStart().getRawEncoding()) + scriptData.getInlineJumpLabelAppend() });
 							}
 							else
 							{
-								caseLabels.push({ (int)result.Val.getInt().getSExtValue(), to_string(caseS->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend() });
+								caseLabels.push({ (int)result.Val.getInt().getSExtValue(), to_string(caseS->getLocStart().getRawEncoding()) + scriptData.getInlineJumpLabelAppend() });
 							}
 						}
 						else if (result.Val.isFloat())
 						{
 							float f = result.Val.getFloat().convertToFloat();
-							caseLabels.push({ *(int*)&f, to_string(caseS->getLocEnd().getRawEncoding()) });
+							caseLabels.push({ *(int*)&f, to_string(caseS->getLocStart().getRawEncoding()) });
 						}
 						else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getSourceRange());
 					}
@@ -2383,7 +2372,7 @@ public:
 
 			if (defaultCase)
 			{
-				scriptData.getCurrentFunction()->setSwitchDefaultCaseLoc(to_string(defaultCase->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
+				scriptData.getCurrentFunction()->setSwitchDefaultCaseLoc(to_string(defaultCase->getLocStart().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
 			}
 			else
 			{
@@ -2393,7 +2382,6 @@ public:
 			//parse all
 			parseStatement(switchStmt->getBody(), switchStmt->getLocEnd().getRawEncoding(), continueLoc);
 			AddJumpInlineCheck(Label, switchStmt->getLocEnd().getRawEncoding());
-			FindBuffer.clear();
 		}
 		else if (isa<GotoStmt>(s))
 		{
@@ -5159,7 +5147,6 @@ public:
 	#pragma endregion
 
 public:
-	set<std::string> FindBuffer;
 	Rewriter &TheRewriter;
 	ASTContext *context;
 	stringstream out;//temp until CXX stuff sorted/removed
