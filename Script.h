@@ -21,7 +21,6 @@ enum BuildType
 class Script
 {
 	FunctionData *entryFunction;
-	FunctionData *indirectGoTo;
 	FunctionData *mainFunction;
 	std::vector<FunctionData *> functions;
 	FunctionData *currentFunc;

@@ -162,6 +162,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); break;
 		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); break;
 		case OK_GetHash:	GetHash(); break;//gta5 needs to override
+		case OK_GoToStack:	GoToStack();
 	}
 	CheckSignedJumps();
 	CheckUnsignedJumps();
@@ -1051,6 +1052,15 @@ void CompileRDR::SetImm()
 		AddOpcode(pSet);
 	}
 }
+void CompileRDR::GoToStack()
+{
+	DoesOpcodeHaveRoom(5);
+	AddOpcode(Function);
+	AddInt8(0);
+	AddInt16(2);
+	AddInt8(0);
+	AddOpcode(ReturnP0R0);
+}
 #pragma endregion
 
 #pragma region Write_Functions
@@ -1477,6 +1487,17 @@ void CompileGTAV::SetImm()
 		AddOpcode(SetImm2);
 		AddInt16(value);
 	}
+}
+void CompileGTAV::GoToStack()
+{
+	DoesOpcodeHaveRoom(5);
+	AddOpcode(Function);
+	AddInt8(0);
+	AddInt16(2);
+	AddInt8(0);
+	DoesOpcodeHaveRoom(3);
+	AddOpcode(Return);
+	AddInt16(0);//cba adding byte 0 twice
 }
 #pragma endregion
 

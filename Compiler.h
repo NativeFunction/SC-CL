@@ -467,6 +467,7 @@ protected:
 	virtual void GetImmP() { AddImm((uint32_t)DATA->getUShort(0) * 4); };//Override: GTAV
 	virtual void GetImm() { assert(false && "GetImm has to be overridden"); };//Override: ALL
 	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
+	virtual void GoToStack() = 0;
 	#pragma endregion
 
 	#pragma region Write_Functions
@@ -642,6 +643,7 @@ private:
 	void Call() override;
 	void GetImm() override;
 	void SetImm() override;	
+	void GoToStack() override;
 	#pragma endregion
 	
 	#pragma region Parse_Functions
@@ -700,6 +702,7 @@ private:
 	void GetImmP() override;
 	void GetImm() override;
 	void SetImm() override;
+	void GoToStack() override;
 	#pragma endregion
 
 	#pragma region Write_Functions

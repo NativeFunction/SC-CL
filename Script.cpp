@@ -3,17 +3,9 @@
 
 using namespace std;
 
-Script::Script(string scriptName, BuildType buildType, Platform platform) : entryFunction(new FunctionData("@__builtin__entryPoint", 0, 0)), indirectGoTo(new FunctionData("@__buiiltin__indirectGoTo", 1, 0)), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform)
+Script::Script(string scriptName, BuildType buildType, Platform platform) : entryFunction(new FunctionData("@__builtin__entryPoint", 0, 0)), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform)
 {
 	functions.push_back(entryFunction);
-	functions.push_back(indirectGoTo);
-	entryFunction->setBuiltIn();
-	indirectGoTo->addOpGetFrame(0);
-	indirectGoTo->addOpSetFrame(1);
-	indirectGoTo->addOpReturn();
-	indirectGoTo->setStackSize(3);
-	indirectGoTo->setProcessed();
-	indirectGoTo->setBuiltIn();
 }
 
 FunctionData * Script::createFunction(string name, int paramCount, int returnCount, bool makeCurrent)

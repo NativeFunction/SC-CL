@@ -125,6 +125,7 @@ enum OpcodeKind{
 	OK_ShiftLeft,
 	OK_ShiftRight,
 	OK_GetHash,
+	OK_GoToStack,
 	OK_JumpTable //Gets compiled as a PushString(V)/PushArrayP(RDR)
 	//do these really need including
 	//OK_Catch
@@ -800,6 +801,21 @@ public:
 	{
 		assert(Instructions.size() && Instructions.back()->getKind() == OK_JumpTable && "Cannot add a jump table case when last instruction isnt a jump table");
 		Instructions.back()->storage.jTable->addJumpLoc(jumpLoc);
+	}
+	void addOpGoToStack()
+	{
+		assert(Instructions.size() && "Cannot add a GoToStack when instruction stack is empty");
+#ifdef USE_OPTIMISATIONS
+		if (Instructions.back()->getKind() == OK_LabelLoc)
+		{
+			Instructions.back()->setKind(OK_Jump);
+		}
+		else
+#endif
+		{
+			Instructions.push_back(new Opcode(OK_GoToStack));
+		}
+
 	}
 
 #pragma endregion

@@ -2037,6 +2037,10 @@ public:
 			Expr *conditional = IfStatement->getCond();
 			Stmt *Then = IfStatement->getThen();
 			Stmt *Else = IfStatement->getElse();
+			if (Else && isa<CompoundStmt>(Else) && cast<CompoundStmt>(Else)->size() == 0)
+			{
+				Else = NULL;
+			}
 
 			string IfLocEnd = to_string(Then->getLocEnd().getRawEncoding());
 
@@ -2059,13 +2063,11 @@ public:
 					bool ifEndRet = scriptData.getCurrentFunction()->endsWithReturn() || (scriptData.getInlineCount() && scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()));
 					if (Else)//still parse the else code just incase there are goto labeils in there
 					{
-
 						AddJumpInlineCheckConditionallyStr(!ifEndRet, Jump, IfLocEnd);
 						LocalVariables.addLevel();
 						parseStatement(Else, breakLoc, continueLoc);
 						LocalVariables.removeLevel();
 						AddJumpInlineCheckConditionallyStr(!ifEndRet, Label, IfLocEnd);
-
 					}
 				}
 				else
@@ -2432,8 +2434,7 @@ public:
 		{
 			auto indirectGoto = cast<IndirectGotoStmt>(s);
 			parseExpression(indirectGoto->getTarget(), false, true);
-			AddInstructionComment(Call, "IndirectGoTo Call", "__buiiltin__indirectGoTo");
-			scriptData.addUsedFuncToCurrent("@__buiiltin__indirectGoTo");
+			AddInstruction(GoToStack);
 		}
 		else
 			Throw("Undefined statement \"" + string(s->getStmtClassName()) + "\"", rewriter, s->getLocStart());

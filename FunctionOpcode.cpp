@@ -410,6 +410,9 @@ int Opcode::getSizeEstimate() const
 				return 4;//just a guess as it depends where it is placed in string table
 			}
 		}
+		case OK_GoToStack:
+			if (isRDR)return 6;
+			else return 8;
 	}
 	assert(false);//trying to figure out which path isnt returning a value
 	return 0;
@@ -742,6 +745,8 @@ string Opcode::toString() const
 		}
 		break;
 	}
+	case OK_GoToStack:
+		current = "Function 0 2\r\nReturn 0 0"; break;
 	}
 #ifdef _DEBUG
 	if (hasComment())
