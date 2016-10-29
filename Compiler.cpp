@@ -274,8 +274,8 @@ void CompileBase::AddJump(const JumpInstructionType type, const string label)
 		}
 		else
 		{
-			Throw("unimplemented long jump func call");
-			//long jump func call
+			PushInt(it->second.LabelLocation);
+			GoToStack();
 		}
 	}
 	
@@ -634,8 +634,8 @@ void CompileBase::Switch(){
 				}
 				else
 				{
-					Throw("unimplemented long jump func call");
-					//long jump func call
+					PushInt(CasesToBeFixed[i].LabelInfo.LabelLocation);
+					GoToStack();
 				}
 			}
 
