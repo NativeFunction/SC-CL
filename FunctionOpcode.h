@@ -310,12 +310,12 @@ public:
 	void addJumpLoc(std::string jumpLoc){ jumpLocs.push_back(new StringStorage(jumpLoc)); }
 	void addJumpLoc(llvm::StringRef jumpLoc){ jumpLocs.push_back(new StringStorage(jumpLoc)); }
 	void addJumpLoc(StringStorage* jumpLoc){ jumpLocs.push_back(jumpLoc); }
-	const StringStorage* getJumpLoc(unsigned index)
+	const StringStorage* getJumpLoc(unsigned index) const
 	{
 		assert(index >= 0 && index < jumpLocs.size() && "Index out of range for jump table");
 		return jumpLocs[index];
 	}
-	std::string getJumpLocAsString(unsigned index)
+	std::string getJumpLocAsString(unsigned index) const
 	{
 		assert(index >= 0 && index < jumpLocs.size() && "Index out of range for jump table");
 		return jumpLocs[index]->toString();
@@ -383,6 +383,11 @@ public:
 		assert(getKind() == OK_Native && "getNative not called on Switch Opcode");
 		return storage.native;
 	}
+	const JumpTableStorage *getJumpTable() const
+	{
+		assert(getKind() == OK_JumpTable && "getNative not called on Switch Opcode");
+		return storage.jTable;
+	}
 
 	friend std::ostream& operator << (std::ostream& stream, const Opcode& opcode) {
 		stream << opcode.toString();
@@ -449,7 +454,7 @@ public:
 	bool isBuiltIn()const{ return _isBuiltIn; }
 	void setBuiltIn(){ _isBuiltIn = true; }
 
-	void codeLayoutRandomisation(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true);
+	void codeLayoutRandomisation(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
 
 	void setUnsafe(){ allowUnsafe = true; }
 	bool isUnsafe()const{ return allowUnsafe; }

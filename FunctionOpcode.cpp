@@ -733,7 +733,7 @@ string Opcode::toString() const
 	case OK_LabelLoc: current = "Push GetLoc(\"" + getString() + "\")"; break;
 	case OK_FuncLoc: current = "Push GetFuncLoc(\"" + getString() + "\")"; break;
 	case OK_JumpTable:{
-		current = "PushArrayP {";
+		current = "PushLabelLocArray {\r\n";
 		if (storage.jTable->getItemCount() == 0)
 		{
 			current += "}"; break;
@@ -741,8 +741,9 @@ string Opcode::toString() const
 		current += "GetLoc(\"" + storage.jTable->getJumpLocAsString(0) + "\")";
 		for (unsigned i = 1; i < storage.jTable->getItemCount();i++)
 		{
-			current += ", GetLoc(\"" + storage.jTable->getJumpLocAsString(i) + "\")";
+			current += ", \r\nGetLoc(\"" + storage.jTable->getJumpLocAsString(i) + "\")";
 		}
+		current += "\r\n}";
 		break;
 	}
 	case OK_GoToStack:
@@ -1086,7 +1087,7 @@ int FunctionData::getSizeEstimate(int incDecl) const
 	return size;
 }
 
-void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, bool keepEndReturn)
+void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, bool keepEndReturn, bool makeJumpTable)
 {
 	int maxSize = Instructions.size();
 	if (!maxSize)
@@ -1106,70 +1107,163 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 	
 	Opcode* first = Instructions[0];
 	bool isFirstNop = first->getKind() == OK_Nop;
-	for(int i = (isFirstNop ? 1 : 0);i < maxSize;)
+	if (makeJumpTable)
 	{
-		vector<Opcode*> block;
-		Opcode* label = new Opcode(OK_Label);
-		label->setString("__builtin__controlFlowObs_" + to_string(labelCounter++));
-		block.push_back(label);
-		int bSize = (rand() % randMod) + minBlockSize;
-		if (i + bSize >= maxSize)
+		vector<string> jumpTableLocations;
+		vector<size_t> jumpTableRandomisation;
+		auto JumpTable = new JumpTableStorage();
+		Opcode *jtableOp = new Opcode(OK_JumpTable);
+		jtableOp->storage.jTable = JumpTable;
+		for (int i = (isFirstNop ? 1 : 0); i < maxSize;)
 		{
-			if (i+bSize > maxSize)
+			vector<Opcode*> block;
+			Opcode* label = new Opcode(OK_Label);
+			label->setString("__builtin__controlFlowObs_" + to_string(labelCounter++));
+			block.push_back(label);
+			int bSize = (rand() % randMod) + minBlockSize;
+			if (i + bSize >= maxSize)
 			{
-				bSize = maxSize - i;
-			}
-			block.resize(bSize + 1);
-			memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
-		}
-		else
-		{
-			block.reserve(bSize + 2);
-			block.resize(bSize + 1);
-			if (bSize)
+				if (i + bSize > maxSize)
+				{
+					bSize = maxSize - i;
+				}
+				block.resize(bSize + 1);
 				memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
-			if (block[bSize]->getKind() != OK_Jump)
-			{
-				Opcode* jumpNext = new Opcode(OK_Jump);
-				jumpNext->setString("__builtin__controlFlowObs_" + to_string(labelCounter));
-				block.push_back(jumpNext);
 			}
+			else
+			{
+				block.reserve(bSize + 2);
+				block.resize(bSize + 1);
+				if (bSize)
+					memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
+				if (block[bSize]->getKind() != OK_Jump)
+				{
+					jumpTableLocations.push_back("__builtin__controlFlowObs_" + to_string(labelCounter));
+				}
+				else
+				{
+					jumpTableLocations.push_back(block[bSize]->getString());//replace the jump with a jump table jump to add confusion
+					bSize--;
+					block.pop_back();
+				}
+				jumpTableRandomisation.push_back(jumpTableRandomisation.size());
+			}
+			InstructionBuilder.push_back(block);
+			i += bSize;
+			random_shuffle(jumpTableRandomisation.begin(), jumpTableRandomisation.end());
 		}
-		InstructionBuilder.push_back(block);
-		i += bSize;
-	}
-	Instructions.clear();
-	if (isFirstNop)Instructions.push_back(first);
-	vector<size_t> randomiseIndexes;
-	for (size_t i = 0; i<InstructionBuilder.size();i++)
-	{
-		randomiseIndexes.push_back(i);
-	}
-	random_shuffle(randomiseIndexes.begin(), (keepEndReturn ? randomiseIndexes.end() - 1 : randomiseIndexes.end()));
-	if (randomiseIndexes[0] > 0)
-	{
-		Opcode* jumpInit = new Opcode(OK_Jump);
-		jumpInit->setString("__builtin__controlFlowObs_0");
-		Instructions.push_back(jumpInit);
+		for (unsigned i = 0; i < jumpTableRandomisation.size();i++)
+		{
+			bool found = false;
+			for (unsigned j = 0; j < jumpTableRandomisation.size();j++)
+			{
+				if (jumpTableRandomisation[i] == j)
+				{
+					found = true;
+					JumpTable->addJumpLoc(jumpTableLocations[j]);
+					Opcode* index = new Opcode(OK_PushInt);
+					index->setInt(i*4);
+					Opcode* jump = new Opcode(OK_Jump);
+					jump->setString("__builtin__jumpTable");
+					InstructionBuilder[j].push_back(index);
+					InstructionBuilder[j].push_back(jump);
+					break;
+				}
+			}
+			assert(found && "Not Found Correct Index");
+		}
+		Instructions.clear();
+		if (isFirstNop)Instructions.push_back(first);
+		addOpPushInt(JumpTable->getItemCount() * 4);
+		addOpLabel("__builtin__jumpTable");
+		Instructions.push_back(jtableOp);
+		addOpAdd();
+		addOpPGet();
+		addOpGoToStack();
+
+		JumpTable->addJumpLoc((string)"__builtin__controlFlowObs_0");
+		vector<size_t> randomiseIndexes;
+		for (size_t i = 0; i < InstructionBuilder.size(); i++)
+		{
+			randomiseIndexes.push_back(i);
+		}
+		random_shuffle(randomiseIndexes.begin(), (keepEndReturn ? randomiseIndexes.end() - 1 : randomiseIndexes.end()));
+		for (uint32_t i = 0; i < randomiseIndexes.size(); i++)
+		{
+			size_t size = InstructionBuilder[randomiseIndexes[i]].size();
+			size_t iSize = Instructions.size();
+			Instructions.resize(iSize + size);
+			memcpy(&Instructions[iSize], &InstructionBuilder[randomiseIndexes[i]][0], size * sizeof(Opcode*));
+		}
 	}
 	else
 	{
-		//pop or nop front item
-	}
-	for(uint32_t i = 0; i < randomiseIndexes.size(); i++)
-	{
-		if (i > 0)
+		for (int i = (isFirstNop ? 1 : 0); i < maxSize;)
 		{
-			if (randomiseIndexes[i] == randomiseIndexes[i-1]+1)
+			vector<Opcode*> block;
+			Opcode* label = new Opcode(OK_Label);
+			label->setString("__builtin__controlFlowObs_" + to_string(labelCounter++));
+			block.push_back(label);
+			int bSize = (rand() % randMod) + minBlockSize;
+			if (i + bSize >= maxSize)
 			{
-				delete Instructions.back();
-				Instructions.pop_back();
+				if (i + bSize > maxSize)
+				{
+					bSize = maxSize - i;
+				}
+				block.resize(bSize + 1);
+				memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
 			}
+			else
+			{
+				block.reserve(bSize + 2);
+				block.resize(bSize + 1);
+				if (bSize)
+					memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
+				if (block[bSize]->getKind() != OK_Jump)
+				{
+					Opcode* jumpNext = new Opcode(OK_Jump);
+					jumpNext->setString("__builtin__controlFlowObs_" + to_string(labelCounter));
+					block.push_back(jumpNext);
+				}
+			}
+			InstructionBuilder.push_back(block);
+			i += bSize;
 		}
-		size_t size = InstructionBuilder[randomiseIndexes[i]].size();
-		size_t iSize = Instructions.size();
-		Instructions.resize(iSize + size);
-		memcpy(&Instructions[iSize], &InstructionBuilder[randomiseIndexes[i]][0], size * sizeof(Opcode*));
+		Instructions.clear();
+		if (isFirstNop)Instructions.push_back(first);
+		vector<size_t> randomiseIndexes;
+		for (size_t i = 0; i < InstructionBuilder.size(); i++)
+		{
+			randomiseIndexes.push_back(i);
+		}
+		random_shuffle(randomiseIndexes.begin(), (keepEndReturn ? randomiseIndexes.end() - 1 : randomiseIndexes.end()));
+		if (randomiseIndexes[0] > 0)
+		{
+			Opcode* jumpInit = new Opcode(OK_Jump);
+			jumpInit->setString("__builtin__controlFlowObs_0");
+			Instructions.push_back(jumpInit);
+		}
+		else
+		{
+			delete InstructionBuilder[0][0];//remove the first label
+			InstructionBuilder[0][0] = new Opcode(OK_Null);
+		}
+		for (uint32_t i = 0; i < randomiseIndexes.size(); i++)
+		{
+			if (i > 0)
+			{
+				if (randomiseIndexes[i] == randomiseIndexes[i - 1] + 1)
+				{
+					delete Instructions.back();
+					Instructions.pop_back();
+				}
+			}
+			size_t size = InstructionBuilder[randomiseIndexes[i]].size();
+			size_t iSize = Instructions.size();
+			Instructions.resize(iSize + size);
+			memcpy(&Instructions[iSize], &InstructionBuilder[randomiseIndexes[i]][0], size * sizeof(Opcode*));
+		}
 	}
 }
 
