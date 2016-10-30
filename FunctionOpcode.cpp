@@ -3,6 +3,8 @@
 #include <sstream>
 #include <ctime>
 #include <algorithm>
+#include <random>
+#include <chrono>
 
 using namespace std;
 
@@ -1159,7 +1161,7 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 			}
 			InstructionBuilder.push_back(block);
 			i += bSize;
-			random_shuffle(jumpTableRandomisation.begin(), jumpTableRandomisation.end());
+			shuffle(jumpTableRandomisation.begin(), jumpTableRandomisation.end(), default_random_engine(chrono::system_clock::now().time_since_epoch().count()));
 		}
 		for (unsigned i = 0; i < jumpTableRandomisation.size();i++)
 		{
