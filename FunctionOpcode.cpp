@@ -869,31 +869,35 @@ void FunctionData::addOpIsNotZero()
 
 void FunctionData::addOpGetConv(int size, bool isSigned)
 {
-	
+	assert(size == 1 || size == 2);
 	if (!(size == 1 || size == 2))
 		return;
-
 
 	const uint32_t extSW = size == 1 ? 0xFF000000 : size == 2 ? 0xFFFF0000 : 0;
 	const uint32_t shiftSize = size == 1 ? 24 : size == 2 ? 16 : 0;
 	const string type = size == 1 ? "Char Type" : size == 2 ? "Short Type" : "";
+	static uint32_t ExtSignWordLabelCounter = 0;
 
 	addOpShiftRight(shiftSize);
 	pushComment(type);
 	if (isSigned)
 	{
+		addOpDup();
+		addOpPushInt(size == 1 ? 127 : size == 2 ? 32767 : 0);
+		addOpJumpLE("__ExtSignWord--noSign--" + to_string(ExtSignWordLabelCounter));
 		addOpPushInt(extSW);
 		addOpOr();
 		pushComment("ExtSignWord");
+		addOpLabel("__ExtSignWord--noSign--" + to_string(ExtSignWordLabelCounter++));
 	}
 
 }
 void FunctionData::addOpSetConv(int size)
 {
+	assert(size == 1 || size == 2);
 	if (!(size == 1 || size == 2))
 		return;
 
-	const uint32_t andSize = size == 1 ? 255 : size == 2 ? 65535 : 0xFFFFFFFF;
 	const uint32_t shiftSize = size == 1 ? 24 : size == 2 ? 16 : 0;
 	const string type = size == 1 ? "Char Type" : size == 2 ? "Short Type" : "";
 
@@ -902,13 +906,11 @@ void FunctionData::addOpSetConv(int size)
 	Opcode *last = Instructions.back();
 	if (last->getKind() == OK_PushInt)
 	{
-		last->setInt((last->getInt() & andSize) << shiftSize);
+		last->setInt(last->getInt() << shiftSize);
 	}
 	else
 		#endif
 	{
-		addOpPushInt(andSize);
-		addOpAnd();
 		addOpShiftLeft(shiftSize);
 		pushComment(type);
 	}

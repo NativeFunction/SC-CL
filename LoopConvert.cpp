@@ -3201,29 +3201,37 @@ public:
 					}
 					else if ((size == 1 || size == 2) && isAssign)
 					{
+						//LocalVariables.addLevel();
+						//int index = LocalVariables.addDecl("DerefSavedVar", 1);
+
+						
 						AddInstruction(SetConv, size);
 
 						parseExpression(subE, subE->getType().getTypePtr()->isArrayType(), true);
+
+						//AddInstruction(Dup);
+						//AddInstruction(SetFrame, index);
 
 						AddInstruction(PGet);
 						AddInstruction(PushInt, size == 1 ? 0xFFFFFF : 0xFFFF);
 						AddInstruction(And);
 						AddInstruction(Or);
+
+						//AddInstruction(GetFrame, index);
+						
+						
 					}
 
 				}
+				
 				if (isa<ArraySubscriptExpr>(subE))
-				{
 					parseArraySubscriptExpr(subE, false, isArrToPtrDecay);
-				}
 				else if (isa<DeclRefExpr>(subE))
-				{
 					parseExpression(subE, false, false);
-				}
 				else
-				{
 					parseExpression(subE, false, true);
-				}
+
+
 				if (!isAddr && !isArrToPtrDecay)
 				{
 					if (isLtoRValue)
