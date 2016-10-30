@@ -258,6 +258,11 @@ protected:
 		std::vector<uint32_t> CodePagePointers;
 		std::vector<uint32_t> StringPagePointers;
 	} PHO;//placeHolderOffsets
+	typedef struct
+	{
+		uint32_t tableOffset;
+		std::string labelName;
+	} JumpTableData;//these can be set at the end of compiling a function
 	#pragma endregion
 
 	#pragma region Parsed_Data_Vars
@@ -268,6 +273,7 @@ protected:
 	std::unordered_map<std::string, uint32_t> FuncLocations;//call, data index
 	std::vector<CallData> CallLocations;//CallLocations to fill after building the CodePageData
 	std::unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
+	std::vector<JumpTableData> jumpTableLocs;
 	#pragma endregion
 
 	#pragma region Parse_Data_Vars
@@ -472,6 +478,7 @@ protected:
 	virtual void GetImm() { assert(false && "GetImm has to be overridden"); };//Override: ALL
 	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
 	virtual void GoToStack() = 0;
+	virtual void AddJumpTable() = 0;
 	#pragma endregion
 
 	#pragma region Write_Functions
@@ -561,7 +568,7 @@ protected:
 
 	#pragma region Parse_Functions
 	void BuildTables();
-	virtual void fixFunctionJumps();
+	virtual void fixFunctionJumps() = 0;
 	virtual void fixFunctionCalls() = 0;
 	void ParseGeneral(const OpcodeKind OK);
 	#pragma endregion
@@ -648,10 +655,12 @@ private:
 	void GetImm() override;
 	void SetImm() override;	
 	void GoToStack() override;
+	void AddJumpTable() override;
 	#pragma endregion
 	
 	#pragma region Parse_Functions
 	void fixFunctionCalls() override;
+	void fixFunctionJumps() override;
 	#pragma endregion
 
 	#pragma region Write_Functions
@@ -696,6 +705,7 @@ private:
 	
 	const uint32_t AddStringToStringPage(const std::string str);
 	void fixFunctionCalls() override;
+	void fixFunctionJumps() override;
 	#pragma endregion
 
 	#pragma region Opcode_Functions
@@ -707,6 +717,7 @@ private:
 	void GetImm() override;
 	void SetImm() override;
 	void GoToStack() override;
+	void AddJumpTable() override;
 	#pragma endregion
 
 	#pragma region Write_Functions

@@ -7,7 +7,7 @@ using namespace Utils::Bitwise;
 #pragma region Base
 
 #pragma region Parse_Functions
-void CompileBase::fixFunctionJumps()
+/*void CompileBase::fixFunctionJumps()
 {
 	/* 
 	jump back is set on jump
@@ -55,14 +55,14 @@ void CompileBase::fixFunctionJumps()
 			}
 		}
 	}
-	*/
+	*//*
 
 	//should check if all labels and jumps are set before clearing
 	JumpLocations.clear();
 	LabelLocations.clear();
 	SignedJumpLocationInc = UnsignedJumpLocationInc = 0;
 	
-}
+}*/
 void CompileBase::ParseGeneral(const OpcodeKind OK)
 {
 	switch (OK)
@@ -163,6 +163,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); return;
 		case OK_GetHash:	GetHash(); return;//gta5 needs to override
 		case OK_GoToStack:	GoToStack(); return;
+		case OK_JumpTable:	AddJumpTable(); return;
 		default: assert(false && "Invalid General Opcode");
 	}
 }
@@ -897,6 +898,22 @@ void CompileRDR::fixFunctionCalls()
 		}
 	}
 }
+void CompileRDR::fixFunctionJumps()
+{
+	for (auto jTableItem : jumpTableLocs)
+	{
+		auto it = LabelLocations.find(jTableItem.labelName);
+		if (it == LabelLocations.end())
+		{
+			Throw("Jump table label '" + jTableItem.labelName + "' not found");
+		}
+		*(uint32_t*)(CodePageData.data() + jTableItem.tableOffset) = SwapEndian(it->second.LabelLocation);
+	}
+	jumpTableLocs.clear();
+	JumpLocations.clear();
+	LabelLocations.clear();
+	SignedJumpLocationInc = UnsignedJumpLocationInc = 0;
+}
 #pragma endregion
 
 #pragma region RSC85Parsing
@@ -1061,6 +1078,34 @@ void CompileRDR::GoToStack()
 	AddInt16(2);
 	AddInt8(0);
 	AddOpcode(ReturnP0R0);
+}
+void CompileRDR::AddJumpTable()
+{
+	auto jumpTable = DATA->getJumpTable();
+	const uint32_t len = jumpTable->getByteSize();
+	if (len < 256)//push string
+	{
+		DoesOpcodeHaveRoom(2 + len);//PushString - Size - length
+		AddOpcode(PushString);
+		AddInt8(len);
+		for (unsigned i = 0; i < jumpTable->getItemCount();i++)
+		{
+			jumpTableLocs.push_back({ CodePageData.size(), jumpTable->getJumpLocAsString(i) });
+			AddInt32(0);//place holder
+		}
+	}
+	else
+	{
+		DoesOpcodeHaveRoom(5 + len);
+		AddOpcode(PushArrayP);
+		AddInt32(len);
+		for (unsigned i = 0; i < jumpTable->getItemCount(); i++)
+		{
+			jumpTableLocs.push_back({ CodePageData.size(), jumpTable->getJumpLocAsString(i) });
+			AddInt32(0);//place holder
+		}
+		AddImm(4);//Skip past the size of the array
+	}
 }
 #pragma endregion
 
@@ -1357,12 +1402,15 @@ const uint32_t CompileGTAV::AddStringToStringPage(const string str)
 	}
 
 	const uint32_t len = str.length();
-	const uint32_t pos = StringPageData.size();
+	uint32_t pos = StringPageData.size();
 
 	if ((pos + len + 1) % 16384 < pos % 16384)
+	{
 		StringPageData.resize(16384 - (pos % 16384) + pos);
+		pos = StringPageData.size();
+	}
 
-	StringPageDataIndexing[str] = StringPageData.size();
+	StringPageDataIndexing[str] = pos;
 	StringPageData.resize(pos + len + 1);
 	memcpy(StringPageData.data() + pos, str.data(), len + 1);
 	return pos;
@@ -1392,6 +1440,22 @@ void CompileGTAV::fixFunctionCalls()
 			default: assert(false && "Invalid Call Instruction"); break;
 		}
 	}
+}
+void CompileGTAV::fixFunctionJumps()
+{
+	for (auto jTableItem : jumpTableLocs)
+	{
+		auto it = LabelLocations.find(jTableItem.labelName);
+		if (it == LabelLocations.end())
+		{
+			Throw("Jump table label '" + jTableItem.labelName + "' not found");
+		}
+		*(uint32_t*)(StringPageData.data() + jTableItem.tableOffset) = SwapEndian(it->second.LabelLocation);
+	}
+	jumpTableLocs.clear();
+	JumpLocations.clear();
+	LabelLocations.clear();
+	SignedJumpLocationInc = UnsignedJumpLocationInc = 0;
 }
 #pragma endregion
 
@@ -1499,6 +1563,27 @@ void CompileGTAV::GoToStack()
 	DoesOpcodeHaveRoom(3);
 	AddOpcode(Return);
 	AddInt16(0);//cba adding byte 0 twice
+}
+void CompileGTAV::AddJumpTable()
+{
+	auto jumpTable = DATA->getJumpTable();
+	const uint32_t len = jumpTable->getByteSize() + 1;
+	uint32_t pos = StringPageData.size();
+
+	if ((pos + len) % 16384 < pos % 16384)
+	{
+		StringPageData.resize(16384 - (pos % 16384) + pos);
+		pos = StringPageData.size();
+	}
+	PushInt(pos);
+	AddOpcode(PushString);
+	StringPageData.resize(pos + len, 0);
+	for (unsigned i = 0; i < jumpTable->getItemCount();i++)
+	{
+		jumpTableLocs.push_back({ pos, jumpTable->getJumpLocAsString(i) });
+		pos += 4;
+	}
+	
 }
 #pragma endregion
 
