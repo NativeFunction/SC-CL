@@ -67,105 +67,104 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 {
 	switch (OK)
 	{
-		case OK_Null:		break;
-		case OK_Nop:		for (int i = DATA->getUShort(0); i--;){ AddOpcode(Nop); }break;
-		case OK_Add:		AddOpcode(Add); break;
-		case OK_Sub:		AddOpcode(Sub); break;
-		case OK_Mult:		AddOpcode(Mult); break;
-		case OK_Div:		AddOpcode(Div); break;
-		case OK_Mod:		AddOpcode(Mod); break;
-		case OK_Not:		AddOpcode(Not); break;
-		case OK_Neg:		AddOpcode(Neg); break;
-		case OK_CmpEq:		AddOpcode(CmpEq); break;
-		case OK_CmpNe:		AddOpcode(CmpNe); break;
-		case OK_CmpGt:		AddOpcode(CmpGt); break;
-		case OK_CmpGe:		AddOpcode(CmpGe); break;
-		case OK_CmpLt:		AddOpcode(CmpLt); break;
-		case OK_CmpLe:		AddOpcode(CmpLe); break;
-		case OK_FAdd:		AddOpcode(fAdd); break;
-		case OK_FSub:		AddOpcode(fSub); break;
-		case OK_FMult:		AddOpcode(fMult); break;
-		case OK_FDiv:		AddOpcode(fDiv); break;
-		case OK_FMod:		AddOpcode(fMod); break;
-		case OK_FNeg:		AddOpcode(fNeg); break;
-		case OK_FCmpEq:		AddOpcode(fCmpEq); break;
-		case OK_FCmpNe:		AddOpcode(fCmpNe); break;
-		case OK_FCmpGt:		AddOpcode(fCmpGt); break;
-		case OK_FCmpGe:		AddOpcode(fCmpGe); break;
-		case OK_FCmpLt:		AddOpcode(fCmpLt); break;
-		case OK_FCmpLe:		AddOpcode(fCmpLe); break;
-		case OK_VAdd:		AddOpcode(vAdd); break;
-		case OK_VSub:		AddOpcode(vSub); break;
-		case OK_VMult:		AddOpcode(vMult); break;
-		case OK_VDiv:		AddOpcode(vDiv); break;
-		case OK_VNeg:		AddOpcode(vNeg); break;
-		case OK_And:		AddOpcode(And); break;
-		case OK_Or:			AddOpcode(Or); break;
-		case OK_Xor:		AddOpcode(Xor); break;
-		case OK_FtoI:		AddOpcode(FtoI); break;
-		case OK_ItoF:		AddOpcode(ItoF); break;
-		case OK_FtoV:		AddOpcode(FtoV); break;
-		case OK_PushInt:	PushInt(); break;//gta4 needs to override
-		case OK_PushBytes:	PushBytes(); break;//gta4 needs to override
-		case OK_PushFloat:	PushFloat(); break;//gta4 needs to override
-		case OK_Dup:		AddOpcode(Dup); break;
-		case OK_Drop:		AddOpcode(Drop); break;
-		case OK_Native:		CallNative(); break;//callnative def| gta5 1 byte param/return, 2 byte call loc | rdr 2 byte call loc | gta4: 1 byte param, 1 byte return, 4 byte hash
-		case OK_Return:		Return(); break;//rdr needs to override
-		case OK_PGet:		AddOpcode(pGet); break;
-		case OK_PSet:		AddOpcode(pSet); break;
-		case OK_PeekSet:	AddOpcode(pPeekSet); break;
-		case OK_ToStack:	AddOpcode(ToStack); break;
-		case OK_FromStack:	AddOpcode(FromStack); break;
+		case OK_Null:		return;
+		case OK_Nop:		AddPadding(DATA->getUShort(0)); return;
+		case OK_Add:		AddOpcode(Add); return;
+		case OK_Sub:		AddOpcode(Sub); return;
+		case OK_Mult:		AddOpcode(Mult); return;
+		case OK_Div:		AddOpcode(Div); return;
+		case OK_Mod:		AddOpcode(Mod); return;
+		case OK_Not:		AddOpcode(Not); return;
+		case OK_Neg:		AddOpcode(Neg); return;
+		case OK_CmpEq:		AddOpcode(CmpEq); return;
+		case OK_CmpNe:		AddOpcode(CmpNe); return;
+		case OK_CmpGt:		AddOpcode(CmpGt); return;
+		case OK_CmpGe:		AddOpcode(CmpGe); return;
+		case OK_CmpLt:		AddOpcode(CmpLt); return;
+		case OK_CmpLe:		AddOpcode(CmpLe); return;
+		case OK_FAdd:		AddOpcode(fAdd); return;
+		case OK_FSub:		AddOpcode(fSub); return;
+		case OK_FMult:		AddOpcode(fMult); return;
+		case OK_FDiv:		AddOpcode(fDiv); return;
+		case OK_FMod:		AddOpcode(fMod); return;
+		case OK_FNeg:		AddOpcode(fNeg); return;
+		case OK_FCmpEq:		AddOpcode(fCmpEq); return;
+		case OK_FCmpNe:		AddOpcode(fCmpNe); return;
+		case OK_FCmpGt:		AddOpcode(fCmpGt); return;
+		case OK_FCmpGe:		AddOpcode(fCmpGe); return;
+		case OK_FCmpLt:		AddOpcode(fCmpLt); return;
+		case OK_FCmpLe:		AddOpcode(fCmpLe); return;
+		case OK_VAdd:		AddOpcode(vAdd); return;
+		case OK_VSub:		AddOpcode(vSub); return;
+		case OK_VMult:		AddOpcode(vMult); return;
+		case OK_VDiv:		AddOpcode(vDiv); return;
+		case OK_VNeg:		AddOpcode(vNeg); return;
+		case OK_And:		AddOpcode(And); return;
+		case OK_Or:			AddOpcode(Or); return;
+		case OK_Xor:		AddOpcode(Xor); return;
+		case OK_FtoI:		AddOpcode(FtoI); return;
+		case OK_ItoF:		AddOpcode(ItoF); return;
+		case OK_FtoV:		AddOpcode(FtoV); return;
+		case OK_PushInt:	PushInt(); return;//gta4 needs to override
+		case OK_PushBytes:	PushBytes(); return;//gta4 needs to override
+		case OK_PushFloat:	PushFloat(); return;//gta4 needs to override
+		case OK_Dup:		AddOpcode(Dup); return;
+		case OK_Drop:		AddOpcode(Drop); return;
+		case OK_Native:		CallNative(); return;//callnative def| gta5 1 byte param/return, 2 byte call loc | rdr 2 byte call loc | gta4: 1 byte param, 1 byte return, 4 byte hash
+		case OK_Return:		Return(); return;//rdr needs to override
+		case OK_PGet:		AddOpcode(pGet); return;
+		case OK_PSet:		AddOpcode(pSet); return;
+		case OK_PeekSet:	AddOpcode(pPeekSet); return;
+		case OK_ToStack:	AddOpcode(ToStack); return;
+		case OK_FromStack:	AddOpcode(FromStack); return;
 
-		case OK_GetArrayP:	GetArrayP(); break;
-		case OK_GetArray:	GetArray(); break;
-		case OK_SetArray:	SetArray(); break;
-		case OK_GetFrameP:	GetFrameP(); break;
-		case OK_GetFrame:	GetFrame(); break;
-		case OK_SetFrame:	SetFrame(); break;
-		case OK_GetStaticP:	GetStaticP(); break;
-		case OK_GetStatic:	GetStatic(); break;
-		case OK_SetStatic:	SetStatic(); break;
-		case OK_GetGlobalP:	GetGlobalP(); break;
-		case OK_GetGlobal:	GetGlobal(); break;
-		case OK_SetGlobal:	SetGlobal(); break;
-		case OK_AddImm:		AddImm(); break;
-		case OK_MultImm:	MultImm(); break;
-		case OK_FAddImm:	FAddImm(); break;
-		case OK_FMultImm:	FMultImm(); break;
-		case OK_GetImmP:	GetImmP(); break;
-		case OK_GetImm:		GetImm(); break;
-		case OK_SetImm:		SetImm(); break;
+		case OK_GetArrayP:	GetArrayP(); return;
+		case OK_GetArray:	GetArray(); return;
+		case OK_SetArray:	SetArray(); return;
+		case OK_GetFrameP:	GetFrameP(); return;
+		case OK_GetFrame:	GetFrame(); return;
+		case OK_SetFrame:	SetFrame(); return;
+		case OK_GetStaticP:	GetStaticP(); return;
+		case OK_GetStatic:	GetStatic(); return;
+		case OK_SetStatic:	SetStatic(); return;
+		case OK_GetGlobalP:	GetGlobalP(); return;
+		case OK_GetGlobal:	GetGlobal(); return;
+		case OK_SetGlobal:	SetGlobal(); return;
+		case OK_AddImm:		AddImm(); return;
+		case OK_MultImm:	MultImm(); return;
+		case OK_FAddImm:	FAddImm(); return;
+		case OK_FMultImm:	FMultImm(); return;
+		case OK_GetImmP:	GetImmP(); return;
+		case OK_GetImm:		GetImm(); return;
+		case OK_SetImm:		SetImm(); return;
 
 
-		case OK_Call:		Call();  break;//call def| gta4: 4 byte loc | gta5: 3 byte loc | rdr: 2 byte loc (loc or'ed)
-		case OK_Jump:		AddJump(JumpInstructionType::Jump, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpFalse:	AddJump(JumpInstructionType::JumpFalse, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpEQ:		AddJump(JumpInstructionType::JumpEQ, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpNE:		AddJump(JumpInstructionType::JumpNE, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpGT:		AddJump(JumpInstructionType::JumpGT, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpGE:		AddJump(JumpInstructionType::JumpGE, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpLT:		AddJump(JumpInstructionType::JumpLT, DATA->getString()); break;//gta 4 needs to override
-		case OK_JumpLE:		AddJump(JumpInstructionType::JumpLE, DATA->getString()); break;//gta 4 needs to override
-		case OK_Switch:		Switch(); break;
-		case OK_PushString:	PushString(); break;//gta5 needs to override
-		case OK_StrCopy:	StrCopy(); break;//gta4 needs to override
-		case OK_ItoS:		ItoS(); break;//gta4 needs to override
-		case OK_StrAdd:		StrAdd(); break;//gta4 needs to override
-		case OK_StrAddI:	StrAddI(); break;//gta4 needs to override
-		case OK_MemCpy:		AddOpcode(MemCopy); break;
-		case OK_PCall:		pCall(); break;//gta4 needs to override as error
-		case OK_Label:		AddLabel(DATA->getString()); break;
-		case OK_LabelLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); break;
-		case OK_FuncLoc:	AddFuncLoc(DATA->getString()); break;
-		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); break;
-		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); break;
-		case OK_GetHash:	GetHash(); break;//gta5 needs to override
-		case OK_GoToStack:	GoToStack();
+		case OK_Call:		Call();  return;//call def| gta4: 4 byte loc | gta5: 3 byte loc | rdr: 2 byte loc (loc or'ed)
+		case OK_Jump:		AddJump(JumpInstructionType::Jump, DATA->getString()); return;//gta 4 needs to override
+		case OK_JumpFalse:	AddJump(JumpInstructionType::JumpFalse, DATA->getString()); return;//gta 4 needs to override
+		case OK_JumpEQ:		AddJump(JumpInstructionType::JumpEQ, DATA->getString()); return;//gta 4 needs to override
+		case OK_JumpNE:		AddJump(JumpInstructionType::JumpNE, DATA->getString()); return;//gta 4 needs to override
+		case OK_JumpGT:		AddJump(JumpInstructionType::JumpGT, DATA->getString()); return;//gta 4 needs to override
+		case OK_JumpGE:		AddJump(JumpInstructionType::JumpGE, DATA->getString()); return;//gta 4 needs to override
+		case OK_JumpLT:		AddJump(JumpInstructionType::JumpLT, DATA->getString()); return;//gta 4 needs to override
+		case OK_JumpLE:		AddJump(JumpInstructionType::JumpLE, DATA->getString()); return;//gta 4 needs to override
+		case OK_Switch:		Switch(); return;
+		case OK_PushString:	PushString(); return;//gta5 needs to override
+		case OK_StrCopy:	StrCopy(); return;//gta4 needs to override
+		case OK_ItoS:		ItoS(); return;//gta4 needs to override
+		case OK_StrAdd:		StrAdd(); return;//gta4 needs to override
+		case OK_StrAddI:	StrAddI(); return;//gta4 needs to override
+		case OK_MemCpy:		AddOpcode(MemCopy); return;
+		case OK_PCall:		pCall(); return;//gta4 needs to override as error
+		case OK_Label:		AddLabel(DATA->getString()); return;
+		case OK_LabelLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); return;
+		case OK_FuncLoc:	AddFuncLoc(DATA->getString()); return;
+		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); return;
+		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); return;
+		case OK_GetHash:	GetHash(); return;//gta5 needs to override
+		case OK_GoToStack:	GoToStack(); return;
+		default: assert(false && "Invalid General Opcode");
 	}
-	CheckSignedJumps();
-	CheckUnsignedJumps();
 }
 void CompileBase::BuildTables()
 {
@@ -177,6 +176,8 @@ void CompileBase::BuildTables()
 			for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
 			{
 				ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
+				CheckSignedJumps();
+				CheckUnsignedJumps();
 			}
 			fixFunctionJumps();
 		}

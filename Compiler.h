@@ -303,6 +303,10 @@ protected:
 	virtual void Compile(std::string outDirectory) = 0;
 
 	#pragma region Data_Functions
+	inline void AddPadding(const uint16_t value)
+	{
+		CodePageData.resize(CodePageData.size() + value);
+	}
 	inline void AddInt8(const uint8_t b)
 	{
 		CodePageData.push_back(b);
