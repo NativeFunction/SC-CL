@@ -1103,6 +1103,7 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 	{
 		return;//jumps may be screwed messed up if past 32768 size limit
 	}
+	unsigned seed = chrono::system_clock::now().time_since_epoch().count();
 	srand(time(NULL));
 	vector<vector<Opcode*>> InstructionBuilder;
 	int labelCounter = 0;
@@ -1161,7 +1162,7 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 			}
 			InstructionBuilder.push_back(block);
 			i += bSize;
-			shuffle(jumpTableRandomisation.begin(), jumpTableRandomisation.end(), default_random_engine(chrono::system_clock::now().time_since_epoch().count()));
+			shuffle(jumpTableRandomisation.begin(), jumpTableRandomisation.end(), default_random_engine(seed));
 		}
 		for (unsigned i = 0; i < jumpTableRandomisation.size();i++)
 		{
