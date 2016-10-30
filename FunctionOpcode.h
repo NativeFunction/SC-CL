@@ -372,6 +372,7 @@ public:
 	uint8_t getByte(int offset) const;
 	int getSizeEstimate() const;
 	std::string toString() const;
+	void makeNull();
 
 	const SwitchStorage *getSwitch() const
 	{

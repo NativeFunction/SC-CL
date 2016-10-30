@@ -763,6 +763,40 @@ string Opcode::toString() const
 #undef PrintJump
 }
 
+void Opcode::makeNull()
+{
+	switch (opcodeKind)
+	{
+		case OK_Call:
+		case OK_PushString:
+		case OK_Jump:
+		case OK_JumpFalse:
+		case OK_JumpEQ:
+		case OK_JumpNE:
+		case OK_JumpGT:
+		case OK_JumpGE:
+		case OK_JumpLT:
+		case OK_JumpLE:
+		case OK_Label:
+		case OK_LabelLoc:
+		case OK_FuncLoc:
+			delete storage.string;
+			break;
+		case OK_Native:
+			delete storage.native;
+			break;
+		case OK_Switch:
+			delete storage.switchCase;
+			break;
+		case OK_JumpTable:
+			delete storage.jTable;
+			break;
+		default:
+			break;
+	}
+	opcodeKind = OK_Null;
+}
+
 bool FunctionData::tryPop2Ints(int & i1, int & i2)
 {
 	int size = Instructions.size();
@@ -1103,7 +1137,7 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 	{
 		return;//jumps may be screwed messed up if past 32768 size limit
 	}
-	unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+	auto randomEngine = default_random_engine(chrono::system_clock::now().time_since_epoch().count());
 	srand(time(NULL));
 	vector<vector<Opcode*>> InstructionBuilder;
 	int labelCounter = 0;
@@ -1117,6 +1151,17 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 		auto JumpTable = new JumpTableStorage();
 		Opcode *jtableOp = new Opcode(OK_JumpTable);
 		jtableOp->storage.jTable = JumpTable;
+
+		vector<Opcode*> jTableBlock;
+		Opcode *label = new Opcode(OK_Label);
+		label->setString("__builtin__jumpTable");
+		jTableBlock.push_back(label);
+		jTableBlock.push_back(jtableOp);
+		jTableBlock.push_back(new Opcode(OK_Add));
+		jTableBlock.push_back(new Opcode(OK_PGet));
+		jTableBlock.push_back(new Opcode(OK_GoToStack));
+		InstructionBuilder.push_back(jTableBlock);
+
 		for (int i = (isFirstNop ? 1 : 0); i < maxSize;)
 		{
 			vector<Opcode*> block;
@@ -1162,7 +1207,7 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 			}
 			InstructionBuilder.push_back(block);
 			i += bSize;
-			shuffle(jumpTableRandomisation.begin(), jumpTableRandomisation.end(), default_random_engine(seed));
+			shuffle(jumpTableRandomisation.begin(), jumpTableRandomisation.end(), randomEngine);
 		}
 		for (unsigned i = 0; i < jumpTableRandomisation.size();i++)
 		{
@@ -1177,8 +1222,8 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 					index->setInt(i*4);
 					Opcode* jump = new Opcode(OK_Jump);
 					jump->setString("__builtin__jumpTable");
-					InstructionBuilder[j].push_back(index);
-					InstructionBuilder[j].push_back(jump);
+					InstructionBuilder[j+1].push_back(index);
+					InstructionBuilder[j+1].push_back(jump);
 					break;
 				}
 			}
@@ -1187,11 +1232,7 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 		Instructions.clear();
 		if (isFirstNop)Instructions.push_back(first);
 		addOpPushInt(JumpTable->getItemCount() * 4);
-		addOpLabel("__builtin__jumpTable");
-		Instructions.push_back(jtableOp);
-		addOpAdd();
-		addOpPGet();
-		addOpGoToStack();
+		addOpJump("__builtin__jumpTable");
 
 		JumpTable->addJumpLoc((string)"__builtin__controlFlowObs_0");
 		vector<size_t> randomiseIndexes;
@@ -1199,7 +1240,7 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 		{
 			randomiseIndexes.push_back(i);
 		}
-		random_shuffle(randomiseIndexes.begin(), (keepEndReturn ? randomiseIndexes.end() - 1 : randomiseIndexes.end()));
+		shuffle(randomiseIndexes.begin(), (keepEndReturn ? randomiseIndexes.end() - 1 : randomiseIndexes.end()), randomEngine);
 		for (uint32_t i = 0; i < randomiseIndexes.size(); i++)
 		{
 			size_t size = InstructionBuilder[randomiseIndexes[i]].size();
@@ -1249,7 +1290,7 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 		{
 			randomiseIndexes.push_back(i);
 		}
-		random_shuffle(randomiseIndexes.begin(), (keepEndReturn ? randomiseIndexes.end() - 1 : randomiseIndexes.end()));
+		shuffle(randomiseIndexes.begin(), (keepEndReturn ? randomiseIndexes.end() - 1 : randomiseIndexes.end()), randomEngine);
 		if (randomiseIndexes[0] > 0)
 		{
 			Opcode* jumpInit = new Opcode(OK_Jump);
@@ -1258,8 +1299,7 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 		}
 		else
 		{
-			delete InstructionBuilder[0][0];//remove the first label
-			InstructionBuilder[0][0] = new Opcode(OK_Null);
+			InstructionBuilder[0][0]->makeNull();
 		}
 		for (uint32_t i = 0; i < randomiseIndexes.size(); i++)
 		{
@@ -1301,8 +1341,8 @@ void FunctionData::optimisePushBytes()
 						op->setByte(nextVal, 2);
 						op->setByte(next2Val, 3);
 						//nop the next 2 opcodes as they have been handled
-						next->setKind(OK_Null);
-						next2->setKind(OK_Null);
+						next->makeNull();
+						next2->makeNull();
 						//skip the next 2 in Instructions in the next iteration
 						i += 2;
 					}
@@ -1314,7 +1354,7 @@ void FunctionData::optimisePushBytes()
 						op->setByte(val, 1);
 						op->setByte(nextVal, 2);
 						//nop the next opcode as it has been handled
-						next->setKind(OK_Null);
+						next->makeNull();
 						//skip the next instruction
 						i++;
 					}
