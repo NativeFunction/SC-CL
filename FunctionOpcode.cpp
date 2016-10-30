@@ -1121,6 +1121,16 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 			label->setString("__builtin__controlFlowObs_" + to_string(labelCounter++));
 			block.push_back(label);
 			int bSize = (rand() % randMod) + minBlockSize;
+			for (int j = 0; j < bSize;j++)
+			{
+				if (i + j >= maxSize)
+					break;
+				if (Instructions[i+j]->getKind() == OK_Jump)
+				{
+					bSize = j + 1;
+					break;
+				}
+			}
 			if (i + bSize >= maxSize)
 			{
 				if (i + bSize > maxSize)
@@ -1143,7 +1153,6 @@ void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, b
 				else
 				{
 					jumpTableLocations.push_back(block[bSize]->getString());//replace the jump with a jump table jump to add confusion
-					bSize--;
 					block.pop_back();
 				}
 				jumpTableRandomisation.push_back(jumpTableRandomisation.size());
