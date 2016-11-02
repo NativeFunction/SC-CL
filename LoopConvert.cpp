@@ -5814,7 +5814,7 @@ public:
 
 			StaticData.reserve(StaticData.size() + 45 * statics.size());
 			for (auto item : statics)
-				StaticData += "SetStaticName " + to_string(item.second.index) + " " + to_string(item.first) + item.second.name + "\r\n";
+				StaticData += "SetStaticName " + to_string(item.second.index) + " " + to_string(item.first) + "//" + item.second.name + "\r\n";
 
 			fwrite(StaticData.data(), 1, StaticData.size(), file);
 			StaticData.clear();
