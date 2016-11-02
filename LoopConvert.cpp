@@ -58,8 +58,13 @@ static Rewriter rewriter;
 #pragma endregion
 
 #pragma region Global_Var_and_Scope_Decls
+typedef struct NamedIndex
+{
+	uint32_t index;
+	string name;
+} NamedIndex;
 map<string, int> globals;
-map<string, int> statics;
+map<uint32_t, NamedIndex> statics;//static decl end loc, StaticData
 static int globalInc = 0;
 static uint32_t staticInc = 0;
 
@@ -627,8 +632,11 @@ public:
 				}
 			}
 		}
-		else if (statics.find(key) != statics.end()) {
-			index = statics[key];
+		else if (statics.find(declref->getDecl()->getLocEnd().getRawEncoding()) != statics.end()) {
+			NamedIndex staticLoc = statics[declref->getDecl()->getLocEnd().getRawEncoding()];
+			cout <<  "Static Decl \"" << staticLoc.name << "\" End: " << declref->getDecl()->getLocEnd().getRawEncoding() << endl;
+
+			index = staticLoc.index;
 			if (isLtoRValue && !isAddr)
 			{
 				AddInstructionComment(GetStatic, key, index);
@@ -2742,7 +2750,6 @@ public:
 						string name = parseCast(cast<const CastExpr>(callee));
 						if (!scriptData.addUsedFuncToCurrent(name))
 							Throw("Function \"" + name.substr(1) + "\" not found", rewriter, call->getExprLoc());
-
 						AddInstructionComment(Call, "NumArgs: " + to_string(call->getNumArgs()), name.substr(1));
 					}
 
@@ -5367,7 +5374,7 @@ public:
 					doesCurrentValueNeedSet = true;
 
 					//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
-					scriptData.getEntryFunction()->addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
+					scriptData.getEntryFunction()->addOpGetStaticP(statics[DRE->getDecl()->getLocEnd().getRawEncoding()].index);
 				}
 				else
 				{
@@ -5397,7 +5404,7 @@ public:
 					doesCurrentValueNeedSet = true;
 
 					//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
-					scriptData.getEntryFunction()->addOpGetStaticP(statics[DRE->getDecl()->getNameAsString()]);
+					scriptData.getEntryFunction()->addOpGetStaticP(statics[DRE->getDecl()->getLocEnd().getRawEncoding()].index);
 				}
 				else// need to test byte* t = {1,2,3};
 					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getExprLoc());
@@ -5596,7 +5603,7 @@ public:
 					doesCurrentValueNeedSet = true;
 
 					if (!inc)
-						scriptData.getEntryFunction()->addOpGetStaticP(statics[declRef->getDecl()->getNameAsString()]);
+						scriptData.getEntryFunction()->addOpGetStaticP(statics[declRef->getDecl()->getLocEnd().getRawEncoding()].index);
 
 					if (!ssize)
 					{
@@ -5632,6 +5639,7 @@ public:
 		if (isa<VarDecl>(D)) {
 			globalVarDecl = cast<VarDecl>(D);
 			if (globalVarDecl->hasGlobalStorage()) {
+				//globalVarDecl->getStorageClass() == SC_Static
 				if (globalVarDecl->hasAttr<GlobalVariableAttr>())
 				{
 					if (globals.find(dumpName(cast<NamedDecl>(D))) == globals.end())
@@ -5649,7 +5657,8 @@ public:
 				}
 				else
 				{
-					if (statics.find(dumpName(cast<NamedDecl>(D))) == statics.end()) {
+					uint32_t staticLoc = globalVarDecl->getLocEnd().getRawEncoding();// +dumpName(cast<NamedDecl>(D));
+					if (statics.find(staticLoc) == statics.end()) {
 
 						auto size = getSizeOfType(globalVarDecl->getType().getTypePtr());
 
@@ -5659,7 +5668,7 @@ public:
 						isCurrentExprEvaluable = true;
 						doesCurrentValueNeedSet = false;
 
-						statics.insert(make_pair(dumpName(cast<NamedDecl>(D)), staticInc));
+						statics.insert({ staticLoc, {staticInc, dumpName(cast<NamedDecl>(D))} });
 
 						scriptData.addStaticDecl(getSizeFromBytes(size));
 						staticInc += getSizeFromBytes(size);
@@ -5804,23 +5813,14 @@ public:
 		if (file != NULL)
 		{
 			string StaticData = scriptData->getStaticsAsString();
-			fwrite(StaticData.data(), 1, StaticData.size(), file);
-			struct items
-			{
-				int index; string name; 
-				bool operator<(const items &rhs) const { return index < rhs.index; }
-			};
-			vector<items> foundIndexes;
+
+			StaticData.reserve(StaticData.size() + 45 * statics.size());
 			for (auto item : statics)
-			{
-				foundIndexes.push_back({ item.second, item.first });
-			}
-			sort(foundIndexes.begin(), foundIndexes.end());
-			for (auto item : foundIndexes)
-			{
-				string str = "SetStaticName " + to_string(item.index) + " " + item.name + "\r\n";
-				fwrite(str.data(), 1, str.size(), file);
-			}
+				StaticData += "SetStaticName " + to_string(item.second.index) + " " + to_string(item.first) + item.second.name + "\r\n";
+
+			fwrite(StaticData.data(), 1, StaticData.size(), file);
+			StaticData.clear();
+
 			for (uint32_t i = 0, max = scriptData->getFunctionCount(); i <max; i++)
 			{
 				auto func = scriptData->getFunctionFromIndex(i);
