@@ -634,8 +634,6 @@ public:
 		}
 		else if (statics.find(declref->getDecl()->getLocEnd().getRawEncoding()) != statics.end()) {
 			NamedIndex staticLoc = statics[declref->getDecl()->getLocEnd().getRawEncoding()];
-			cout <<  "Static Decl \"" << staticLoc.name << "\" End: " << declref->getDecl()->getLocEnd().getRawEncoding() << endl;
-
 			index = staticLoc.index;
 			if (isLtoRValue && !isAddr)
 			{
