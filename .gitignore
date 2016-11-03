@@ -3,8 +3,10 @@
 !CMakeLists.txt
 !ConsoleColor.h
 !contributors.txt
-!FunctionOpcode.cpp
-!FunctionOpcode.h
+!FunctionData.cpp
+!FunctionData.h
+!Opcode.h
+!Opcode.cpp
 !LoopConvert.cpp
 !Utils.cpp
 !Utils.h

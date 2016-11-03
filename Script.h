@@ -1,5 +1,5 @@
 #pragma once
-#include "FunctionOpcode.h"
+#include "FunctionData.h"
 #include <vector>
 
 enum Platform

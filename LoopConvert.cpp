@@ -7,7 +7,7 @@
 #include <cmath>
 #include "ClangUtils.h"
 #include "Utils.h"
-#include "FunctionOpcode.h"
+#include "FunctionData.h"
 #include "clang/Lex/PreProcessor.h"
 #include "ConstExpr.h"
 #include "Script.h"
