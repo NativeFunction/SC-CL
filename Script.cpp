@@ -17,7 +17,9 @@ FunctionData * Script::createFunction(string name, int paramCount, int returnCou
 		FunctionData *func = functions[i];
 		if (hash == func->getHash() && name == func->getName())
 		{
-			assert(!func->isProcessed() && "Function has already been processed");
+			//assert(!func->isProcessed() && "Function has already been processed");
+			if(func->isProcessed())
+				Utils::System::Warn("Function \"" + name + "\" has already been processed");
 			if (makeCurrent)
 			{
 				currentFunc = func;
