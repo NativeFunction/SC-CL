@@ -5882,7 +5882,6 @@ private:
 
 void WriteAsmFile(string outDir)
 {
-	scriptData->finaliseEntryFunction();
 	string Out = outDir + "/" + scriptData->getASMFileName();
 	FILE* file = fopen(Out.data(), "wb");
 	if (file != NULL)
@@ -5988,6 +5987,7 @@ int main(int argc, const char **argv) {
 		if (!ProcessingFailed)
 		{
 			//ProcessingSuccess
+			scriptData->finaliseEntryFunction();
 			
 			WriteAsmFile(outDir);
 			WriteScriptFile(outDir);
