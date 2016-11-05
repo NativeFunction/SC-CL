@@ -34,6 +34,7 @@ class Script
 	std::string _scriptName;
 public:
 	Script(std::string scriptName, BuildType buildType, Platform platform);
+
 	FunctionData *getEntryFunction() const{ return entryFunction; }
 	FunctionData *getCurrentFunction()const{ return currentFunc; }
 	FunctionData *createFunction(std::string name, int paramCount, int returnCount, bool makeCurrent = false);

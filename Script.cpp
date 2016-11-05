@@ -3,7 +3,8 @@
 
 using namespace std;
 
-Script::Script(string scriptName, BuildType buildType, Platform platform) : entryFunction(new FunctionData("@__builtin__entryPoint", 0, 0)), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform)
+Script::Script(string scriptName, BuildType buildType, Platform platform) : 
+	entryFunction(new FunctionData("@__builtin__entryPoint", 0, 0)), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform)
 {
 	functions.push_back(entryFunction);
 }

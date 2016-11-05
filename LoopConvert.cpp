@@ -58,13 +58,15 @@ static Rewriter rewriter;
 #pragma endregion
 
 #pragma region Global_Var_and_Scope_Decls
+unique_ptr<Script> scriptData = nullptr;
+vector<StringRef> parsedFiles;
 typedef struct NamedIndex
 {
 	uint32_t index;
 	string name;
 } NamedIndex;
 map<string, int> globals;
-map<uint32_t, NamedIndex> statics;//static decl end loc, StaticData
+map<uint32_t, NamedIndex> statics;///static decl end loc, StaticData
 static int globalInc = 0;
 static uint32_t staticInc = 0;
 
@@ -5799,79 +5801,18 @@ private:
 #pragma region CreateASTConsumer
 class MyFrontendAction : public ASTFrontendAction {
 public:
-	MyFrontendAction() {}
-	~MyFrontendAction(){ if (scriptData){ delete scriptData; } }
-	void EndSourceFileAction() override {
+	~MyFrontendAction()
+	{ 
+		cout << "class ended\n";
+
+		//this should not be needed anymore
 		if (diagnostics->getClient()->getNumErrors())
-		{
-			return;
-		}
-		scriptData->finaliseEntryFunction();
-		FILE* file = fopen((outDir + "\\" + scriptData->getASMFileName()).data(), "wb");
-		if (file != NULL)
-		{
-			string StaticData = scriptData->getStaticsAsString();
+			exit(EXIT_FAILURE);
+	}
+	void EndSourceFileAction() override {
 
-			StaticData.reserve(StaticData.size() + 45 * statics.size());
-			for (auto item : statics)
-				StaticData += "SetStaticName " + to_string(item.second.index) + " " + to_string(item.first) + "//" + item.second.name + "\r\n";
-
-			fwrite(StaticData.data(), 1, StaticData.size(), file);
-			StaticData.clear();
-
-			for (uint32_t i = 0, max = scriptData->getFunctionCount(); i <max; i++)
-			{
-				auto func = scriptData->getFunctionFromIndex(i);
-				if (func->IsUsed())
-				{
-					assert(func->isProcessed() && "Function Prototype Implementation missing on referenced function");
-					string fStr = func->toString();
-					fwrite(fStr.c_str(), 1, fStr.size(), file);
-				}
-			}
-			fclose(file);
-		}
-		else Throw("Output File Could Not Be Opened");
-
-		switch(scriptData->getBuildType())
-		{
-			case BT_RDR_XSC:
-			case BT_RDR_SCO:
-			{
-				switch (scriptData->getBuildPlatform())
-				{
-					case P_XBOX:
-					case P_PS3:
-					{
-						CompileRDR c(*scriptData);
-						c.Compile(outDir);
-					}
-					break;
-					default:
-						Throw("Red dead redemption only supported on Xbox360 and PS3");
-				}
-			}
-			break;
-			case BT_GTAV:
-			{
-				switch(scriptData->getBuildPlatform())
-				{
-					case P_XBOX:
-					case P_PS3:
-					{
-						CompileGTAV c(*scriptData);
-						c.Compile(outDir);
-					}
-						break;
-					default:
-						Throw("GTA V only supported on Xbox360 and PS3");
-				}
-			}
-			break;
-			default:
-				Throw("Unsupported Build Platfom");
-		}
-	
+		cout << "file ended\n";
+		
 	}
 	
 	void AddDefines(Preprocessor &PP)
@@ -5915,37 +5856,154 @@ public:
 	
 	
 	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
-		diagnostics = &CI.getDiagnostics();
 		llvm::errs() << "Compiling: " << file << "\n";
+		auto it = find(parsedFiles.begin(), parsedFiles.end(), file);
+		if (it == parsedFiles.end())
+			parsedFiles.push_back(file);
+		else
+			this->~MyFrontendAction();
+
+		diagnostics = &CI.getDiagnostics();
+
 		TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
 		rewriter = TheRewriter;
-		SourceManager &SM = TheRewriter.getSourceMgr();
-		string fileName(string(SM.getFileEntryForID(SM.getMainFileID())->getName()));
-		fileName.erase(fileName.find_last_of(".c") - 1);
-		scriptData = new Script(fileName.substr(fileName.find_last_of('\\') + 1), BT_GTAV, P_XBOX);
+
+		//const SourceManager &SM = TheRewriter.getSourceMgr();
+		//string fileName(string(SM.getFileEntryForID(SM.getMainFileID())->getName()));
+
+		//is CompilerInstance constant? if so these can be done once instead of being applied every file
 		ModifyClangWarnings(*diagnostics);
 		AddDefines(CI.getPreprocessor());
-		outDir = fileName.substr(0, fileName.find_last_of('\\'));
+
 		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), *scriptData);
 	}
 
 private:
 	DiagnosticsEngine* diagnostics = NULL;
-	Script *scriptData = NULL;
 	Rewriter TheRewriter;
 	string outDir;
 };
 #pragma endregion
+
+
+void WriteAsmFile(string outDir)
+{
+	scriptData->finaliseEntryFunction();
+	string Out = outDir + "/" + scriptData->getASMFileName();
+	FILE* file = fopen(Out.data(), "wb");
+	if (file != NULL)
+	{
+		string StaticData = scriptData->getStaticsAsString();
+
+		StaticData.reserve(StaticData.size() + 45 * statics.size());
+		for (auto item : statics)
+			StaticData += "SetStaticName " + to_string(item.second.index) + " " + to_string(item.first) + "//" + item.second.name + "\r\n";
+
+		fwrite(StaticData.data(), 1, StaticData.size(), file);
+		StaticData.clear();
+
+		for (uint32_t i = 0, max = scriptData->getFunctionCount(); i <max; i++)
+		{
+			auto func = scriptData->getFunctionFromIndex(i);
+			if (func->IsUsed())
+			{
+				assert(func->isProcessed() && "Function Prototype Implementation missing on referenced function");
+				string fStr = func->toString();
+				fwrite(fStr.c_str(), 1, fStr.size(), file);
+			}
+		}
+		fclose(file);
+	}
+	else Throw("Output File \"" + Out + "\" Could Not Be Opened");
+
+}
+
+void WriteScriptFile(string outDir)
+{
+	switch (scriptData->getBuildType())
+	{
+		case BT_RDR_XSC:
+		case BT_RDR_SCO:
+		{
+			switch (scriptData->getBuildPlatform())
+			{
+				case P_XBOX:
+				case P_PS3:
+				{
+					CompileRDR c(*scriptData);
+					c.Compile(outDir);
+				}
+				break;
+				default:
+				Throw("Red dead redemption only supported on Xbox360 and PS3");
+			}
+		}
+		break;
+		case BT_GTAV:
+		{
+			switch (scriptData->getBuildPlatform())
+			{
+				case P_XBOX:
+				case P_PS3:
+				{
+					CompileGTAV c(*scriptData);
+					c.Compile(outDir);
+				}
+				break;
+				default:
+				Throw("GTA V only supported on Xbox360 and PS3");
+			}
+		}
+		break;
+		default:
+		Throw("Unsupported Build Platform");
+	}
+}
+
+string GetBaseNameFromDir(string &Dir)
+{
+	size_t BaseStartPos = Dir.find_last_of("/\\") + 1;
+	size_t BaseExtPos = Dir.find_last_of('.');
+	if (BaseExtPos == Dir.npos)
+		return "Script";
+	else if (BaseStartPos == Dir.npos)
+		BaseStartPos = 0;
+	return Dir.substr(BaseStartPos, BaseExtPos - BaseStartPos);
+}
 
 int main(int argc, const char **argv) {
 	cout << "Starting Clang 3.8.1\r\n";
 
 	CommonOptionsParser op(argc, argv, ToolingSampleCategory);
 	ClangTool Tool(op.getCompilations(), op.getSourcePathList());
-	// ClangTool::run accepts a FrontendActionFactory, which is then used to
-	// create new objects implementing the FrontendAction interface. Here we use
-	// the helper newFrontendActionFactory to create a default factory that will
-	// return a new MyFrontendAction object every time.
-	// To further customize this, we could create our own factory class.
-	return Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
+	bool ProcessingFailed = true;
+
+	/// ClangTool::run accepts a FrontendActionFactory, which is then used to
+	/// create new objects implementing the FrontendAction interface. Here we use
+	/// the helper newFrontendActionFactory to create a default factory that will
+	/// return a new MyFrontendAction object every time.
+	/// To further customize this, we could create our own factory class.
+	
+	if (op.getSourcePathList().size() > 0)
+	{
+		//this is temporary. script name should be set from the file that the main function is in
+		string outDir = op.getSourcePathList()[0].substr(0, op.getSourcePathList()[0].find_last_of('/'));
+		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
+		scriptData.reset(new Script(scriptName, BT_GTAV, P_XBOX));
+		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
+		if (!ProcessingFailed)
+		{
+			//ProcessingSuccess
+			
+			WriteAsmFile(outDir);
+			WriteScriptFile(outDir);
+
+		}
+		else
+		{
+			//ProcessingFailed
+		}
+	}
+
+	return (int)ProcessingFailed;
 }
