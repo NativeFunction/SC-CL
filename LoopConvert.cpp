@@ -5980,7 +5980,7 @@ int main(int argc, const char **argv) {
 	if (op.getSourcePathList().size() > 0)
 	{
 		//this is temporary. script name should be set from the file that the main function is in
-		string outDir = op.getSourcePathList()[0].substr(0, op.getSourcePathList()[0].find_last_of('/'));
+		string outDir = op.getSourcePathList()[0].substr(0, op.getSourcePathList()[0].find_last_of("/\\"));
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
 		scriptData.reset(new Script(scriptName, BT_GTAV, P_XBOX));
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
