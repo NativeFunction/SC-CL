@@ -59,7 +59,6 @@ static Rewriter rewriter;
 
 #pragma region Global_Var_and_Scope_Decls
 unique_ptr<Script> scriptData = nullptr;
-vector<StringRef> parsedFiles;
 typedef struct NamedIndex
 {
 	uint32_t index;
@@ -5857,11 +5856,6 @@ public:
 	
 	std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef file) override {
 		llvm::errs() << "Compiling: " << file << "\n";
-		auto it = find(parsedFiles.begin(), parsedFiles.end(), file);
-		if (it == parsedFiles.end())
-			parsedFiles.push_back(file);
-		else
-			this->~MyFrontendAction();
 
 		diagnostics = &CI.getDiagnostics();
 
