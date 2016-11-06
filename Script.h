@@ -37,7 +37,7 @@ public:
 
 	FunctionData *getEntryFunction() const{ return entryFunction; }
 	FunctionData *getCurrentFunction()const{ return currentFunc; }
-	FunctionData *createFunction(std::string name, int paramCount, int returnCount, bool makeCurrent = false);
+	FunctionData *createFunction(std::string name, int paramCount, int returnCount, bool makeCurrent = false, bool isPrototype = false);
 	void clearCurrentFunction(){ currentFunc = NULL; }
 	const FunctionData *getFunctionFromName(std::string name)const;
 	unsigned getFunctionCount() const{ return functions.size(); }

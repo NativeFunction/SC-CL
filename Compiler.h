@@ -585,10 +585,10 @@ public:
 		switch (HLData->getBuildType())
 		{
 			case BT_RDR_SCO:
-				SCOWrite((outDirectory + "\\" + HLData->getBuildFileName()).data(), true);
+				SCOWrite((outDirectory + HLData->getBuildFileName()).data(), true);
 				break;
 			case BT_RDR_XSC:
-				XSCWrite((outDirectory + "\\" + HLData->getBuildFileName()).data(), true);
+				XSCWrite((outDirectory + HLData->getBuildFileName()).data(), true);
 				break;
 			default:
 				assert(false && "Incompatible build type for RDR");
@@ -685,7 +685,7 @@ public:
 		switch (HLData->getBuildType())
 		{
 			case BT_GTAV:
-			XSCWrite((outDirectory + "\\" + HLData->getBuildFileName()).data());
+			XSCWrite((outDirectory + HLData->getBuildFileName()).data());
 			break;
 			default:
 			assert(false && "Incompatible build type for GTAV");

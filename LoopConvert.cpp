@@ -4916,15 +4916,22 @@ public:
 		else
 		{
 			string name = f->getNameAsString();
-			if (f->getStorageClass() == SC_None)
+			if (f->hasAttrs())
 			{
-				//prototype detected, add it to the functions list(s), 
-
-				int32_t paramSize = 0;
-				for (uint32_t i = 0; i<f->getNumParams(); i++)
-					paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-				scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())));
+				AttrVec attrs = f->getAttrs();
+				for (uint32_t i = 0; i < attrs.size(); i++)
+				{
+					//these prototypes are reserved
+					if (strcmp(attrs[i]->getSpelling(), "native") || strcmp(attrs[i]->getSpelling(), "intrinsic"))
+						return false;
+				}
 			}
+			int32_t paramSize = 0;
+			for (uint32_t i = 0; i < f->getNumParams(); i++)
+				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
+			scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), false, true);
+
+			cout << "added prototype: " << name << endl;
 		}
 
 		return true;
@@ -5882,7 +5889,7 @@ private:
 
 void WriteAsmFile(string outDir)
 {
-	string Out = outDir + "/" + scriptData->getASMFileName();
+	string Out = outDir  + scriptData->getASMFileName();
 	FILE* file = fopen(Out.data(), "wb");
 	if (file != NULL)
 	{
@@ -5955,13 +5962,18 @@ void WriteScriptFile(string outDir)
 
 string GetBaseNameFromDir(string &Dir)
 {
-	size_t BaseStartPos = Dir.find_last_of("/\\") + 1;
-	size_t BaseExtPos = Dir.find_last_of('.');
+	const size_t BaseStartPos = Dir.find_last_of("/\\") + 1;
+	const size_t BaseExtPos = Dir.find_last_of('.');
 	if (BaseExtPos == Dir.npos)
 		return "Script";
 	else if (BaseStartPos == Dir.npos)
-		BaseStartPos = 0;
+		return Dir.substr(BaseStartPos, BaseExtPos);
 	return Dir.substr(BaseStartPos, BaseExtPos - BaseStartPos);
+}
+string GetDir(string &Dir)
+{
+	const size_t BaseExtPos = Dir.find_last_of("/\\") + 1;
+	return BaseExtPos == Dir.npos ? "" : Dir.substr(0, BaseExtPos);
 }
 
 int main(int argc, const char **argv) {
@@ -5980,7 +5992,8 @@ int main(int argc, const char **argv) {
 	if (op.getSourcePathList().size() > 0)
 	{
 		//this is temporary. script name should be set from the file that the main function is in
-		string outDir = op.getSourcePathList()[0].substr(0, op.getSourcePathList()[0].find_last_of("/\\"));
+		
+		string outDir = GetDir(op.getSourcePathList()[0]);
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
 		scriptData.reset(new Script(scriptName, BT_GTAV, P_XBOX));
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());

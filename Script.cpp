@@ -9,7 +9,7 @@ Script::Script(string scriptName, BuildType buildType, Platform platform) :
 	functions.push_back(entryFunction);
 }
 
-FunctionData * Script::createFunction(string name, int paramCount, int returnCount, bool makeCurrent)
+FunctionData * Script::createFunction(string name, int paramCount, int returnCount, bool makeCurrent, bool isPrototype)
 {
 	uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
 	for (int i = 0, max = getFunctionCount(); i<max; i++)
@@ -17,9 +17,12 @@ FunctionData * Script::createFunction(string name, int paramCount, int returnCou
 		FunctionData *func = functions[i];
 		if (hash == func->getHash() && name == func->getName())
 		{
-			//assert(!func->isProcessed() && "Function has already been processed");
-			if(func->isProcessed())
-				Utils::System::Warn("Function \"" + name + "\" has already been processed");
+			if (isPrototype)
+			{
+				//assert(!func->isProcessed() && "Function has already been processed");
+				if (func->isProcessed())
+					Utils::System::Warn("Function \"" + name + "\" has already been processed");
+			}
 			if (makeCurrent)
 			{
 				currentFunc = func;
