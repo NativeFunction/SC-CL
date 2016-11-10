@@ -41,7 +41,6 @@ FunctionData * Script::createFunction(string name, int paramCount, int returnCou
 
 const FunctionData * Script::getFunctionFromName(string name) const
 {
-	name = "@" + name;
 	uint32_t hash = Utils::Hashing::JoaatCased(name);
 	for (int i = 0, max = getFunctionCount(); i < max;i++)
 	{
@@ -90,7 +89,7 @@ void Script::finaliseEntryFunction()
 {
 	if (mainFunction)
 	{
-		entryFunction->addOpCall("main");
+		entryFunction->addOpCall("!main");
 		for (int i = 0; i < mainFunction->getReturnCount(); i++)
 		{
 			entryFunction->addOpDrop();

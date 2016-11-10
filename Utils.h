@@ -49,6 +49,15 @@ namespace Utils {
 
 		std::vector<NamedUint32> ReorderUint32Vector_SmallToBig(std::vector<uint32_t> vec, std::vector<const char*> name);
 		void ArrayReverse(std::vector<uint8_t> InArr, std::vector<uint8_t>& OutArr);
+
+		//static const string base223_chars = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~¦€ü‚ƒ„…†‡ˆ‰Š‹ŒìŽÅÉ‘’“”•–—ÿ™š›œ¥žŸá¡¢£¤¥¦§¨©ª«¬¡®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ";
+
+		inline char Uint8ToBase223(uint8_t value)
+		{
+			if (value >= 0 && value < 223)
+				return  (char)(33 + value);
+			return '\0';
+		}
 	}
 	namespace Bitwise
 	{

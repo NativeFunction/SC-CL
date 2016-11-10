@@ -54,7 +54,7 @@ public:
 		return "";
 	}
 
-	void setMainFunction(FunctionData* mainFunc){ assert(mainFunc->getName() == "@main" && "trying to set function not called main to mainFunction"); mainFunction = mainFunc; }
+	void setMainFunction(FunctionData* mainFunc){ assert(mainFunc->getName() == "@!main" && "trying to set function not called main to mainFunction"); mainFunction = mainFunc; }
 
 	bool addUsedFuncToCurrent(std::string name);
 	bool addUsedFuncToEntry(std::string name);

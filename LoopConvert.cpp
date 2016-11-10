@@ -59,6 +59,7 @@ static Rewriter rewriter;
 
 #pragma region Global_Var_and_Scope_Decls
 unique_ptr<Script> scriptData = nullptr;
+uint32_t CurrentFileId = 0;
 typedef struct NamedIndex
 {
 	uint32_t index;
@@ -419,6 +420,7 @@ uint32_t getNumVirtMethods(const CXXRecordDecl *classDecl) {
 #pragma endregion
 
 
+
 #pragma region Global_Opcode_Functions
 #pragma region Opcodes_Push
 
@@ -443,6 +445,7 @@ const DeclRefExpr *getDeclRefExpr(const Expr *e) {
 	}
 	return NULL;
 }
+
 #pragma endregion
 
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
@@ -492,13 +495,22 @@ public:
 		return "";
 	}
 	string getNameForFunc(const FunctionDecl *decl) {
+
+		string FileId = "!";
+		if (decl->getStorageClass() == SC_Static)
+		{
+			assert(CurrentFileId && "File id 0 reserved for extern");
+			FileId = Utils::DataConversion::Uint8ToBase223(CurrentFileId);
+			assert(*FileId.data() && "File link count over 222");
+		}
+
 		if (isa<CXXMethodDecl>(decl)) {
 			const CXXMethodDecl *methodDecl = cast<const CXXMethodDecl>(decl);
 			const CXXRecordDecl *record = methodDecl->getParent();
-			return "@" + record->getNameAsString() + "::" + methodDecl->getNameAsString();
+			return "@" + FileId + record->getNameAsString() + "::" + methodDecl->getNameAsString();
 		}
 		else {
-			return "@" + decl->getNameAsString();
+			return "@" + FileId + decl->getNameAsString();
 		}
 	}
 	#pragma endregion
@@ -2600,7 +2612,7 @@ public:
 					else {
 
 						parseExpression(expr->getBase(), true);
-						AddInstructionComment(Call, "NumArgs: " + to_string(call->getNumArgs() + 1), getNameForFunc(method).substr(1));
+						AddInstructionComment(Call, "(memExpr) NumArgs: " + to_string(call->getNumArgs() + 1), getNameForFunc(method).substr(1));
 					}
 				}
 				else {
@@ -2661,7 +2673,7 @@ public:
 					bool inlined = false;
 					if (const FunctionDecl * cDecl = call->getDirectCallee())
 					{
-						string name = dumpName(cast<NamedDecl>(cDecl));
+						string name = getNameForFunc(cDecl);
 						string curName = dumpName(cast<NamedDecl>(currFunction));
 						if (cDecl->hasBody() && !scriptData.isFunctionInInlineStack(name) && curName != name)
 						{
@@ -2746,7 +2758,7 @@ public:
 					}
 					if (!inlined)
 					{
-						string name = parseCast(cast<const CastExpr>(callee));
+						string name = getNameForFunc(call->getDirectCallee());
 						if (!scriptData.addUsedFuncToCurrent(name))
 							Throw("Function \"" + name.substr(1) + "\" not found", rewriter, call->getExprLoc());
 						AddInstructionComment(Call, "NumArgs: " + to_string(call->getNumArgs()), name.substr(1));
@@ -4863,13 +4875,18 @@ public:
 
 			Stmt *FuncBody = f->getBody();
 
+			//if (f->getStorageClass() == SC_Static)
+
+
 			int32_t paramSize = 0;
-			for (uint32_t i = 0; i<f->getNumParams(); i++)
+			for (uint32_t i = 0; i < f->getNumParams(); i++)
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-			if (isa<CXXMethodDecl>(f)) paramSize++;
-			
-			auto func = scriptData.createFunction(getNameForFunc(f), paramSize, getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), true);
-			//string name = dumpName(cast<NamedDecl>(f));
+
+			if (isa<CXXMethodDecl>(f))
+				paramSize++;
+
+			FunctionData* func = scriptData.createFunction(getNameForFunc(f), paramSize, getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), true);
+
 
 			if (f->isMain())
 			{
@@ -4929,7 +4946,9 @@ public:
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i < f->getNumParams(); i++)
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
+
 			scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), false, true);
+
 
 			cout << "added prototype: " << name << endl;
 		}
@@ -5807,6 +5826,10 @@ private:
 #pragma region CreateASTConsumer
 class MyFrontendAction : public ASTFrontendAction {
 public:
+	MyFrontendAction()
+	{
+		CurrentFileId++;
+	}
 	~MyFrontendAction()
 	{ 
 		cout << "class ended\n";
