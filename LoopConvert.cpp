@@ -2038,6 +2038,16 @@ public:
 		return false;
 	}
 
+	bool findAnyLabel(const Stmt* stmt)
+	{
+		for (auto it = stmt->child_begin(); it!=stmt->child_end();++it)
+		{
+			if (isa<LabelStmt>(*it))
+				return true;
+			return findAnyLabel(*it);
+		}
+		return false;
+	}
 	bool parseStatement(Stmt *s, uint64_t breakLoc = -1, uint64_t continueLoc = -1) {
 		if (isa<CompoundStmt>(s)) {
 			CompoundStmt *cSt = cast<CompoundStmt>(s);
@@ -2079,8 +2089,12 @@ public:
 					LocalVariables.addLevel();
 					parseStatement(Then, breakLoc, continueLoc);
 					LocalVariables.removeLevel();
+					if (Else && !findAnyLabel(Else))
+					{
+						Else = NULL;// if there are no labels in the else just mark it as null as the code will never be executed
+					}
 					bool ifEndRet = scriptData.getCurrentFunction()->endsWithReturn() || (scriptData.getInlineCount() && scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()));
-					if (Else)//still parse the else code just incase there are goto labeils in there
+					if (Else)
 					{
 						AddJumpInlineCheckConditionallyStr(!ifEndRet, Jump, IfLocEnd);
 						LocalVariables.addLevel();
@@ -2092,21 +2106,48 @@ public:
 				else
 				{
 					//still parse the then code just incase there are goto labels in there
-					AddJumpInlineCheckStr(Jump, Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd);
-					LocalVariables.addLevel();
-					parseStatement(Then, breakLoc, continueLoc);
-					LocalVariables.removeLevel();
-					bool ifEndRet = scriptData.getCurrentFunction()->endsWithReturn() || (scriptData.getInlineCount() && scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()));
-					if (Else)
+					if (findAnyLabel(Then) && cast<CompoundStmt>(Then)->size())
 					{
-						AddJumpInlineCheckConditionallyStr(!ifEndRet, Jump, IfLocEnd);
+						if (Else)
+						{
+							AddJumpInlineCheckStr(Jump, to_string(Else->getLocStart().getRawEncoding()));
+							LocalVariables.addLevel();
+							parseStatement(Then, breakLoc, continueLoc);
+							LocalVariables.removeLevel();
 
-						AddJumpInlineCheck(Label, Else->getLocStart().getRawEncoding());
-						LocalVariables.addLevel();
-						parseStatement(Else, breakLoc, continueLoc);
-						LocalVariables.removeLevel();
+
+							bool ifEndRet = scriptData.getCurrentFunction()->endsWithReturn() || (scriptData.getInlineCount() && scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()));
+							if (Else)
+							{
+								AddJumpInlineCheckConditionallyStr(!ifEndRet, Jump, IfLocEnd);
+
+								AddJumpInlineCheck(Label, Else->getLocStart().getRawEncoding());
+								LocalVariables.addLevel();
+								parseStatement(Else, breakLoc, continueLoc);
+								LocalVariables.removeLevel();
+							}
+							AddJumpInlineCheckConditionallyStr(!ifEndRet || !Else, Label, IfLocEnd);
+						}
+						else
+						{
+							AddJumpInlineCheckStr(Jump, IfLocEnd);
+							LocalVariables.addLevel();
+							parseStatement(Then, breakLoc, continueLoc);
+							LocalVariables.removeLevel();
+							AddJumpInlineCheckStr(Label, IfLocEnd);
+
+						}
 					}
-					AddJumpInlineCheckConditionallyStr(!ifEndRet || !Else, Label, IfLocEnd);
+					else
+					{
+						//ignore the then case
+						if (Else)
+						{
+							LocalVariables.addLevel();
+							parseStatement(Else, breakLoc, continueLoc);
+							LocalVariables.removeLevel();
+						}
+					}
 				}
 			}
 			else
