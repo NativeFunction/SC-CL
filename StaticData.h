@@ -110,11 +110,15 @@ public:
 		_initialisation.resize(curSize + 1);
 		*(int8_t*)&_initialisation[curSize] = value;
 	}
-	void pushStringInit(const std::string& str)
+	void pushStringInit(const std::string& str, size_t strActSize)
 	{
 		size_t curSize = _initialisation.size();
-		_initialisation.resize(curSize + str.length() + 1);
-		memcpy(&_initialisation[curSize], str.data(), str.size());
+		_initialisation.resize(curSize + strActSize);
+		memcpy(&_initialisation[curSize], str.data(), min(str.size(), strActSize));
+		if (str.size() >= strActSize)
+		{
+			_initialisation.back() = '\0';
+		}
 	}
 	void pushNullInit(size_t count, uint8_t stackWidth)
 	{

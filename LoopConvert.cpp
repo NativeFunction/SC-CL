@@ -2105,8 +2105,7 @@ public:
 				}
 				else
 				{
-					//still parse the then code just incase there are goto labels in there
-					if (findAnyLabel(Then) && cast<CompoundStmt>(Then)->size())
+					if (findAnyLabel(Then))
 					{
 						if (Else)
 						{
@@ -5389,7 +5388,7 @@ public:
 			const StringLiteral *literal = cast<const StringLiteral>(e);
 			if (literal->getString().str().length() > 0)
 			{
-				scriptData.getCurrentStatic()->pushStringInit(literal->getString().str());
+				scriptData.getCurrentStatic()->pushStringInit(literal->getString().str(), scriptData.getStackWidth() * getSizeFromBytes(getLiteralSizeOfType(e->getType().getTypePtr())));
 				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
 				string strlit = literal->getString().str();
 				e->getType().getTypePtr();
