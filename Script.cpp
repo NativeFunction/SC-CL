@@ -4,9 +4,13 @@
 using namespace std;
 
 Script::Script(string scriptName, BuildType buildType, Platform platform) : 
-	entryFunction(new FunctionData("@__builtin__entryPoint", 0, 0)), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform)
+	 mainFunction(NULL), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform), scriptParams()
 {
-	functions.push_back(entryFunction);
+	auto entry = std::make_unique<FunctionData>("@__builtin__entryPoint", 0, 0);
+	entryFunction = entry.get();
+	functions.push_back(std::move(entry));
+	_endian = (buildType == BT_GTAV && platform == P_PC) ? END_LITTLE : END_BIG;
+	_stackWidth = (buildType == BT_GTAV && platform == P_PC) ? 8 : 4;
 }
 
 FunctionData * Script::createFunction(string name, int paramCount, int returnCount, bool makeCurrent, bool isPrototype)
@@ -14,7 +18,7 @@ FunctionData * Script::createFunction(string name, int paramCount, int returnCou
 	uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
 	for (int i = 0, max = getFunctionCount(); i<max; i++)
 	{
-		FunctionData *func = functions[i];
+		FunctionData *func = functions[i].get();
 		if (hash == func->getHash() && name == func->getName())
 		{
 			if (isPrototype)
@@ -30,25 +34,39 @@ FunctionData * Script::createFunction(string name, int paramCount, int returnCou
 			return func;
 		}
 	}
-	FunctionData *newFunc = new FunctionData(name, paramCount, returnCount);
-	functions.push_back(newFunc);
+	functions.push_back(std::make_unique<FunctionData>(name, paramCount, returnCount));
 	if (makeCurrent)
 	{
-		currentFunc = newFunc;
+		currentFunc = functions.back().get();
 	}
-	return newFunc;
+	return functions.back().get();
 }
 
-const FunctionData * Script::getFunctionFromName(string name) const
+FunctionData * Script::getFunctionFromName(const string& name)
 {
 	uint32_t hash = Utils::Hashing::JoaatCased(name);
 	for (int i = 0, max = getFunctionCount(); i < max;i++)
 	{
 		const FunctionData *func = getFunctionFromIndex(i);
 		if (hash == func->getHash() && name == func->getName())
-			return functions[i];
+			return functions[i].get();
 	}
 	Utils::System::Warn("Function \"" + name + "\" does not exist");
+	assert(false && "Function doesnt exist");
+	return NULL;
+}
+
+const FunctionData * Script::getFunctionFromName(const string& name) const
+{
+	string newname = "@" + name;
+	uint32_t hash = Utils::Hashing::JoaatCased(newname);
+	for (int i = 0, max = getFunctionCount(); i < max; i++)
+	{
+		const FunctionData *func = getFunctionFromIndex(i);
+		if (hash == func->getHash() && newname == func->getName())
+			return functions[i].get();
+	}
+	Utils::System::Warn("Function \"" + newname + "\" does not exist");
 	assert(false && "Function doesnt exist");
 	return NULL;
 }
@@ -59,7 +77,7 @@ bool Script::addUsedFuncToCurrent(string name)
 	uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
 	for (int i = 0, max = getFunctionCount(); i<max; i++)
 	{
-		FunctionData *func = functions[i];
+		FunctionData *func = functions[i].get();
 		if (hash == func->getHash() && name == func->getName())
 		{
 			getCurrentFunction()->addUsedFunc(func);
@@ -74,7 +92,7 @@ bool Script::addUsedFuncToEntry(string name)
 	uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
 	for (int i = 0, max = getFunctionCount(); i<max; i++)
 	{
-		FunctionData *func = functions[i];
+		FunctionData *func = functions[i].get();
 		if (hash == func->getHash() && name == func->getName())
 		{
 			entryFunction->addUsedFunc(func);
@@ -89,6 +107,34 @@ void Script::finaliseEntryFunction()
 {
 	if (mainFunction)
 	{
+		entryFunction->addUsedFunc(mainFunction);
+		if (scriptParams)
+		{
+			if (getBuildType() != BT_RDR_XSC && getBuildType() != BT_RDR_SCO)
+			{
+				scriptParams->setUsed(*this);
+				entryFunction->setUsed(*this);
+			}
+			else
+			{
+				entryFunction->setUsed(*this);
+				scriptParams->setUsed(*this);
+			}
+			if (scriptParams->getSize() > 1)
+			{
+				entryFunction->addOpPushInt(scriptParams->getSize());
+				entryFunction->addOpGetStaticP(scriptParams.get());
+				entryFunction->addOpToStack();
+			}
+			else if (scriptParams->getSize())
+			{
+				entryFunction->addOpGetStatic(scriptParams.get());
+			}
+		}
+		else
+		{
+			entryFunction->setUsed(*this);
+		}
 		entryFunction->addOpCall("!main");
 		for (int i = 0; i < mainFunction->getReturnCount(); i++)
 		{
@@ -96,9 +142,7 @@ void Script::finaliseEntryFunction()
 			entryFunction->pushComment("dropping main returns");
 		}
 		entryFunction->addOpReturn();
-		entryFunction->addUsedFunc(mainFunction);
 		entryFunction->setProcessed();
-		entryFunction->setUsed();
 	}
 	else
 	{

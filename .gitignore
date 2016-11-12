@@ -1,5 +1,6 @@
 *
 !.gitignore
+!BuildTarget.h
 !CMakeLists.txt
 !ConsoleColor.h
 !contributors.txt
@@ -18,6 +19,8 @@
 !OpcodeConsts.h
 !Script.h
 !Script.cpp
+!StaticData.h
+!StaticData.cpp
 !bin/
 !bin/include/
 !RDR/

@@ -1,4 +1,5 @@
 #include "Compiler.h"
+#include "StaticData.h"
 
 using namespace std;
 using namespace Utils::System;
@@ -491,6 +492,24 @@ else if (value <= 0xFFFF)\
 else{\
 assert(false && errorstr);\
 }
+#define AddOpcodeStatic(op, errorstr)\
+assert(DATA->getStaticData()->isUsed() && "unused static referenced, this shouldn't happen");\
+const uint32_t value = DATA->getStaticData()->getIndex();\
+if (value <= 0xFF)\
+{\
+	DoesOpcodeHaveRoom(2);\
+	AddInt8(BaseOpcodes->##op##1);\
+	AddInt8(value);\
+}\
+else if (value <= 0xFFFF)\
+{\
+	DoesOpcodeHaveRoom(3);\
+	AddInt8(BaseOpcodes->##op##2);\
+	AddInt16(value);\
+}\
+else{\
+assert(false && errorstr);\
+}
 #pragma endregion
 #pragma region AddOpcodeB_2or3
 #define AddOpcodeB_2or3(op, errorstr)\
@@ -538,15 +557,15 @@ void CompileBase::SetFrame()
 }
 void CompileBase::GetStaticP()
 {
-	AddOpcodeB_1or2(GetStaticP, "GetStaticP index too high");
+	AddOpcodeStatic(GetStaticP, "GetStaticP index too high");
 }
 void CompileBase::GetStatic()
 {
-	AddOpcodeB_1or2(GetStatic, "GetStatic index too high");
+	AddOpcodeStatic(GetStatic, "GetStatic index too high");
 }
 void CompileBase::SetStatic()
 {
-	AddOpcodeB_1or2(SetStatic, "SetStatic index too high");
+	AddOpcodeStatic(SetStatic, "SetStatic index too high");
 }
 void CompileBase::GetGlobalP()
 {
@@ -822,19 +841,19 @@ void CompileBase::WriteNatives()
 }
 void CompileBase::WriteStaticsNoPadding()
 {
-	const size_t staticByteSize = HLData->getStaticSize() * 4;
+	const size_t staticByteSize = HLData->getStaticCount() * 4;
 
 	SavedOffsets.Statics = BuildBuffer.size();
 
 	BuildBuffer.resize(BuildBuffer.size() + staticByteSize);
-	memcpy(BuildBuffer.data() + BuildBuffer.size() - staticByteSize, HLData->getStaticData(), staticByteSize);
+	memcpy(BuildBuffer.data() + BuildBuffer.size() - staticByteSize, HLData->getNewStaticData(), staticByteSize);
 }
 void CompileBase::WriteStatics()
 {
 
-	if (HLData->getStaticSize() > 0)
+	if (HLData->getStaticCount() > 0)
 	{
-		const size_t staticByteSize = HLData->getStaticSize() * 4;
+		const size_t staticByteSize = HLData->getStaticCount() * 4;
 
 		if (GetSpaceLeft(16384) < staticByteSize)
 			FillPageDynamic(16384);
@@ -842,7 +861,7 @@ void CompileBase::WriteStatics()
 		SavedOffsets.Statics = BuildBuffer.size();
 
 		BuildBuffer.resize(BuildBuffer.size() + staticByteSize);
-		memcpy(BuildBuffer.data() + BuildBuffer.size() - staticByteSize, HLData->getStaticData(), staticByteSize);
+		memcpy(BuildBuffer.data() + BuildBuffer.size() - staticByteSize, HLData->getNewStaticData(), staticByteSize);
 
 		Pad();
 
@@ -1117,7 +1136,7 @@ void CompileRDR::WriteHeader()
 	AddInt32toBuff(0); //Unk1 ptr
 	AddInt32toBuff(0); //codeBlocksListOffsetPtr
 	AddInt32toBuff(CodePageData.size());//code length
-	AddInt32toBuff(0);//script ParameterCount (this needs to be implemented)
+	AddInt32toBuff(HLData->getParameterCount());//script ParameterCount (this needs to be implemented)
 	AddInt32toBuff(HLData->getStaticSize());//statics count
 	AddInt32toBuff(0); //Statics offset
 	AddInt32toBuff(0x349D018A);//GlobalsSignature
@@ -1597,7 +1616,7 @@ void CompileGTAV::WriteHeader()
 	AddInt32toBuff(0); //codeBlocksListOffsetPtr
 	AddInt32toBuff(0x11CD39A2);//unk2
 	AddInt32toBuff(CodePageData.size());//code length
-	AddInt32toBuff(0);//script ParameterCount (this needs to be implemented)
+	AddInt32toBuff(HLData->getParameterCount());//script ParameterCount (this needs to be implemented)
 	AddInt32toBuff(HLData->getStaticSize());//statics count
 	AddInt32toBuff(0);//GlobalsSize
 	AddInt32toBuff(NativeHashMap.size());//natives count

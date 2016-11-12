@@ -645,12 +645,12 @@ public:
 				}
 			}
 		}
-		else if (statics.find(declref->getDecl()->getLocEnd().getRawEncoding()) != statics.end()) {
-			NamedIndex staticLoc = statics[declref->getDecl()->getLocEnd().getRawEncoding()];
-			index = staticLoc.index;
+		else if (auto sData = scriptData.findStatic(declref->getDecl()->getLocEnd().getRawEncoding())) {
+
+			scriptData.getCurrentFunction()->addUsedStatic(sData);
 			if (isLtoRValue && !isAddr)
 			{
-				AddInstructionComment(GetStatic, key, index);
+				AddInstructionComment(GetStatic, key, sData);
 				if (size == 1 || size == 2)
 				{
 					AddInstruction(GetConv, size, declref->getType()->isSignedIntegerType());
@@ -658,7 +658,7 @@ public:
 			}
 			else if (isAddr)
 			{
-				AddInstructionComment(GetStaticP, key, index);
+				AddInstructionComment(GetStaticP, key, sData);
 			}
 			else if (isAssign)
 			{
@@ -668,7 +668,7 @@ public:
 				if (size > 4)//fromStack
 				{
 					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
-					AddInstructionComment(GetStaticP, "&" + key, index);
+					AddInstructionComment(GetStaticP, "&" + key, sData);
 					AddInstruction(FromStack);
 				}
 				else
@@ -677,7 +677,7 @@ public:
 					{
 						AddInstruction(SetConv, size);
 					}
-					AddInstructionComment(SetStatic, key, index);
+					AddInstructionComment(SetStatic, key, sData);
 				}
 			}
 		}
@@ -4881,14 +4881,13 @@ public:
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i < f->getNumParams(); i++)
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
-
 			if (isa<CXXMethodDecl>(f))
 				paramSize++;
+			
 
 			FunctionData* func = scriptData.createFunction(getNameForFunc(f), paramSize, getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), true);
-
-
-			if (f->isMain())
+			auto identifier = f->getIdentifier();
+			if (identifier && identifier->isStr("main"))//cant use f->isMain as its now freestanding exe
 			{
 				scriptData.setMainFunction(func);
 			}
@@ -5237,6 +5236,7 @@ public:
 			uint32_t size = getSizeFromBytes(getSizeOfType(type));
 
 			scriptData.addStaticInit(0, size);
+			scriptData.getCurrentStatic()->pushNullInit(size, scriptData.getStackWidth());
 			return true;
 		}
 		else if (e->EvaluateAsRValue(result, *context))
@@ -5277,6 +5277,8 @@ public:
 
 					if (++intIndex >= 4)
 						intIndex = 0;
+
+					scriptData.getCurrentStatic()->pushInit8(resValue);
 				}
 				else if (type->isSpecificBuiltinType(BuiltinType::Kind::Short) || type->isSpecificBuiltinType(BuiltinType::Kind::UShort))
 				{
@@ -5288,20 +5290,31 @@ public:
 					intIndex += 2;
 					if (intIndex >= 4)
 						intIndex = 0;
+					scriptData.getCurrentStatic()->pushInit16(resValue, scriptData.getEndian());
 				}
 				else if (isCurrentExprEvaluable)
-					scriptData.addStaticInit((int32_t)resValue);
+				{
+					scriptData.addStaticInit((int32_t)resValue);//remove later
+					scriptData.getCurrentStatic()->pushInit32(resValue, scriptData.getEndian());
+				}
 				else
-					scriptData.getEntryFunction()->addOpPushInt((int32_t)resValue);
+				{
+					scriptData.getCurrentStatic()->addOpPushInt(resValue);
+				}
 
 				return true;
 			}
 			else if (result.Val.isFloat())
 			{
 				if (isCurrentExprEvaluable)
+				{
 					scriptData.addStaticInit(FloatToInt((float)extractAPFloat(result.Val.getFloat())));
+					scriptData.getCurrentStatic()->pushInit32(FloatToInt((float)extractAPFloat(result.Val.getFloat())), scriptData.getEndian());
+				}
 				else
-					scriptData.getEntryFunction()->addOpPushFloat((float)extractAPFloat(result.Val.getFloat()));
+				{
+					scriptData.getCurrentStatic()->addOpPushFloat((float)extractAPFloat(result.Val.getFloat()));
+				}
 				return true;
 			}
 			else if (result.Val.isComplexFloat())
@@ -5309,6 +5322,11 @@ public:
 				//can this be unevaluable?
 				scriptData.addStaticInit(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatReal())));
 				scriptData.addStaticInit(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatImag())));
+
+				scriptData.getCurrentStatic()->pushInit32(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatReal())), scriptData.getEndian());
+				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
+				scriptData.getCurrentStatic()->pushInit32(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatImag())), scriptData.getEndian());
+				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
 				return true;
 			}
 			else if (result.Val.isComplexInt())
@@ -5316,6 +5334,12 @@ public:
 				//can this be unevaluable?
 				scriptData.addStaticInit(result.Val.getComplexIntReal().getSExtValue());
 				scriptData.addStaticInit(result.Val.getComplexIntImag().getSExtValue());
+
+
+				scriptData.getCurrentStatic()->pushInit32(result.Val.getComplexIntReal().getSExtValue(), scriptData.getEndian());
+				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
+				scriptData.getCurrentStatic()->pushInit32(result.Val.getComplexIntImag().getSExtValue(), scriptData.getEndian());
+				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
 				return true;
 			}
 		}
@@ -5324,6 +5348,8 @@ public:
 			const StringLiteral *literal = cast<const StringLiteral>(e);
 			if (literal->getString().str().length() > 0)
 			{
+				scriptData.getCurrentStatic()->pushStringInit(literal->getString().str());
+				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
 				string strlit = literal->getString().str();
 				e->getType().getTypePtr();
 
@@ -5363,17 +5389,20 @@ public:
 			const InitListExpr *I = cast<const InitListExpr>(e);
 			uint32_t size = getSizeFromBytes(getSizeOfType(I->getType().getTypePtr()));
 			uint32_t SavedStaticInc = scriptData.getStaticSize();
-
+			size_t curSize = scriptData.getCurrentStatic()->getStackInitSize(scriptData.getStackWidth());
 			resetIntIndex();
-
 			for (uint32_t i = 0; i < I->getNumInits(); i++)
 			{
 				isCurrentExprEvaluable = true;
 				doesCurrentValueNeedSet = false;
 				ParseLiteral(I->getInit(i), false, true);
 				if (doesCurrentValueNeedSet)
-					scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
+				{
+					scriptData.addStaticInit();//needs removing
+					scriptData.getCurrentStatic()->addOpSetThisStatic(scriptData);
+				}
 			}
+			scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
 
 			resetIntIndex();
 			isCurrentExprEvaluable = true;
@@ -5384,7 +5413,10 @@ public:
 				//cout << "init list size is less adding " << size - (oldStaticInc - SavedStaticInc) << " size: " << size << endl;
 
 				scriptData.addStaticInit(0, size - (scriptData.getStaticSize() - SavedStaticInc));
-				
+			}
+			if (scriptData.getCurrentStatic()->getStackInitSize(scriptData.getStackWidth()) - curSize < size)
+			{
+				scriptData.getCurrentStatic()->pushNullInit(size -(scriptData.getCurrentStatic()->getStackInitSize(scriptData.getStackWidth()) - curSize), scriptData.getStackWidth());
 			}
 			return true;
 		}
@@ -5399,7 +5431,10 @@ public:
 					doesCurrentValueNeedSet = true;
 
 					//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
-					scriptData.getEntryFunction()->addOpGetStaticP(statics[DRE->getDecl()->getLocEnd().getRawEncoding()].index);
+					StaticData* staticData = scriptData.findStatic(DRE->getDecl()->getLocEnd().getRawEncoding());
+					assert(staticData && "Static Not Found");
+					scriptData.getCurrentStatic()->addOpGetStaticP(staticData);
+					scriptData.getCurrentStatic()->setDynamic();
 				}
 				else
 				{
@@ -5420,8 +5455,9 @@ public:
 				if (isa<StringLiteral>(icast->getSubExpr()))//char* x = "hello";
 				{
 					const StringLiteral *literal = cast<const StringLiteral>(icast->getSubExpr());
-					scriptData.getEntryFunction()->addOpPushString(literal->getString().str());
-					scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
+					scriptData.getCurrentStatic()->addOpPushString(literal->getString().str());
+					scriptData.getCurrentStatic()->addOpSetThisStatic(scriptData);
+					scriptData.addStaticInit();//prevents errors with old methods
 				}
 				else if (isa<DeclRefExpr>(icast->getSubExpr()))//int vstack[10] = {1,2,3,4,5,6,7,8,9,10}, *vstack_ptr = vstack;
 				{
@@ -5429,7 +5465,10 @@ public:
 					doesCurrentValueNeedSet = true;
 
 					//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
-					scriptData.getEntryFunction()->addOpGetStaticP(statics[DRE->getDecl()->getLocEnd().getRawEncoding()].index);
+					StaticData* staticData = scriptData.findStatic(DRE->getDecl()->getLocEnd().getRawEncoding());
+					assert(staticData && "Static Not Found");
+					scriptData.getCurrentStatic()->addOpGetStaticP(staticData);
+					scriptData.getCurrentStatic()->setDynamic();
 				}
 				else// need to test byte* t = {1,2,3};
 					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getExprLoc());
@@ -5442,11 +5481,14 @@ public:
 					if (isa<FunctionDecl>(declRef->getDecl())) {
 						const FunctionDecl *decl = cast<const FunctionDecl>(declRef->getDecl());
 
-						if (!scriptData.addUsedFuncToEntry("@" + decl->getNameAsString()))
+						if (!scriptData.getFunctionFromName(decl->getNameAsString()))
 							Throw("Static function pointer \"" + decl->getNameAsString() + "\" not found");
 
-						scriptData.getEntryFunction()->addOpFuncLoc(decl->getNameAsString());
-						scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
+						scriptData.addStaticInit();
+						//New Handling
+						scriptData.getCurrentStatic()->addOpFuncLoc(scriptData.getFunctionFromName(decl->getNameAsString()));
+						scriptData.getCurrentStatic()->addOpSetThisStatic(scriptData);
+						scriptData.getCurrentStatic()->setDynamic();
 
 					}
 					else Throw("Unimplemented CK_FunctionToPointerDecay DeclRefExpr for " + string(declRef->getStmtClassName()));
@@ -5520,16 +5562,18 @@ public:
 					const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
 					int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
 					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
-
+					auto cur = scriptData.getCurrentStatic();
+					cur->setDynamic();
 					if (bOp->getLHS()->getType()->isFloatingType())
-						scriptData.getEntryFunction()->addOpFSub();
+						cur->addOpFSub();
 					else
-						scriptData.getEntryFunction()->addOpSub();
+						cur->addOpSub();
+
 
 					if (pSize > 1)
 					{
-						scriptData.getEntryFunction()->addOpPushInt(pSize);
-						scriptData.getEntryFunction()->addOpDiv();
+						cur->addOpPushInt(pSize);
+						cur->addOpDiv();
 					}
 
 					return -1;
@@ -5550,7 +5594,7 @@ public:
 					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
 					if (pSize > 1)
-						scriptData.getEntryFunction()->addOpMultImm(pSize);
+						scriptData.getCurrentStatic()->addOpMultImm(pSize);
 				}
 				else
 					Throw("Pointer to literal operation not addition or subtraction \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
@@ -5568,7 +5612,7 @@ public:
 					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
 					if (pSize > 1)
-						scriptData.getEntryFunction()->addOpMultImm(pSize);
+						scriptData.getCurrentStatic()->addOpMultImm(pSize);
 				}
 				else
 					Throw("Pointer to literal operation not addition or subtraction \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
@@ -5585,8 +5629,8 @@ public:
 
 			switch (op)
 			{
-				case BO_Sub: scriptData.getEntryFunction()->addOpSub(); break;
-				case BO_Add: scriptData.getEntryFunction()->addOpAdd(); break;
+				case BO_Sub: scriptData.getCurrentStatic()->addOpSub();  break;
+				case BO_Add: scriptData.getCurrentStatic()->addOpAdd(); break;
 				default:
 				Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
 			}
@@ -5626,9 +5670,12 @@ public:
 				if (index->EvaluateAsInt(iResult, *context))
 				{
 					doesCurrentValueNeedSet = true;
-
+					auto cur = scriptData.getCurrentStatic();
+					cur->setDynamic();
 					if (!inc)
-						scriptData.getEntryFunction()->addOpGetStaticP(statics[declRef->getDecl()->getLocEnd().getRawEncoding()].index);
+					{
+						cur->addOpGetStaticP(scriptData.findStatic(declRef->getDecl()->getLocEnd().getRawEncoding()));
+					}
 
 					if (!ssize)
 					{
@@ -5636,10 +5683,12 @@ public:
 						if (type->isArrayType())
 							elementSize = getSizeOfType(base->getType()->getArrayElementTypeNoTypeQual());
 
-						scriptData.getEntryFunction()->addOpAddImm(iResult.getSExtValue() * elementSize);
+						cur->addOpAddImm(iResult.getSExtValue() * elementSize);
 					}
 					else
-						scriptData.getEntryFunction()->addOpAddImm(ssize * iResult.getSExtValue());
+					{
+						cur->addOpAddImm(ssize * iResult.getSExtValue());
+					}
 
 					ssize = getSizeOfType(type);
 				}
@@ -5683,10 +5732,11 @@ public:
 				else
 				{
 					uint32_t staticLoc = globalVarDecl->getLocEnd().getRawEncoding();// +dumpName(cast<NamedDecl>(D));
+
 					if (statics.find(staticLoc) == statics.end()) {
 
 						auto size = getSizeOfType(globalVarDecl->getType().getTypePtr());
-
+						scriptData.addStaticNewDecl(staticLoc, dumpName(cast<NamedDecl>(D)), getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())));
 						resetIntIndex();
 						savedType = nullptr;
 
@@ -5709,12 +5759,16 @@ public:
 								staticInc = scriptData.getStaticSize();
 
 							if (doesCurrentValueNeedSet)
-								scriptData.getEntryFunction()->addOpSetStatic(scriptData.addStaticInit());
-
+							{
+								scriptData.addStaticInit();
+								scriptData.getCurrentStatic()->addOpSetThisStatic(scriptData);
+							}
+							scriptData.getCurrentStatic()->fillCapacity(scriptData.getStackWidth());
 						}
 						else
 						{
 							scriptData.fillStaticCapacity();
+							scriptData.getCurrentStatic()->fillCapacity(scriptData.getStackWidth());
 						}
 
 
@@ -5888,6 +5942,7 @@ public:
 		llvm::errs() << "Compiling: " << file << "\n";
 
 		diagnostics = &CI.getDiagnostics();
+		CI.getLangOpts().Freestanding = true;
 
 		TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
 		rewriter = TheRewriter;
@@ -5924,6 +5979,9 @@ void WriteAsmFile(string outDir)
 
 		fwrite(StaticData.data(), 1, StaticData.size(), file);
 		StaticData.clear();
+		//this needs tidying up and when ready removing the first statics method
+		string staticData2 = "/*\r\n" + scriptData->getNewStaticsAsString() + "\r\n*/\r\n";
+		fwrite(staticData2.data(), 1, staticData2.size(), file);
 
 		for (uint32_t i = 0, max = scriptData->getFunctionCount(); i <max; i++)
 		{

@@ -303,11 +303,13 @@ public:
 
 #pragma region Forward Declarations
 class FunctionData;
+class StaticData;
 #pragma endregion
 
 class Opcode
 {
 	friend class FunctionData;
+	friend class StaticData;
 	OpcodeKind opcodeKind;
 #ifdef _DEBUG
 	StringStorage *_comment = NULL;
@@ -355,6 +357,7 @@ class Opcode
 		NativeStorage *native;
 		StringStorage *string;
 		JumpTableStorage *jTable;
+		StaticData* staticData;
 	}storage = { 0,0,0,0 };
 public:
 
@@ -440,13 +443,18 @@ public:
 	}
 	const NativeStorage *getNative() const
 	{
-		assert(getKind() == OK_Native && "getNative not called on Switch Opcode");
+		assert(getKind() == OK_Native && "getNative not called on Native Opcode");
 		return storage.native;
 	}
 	const JumpTableStorage *getJumpTable() const
 	{
-		assert(getKind() == OK_JumpTable && "getNative not called on Switch Opcode");
+		assert(getKind() == OK_JumpTable && "getNative not called on JumpTable Opcode");
 		return storage.jTable;
+	}
+	const StaticData* getStaticData()const
+	{
+		assert((getKind() == OK_GetStaticP || getKind() == OK_GetStatic || getKind() == OK_SetStatic) && "getStaticData not called on static opcode");
+		return storage.staticData;
 	}
 
 	friend std::ostream& operator << (std::ostream& stream, const Opcode& opcode) {

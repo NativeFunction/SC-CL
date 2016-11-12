@@ -258,14 +258,18 @@ bool FunctionData::endsWithInlineReturn(string position) const
 	return Instructions.size() && Instructions.back()->getKind() == OK_Jump && Instructions.back()->getString() == position;
 }
 
-void FunctionData::setUsed()
+void FunctionData::setUsed(Script& scriptBase)
 {
 	if (!used)
 	{
 		used = true;
 		for(auto fdata : usedFuncs)
 		{
-			fdata->setUsed();
+			fdata->setUsed(scriptBase);
+		}
+		for(auto sdata: _usedStatics)
+		{
+			sdata->setUsed(scriptBase);
 		}
 	}
 	
@@ -321,6 +325,14 @@ void FunctionData::addUsedFunc(FunctionData * func)
 	if(find(usedFuncs.begin(), usedFuncs.end(), func) == usedFuncs.end())
 	{
 		usedFuncs.push_back(func);
+	}
+}
+
+void FunctionData::addUsedStatic(StaticData * staticData)
+{
+	if (find(_usedStatics.begin(), _usedStatics.end(), staticData) == _usedStatics.end())
+	{
+		_usedStatics.push_back(staticData);
 	}
 }
 
@@ -583,6 +595,14 @@ void FunctionData::optimisePushBytes()
 			}
 		}
 	}
+}
+
+void FunctionData::moveInto(std::vector<Opcode*>& source)
+{
+	size_t curSize = Instructions.size();
+	Instructions.resize(Instructions.size() + source.size());
+	memcpy(&Instructions[curSize], source.data(), source.size() * sizeof(Opcode*));
+	source.clear();
 }
 
 void FunctionData::addOpAdd()
@@ -1069,24 +1089,16 @@ void FunctionData::addOpPGet()
 		Instructions.back()->setKind(OK_GetArray);
 		return;
 	case OK_GetFrameP:
-		Instructions.pop_back();
-		addOpGetFrame(op->getUShort(0));
-		delete op;
+		Instructions.back()->setKind(OK_GetFrame);
 		return;
 	case OK_GetGlobalP:
-		Instructions.pop_back();
-		addOpGetGlobal(op->getInt());
-		delete op;
+		Instructions.back()->setKind(OK_GetGlobal);
 		return;
 	case OK_GetStaticP:
-		Instructions.pop_back();
-		addOpGetStatic(op->getUShort(0));
-		delete op;
+		Instructions.back()->setKind(OK_GetStatic);
 		return;
 	case OK_GetImmP:
-		Instructions.pop_back();
-		addOpGetImm(op->getUShort(0));
-		delete op;
+		Instructions.back()->setKind(OK_GetImm);
 		return;
 	default:
 		Instructions.push_back(new Opcode(OK_PGet));
@@ -1164,7 +1176,7 @@ void FunctionData::addOpGetFrame(uint16_t index)
 
 }
 
-void FunctionData::addOpGetStatic(uint16_t index)
+/*void FunctionData::addOpGetStatic(uint16_t index)
 {
 #ifdef USE_OPTIMISATIONS
 	if (Instructions.size())
@@ -1199,7 +1211,7 @@ void FunctionData::addOpGetStatic(uint16_t index)
 		op->setUShort(index, 0);
 		Instructions.push_back(op);
 	}
-}
+}*/
 
 void FunctionData::addOpGetGlobal(int index)
 {
@@ -1375,7 +1387,6 @@ void FunctionData::addOpGetImmP(uint16_t index)
 		switch(Instructions.back()->getKind())
 		{
 			case OK_GetFrameP:
-			case OK_GetStaticP:
 			case OK_GetGlobalP:
 			case OK_GetImmP:
 				Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
@@ -1398,7 +1409,6 @@ void FunctionData::addOpGetImm(uint16_t index)
 		switch (Instructions.back()->getKind())
 		{
 			case OK_GetFrameP:
-			case OK_GetStaticP:
 			case OK_GetGlobalP:
 			case OK_GetImmP:
 				Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);

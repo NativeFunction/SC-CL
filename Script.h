@@ -1,37 +1,33 @@
 #pragma once
 #include "FunctionData.h"
+#include "StaticData.h"
+#include "BuildTarget.h"
+#include <memory>
 #include <vector>
-
-enum Platform
-{
-	P_XBOX,
-	P_PS3,
-	P_PC
-};
-
-enum BuildType
-{
-	BT_GTAIV,
-	BT_RDR_XSC,
-	BT_RDR_SCO,
-	BT_GTAV
-};
-
-
+#include <map>
 class Script
 {
 	FunctionData *entryFunction;
 	FunctionData *mainFunction;
-	std::vector<FunctionData *> functions;
+	std::vector<std::unique_ptr<FunctionData>> functions;
+	std::vector<std::unique_ptr<StaticData>> statics;
+	std::map<unsigned, StaticData*> Statics;
+	std::vector<StaticData*> finalStatics;
+	size_t newStaticCount = 0;
 	FunctionData *currentFunc;
+	StaticData *currentStatic = NULL;
 	std::vector<int32_t> staticTable;
+	std::vector<uint8_t> newStaticTable;
 	std::vector<uint32_t> staticTableShortIndexes;//endian for printing has to be swapped. however for shorts we have to Flip2BytesIn4
 	struct InlineData { uint32_t hash; std::string name; std::string inlineLblAppend; bool unsafe; };
 	std::vector<InlineData> inlineStack;
 	int staticCount = 0;
 	BuildType _bType;
 	Platform _platform;
+	Endian _endian;
+	uint8_t _stackWidth;
 	std::string _scriptName;
+	std::unique_ptr<StaticData> scriptParams;
 public:
 	Script(std::string scriptName, BuildType buildType, Platform platform);
 
@@ -39,9 +35,10 @@ public:
 	FunctionData *getCurrentFunction()const{ return currentFunc; }
 	FunctionData *createFunction(std::string name, int paramCount, int returnCount, bool makeCurrent = false, bool isPrototype = false);
 	void clearCurrentFunction(){ currentFunc = NULL; }
-	const FunctionData *getFunctionFromName(std::string name)const;
+	FunctionData *getFunctionFromName(const std::string &name);
+	const FunctionData *getFunctionFromName(const std::string &name)const;
 	unsigned getFunctionCount() const{ return functions.size(); }
-	const FunctionData *getFunctionFromIndex(unsigned index)const{ assert(index < getFunctionCount() && index >= 0 && "Function index out of range"); return functions[index]; }
+	const FunctionData *getFunctionFromIndex(unsigned index)const{ assert(index < getFunctionCount() && index >= 0 && "Function index out of range"); return functions[index].get(); }
 
 	unsigned getInlineCount() const{ return inlineStack.size(); }
 
@@ -54,7 +51,22 @@ public:
 		return "";
 	}
 
-	void setMainFunction(FunctionData* mainFunc){ assert(mainFunc->getName() == "@!main" && "trying to set function not called main to mainFunction"); mainFunction = mainFunc; }
+	void setMainFunction(FunctionData* mainFunc){ 
+		assert(mainFunc->getName() == "@!main" && "trying to set function not called main to mainFunction"); 
+		assert(!mainFunction && "Trying to set main function twice");
+		mainFunction = mainFunc; 
+		if (mainFunction->getParamCount())
+		{
+			assert(!scriptParams && "script params already set");
+			scriptParams = std::make_unique<StaticData>("__builtin_ScriptParameters", mainFunction->getParamCount());
+			scriptParams->fillCapacity(getStackWidth());
+		}
+	}
+
+	unsigned getParameterCount()const
+	{
+		return scriptParams ? scriptParams->getSize() : 0;
+	}
 
 	bool addUsedFuncToCurrent(std::string name);
 	bool addUsedFuncToEntry(std::string name);
@@ -123,7 +135,20 @@ public:
 	{
 		return staticTable.data();
 	}
+	const uint8_t* getNewStaticData() const
+	{
+		return newStaticTable.data();
+	}
 	std::string getStaticsAsString();
+	std::string getNewStaticsAsString()
+	{
+		std::string out = "SetStaticsCount " + std::to_string(newStaticCount);
+		for (auto sdata:finalStatics)
+		{
+			out += sdata->getStringOutput(getEndian(), getStackWidth());
+		}
+		return std::move(out);
+	}
 
 	std::string getScriptName()const{ return _scriptName; }
 	BuildType getBuildType()const{ return _bType; }
@@ -144,12 +169,46 @@ public:
 	std::string getASMFileName()const{
 		return getScriptName() + "." + getBuildTypeExt();
 	}
+
+	size_t getStaticCount()const
+	{
+		return newStaticCount;
+	}
+	void incStaticCount(StaticData* staticData)
+	{
+		assert(staticData);
+		assert(staticData->getSize() && "incAmount must be positive");
+		newStaticCount += staticData->getSize();
+		finalStatics.push_back(staticData);
+	}
+	void addStaticNewDecl(unsigned sourceLoc, const std::string& name, int size)
+	{
+		statics.push_back(std::make_unique<StaticData>(name, size));
+		currentStatic = statics.back().get();
+		Statics.insert({ sourceLoc, currentStatic });
+	}
+	StaticData* getCurrentStatic()const{ return currentStatic; }
+	std::vector<uint8_t>& getStaticTable(){ return newStaticTable; }
 	
+	uint8_t getStackWidth()const 
+	{
+		return _stackWidth;
+	}
+	Endian getEndian()const
+	{
+		return _endian;
+	}
+	StaticData* findStatic(unsigned sourceLoc)
+	{
+		auto it = Statics.find(sourceLoc);
+		if (it != Statics.end())
+		{
+			return it->second;
+		}
+		return NULL;
+	}
+
 	~Script()
 	{
-		for(auto fData : functions)
-		{
-			delete fData;
-		}
 	}
 };

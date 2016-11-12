@@ -1,5 +1,6 @@
 #pragma once
 #include "Opcode.h"
+#include "StaticData.h"
 
 
 #define USE_OPTIMISATIONS
@@ -28,6 +29,8 @@ else \
 #define SimpleFloatOpCheck(Op, OpName) Instructions.push_back(new Opcode(OK_##OpName))
 #endif
 
+class Script;
+
 class FunctionData
 {
 	bool tryPop2Ints(int& i1, int& i2);
@@ -43,6 +46,7 @@ class FunctionData
 	bool _isBuiltIn = false;
 	std::vector<Opcode *> Instructions;
 	std::vector<FunctionData *> usedFuncs;
+	std::vector<StaticData*> _usedStatics;
 	bool allowUnsafe = false;
 public:
 	
@@ -63,13 +67,14 @@ public:
 	}
 	uint32_t getHash()const{ return hash; }
 	std::string getName()const{ return name; }
-	void setUsed();
+	void setUsed(Script& scriptBase);
 	bool IsUsed()const{ return used; }
 	friend std::ostream& operator << (std::ostream& stream, const FunctionData& fdata);
 	std::string toString() const;
 	void addSwitchCase(int caseVal, std::string jumpLoc);
 	void setSwitchDefaultCaseLoc(std::string jumpLoc);
 	void addUsedFunc(FunctionData *func);
+	void addUsedStatic(StaticData *staticData);
 	int getSizeEstimate(int incDecl) const;//only to be used when seeing if a function should be inlined
 	const Opcode *getInstruction(size_t index)const{
 		assert(index < Instructions.size() && "Instruction out of range");
@@ -92,7 +97,7 @@ public:
 	void setUnsafe(){ allowUnsafe = true; }
 	bool isUnsafe()const{ return allowUnsafe; }
 	void optimisePushBytes();
-
+	void moveInto(std::vector<Opcode*>& source);
 #pragma region CreateOpcodes
 	void addOpNop(uint16_t nopCount)
 	{
@@ -265,17 +270,22 @@ public:
 		op->setUShort(index, 0);
 		Instructions.push_back(op);
 	}
-	void addOpGetStaticP(uint16_t index)
+	void addOpGetStaticP(StaticData* staticData)
 	{
 		Opcode* op = new Opcode(OK_GetStaticP);
-		op->setUShort(index, 0);
+		op->storage.staticData = staticData;
 		Instructions.push_back(op);
 	}
-	void addOpGetStatic(uint16_t index);
-	void addOpSetStatic(uint16_t index)
+	void addOpGetStatic(StaticData* staticData)
+	{
+		Opcode* op = new Opcode(OK_GetStatic);
+		op->storage.staticData = staticData;
+		Instructions.push_back(op);
+	}
+	void addOpSetStatic(StaticData* staticData)
 	{
 		Opcode* op = new Opcode(OK_SetStatic);
-		op->setUShort(index, 0);
+		op->storage.staticData = staticData;
 		Instructions.push_back(op);
 	}
 	void addOpGetGlobalP(int index)
