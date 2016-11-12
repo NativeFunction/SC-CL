@@ -1137,7 +1137,7 @@ void CompileRDR::WriteHeader()
 	AddInt32toBuff(0); //codeBlocksListOffsetPtr
 	AddInt32toBuff(CodePageData.size());//code length
 	AddInt32toBuff(HLData->getParameterCount());//script ParameterCount (this needs to be implemented)
-	AddInt32toBuff(HLData->getStaticSize());//statics count
+	AddInt32toBuff(HLData->getStaticCount());//statics count
 	AddInt32toBuff(0); //Statics offset
 	AddInt32toBuff(0x349D018A);//GlobalsSignature
 	AddInt32toBuff(NativeHashMap.size());//natives count
@@ -1617,7 +1617,7 @@ void CompileGTAV::WriteHeader()
 	AddInt32toBuff(0x11CD39A2);//unk2
 	AddInt32toBuff(CodePageData.size());//code length
 	AddInt32toBuff(HLData->getParameterCount());//script ParameterCount (this needs to be implemented)
-	AddInt32toBuff(HLData->getStaticSize());//statics count
+	AddInt32toBuff(HLData->getStaticCount());//statics count
 	AddInt32toBuff(0);//GlobalsSize
 	AddInt32toBuff(NativeHashMap.size());//natives count
 	AddInt32toBuff(0); //Statics offset
