@@ -65,7 +65,6 @@ typedef struct NamedIndex
 	uint32_t index;
 	string name;
 } NamedIndex;
-map<string, int> globals;
 map<uint32_t, NamedIndex> statics;///static decl end loc, StaticData
 static int globalInc = 0;
 static uint32_t staticInc = 0;
@@ -568,6 +567,7 @@ public:
 	void printDeclWithKey(string key, bool isAddr, bool isLtoRValue, bool isAssign, const DeclRefExpr* declref) {
 		int index = -1;
 		const Type* type = declref->getType().getTypePtr();
+		const VarDecl *varDecl = dyn_cast<VarDecl>(declref->getDecl());
 		size_t size = getSizeOfType(type);
 		bool isStackCpy = size > 4 && isLtoRValue && !isAddr;//if greater then 4 bytes then a to stack is in order
 
@@ -611,8 +611,8 @@ public:
 
 			}
 		}
-		else if (globals.find(key) != globals.end()) {
-			index = globals[key];
+		else if (varDecl && varDecl->hasAttr<GlobalVariableAttr>()) {
+			index = varDecl->getAttr<GlobalVariableAttr>()->getIndex();
 			if (isLtoRValue && !isAddr)
 			{
 				AddInstructionComment(GetGlobal, "Global_" + key, index);
@@ -5716,18 +5716,18 @@ public:
 				//globalVarDecl->getStorageClass() == SC_Static
 				if (globalVarDecl->hasAttr<GlobalVariableAttr>())
 				{
-					if (globals.find(dumpName(cast<NamedDecl>(D))) == globals.end())
+					if (globalVarDecl->getStorageClass() == SC_None)
 					{
-						globals.insert(make_pair(dumpName(cast<NamedDecl>(D)), globalVarDecl->getAttr<GlobalVariableAttr>()->getIndex()));
+						if (globalVarDecl->hasInit())
+						{
+							Throw("Global variables cannot be initialised", rewriter, D->getSourceRange());
+						}
 					}
 					else
 					{
-						Throw("Global Var " + dumpName(cast<NamedDecl>(D)) + " is already defined", rewriter, D->getSourceRange());
+						Throw("Global variables cannot have a storage class associated with them", rewriter, globalVarDecl->getSourceRange());
 					}
-					if (globalVarDecl->hasInit())
-					{
-						Throw("Global variables cannot be initialised", rewriter, D->getSourceRange());
-					}
+					
 				}
 				else
 				{
@@ -6076,7 +6076,7 @@ int main(int argc, const char **argv) {
 		
 		string outDir = GetDir(op.getSourcePathList()[0]);
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
-		scriptData.reset(new Script(scriptName, BT_GTAV, P_XBOX));
+		scriptData.reset(new Script(scriptName, BT_RDR_XSC, P_XBOX));
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 		if (!ProcessingFailed)
 		{
