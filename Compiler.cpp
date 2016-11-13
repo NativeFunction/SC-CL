@@ -783,7 +783,12 @@ void CompileBase::Write16384CodePages()
 	{
 
 		if (GetSpaceLeft(16384) < 16384)
-			FillPageNops();
+		{
+			if(i)
+				FillPageNops();
+			else
+				FillPageDynamic(16384);
+		}
 
 		SavedOffsets.CodePagePointers[i] = BuildBuffer.size();
 
@@ -1411,6 +1416,38 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 #pragma region GTAV
 
 #pragma region Parse_Functions
+inline int32_t CompileGTAV::GetSizeFromFlag(uint32_t flag, int32_t baseSize)
+{
+	baseSize <<= (int32_t)(flag & 0xf);
+	int size = (int32_t)((((flag >> 17) & 0x7f) + (((flag >> 11) & 0x3f) << 1) + (((flag >> 7) & 0xf) << 2) + (((flag >> 5) & 0x3) << 3) + (((flag >> 4) & 0x1) << 4)) * baseSize);
+	for (int32_t i = 0; i < 4; ++i)
+		size += (((flag >> (24 + i)) & 1) == 1) ? (baseSize >> (1 + i)) : 0;
+	return size;
+}
+inline int32_t CompileGTAV::GetSizeFromSystemFlag(uint32_t flag)
+{
+	if (HLData->getBuildPlatform() == Platform::P_PS3)
+		return GetSizeFromFlag(flag, 0x1000);
+	else // XBOX 360 / PC
+		return GetSizeFromFlag(flag, 0x2000);
+}
+inline int32_t CompileGTAV::GetSizeFromGraphicsFlag(uint32_t flag)
+{
+	if (HLData->getBuildPlatform() == Platform::P_PS3)
+		return GetSizeFromFlag(flag, 0x1580);
+	else // XBOX 360 / PC
+		return GetSizeFromFlag(flag, 0x2000);
+}
+uint32_t CompileGTAV::GetFlagFromSize(int32_t size)
+{
+	for (int i = 0; i < 0x7FFFFFFF; i++)
+	{
+		if (GetSizeFromSystemFlag(i) == size)
+			return i;
+	}
+	assert(false && "GetFlagFromSize: Size Not Found");
+	return 0;
+}
 const uint32_t CompileGTAV::AddStringToStringPage(const string str)
 {
 	//if string is in table
@@ -1748,12 +1785,12 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 	#pragma region Write_File
 	if (AddRsc7Header)
 	{
-		vector<uint32_t> rsc7 =
+		const vector<uint32_t> rsc7 =
 		{
-			Utils::Bitwise::SwapEndian(0x52534337u),
-			Utils::Bitwise::SwapEndian(0x00000009u),
-			Utils::Bitwise::SwapEndian(0u),//GetFlagFromSize(BuildBuffer.size(), 16384 / 2)
-			Utils::Bitwise::SwapEndian(0x90000000u)
+			Utils::Bitwise::SwapEndian(0x52534337u),//magic
+			Utils::Bitwise::SwapEndian((uint32_t)ResourceType::ScriptContainer),//resourceType
+			Utils::Bitwise::SwapEndian(GetFlagFromSize(BuildBuffer.size())),//systemFlag
+			Utils::Bitwise::SwapEndian(0x90000000u)//graphicsFlag
 		};
 
 		fwrite(rsc7.data(), 1, 16, file);

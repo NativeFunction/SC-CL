@@ -277,6 +277,7 @@ protected:
 	#pragma endregion
 
 	#pragma region Parse_Data_Vars
+	uint32_t ReadBufferSize = 0;
 	const OpCodes* BaseOpcodes;//dynamic opcode list
 	const Script* HLData;//data to parse(High Level Data)
 	uint32_t FunctionCount = 0;
@@ -301,6 +302,8 @@ protected:
 	{
 		BaseOpcodes = &Op;
 		HLData = &data;
+		//												XBOX									PS3		PC
+		ReadBufferSize = !HLData->getBuildPlatform() ? 16384 : HLData->getBuildPlatform() == 1 ? 8192 : 16384;//TODO: Find pc read buffer
 		FunctionCount = Function_Count;
 		InstructionCount = Instruction_Count;
 	}
@@ -695,6 +698,21 @@ public:
 private:
 	const OpCodes GTAVOpcodes = { VO_Nop, VO_Add, VO_Sub, VO_Mult, VO_Div, VO_Mod, VO_Not, VO_Neg, VO_CmpEq, VO_CmpNe, VO_CmpGt, VO_CmpGe, VO_CmpLt, VO_CmpLe, VO_fAdd, VO_fSub, VO_fMult, VO_fDiv, VO_fMod, VO_fNeg, VO_fCmpEq, VO_fCmpNe, VO_fCmpGt, VO_fCmpGe, VO_fCmpLt, VO_fCmpLe, VO_vAdd, VO_vSub, VO_vMult, VO_vDiv, VO_vNeg, VO_And, VO_Or, VO_Xor, VO_ItoF, VO_FtoI, VO_FtoV, VO_PushB, VO_PushB2, VO_PushB3, VO_Push, VO_PushF, VO_Dup, VO_Drop, VO_CallNative, VO_Function, VO_Return, VO_pGet, VO_pSet, VO_pPeekSet, VO_ToStack, VO_FromStack, VO_GetArrayP1, VO_GetArray1, VO_SetArray1, VO_GetFrameP1, VO_GetFrame1, VO_SetFrame1, VO_GetStaticP1, VO_GetStatic1, VO_SetStatic1, VO_Add1, VO_Mult1, VO_GetImm1, VO_SetImm1, VO_PushS, VO_Add2, VO_Mult2, VO_GetImm2, VO_SetImm2, VO_GetArrayP2, VO_GetArray2, VO_SetArray2, VO_GetFrameP2, VO_GetFrame2, VO_SetFrame2, VO_GetStaticP2, VO_GetStatic2, VO_SetStatic2, VO_GetGlobalP2, VO_GetGlobal2, VO_SetGlobal2, VO_Jump, VO_JumpFalse, VO_JumpNE, VO_JumpEQ, VO_JumpLE, VO_JumpLT, VO_JumpGE, VO_JumpGT, VO_Call, VO_GetGlobalp3, VO_GetGlobal3, VO_SetGlobal3, VO_PushI24, VO_Switch, VO_PushString, VO_StrCopy, VO_ItoS, VO_StrAdd, VO_StrAddi, VO_Memcopy, VO_Catch, VO_Throw, VO_pCall, VO_Push_Neg1, VO_Push_0, VO_Push_1, VO_Push_2, VO_Push_3, VO_Push_4, VO_Push_5, VO_Push_6, VO_Push_7, VO_PushF_Neg1, VO_PushF_0, VO_PushF_1, VO_PushF_2, VO_PushF_3, VO_PushF_4, VO_PushF_5, VO_PushF_6, VO_PushF_7, VO_GetImmP, VO_GetImmP1, VO_GetImmP2, VO_GetHash };
 
+	#pragma region Type_Defines
+	enum class ResourceType : uint8_t
+	{
+		XenonTextDict = 7,
+		WinTextDict = 8,
+		ScriptContainer = 9,
+		Particles_0 = 27,
+		Bounds = 32,
+		Particles_1 = 36,
+		XenonModel = 109,
+		WinModel = 110,
+		WinModelFlag = 112
+	};
+	#pragma endregion
+
 	#pragma region Parsed_Data_Vars
 	std::vector<uint8_t> StringPageData;
 	std::unordered_map<std::string, uint32_t> StringPageDataIndexing;
@@ -702,7 +720,10 @@ private:
 	#pragma endregion
 
 	#pragma region Parse_Functions
-	
+	int32_t GetSizeFromFlag(uint32_t flag, int32_t baseSize);
+	int32_t GetSizeFromSystemFlag(uint32_t flag);
+	int32_t GetSizeFromGraphicsFlag(uint32_t flag);
+	uint32_t GetFlagFromSize(int32_t size);
 	const uint32_t AddStringToStringPage(const std::string str);
 	void fixFunctionCalls() override;
 	void fixFunctionJumps() override;
