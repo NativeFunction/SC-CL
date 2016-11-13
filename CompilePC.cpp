@@ -317,7 +317,7 @@ void CompileGTAPC::CallNative(const uint64_t hash, const uint8_t paramCount, con
 			Throw("Native Call Index out of bounds");
 
 		AddInt8((DATA->getNative()->getParamCount() << 2) | (DATA->getNative()->getReturnCount() & 0x3));
-		AddInt16(index);
+		AddInt16(Utils::Bitwise::SwapEndian((uint16_t)index));
 	}
 	else
 	{
@@ -329,7 +329,7 @@ void CompileGTAPC::CallNative(const uint64_t hash, const uint8_t paramCount, con
 			Utils::System::Throw("Native Call Index out of bounds");
 
 		AddInt8((paramCount << 2) | (returnCount & 0x3));
-		AddInt16(index);
+		AddInt16(Utils::Bitwise::SwapEndian((uint16_t)index));
 	}
 }
 

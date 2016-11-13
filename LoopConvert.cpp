@@ -5507,6 +5507,7 @@ public:
 					const StringLiteral *literal = cast<const StringLiteral>(icast->getSubExpr());
 					scriptData.getCurrentStatic()->addOpPushString(literal->getString().str());
 					scriptData.getCurrentStatic()->addOpSetThisStatic(scriptData);
+					scriptData.getCurrentStatic()->setDynamic();
 					scriptData.addStaticInit();//prevents errors with old methods
 				}
 				else if (isa<DeclRefExpr>(icast->getSubExpr()))//int vstack[10] = {1,2,3,4,5,6,7,8,9,10}, *vstack_ptr = vstack;
@@ -5754,6 +5755,69 @@ public:
 
 			}
 
+		}
+		else if (isa<MemberExpr>(e))
+		{
+			if (!isAddr)
+			{
+				Throw("Can only get address of members for static defines", rewriter, e->getExprLoc());
+			}
+			auto cur = scriptData.getCurrentStatic();
+			doesCurrentValueNeedSet = true;
+			const MemberExpr *E = cast<const MemberExpr>(e);
+			Expr *BaseExpr = E->getBase();
+
+
+			if (E->isArrow()) {
+				ParseLiteral(BaseExpr, false, true);
+			}
+			else
+				ParseLiteral(BaseExpr, true);
+
+
+			int offset = 0;
+			NamedDecl *ND = E->getMemberDecl();
+
+
+
+			if (auto *Field = dyn_cast<FieldDecl>(ND)) {
+				const RecordDecl *record = Field->getParent();
+				if (record->isUnion())
+					offset = 0;
+				else {
+					for (const auto *CS : record->fields()) {
+						if (CS == Field)
+							break;
+
+						const  QualType type = CS->getType();
+						int temp = getSizeOfQualType(&type);
+						offset += max(temp, stackWidth);
+					}
+				}
+			}
+			cur->addOpGetImmP(getSizeFromBytes(offset));
+			cur->setDynamic();
+			return 1;
+		}
+		else if (isa<DeclRefExpr>(e))
+		{
+			auto declRef = cast<DeclRefExpr>(e);
+			if (isAddr)
+			{
+				if (auto varDecl = dyn_cast_or_null<VarDecl>(declRef->getFoundDecl()))
+				{
+					scriptData.getCurrentStatic()->addOpGetStaticP(scriptData.findStatic(varDecl->getLocEnd().getRawEncoding()));
+					scriptData.getCurrentStatic()->setDynamic();
+					return 1;
+				}else
+				{
+					Throw("DeclRefExpr error", rewriter, e->getSourceRange());
+				}
+			}
+			else
+			{
+				Throw("DeclRefExpr error", rewriter, e->getSourceRange());
+			}
 		}
 		else
 			Throw("Class " + string(e->getStmtClassName()) + " is unimplemented for a static define");
