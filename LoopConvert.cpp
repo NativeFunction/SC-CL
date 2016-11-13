@@ -2513,7 +2513,7 @@ public:
 	/// <returns></returns>
 	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, bool isAssign = false, bool isArrToPtrDecay = false) {
 		Expr::EvalResult result;
-		if (e->EvaluateAsRValue(result, *context) && !result.HasSideEffects)
+		if (!isAddr && e->EvaluateAsRValue(result, *context) && !result.HasSideEffects)
 		{
 			if (result.Val.isInt())
 			{
