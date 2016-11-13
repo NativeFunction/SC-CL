@@ -68,8 +68,6 @@ public:
 		return scriptParams ? scriptParams->getSize() : 0;
 	}
 
-	bool addUsedFuncToCurrent(std::string name);
-	bool addUsedFuncToEntry(std::string name);
 	void finaliseEntryFunction();
 
 	bool isFunctionInInlineStack(std::string name) const;

@@ -358,6 +358,7 @@ class Opcode
 		StringStorage *string;
 		JumpTableStorage *jTable;
 		StaticData* staticData;
+		FunctionData* functionData;
 	}storage = { 0,0,0,0 };
 public:
 
@@ -394,8 +395,7 @@ public:
 	}
 	std::string getString() const
 	{
-		assert((getKind() == OK_Call ||
-			getKind() == OK_PushString ||
+		assert((getKind() == OK_PushString ||
 			getKind() == OK_Jump ||
 			getKind() == OK_JumpFalse ||
 			getKind() == OK_JumpEQ ||
@@ -455,6 +455,11 @@ public:
 	{
 		assert((getKind() == OK_GetStaticP || getKind() == OK_GetStatic || getKind() == OK_SetStatic) && "getStaticData not called on static opcode");
 		return storage.staticData;
+	}
+	const FunctionData* getFunctionData()const
+	{
+		assert((getKind() == OK_FuncLoc || getKind() == OK_Call) && "getFunctionData not called on function location opcode");
+		return storage.functionData;
 	}
 
 	friend std::ostream& operator << (std::ostream& stream, const Opcode& opcode) {

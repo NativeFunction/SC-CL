@@ -71,38 +71,6 @@ const FunctionData * Script::getFunctionFromName(const string& name) const
 	return NULL;
 }
 
-bool Script::addUsedFuncToCurrent(string name)
-{
-	assert(getCurrentFunction() && "Current func undefined");
-	uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
-	for (int i = 0, max = getFunctionCount(); i<max; i++)
-	{
-		FunctionData *func = functions[i].get();
-		if (hash == func->getHash() && name == func->getName())
-		{
-			getCurrentFunction()->addUsedFunc(func);
-			return true;
-		}
-	}
-	return false;
-}
-
-bool Script::addUsedFuncToEntry(string name)
-{
-	uint32_t hash = Utils::Hashing::JoaatCased(name.c_str());
-	for (int i = 0, max = getFunctionCount(); i<max; i++)
-	{
-		FunctionData *func = functions[i].get();
-		if (hash == func->getHash() && name == func->getName())
-		{
-			entryFunction->addUsedFunc(func);
-			return true;
-		}
-	}
-	assert(false && "Function doesnt exist");
-	return false;
-}
-
 void Script::finaliseEntryFunction()
 {
 	if (mainFunction)
@@ -135,7 +103,7 @@ void Script::finaliseEntryFunction()
 		{
 			entryFunction->setUsed(*this);
 		}
-		entryFunction->addOpCall("!main");
+		entryFunction->addOpCall(mainFunction);
 		for (int i = 0; i < mainFunction->getReturnCount(); i++)
 		{
 			entryFunction->addOpDrop();

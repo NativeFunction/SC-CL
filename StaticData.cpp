@@ -57,7 +57,7 @@ void StaticData::addOpFuncLoc(FunctionData * functionData)
 {
 	addReferencedFunction(functionData);
 	Opcode *op = new Opcode(OK_FuncLoc);
-	op->setString(functionData->getName().substr(1));
+	op->storage.functionData = functionData;
 	_dynamicInitialisation.push_back(op);
 }
 

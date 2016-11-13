@@ -309,10 +309,11 @@ public:
 	void addOpGetImm(uint16_t index);
 	void addOpSetImm(uint16_t index);
 
-	void addOpCall(std::string fName)
+	void addOpCall(FunctionData* callee)
 	{
+		addUsedFunc(callee);
 		Opcode* op = new Opcode(OK_Call);
-		op->setString(fName);
+		op->storage.functionData = callee;
 		Instructions.push_back(op);
 	}
 #pragma region Jumps
@@ -426,10 +427,11 @@ public:
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpFuncLoc(std::string funcName)
+	void addOpFuncLoc(FunctionData* function)
 	{
+		addUsedFunc(function);
 		Opcode* op = new Opcode(OK_FuncLoc);
-		op->setString(funcName);
+		op->storage.functionData = function;
 		Instructions.push_back(op);
 	}
 	void addOpLabelLoc(unsigned int rawEncoding){ addOpLabelLoc(std::to_string(rawEncoding)); }

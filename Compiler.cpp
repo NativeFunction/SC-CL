@@ -159,7 +159,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_PCall:		pCall(); return;//gta4 needs to override as error
 		case OK_Label:		AddLabel(DATA->getString()); return;
 		case OK_LabelLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); return;
-		case OK_FuncLoc:	AddFuncLoc(DATA->getString()); return;
+		case OK_FuncLoc:	AddFuncLoc(DATA->getFunctionData()->getName()); return;
 		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); return;
 		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); return;
 		case OK_GetHash:	GetHash(); return;//gta5 needs to override
@@ -174,7 +174,7 @@ void CompileBase::BuildTables()
 	{
 		if (HLData->getFunctionFromIndex(FunctionCount)->IsUsed())
 		{
-			AddFunction(HLData->getFunctionFromIndex(FunctionCount)->getName().substr(1), HLData->getFunctionFromIndex(FunctionCount)->getParamCount(), HLData->getFunctionFromIndex(FunctionCount)->getStackSize());
+			AddFunction(HLData->getFunctionFromIndex(FunctionCount)->getName(), HLData->getFunctionFromIndex(FunctionCount)->getParamCount(), HLData->getFunctionFromIndex(FunctionCount)->getStackSize());
 			for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
 			{
 				ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
@@ -1027,11 +1027,12 @@ void CompileRDR::Return()
 void CompileRDR::Call()
 {
 	// rdr: 2 byte loc (loc or'ed)
-	auto it = FuncLocations.find(DATA->getString());
+	string name = DATA->getFunctionData()->getName();
+	auto it = FuncLocations.find(name);
 	if (it == FuncLocations.end())
 	{
 		DoesOpcodeHaveRoom(4);//4 because pcall can be separate
-		CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getString() });
+		CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, name });
 		AddInt24(0);//call, int16 loc / pushi24, int16 loc part
 		AddInt16(0);//int16 loc part 2, pcall
 	}
@@ -1553,7 +1554,7 @@ void CompileGTAV::Call()
 	// gta5: 3 byte loc
 	DoesOpcodeHaveRoom(4);
 	AddOpcode(Call);
-	CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getString() });
+	CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getFunctionData()->getName() });
 	AddInt24(0);
 }
 void CompileGTAV::PushString()

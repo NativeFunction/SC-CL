@@ -687,12 +687,12 @@ public:
 			{
 				if (auto funcDecl = dyn_cast_or_null<FunctionDecl>(declref->getDecl()))
 				{
-					string name = getNameForFunc(funcDecl);
-					if (!scriptData.addUsedFuncToCurrent(name))
+					if (auto func = scriptData.getFunctionFromName(getNameForFunc(funcDecl)))
 					{
-						Throw("Function pointer \"" + key + "\" not found");
+						AddInstructionComment(FuncLoc, "DeclRefExpr, nothing else, so func it", func);
 					}
-					AddInstructionComment(FuncLoc, "DeclRefExpr, nothing else, so func it", name.substr(1));
+					else
+						Throw("Function pointer \"" + key + "\" not found");
 				}
 			}
 		}
@@ -2653,7 +2653,7 @@ public:
 					else {
 
 						parseExpression(expr->getBase(), true);
-						AddInstructionComment(Call, "(memExpr) NumArgs: " + to_string(call->getNumArgs() + 1), getNameForFunc(method).substr(1));
+						AddInstructionComment(Call, "(memExpr) NumArgs: " + to_string(call->getNumArgs() + 1), scriptData.getFunctionFromName(getNameForFunc(method)));
 					}
 				}
 				else {
@@ -2800,9 +2800,13 @@ public:
 					if (!inlined)
 					{
 						string name = getNameForFunc(call->getDirectCallee());
-						if (!scriptData.addUsedFuncToCurrent(name))
+						if (auto func = scriptData.getFunctionFromName(name))
+						{
+							AddInstructionComment(Call, "NumArgs: " + to_string(call->getNumArgs()), func);
+						}
+						else
 							Throw("Function \"" + name.substr(1) + "\" not found", rewriter, call->getExprLoc());
-						AddInstructionComment(Call, "NumArgs: " + to_string(call->getNumArgs()), name.substr(1));
+						
 					}
 
 				}
@@ -3662,17 +3666,17 @@ public:
 				//out << "call "
 				if (expr->getType()->isArrayType()) {
 					AddInstruction(Dup);
-					AddInstruction(Call, expr->getType()->getAsArrayTypeUnsafe()->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl()->getNameAsString() + "::VTableInit");
+					AddInstruction(Call, scriptData.getFunctionFromName(expr->getType()->getAsArrayTypeUnsafe()->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl()->getNameAsString() + "::VTableInit"));
 				}
 				else {
 					AddInstruction(Dup);
-					AddInstruction(Call, expr->getBestDynamicClassType()->getNameAsString().substr(1) + "::VTableInit");
+					AddInstruction(Call, scriptData.getFunctionFromName(expr->getBestDynamicClassType()->getNameAsString().substr(1) + "::VTableInit"));
 				}
 				//  out << " //End_VtableInit\n" << endl;
 			}
 			if (expr->getConstructor()->hasBody())
 			{
-				AddInstructionComment(Call, "ctor", getNameForFunc(expr->getConstructor()).substr(1));
+				AddInstructionComment(Call, "ctor", scriptData.getFunctionFromName(getNameForFunc(expr->getConstructor()).substr(1)));
 			}
 		}
 		else if (isa<BinaryOperator>(e)) {

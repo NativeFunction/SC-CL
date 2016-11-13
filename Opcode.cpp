@@ -1,5 +1,6 @@
 #include "Opcode.h"
 #include "StaticData.h"
+#include "FunctionData.h"
 
 using namespace std;
 
@@ -13,7 +14,6 @@ Opcode::~Opcode()
 #endif
 	switch (opcodeKind)
 	{
-		case OK_Call:
 		case OK_PushString:
 		case OK_Jump:
 		case OK_JumpFalse:
@@ -25,7 +25,6 @@ Opcode::~Opcode()
 		case OK_JumpLE:
 		case OK_Label:
 		case OK_LabelLoc:
-		case OK_FuncLoc:
 			delete storage.string;
 			break;
 		case OK_Native:
@@ -571,7 +570,7 @@ string Opcode::toString() const
 			}
 			break;
 		}
-		case OK_Call:current = "Call @" + getString(); break;
+		case OK_Call:current = "Call " + getFunctionData()->getName(); break;
 		case OK_Jump: current = "Jump @" + getString(); break;
 		case OK_JumpFalse: PrintJump(False); break;
 		case OK_JumpEQ: PrintJump(EQ); break;
@@ -616,7 +615,7 @@ string Opcode::toString() const
 		case OK_PCall: current = "PCall"; break;
 		case OK_Label: current = "\r\n:" + getString(); break; //make labels have a line break
 		case OK_LabelLoc: current = "Push GetLoc(\"" + getString() + "\")"; break;
-		case OK_FuncLoc: current = "Push GetFuncLoc(\"" + getString() + "\")"; break;
+		case OK_FuncLoc: current = "Push GetFuncLoc(\"" + getFunctionData()->getName().substr(1) + "\")"; break;
 		case OK_JumpTable:{
 			current = "PushLabelLocArray {\r\n";
 			if (storage.jTable->getItemCount() == 0)
@@ -650,7 +649,6 @@ void Opcode::makeNull()
 {
 	switch (opcodeKind)
 	{
-		case OK_Call:
 		case OK_PushString:
 		case OK_Jump:
 		case OK_JumpFalse:
@@ -662,7 +660,6 @@ void Opcode::makeNull()
 		case OK_JumpLE:
 		case OK_Label:
 		case OK_LabelLoc:
-		case OK_FuncLoc:
 			delete storage.string;
 			break;
 		case OK_Native:
@@ -677,5 +674,6 @@ void Opcode::makeNull()
 		default:
 			break;
 	}
+	storage.i32 = 0;
 	opcodeKind = OK_Null;
 }
