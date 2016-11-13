@@ -1284,35 +1284,63 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 	#pragma region Write_File
 	if (CompressAndEncrypt)
 	{
-
 		// compressing and encrypting
+		uint8_t* CompressedData = nullptr;
+		uint32_t CompressedLen = 0;
 
-		Utils::Compression::xCompress Compression;
-		Compression.xCompressInit();
-
-		vector<uint8_t> Compressed(BuildBuffer.size() + 8);
-		uint8_t* CompressedData = Compressed.data();
-		int32_t CompressedLen = 0;
-
-		Compression.Compress((uint8_t*)BuildBuffer.data(), BuildBuffer.size(), CompressedData + 8, &CompressedLen);
-
-		if (CompressedLen > 0)
+		switch (HLData->getBuildPlatform())
 		{
-			*(uint32_t*)CompressedData = SwapEndian(0x0FF512F1);//LZX Signature?
-			*(uint32_t*)(CompressedData + 4) = SwapEndian(CompressedLen);
-			CompressedLen += 8;
+			case Platform::P_XBOX:
+			{
+				Utils::Compression::xCompress Compression;
+				Compression.xCompressInit();
+
+				vector<uint8_t> Compressed(BuildBuffer.size() + 8);
+				CompressedData = Compressed.data();
+				CompressedLen = 0;
+
+				Compression.Compress((uint8_t*)BuildBuffer.data(), BuildBuffer.size(), CompressedData + 8, (int32_t*)&CompressedLen);
+
+				if (CompressedLen > 0)
+				{
+					*(uint32_t*)CompressedData = SwapEndian(0x0FF512F1);//LZX Signature?
+					*(uint32_t*)(CompressedData + 4) = SwapEndian(CompressedLen);
+					CompressedLen += 8;
+				}
+				else Throw("Compression Failed");
+			}
+			break;
+			case Platform::P_PS3:
+			{
+				CompressedLen = BuildBuffer.size();
+				vector<uint8_t> Compressed(BuildBuffer.size());
+				CompressedData = Compressed.data();
+
+				Utils::Compression::ZLIB_Compress(BuildBuffer.data(), BuildBuffer.size(), CompressedData, CompressedLen);
+				//fix length of compressed data
+
+
+				if (CompressedLen == 0)
+					Throw("CSC Compressed Size Invalid");
+			}
+			break;
+			case Platform::P_PC:
+			default:
+			Throw("Invalid Build Platform for compression");
 		}
-		else Throw("Compression Failed");
+
+
 
 		if (!Utils::Crypt::AES_Encrypt(CompressedData, CompressedLen))
 			Throw("Encryption Failed");
 
-
-		vector<uint32_t> CSR_Header(4);
-		CSR_Header[0] = SwapEndian(0x85435352);//.CSR
-		CSR_Header[1] = SwapEndian(0x00000002);//Resource Type Script
-		CSR_Header[2] = SwapEndian(0x80000000);//unk int max val (flags1)
-		CSR_Header[3] = SwapEndian(GetFullFlagWithSize(BuildBuffer.size(), headerFlag));//size (flags2)
+		const vector<uint32_t> CSR_Header =
+		{
+			SwapEndian(0x85435352u),//.CSR
+			SwapEndian(0x00000002u),//Resource Type Script
+			SwapEndian(0x80000000u),//unk int max val (flags1)
+			SwapEndian(GetFullFlagWithSize(BuildBuffer.size(), headerFlag))//size (flags2)
+		};
 
 		FILE* file = fopen(path, "wb");
 		if (file != NULL)
