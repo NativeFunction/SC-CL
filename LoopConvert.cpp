@@ -685,14 +685,15 @@ public:
 		{
 			if (isAddr || isLtoRValue)
 			{
-				string name = "@" + key;
-				if (!scriptData.addUsedFuncToCurrent(name))
+				if (auto funcDecl = dyn_cast_or_null<FunctionDecl>(declref->getDecl()))
 				{
-					Throw("Function pointer \"" + key + "\" not found");
+					string name = getNameForFunc(funcDecl);
+					if (!scriptData.addUsedFuncToCurrent(name))
+					{
+						Throw("Function pointer \"" + key + "\" not found");
+					}
+					AddInstructionComment(FuncLoc, "DeclRefExpr, nothing else, so func it", name.substr(1));
 				}
-
-				AddInstructionComment(FuncLoc, "DeclRefExpr, nothing else, so func it", key);
-
 			}
 		}
 		AddInstructionConditionally(isStackCpy, ToStack);
@@ -5263,7 +5264,25 @@ class GlobalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
 public:
 	GlobalsVisitor(Rewriter &R, ASTContext *context, Script& scriptData) : TheRewriter(R), context(context), scriptData(scriptData) {}
 
+	string getNameForFunc(const FunctionDecl *decl) {
 
+		string FileId = "!";
+		if (decl->getStorageClass() == SC_Static)
+		{
+			assert(CurrentFileId && "File id 0 reserved for extern");
+			FileId = Utils::DataConversion::Uint8ToBase223(CurrentFileId);
+			assert(*FileId.data() && "File link count over 222");
+		}
+
+		if (isa<CXXMethodDecl>(decl)) {
+			const CXXMethodDecl *methodDecl = cast<const CXXMethodDecl>(decl);
+			const CXXRecordDecl *record = methodDecl->getParent();
+			return "@" + FileId + record->getNameAsString() + "::" + methodDecl->getNameAsString();
+		}
+		else {
+			return "@" + FileId + decl->getNameAsString();
+		}
+	}
 	int32_t ParseLiteral(const Expr *e, bool isAddr = false, bool isLtoRValue = false)
 	{
 		Expr::EvalResult result;
@@ -5520,13 +5539,14 @@ public:
 					const DeclRefExpr *declRef = cast<const DeclRefExpr>(icast->getSubExpr());
 					if (isa<FunctionDecl>(declRef->getDecl())) {
 						const FunctionDecl *decl = cast<const FunctionDecl>(declRef->getDecl());
-
-						if (!scriptData.getFunctionFromName(decl->getNameAsString()))
+						
+						auto function = scriptData.getFunctionFromName(getNameForFunc(decl));
+						if (!function)
 							Throw("Static function pointer \"" + decl->getNameAsString() + "\" not found");
 
 						scriptData.addStaticInit();
 						//New Handling
-						scriptData.getCurrentStatic()->addOpFuncLoc(scriptData.getFunctionFromName(decl->getNameAsString()));
+						scriptData.getCurrentStatic()->addOpFuncLoc(function);
 						scriptData.getCurrentStatic()->addOpSetThisStatic(scriptData);
 						scriptData.getCurrentStatic()->setDynamic();
 

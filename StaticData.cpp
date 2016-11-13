@@ -42,6 +42,7 @@ void StaticData::addOpSetThisStatic(Script & scriptBase)
 		_dynamicInitialisation.push_back(op);
 		op = new Opcode(OK_SetImm);
 		op->setUShort(_initialisation.size() / scriptBase.getStackWidth(), 0);
+		_dynamicInitialisation.push_back(op);
 	}
 	else
 	{
