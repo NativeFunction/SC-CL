@@ -12,10 +12,11 @@
 #include "ConstExpr.h"
 #include "Script.h"
 #include "Compiler.h"
+#include "CompilePC.h"
 
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h)
-#define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4)
+#define MultValue(pTypePtr) (pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth)
 #define STATIC_PADDING_DEBUG 0
 #define AddInstruction(opName, ...) scriptData.getCurrentFunction()->addOp##opName(__VA_ARGS__)
 #ifdef _DEBUG
@@ -68,6 +69,8 @@ typedef struct NamedIndex
 map<uint32_t, NamedIndex> statics;///static decl end loc, StaticData
 static int globalInc = 0;
 static uint32_t staticInc = 0;
+
+uint8_t stackWidth = 4;
 
 struct local_scope
 {
@@ -158,16 +161,16 @@ uint64_t getSizeOfQualType(const QualType *type) {
 	}
 
 	const Type *canonical = type->getCanonicalType().getTypePtr();
-	if (canonical->getBaseElementTypeUnsafe()->isCharType() && mult >= 4) {
-		return 1 * mult + ((mult % 4 != 0) ? 1 : 0);
+	if (canonical->getBaseElementTypeUnsafe()->isCharType() && mult >= stackWidth) {
+		return 1 * mult + ((mult % stackWidth != 0) ? 1 : 0);
 	}
 	else if (canonical->isArrayType())
-		return getSizeOfType(canonical->getArrayElementTypeNoTypeQual())*mult + (mult > 1 ? 4 : 0);
+		return getSizeOfType(canonical->getArrayElementTypeNoTypeQual())*mult + (mult > 1 ? stackWidth : 0);
 	else
-		return getSizeOfType(canonical)*mult + (mult > 1 ? 4 : 0);
+		return getSizeOfType(canonical)*mult + (mult > 1 ? stackWidth : 0);
 }
 uint32_t getSizeFromBytes(uint64_t bytes) {
-	uint32_t size = (bytes / 4) + ((bytes % 4) ? 1 : 0);
+	uint32_t size = (bytes / stackWidth) + ((bytes % stackWidth) ? 1 : 0);
 	return size;
 }
 uint32_t getLiteralSizeOfType(const Type* type) {
@@ -218,13 +221,13 @@ uint32_t getLiteralSizeOfType(const Type* type) {
 
 	}
 	else if (type->isAnyComplexType())
-		return 8;
+		return 2 * stackWidth;
 	else if (type->isCharType())
 		return 1;
 	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 		return 2;
 	else if (type->isIntegerType() || type->isBooleanType() || type->isRealFloatingType() || type->isPointerType())
-		return 4;
+		return stackWidth;
 	else if (type->isVoidType())
 		return 0;
 
@@ -234,7 +237,7 @@ uint32_t getSizeOfType(const Type* type) {
 
 	if (isa<ConstantArrayType>(type)) {
 		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
-		return ((getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue()) + 4 - 1) & ~3;
+		return ((getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue()) + stackWidth - 1) & ~(stackWidth-1);
 	}
 	//else if (type->isRecordType() && type->getAsCXXRecordDecl()) {
 	//	CXXRecordDecl *recordDecl = type->getAsCXXRecordDecl();
@@ -253,7 +256,7 @@ uint32_t getSizeOfType(const Type* type) {
 				}
 				const Type* type = CS->getType().getTypePtr();
 
-				size += (getSizeOfType(type) + 4 - 1) & ~3;
+				size += (getSizeOfType(type) + stackWidth - 1) & ~(stackWidth-1);
 			}
 			//cout << "struct: " << size << " : " << to_string(getSizeFromBytes((uint64_t)size)) << '\n';
 
@@ -271,7 +274,7 @@ uint32_t getSizeOfType(const Type* type) {
 			for (const auto *CS : rd->fields()) {
 				const Type* type = CS->getType().getTypePtr();
 
-				uint32_t sz = (getSizeOfType(type) + 4 - 1) & ~3;
+				uint32_t sz = (getSizeOfType(type) + stackWidth - 1) & ~(stackWidth-1);
 				if (sz > size)
 					size = sz;
 			}
@@ -286,11 +289,11 @@ uint32_t getSizeOfType(const Type* type) {
 	else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 		return 2;
 	else if (type->isIntegerType() || type->isBooleanType() || type->isRealFloatingType() || type->isPointerType())
-		return 4;
+		return stackWidth;
 	else if (type->isVoidType())
 		return 0;
 	else if (type->isAnyComplexType())
-		return 8;
+		return 2 * stackWidth;
 
 	return 0;
 }
@@ -354,11 +357,11 @@ uint32_t getSizeOfCXXDecl(const CXXRecordDecl *classDecl, bool incVTableDef = fa
 		for (CXXMethodDecl *VFI : classDecl->methods()) {
 			if (VFI->isVirtualAsWritten() && VFI->isFirstDecl()) {
 				if (!printedVTP) {
-					offset += 4;
+					offset += stackWidth;
 					printedVTP = true;
 				}
 				if (incVTableDef)
-					offset += 4;
+					offset += stackWidth;
 				else
 					break;
 			}
@@ -376,7 +379,7 @@ uint32_t getSizeOfCXXDecl(const CXXRecordDecl *classDecl, bool incVTableDef = fa
 
 			const  QualType type = CS->getType();
 			int temp = getSizeOfQualType(&type);
-			temp = max(temp, 4);
+			temp = max(temp, stackWidth);
 
 			if (temp > (int)offset)
 				offset = temp;
@@ -393,7 +396,7 @@ uint32_t getSizeOfCXXDecl(const CXXRecordDecl *classDecl, bool incVTableDef = fa
 
 			const  QualType type = CS->getType();
 			int temp = getSizeOfQualType(&type);
-			offset += max(temp, 4);
+			offset += max(temp, stackWidth);
 		}
 	}
 
@@ -569,7 +572,7 @@ public:
 		const Type* type = declref->getType().getTypePtr();
 		const VarDecl *varDecl = dyn_cast<VarDecl>(declref->getDecl());
 		size_t size = getSizeOfType(type);
-		bool isStackCpy = size > 4 && isLtoRValue && !isAddr;//if greater then 4 bytes then a to stack is in order
+		bool isStackCpy = size > stackWidth && isLtoRValue && !isAddr;//if greater then 4 bytes then a to stack is in order
 
 		if (isStackCpy) {
 			AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
@@ -594,7 +597,7 @@ public:
 			{
 				//this for single var setting (and or) for data preservation is not needed
 				
-				if (size > 4)//fromStack
+				if (size > stackWidth)//fromStack
 				{
 					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
 					AddInstructionComment(GetFrameP, "(pdecl)&" + key, index);
@@ -629,7 +632,7 @@ public:
 			{
 				//this for single var setting (and or) for data preservation is not needed
 				
-				if (size > 4)//fromStack
+				if (size > stackWidth)//fromStack
 				{
 					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
 					AddInstructionComment(GetGlobalP, "&Global_" + key, index);
@@ -665,7 +668,7 @@ public:
 				//this for single var setting (and or) for data preservation is not needed
 				
 
-				if (size > 4)//fromStack
+				if (size > stackWidth)//fromStack
 				{
 					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
 					AddInstructionComment(GetStaticP, "&" + key, sData);
@@ -788,7 +791,7 @@ public:
 
 						parseExpression(initializer, false, true);
 						
-						if (size > 4) {
+						if (size > stackWidth) {
 							AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
 							AddInstructionComment(GetFrameP, "&" + var->getNameAsString(), curIndex);
 							AddInstruction(FromStack);
@@ -1303,9 +1306,9 @@ public:
 				{
 					llvm::APSInt apCount;
 					int iCount;
-					if (argArray[2]->EvaluateAsInt(apCount, *context) && (iCount = apCount.getSExtValue(), iCount > 0) && iCount & ~3)
+					if (argArray[2]->EvaluateAsInt(apCount, *context) && (iCount = apCount.getSExtValue(), iCount > 0) && iCount & ~(stackWidth-1))
 					{
-						int itemCount = iCount / 4;
+						int itemCount = iCount / stackWidth;
 						if (itemCount == 1)
 						{
 							parseExpression(argArray[1], true, true);
@@ -2597,20 +2600,9 @@ public:
 				}
 				else
 				{
-					int size = getSizeOfType(e->getType().getTypePtr());
-					int litSize = str.size();
-					const char *ptr = str.c_str();
-					for (int i = 0; i < size; i += 4)
-					{
-						uint32_t res = 0;
-						for (int j = 0; j < 4; j++)
-						{
-							if (i + j < litSize) {
-								res |= ptr[i + j] << ((3 - j) << 3);
-							}
-						}
-						AddInstruction(PushInt, (int32_t)res);
-					}
+					AddInstruction(PushInt, getSizeFromBytes(getSizeOfType(e->getType().getTypePtr())));
+					AddInstructionComment(PushString, "string array", str);
+					AddInstruction(ToStack);
 				}
 			}
 
@@ -2878,7 +2870,7 @@ public:
 						CXXRecordDecl *base = declRef->getType()->getAsCXXRecordDecl();
 						int offset = getSizeOfCXXDecl(base, false, false, icast->getType()->getAsCXXRecordDecl());
 						if (offset != 0) {
-							AddInstructionComment(PushInt, "Base+" + to_string(offset), offset / 4);
+							AddInstructionComment(PushInt, "Base+" + to_string(offset), offset / stackWidth);
 							parseExpression(declRef, true);
 							AddInstructionComment(GetArrayP, "Cast : " + base->getDeclName().getAsString() + " to " + icast->getType()->getAsCXXRecordDecl()->getDeclName().getAsString(), 1);
 						}
@@ -2894,7 +2886,7 @@ public:
 						CXXRecordDecl *base = pointer->getPointeeType()->getAsCXXRecordDecl();
 						int offset = getSizeOfCXXDecl(base, false, false, castPointer->getPointeeCXXRecordDecl());
 						if (offset != 0) {
-							AddInstructionComment(PushInt, "Base+" + to_string(offset), offset / 4);
+							AddInstructionComment(PushInt, "Base+" + to_string(offset), offset / stackWidth);
 							parseExpression(expr, true);
 							AddInstruction(GetArrayP, 1);
 							if (icast->getType()->getAsCXXRecordDecl())
@@ -3385,7 +3377,7 @@ public:
 			if ((op->isPrefix() || op->isPostfix()) && isa<PointerType>(subE->getType()))
 			{
 				const Type* pTypePtr = subE->getType().getTypePtr()->getPointeeType().getTypePtr();
-				int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+				int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 				pMult = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 			}
 
@@ -4217,7 +4209,7 @@ public:
 							if (op == BO_Sub)
 							{
 								const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
-								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 								int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
 								AddInstructionCondition(bOp->getLHS()->getType()->isFloatingType(), FSub, Sub);
@@ -4239,7 +4231,7 @@ public:
 							if (op == BO_Add || op == BO_Sub)
 							{
 								const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
-								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 								int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 								AddInstructionConditionally(pSize > 1, MultImm, pSize);
 							}
@@ -4252,7 +4244,7 @@ public:
 							if (op == BO_Add || op == BO_Sub)
 							{
 								const Type* pTypePtr = bOp->getRHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
-								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 								int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 								AddInstructionConditionally(pSize > 1, MultImm, pSize);
 							}
@@ -4377,7 +4369,7 @@ public:
 
 							const  QualType type = CS->getType();
 							int temp = getSizeOfQualType(&type);
-							offset += max(temp, 4);
+							offset += max(temp, stackWidth);
 						}
 					}
 				}
@@ -4402,191 +4394,185 @@ public:
 		else if (isa<InitListExpr>(e))
 		{
 			//{ 1, 3, 7 }; support
-			const InitListExpr *I = cast<const InitListExpr>(e);
-			if (I->getType()->isArrayType())
+			if (isLtoRValue)
 			{
-				switch (getSizeOfType(I->getType()->getArrayElementTypeNoTypeQual()))
+				const InitListExpr *I = cast<const InitListExpr>(e);
+				if (I->getType()->isArrayType())
 				{
-					case 1:
+					switch (getSizeOfType(I->getType()->getArrayElementTypeNoTypeQual()))
 					{
-						int initCount = I->getNumInits();
-						int i;
-						for (i = 0; i < initCount; i += 4)
+						case 1:
 						{
-							llvm::APSInt res;
-							int evaluated[4];
-							const Expr* inits[4];
-							bool allconst = true;
-							bool succ[4];
-							for (int j = 0; j < 4; j++)
+							int initCount = I->getNumInits();
+							int i;
+							for (i = 0; i < initCount; i += 4)
 							{
-								if (i + j < initCount)
+								llvm::APSInt res;
+								int evaluated[4];
+								const Expr* inits[4];
+								bool allconst = true;
+								bool succ[4];
+								for (int j = 0; j < 4; j++)
 								{
-									inits[j] = I->getInit(i + j);
-									if ((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+									if (i + j < initCount)
 									{
-										evaluated[j] = res.getSExtValue() & 0xFF;
+										inits[j] = I->getInit(i + j);
+										if ((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+										{
+											evaluated[j] = res.getSExtValue() & 0xFF;
+										}
+										else
+										{
+											allconst = false;
+										}
 									}
 									else
 									{
-										allconst = false;
+										succ[j] = true;
+										evaluated[j] = 0;
 									}
+
+								}
+								if (allconst)
+								{
+									int val = (evaluated[0] << 24) | (evaluated[1] << 16) | (evaluated[2] << 8) | (evaluated[3]);
+									AddInstruction(PushInt, val);
 								}
 								else
 								{
-									succ[j] = true;
-									evaluated[j] = 0;
-								}
-
-							}
-							if (allconst)
-							{
-								int val = (evaluated[0] << 24) | (evaluated[1] << 16) | (evaluated[2] << 8) | (evaluated[3]);
-								AddInstruction(PushInt, val);
-							}
-							else
-							{
-								if (succ[0])
-								{
-									AddInstruction(PushInt, evaluated[0] << 24);
-
-								}
-								else
-								{
-									parseExpression(I->getInit(i), false, true);
-									AddInstruction(PushInt, 255);
-									AddInstruction(And);
-									AddInstruction(ShiftLeft, 24);
-
-								}
-								for (int j = 1; j < 4; j++)
-								{
-									if (i + j >= initCount)
-										break;
-									if (succ[j])
+									if (succ[0])
 									{
-										AddInstruction(PushInt, evaluated[j] << ((3 - j) << 3));
-										AddInstruction(Or);
+										AddInstruction(PushInt, evaluated[0] << 24);
+
 									}
 									else
 									{
-										parseExpression(I->getInit(i + j), false, true);
+										parseExpression(I->getInit(i), false, true);
 										AddInstruction(PushInt, 255);
 										AddInstruction(And);
-										AddInstructionConditionally(j != 3, ShiftLeft, (3 - j) << 3);
-										AddInstruction(Or);
-									}
+										AddInstruction(ShiftLeft, 24);
 
+									}
+									for (int j = 1; j < 4; j++)
+									{
+										if (i + j >= initCount)
+											break;
+										if (succ[j])
+										{
+											AddInstruction(PushInt, evaluated[j] << ((3 - j) << 3));
+											AddInstruction(Or);
+										}
+										else
+										{
+											parseExpression(I->getInit(i + j), false, true);
+											AddInstruction(PushInt, 255);
+											AddInstruction(And);
+											AddInstructionConditionally(j != 3, ShiftLeft, (3 - j) << 3);
+											AddInstruction(Or);
+										}
+
+									}
 								}
 							}
-						}
-						int size = getSizeOfType(I->getType().getTypePtr());
-						while (i < size)
-						{
-							AddInstruction(PushInt, 0);
-							i += 4;
-						}
-					}
-					goto L2RCheck;
-					case 2:
-					{
-						int initCount = I->getNumInits();
-						int i;
-						for (i = 0; i < initCount; i += 2)
-						{
-							llvm::APSInt res;
-							int evaluated[2];
-							const Expr* inits[2];
-							bool allconst = true;
-							bool succ[2];
-							for (int j = 0; j < 2; j++)
+							int size = getSizeOfType(I->getType().getTypePtr());
+							while (i < size)
 							{
-								if (i + j < initCount)
+								AddInstruction(PushInt, 0);
+								i += stackWidth;
+							}
+						}
+						return 1;
+						case 2:
+						{
+							int initCount = I->getNumInits();
+							int i;
+							for (i = 0; i < initCount; i += 2)
+							{
+								llvm::APSInt res;
+								int evaluated[2];
+								const Expr* inits[2];
+								bool allconst = true;
+								bool succ[2];
+								for (int j = 0; j < 2; j++)
 								{
-									inits[j] = I->getInit(i + j);
-									if ((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+									if (i + j < initCount)
 									{
-										evaluated[j] = res.getSExtValue() & 0xFFFF;
+										inits[j] = I->getInit(i + j);
+										if ((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+										{
+											evaluated[j] = res.getSExtValue() & 0xFFFF;
+										}
+										else
+										{
+											allconst = false;
+										}
 									}
 									else
 									{
-										allconst = false;
+										succ[j] = true;
+										evaluated[j] = 0;
 									}
+
+								}
+								if (allconst)
+								{
+									int val = (evaluated[0] << 16) | (evaluated[1]);
+									AddInstruction(PushInt, val);
 								}
 								else
 								{
-									succ[j] = true;
-									evaluated[j] = 0;
-								}
-
-							}
-							if (allconst)
-							{
-								int val = (evaluated[0] << 16) | (evaluated[1]);
-								AddInstruction(PushInt, val);
-							}
-							else
-							{
-								if (succ[0])
-								{
-									AddInstruction(PushInt, evaluated[0] << 16);
-
-								}
-								else
-								{
-									parseExpression(I->getInit(i), false, true);
-									AddInstruction(PushInt, 65535);
-									AddInstruction(And);
-									AddInstruction(ShiftLeft, 16);
-								}
-								if (i + 1 < initCount)
-								{
-									if (succ[1])
+									if (succ[0])
 									{
-										AddInstruction(PushInt, evaluated[1]);
-										AddInstruction(Or);
+										AddInstruction(PushInt, evaluated[0] << 16);
+
 									}
 									else
 									{
-										parseExpression(I->getInit(i + 1), false, true);
+										parseExpression(I->getInit(i), false, true);
 										AddInstruction(PushInt, 65535);
 										AddInstruction(And);
-										AddInstruction(Or);
+										AddInstruction(ShiftLeft, 16);
+									}
+									if (i + 1 < initCount)
+									{
+										if (succ[1])
+										{
+											AddInstruction(PushInt, evaluated[1]);
+											AddInstruction(Or);
+										}
+										else
+										{
+											parseExpression(I->getInit(i + 1), false, true);
+											AddInstruction(PushInt, 65535);
+											AddInstruction(And);
+											AddInstruction(Or);
+										}
 									}
 								}
 							}
+							int size = getSizeOfType(I->getType().getTypePtr());
+							int curSize = getSizeFromBytes(i * 2) * stackWidth;
+							while (curSize < size)
+							{
+								AddInstruction(PushInt, 0);
+								curSize += stackWidth;
+							}
 						}
-						int size = getSizeOfType(I->getType().getTypePtr());
-						int curSize = getSizeFromBytes(i * 2) * 4;
-						while (curSize < size)
-						{
-							AddInstruction(PushInt, 0);
-							curSize += 4;
-						}
+						return 1;
 					}
-					goto L2RCheck;
 				}
-			}
-			int size = getSizeOfType(I->getType().getTypePtr());
-			int curSize = 0;
-			for (unsigned int i = 0; i < I->getNumInits(); i++)
-			{
-				const Expr *init = I->getInit(i);
-				curSize += 4 * getSizeFromBytes(getSizeOfType(init->getType().getTypePtr()));
-				parseExpression(init, false, true);
-			}
-			while (curSize < size)
-			{
-				AddInstruction(PushInt, 0);
-				curSize += 4;
-			}
-		L2RCheck:
-			if (!isLtoRValue)
-			{
-				int bSize = getSizeFromBytes(getSizeOfType(I->getType().getTypePtr()));
-				while(bSize--)
+				int size = getSizeOfType(I->getType().getTypePtr());
+				int curSize = 0;
+				for (unsigned int i = 0; i < I->getNumInits(); i++)
 				{
-					AddInstructionComment(Drop, "Unused InitListExpr");
+					const Expr *init = I->getInit(i);
+					curSize += stackWidth * getSizeFromBytes(getSizeOfType(init->getType().getTypePtr()));
+					parseExpression(init, false, true);
+				}
+				while (curSize < size)
+				{
+					AddInstruction(PushInt, 0);
+					curSize += stackWidth;
 				}
 			}
 			return 1;
@@ -4861,7 +4847,7 @@ public:
 		{
 			int size = getSizeOfType(type);
 			if (type->isArrayType())
-				size = getSizeFromBytes(size) * 4;
+				size = getSizeFromBytes(size) * stackWidth;
 			if (isCst)
 			{
 				int iRes = evalIndex.getSExtValue();
@@ -5016,7 +5002,7 @@ public:
 			offset += getCXXOffsetOfNamedDecl(baseDecl, ND, classDecl);
 			//            for(CXXMethodDecl *VFI : baseDecl->methods()) {
 			//                if(VFI->isVirtual()) {
-			//                    offset+=4;
+			//                    offset+=stackWidth;
 			//                    break;
 			//                }
 			//            }
@@ -5030,13 +5016,13 @@ public:
 			//                
 			//                const  QualType type = CS->getType();
 			//                int temp = getSizeOfQualType(&type);
-			//                offset += max(temp, 4);
+			//                offset += max(temp, stackWidth);
 			//            }
 		}
 
 		for (CXXMethodDecl *VFI : classDecl->methods()) {
 			if (VFI->isVirtualAsWritten()) {
-				offset += 4;
+				offset += stackWidth;
 				break;
 			}
 		}
@@ -5058,7 +5044,7 @@ public:
 
 				const  QualType type = CS->getType();
 				int temp = getSizeOfQualType(&type);
-				offset += max(temp, 4);
+				offset += max(temp, stackWidth);
 			}
 		}
 		return offset;
@@ -5338,7 +5324,7 @@ public:
 
 					scriptData.modifyLastInitStaticByte(resValue, intIndex);
 
-					if (++intIndex >= 4)
+					if (++intIndex >= stackWidth)
 						intIndex = 0;
 
 					scriptData.getCurrentStatic()->pushInit8(resValue);
@@ -5351,7 +5337,7 @@ public:
 					scriptData.modifyLastInitStaticShort(resValue, intIndex);
 
 					intIndex += 2;
-					if (intIndex >= 4)
+					if (intIndex >= stackWidth)
 						intIndex = 0;
 					scriptData.getCurrentStatic()->pushInit16(resValue, scriptData.getEndian());
 				}
@@ -5359,6 +5345,7 @@ public:
 				{
 					scriptData.addStaticInit((int32_t)resValue);//remove later
 					scriptData.getCurrentStatic()->pushInit32(resValue, scriptData.getEndian());
+					scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
 				}
 				else
 				{
@@ -5422,7 +5409,7 @@ public:
 				int32_t i = 0, b = 0;
 				for (; i < strsize; i++, b++)
 				{
-					if (b >= 4)
+					if (b >= stackWidth)
 					{
 						scriptData.addStaticInitBig(buffer);
 						b = 0;
@@ -5430,7 +5417,7 @@ public:
 
 						if (i >= (int32_t)strlit.length())
 						{
-							scriptData.addStaticInit(0, Utils::Math::CeilDivInt(strsize - i, 4));
+							scriptData.addStaticInit(0, Utils::Math::CeilDivInt(strsize - i, stackWidth));
 							break;
 						}
 					}
@@ -5624,7 +5611,7 @@ public:
 				if (op == BO_Sub)
 				{
 					const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
-					int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+					int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 					auto cur = scriptData.getCurrentStatic();
 					cur->setDynamic();
@@ -5654,7 +5641,7 @@ public:
 				if (op == BO_Add || op == BO_Sub)
 				{
 					const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
-					int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+					int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
 					if (pSize > 1)
@@ -5672,7 +5659,7 @@ public:
 				if (op == BO_Add || op == BO_Sub)
 				{
 					const Type* pTypePtr = bOp->getRHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
-					int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : 4;
+					int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
 					if (pSize > 1)
@@ -5743,7 +5730,7 @@ public:
 
 					if (!ssize)
 					{
-						uint32_t elementSize = 4;
+						uint32_t elementSize = stackWidth;
 						if (type->isArrayType())
 							elementSize = getSizeOfType(base->getType()->getArrayElementTypeNoTypeQual());
 
@@ -6095,6 +6082,12 @@ void WriteScriptFile(string outDir)
 					c.Compile(outDir);
 				}
 				break;
+				case P_PC:
+				{
+					CompileGTAPC c(*scriptData);
+					c.Compile(outDir);
+				}
+				break;
 				default:
 				Throw("GTA V only supported on Xbox360 and PS3");
 			}
@@ -6140,7 +6133,8 @@ int main(int argc, const char **argv) {
 		
 		string outDir = GetDir(op.getSourcePathList()[0]);
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
-		scriptData.reset(new Script(scriptName, BT_GTAV, P_XBOX));
+		scriptData.reset(new Script(scriptName, BT_GTAV, P_PC));
+		stackWidth = scriptData->getStackWidth();
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 		if (!ProcessingFailed)
 		{
