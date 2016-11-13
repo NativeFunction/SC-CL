@@ -159,7 +159,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_PCall:		pCall(); return;//gta4 needs to override as error
 		case OK_Label:		AddLabel(DATA->getString()); return;
 		case OK_LabelLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); return;
-		case OK_FuncLoc:	AddFuncLoc(DATA->getFunctionData()->getName()); return;
+		case OK_FuncLoc:	AddFuncLoc(DATA->getFunctionData()); return;
 		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); return;
 		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); return;
 		case OK_GetHash:	GetHash(); return;//gta5 needs to override
@@ -174,7 +174,7 @@ void CompileBase::BuildTables()
 	{
 		if (HLData->getFunctionFromIndex(FunctionCount)->IsUsed())
 		{
-			AddFunction(HLData->getFunctionFromIndex(FunctionCount)->getName(), HLData->getFunctionFromIndex(FunctionCount)->getParamCount(), HLData->getFunctionFromIndex(FunctionCount)->getStackSize());
+			AddFunction(HLData->getFunctionFromIndex(FunctionCount));
 			for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
 			{
 				ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
@@ -588,11 +588,11 @@ void CompileBase::PushString()
 	AddInt8(DATA->getString().size() + 1);//str size + null terminator
 	AddString(DATA->getString());
 }
-void CompileBase::AddFuncLoc(const string funcName)
+void CompileBase::AddFuncLoc(const FunctionData* function)
 {
 	DoesOpcodeHaveRoom(4);
 	AddOpcode(PushI24);
-	CallLocations.push_back({ CodePageData.size(), CallInstructionType::FuncLoc, funcName });
+	CallLocations.push_back({ CodePageData.size(), CallInstructionType::FuncLoc, function });
 	AddInt24(0);
 }
 void CompileBase::Switch(){
@@ -892,14 +892,14 @@ void CompileRDR::fixFunctionCalls()
 {
 	for (auto CallInfo : CallLocations)
 	{
-		auto it = FuncLocations.find(CallInfo.FuncName);
+		auto it = FuncLocations.find(CallInfo.Function);
 		if (it == FuncLocations.end())
 		{
-			Throw("Function \"" + CallInfo.FuncName + "\" not found");
+			Throw("Function \"" + CallInfo.Function->getName() + "\" not found");
 		}
 		uint32_t pos = it->second;
 		if (pos >= 0x1000000)
-			Throw("Function \"" + CallInfo.FuncName + "\" out of call range");
+			Throw("Function \"" + CallInfo.Function->getName() + "\" out of call range");
 		
 		switch (CallInfo.InstructionType)
 		{
@@ -1027,12 +1027,12 @@ void CompileRDR::Return()
 void CompileRDR::Call()
 {
 	// rdr: 2 byte loc (loc or'ed)
-	string name = DATA->getFunctionData()->getName();
-	auto it = FuncLocations.find(name);
+	auto func = DATA->getFunctionData();
+	auto it = FuncLocations.find(func);
 	if (it == FuncLocations.end())
 	{
 		DoesOpcodeHaveRoom(4);//4 because pcall can be separate
-		CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, name });
+		CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, func });
 		AddInt24(0);//call, int16 loc / pushi24, int16 loc part
 		AddInt16(0);//int16 loc part 2, pcall
 	}
@@ -1476,15 +1476,15 @@ void CompileGTAV::fixFunctionCalls()
 {
 	for (auto CallInfo : CallLocations)
 	{
-		auto it = FuncLocations.find(CallInfo.FuncName);
+		auto it = FuncLocations.find(CallInfo.Function);
 		if (it == FuncLocations.end())
 		{
-			Utils::System::Throw("Function \"" + CallInfo.FuncName + "\" not found");
+			Utils::System::Throw("Function \"" + CallInfo.Function->getName() + "\" not found");
 		}
 		uint32_t pos = it->second;
 		if (pos >= 0x1000000)
 		{
-			Utils::System::Throw("Function \"" + CallInfo.FuncName + "\" out of call range");//realistally this is never going to happen
+			Utils::System::Throw("Function \"" + CallInfo.Function->getName() + "\" out of call range");//realistally this is never going to happen
 		}
 		switch (CallInfo.InstructionType)
 		{
@@ -1554,7 +1554,7 @@ void CompileGTAV::Call()
 	// gta5: 3 byte loc
 	DoesOpcodeHaveRoom(4);
 	AddOpcode(Call);
-	CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getFunctionData()->getName() });
+	CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getFunctionData() });
 	AddInt24(0);
 }
 void CompileGTAV::PushString()

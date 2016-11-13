@@ -250,7 +250,7 @@ protected:
 	{
 		const uint32_t CallLocation;
 		const CallInstructionType InstructionType;
-		const std::string FuncName;
+		const FunctionData* Function;
 	} CallData;
 	typedef struct 
 	{
@@ -270,7 +270,7 @@ protected:
 	std::unordered_map<std::string, LabelData> LabelLocations;//label ,data index
 	std::vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData for a function
 	uint32_t SignedJumpLocationInc = 0, UnsignedJumpLocationInc = 0;
-	std::unordered_map<std::string, uint32_t> FuncLocations;//call, data index
+	std::unordered_map<const FunctionData*, uint32_t> FuncLocations;//call, data index
 	std::vector<CallData> CallLocations;//CallLocations to fill after building the CodePageData
 	std::unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
 	std::vector<JumpTableData> jumpTableLocs;
@@ -346,12 +346,12 @@ protected:
 		memcpy(CodePageData.data() + CodePageData.size() - str.size() - 1, str.data(), str.size() + 1);
 	}
 	void AddLabel(const std::string label);
-	inline void AddFuncLabel(const std::string label)
+	inline void AddFuncLabel(const FunctionData* function)
 	{
-		if (FuncLocations.find(label) == FuncLocations.end())
-			FuncLocations.insert({ label, CodePageData.size() });
+		if (FuncLocations.find(function) == FuncLocations.end())
+			FuncLocations.insert({ function, CodePageData.size() });
 		else
-			Utils::System::Throw("Cannot add function. function \"" + label + "\" already exists.");
+			Utils::System::Throw("Cannot add function. function \"" + function->getName() + "\" already exists.");
 	}
 	inline void AddJumpLoc(const JumpInstructionType it, const std::string label)
 	{
@@ -422,23 +422,24 @@ protected:
 	#pragma endregion
 
 	#pragma region Opcode_Functions
-	virtual void AddFunction(std::string name, uint8_t paramCount, uint16_t stackSize)
+	virtual void AddFunction(const FunctionData* function)
 	{
 #if _DEBUG
+		std::string name = function->getName();
 		DoesOpcodeHaveRoom(5 + name.size());
-		AddFuncLabel(name);
+		AddFuncLabel(function);
 		AddOpcode(Function);
-		AddInt8(paramCount);
-		AddInt16(stackSize);
+		AddInt8(function->getParamCount());
+		AddInt16(function->getStackSize());
 		AddInt8(name.size());
 		CodePageData.resize(CodePageData.size() + name.size());
 		memcpy(CodePageData.data() + CodePageData.size() - name.size(), name.data(), name.size());
 #else
 		DoesOpcodeHaveRoom(5);
-		AddFuncLabel(name);
+		AddFuncLabel(function);
 		AddOpcode(Function);
-		AddInt8(paramCount);
-		AddInt16(stackSize);
+		AddInt8(function->getParamCount());
+		AddInt16(function->getStackSize());
 		AddInt8(0);//unused function name
 #endif
 	}
@@ -469,7 +470,7 @@ protected:
 	virtual void pCall() { AddOpcode(pCall); };//Override: GTAIV
 	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };//Override: ALL
 	virtual void Call() { assert(false && "Call has to be overridden"); };//Override: ALL
-	virtual void AddFuncLoc(const std::string funcName);
+	virtual void AddFuncLoc(const FunctionData* function);
 	void Switch();//for gta4 switches override AddJump
 	virtual void AddImm(const int32_t Literal);//Override: GTAIV
 	void AddImm(){ AddImm(DATA->getInt()); }

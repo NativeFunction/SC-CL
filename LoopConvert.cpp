@@ -485,7 +485,7 @@ public:
 		if (isa<CXXMethodDecl>(ND)) {
 			const CXXMethodDecl *method = cast<const CXXMethodDecl>(ND);
 			const CXXRecordDecl *record = method->getParent();
-			return "@" + record->getNameAsString() + "::" + method->getNameAsString();
+			return record->getNameAsString() + "::" + method->getNameAsString();
 		}
 		if (ND->getDeclName()) {
 
@@ -506,10 +506,10 @@ public:
 		if (isa<CXXMethodDecl>(decl)) {
 			const CXXMethodDecl *methodDecl = cast<const CXXMethodDecl>(decl);
 			const CXXRecordDecl *record = methodDecl->getParent();
-			return "@" + FileId + record->getNameAsString() + "::" + methodDecl->getNameAsString();
+			return FileId + record->getNameAsString() + "::" + methodDecl->getNameAsString();
 		}
 		else {
-			return "@" + FileId + decl->getNameAsString();
+			return FileId + decl->getNameAsString();
 		}
 	}
 	#pragma endregion
@@ -2694,11 +2694,11 @@ public:
 					{
 						//clang attribute arguments cannot be 64bits wide, so using 2 32 bit args can manually joining them is the nicest way to support pc
 						//when using 32 bit(xbox/ps3) the hi dword would be 0 so can be neglected
-						AddInstruction(Native, parseCast(cast<const CastExpr>(callee)).substr(1), ((uint64_t)attr->getX64HiDwordHash() << 32) | attr->getHash(), pCount, getSizeFromBytes(getSizeOfType(type.getTypePtr())));
+						AddInstruction(Native, call->getDirectCallee()->getNameAsString(), ((uint64_t)attr->getX64HiDwordHash() << 32) | attr->getHash(), pCount, getSizeFromBytes(getSizeOfType(type.getTypePtr())));
 					}
 					else
 					{
-						AddInstruction(Native, parseCast(cast<const CastExpr>(callee)).substr(1), pCount, getSizeFromBytes(getSizeOfType(type.getTypePtr())));
+						AddInstruction(Native, call->getDirectCallee()->getNameAsString(), pCount, getSizeFromBytes(getSizeOfType(type.getTypePtr())));
 					}
 
 				}
@@ -2805,7 +2805,7 @@ public:
 							AddInstructionComment(Call, "NumArgs: " + to_string(call->getNumArgs()), func);
 						}
 						else
-							Throw("Function \"" + name.substr(1) + "\" not found", rewriter, call->getExprLoc());
+							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
 						
 					}
 
@@ -3670,13 +3670,13 @@ public:
 				}
 				else {
 					AddInstruction(Dup);
-					AddInstruction(Call, scriptData.getFunctionFromName(expr->getBestDynamicClassType()->getNameAsString().substr(1) + "::VTableInit"));
+					AddInstruction(Call, scriptData.getFunctionFromName(expr->getBestDynamicClassType()->getNameAsString() + "::VTableInit"));
 				}
 				//  out << " //End_VtableInit\n" << endl;
 			}
 			if (expr->getConstructor()->hasBody())
 			{
-				AddInstructionComment(Call, "ctor", scriptData.getFunctionFromName(getNameForFunc(expr->getConstructor()).substr(1)));
+				AddInstructionComment(Call, "ctor", scriptData.getFunctionFromName(getNameForFunc(expr->getConstructor())));
 			}
 		}
 		else if (isa<BinaryOperator>(e)) {
@@ -5202,7 +5202,7 @@ public:
 			{
 				paramSize += getSizeFromBytes(getSizeOfType(CS->getParamDecl(i)->getType().getTypePtr()));
 			}
-			auto ctor = scriptData.createFunction("@" + CS->getDeclName().getAsString(), paramSize, getSizeFromBytes(getSizeOfType(CS->getReturnType().getTypePtr())), true);
+			auto ctor = scriptData.createFunction(CS->getDeclName().getAsString(), paramSize, getSizeFromBytes(getSizeOfType(CS->getReturnType().getTypePtr())), true);
 			currFunction = CS;
 
 			for (auto *PI : CS->params()) {
@@ -5243,7 +5243,7 @@ public:
 			out << "#FuncEnd L " << LocalVariables.getCurrentSize() - (isa<CXXMethodDecl>(CS) ? 1 : 0) << endl << endl;
 			if (d->isPolymorphic()) {
 				out << endl << endl;
-				out << "Function 1 1 @" << d->getNameAsString() << "::VTableInit" << endl;
+				out << "Function 1 1 " << d->getNameAsString() << "::VTableInit" << endl;
 				printVTableInit(d, NULL);
 				out << "Return 1 0" << endl;
 				out << "//Var Count 2" << endl;
@@ -5281,10 +5281,10 @@ public:
 		if (isa<CXXMethodDecl>(decl)) {
 			const CXXMethodDecl *methodDecl = cast<const CXXMethodDecl>(decl);
 			const CXXRecordDecl *record = methodDecl->getParent();
-			return "@" + FileId + record->getNameAsString() + "::" + methodDecl->getNameAsString();
+			return FileId + record->getNameAsString() + "::" + methodDecl->getNameAsString();
 		}
 		else {
-			return "@" + FileId + decl->getNameAsString();
+			return FileId + decl->getNameAsString();
 		}
 	}
 	int32_t ParseLiteral(const Expr *e, bool isAddr = false, bool isLtoRValue = false)
@@ -6140,7 +6140,7 @@ int main(int argc, const char **argv) {
 		
 		string outDir = GetDir(op.getSourcePathList()[0]);
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
-		scriptData.reset(new Script(scriptName, BT_RDR_XSC, P_XBOX));
+		scriptData.reset(new Script(scriptName, BT_GTAV, P_XBOX));
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 		if (!ProcessingFailed)
 		{

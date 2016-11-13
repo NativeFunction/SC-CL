@@ -6,7 +6,7 @@ using namespace std;
 Script::Script(string scriptName, BuildType buildType, Platform platform) : 
 	 mainFunction(NULL), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform), scriptParams()
 {
-	auto entry = std::make_unique<FunctionData>("@__builtin__entryPoint", 0, 0);
+	auto entry = std::make_unique<FunctionData>("__builtin__entryPoint", 0, 0);
 	entryFunction = entry.get();
 	functions.push_back(std::move(entry));
 	_endian = (buildType == BT_GTAV && platform == P_PC) ? END_LITTLE : END_BIG;
@@ -58,15 +58,14 @@ FunctionData * Script::getFunctionFromName(const string& name)
 
 const FunctionData * Script::getFunctionFromName(const string& name) const
 {
-	string newname = "@" + name;
-	uint32_t hash = Utils::Hashing::JoaatCased(newname);
+	uint32_t hash = Utils::Hashing::JoaatCased(name);
 	for (int i = 0, max = getFunctionCount(); i < max; i++)
 	{
 		const FunctionData *func = getFunctionFromIndex(i);
-		if (hash == func->getHash() && newname == func->getName())
+		if (hash == func->getHash() && name == func->getName())
 			return functions[i].get();
 	}
-	Utils::System::Warn("Function \"" + newname + "\" does not exist");
+	Utils::System::Warn("Function \"" + name + "\" does not exist");
 	assert(false && "Function doesnt exist");
 	return NULL;
 }

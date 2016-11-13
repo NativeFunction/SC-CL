@@ -570,7 +570,7 @@ string Opcode::toString() const
 			}
 			break;
 		}
-		case OK_Call:current = "Call " + getFunctionData()->getName(); break;
+		case OK_Call:current = "Call @" + getFunctionData()->getName(); break;
 		case OK_Jump: current = "Jump @" + getString(); break;
 		case OK_JumpFalse: PrintJump(False); break;
 		case OK_JumpEQ: PrintJump(EQ); break;
@@ -615,7 +615,7 @@ string Opcode::toString() const
 		case OK_PCall: current = "PCall"; break;
 		case OK_Label: current = "\r\n:" + getString(); break; //make labels have a line break
 		case OK_LabelLoc: current = "Push GetLoc(\"" + getString() + "\")"; break;
-		case OK_FuncLoc: current = "Push GetFuncLoc(\"" + getFunctionData()->getName().substr(1) + "\")"; break;
+		case OK_FuncLoc: current = "Push GetFuncLoc(\"" + getFunctionData()->getName() + "\")"; break;
 		case OK_JumpTable:{
 			current = "PushLabelLocArray {\r\n";
 			if (storage.jTable->getItemCount() == 0)

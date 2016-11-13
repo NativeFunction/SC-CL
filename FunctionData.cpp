@@ -278,7 +278,7 @@ void FunctionData::setUsed(Script& scriptBase)
 string FunctionData::toString() const
 {
 	stringstream stream;
-	stream << "\r\n:" << name.substr(1) << "//>\r\nFunction " << (int)pcount << " " << (int)stackSize << "\r\n";
+	stream << "\r\n:" << name << "//>\r\nFunction " << (int)pcount << " " << (int)stackSize << "\r\n";
 	for(size_t i = 0; i < Instructions.size(); i++)
 	{
 		if (Instructions[i]->getKind() == OK_Null)
@@ -1543,7 +1543,7 @@ void FunctionData::addOpGetHash()
 
 ostream & operator<<(ostream & stream, const FunctionData & fdata)
 {
-	stream << "\r\n:" << fdata.name.substr(1) << "//>\r\nFunction " << (int)fdata.pcount << " " << (int)fdata.stackSize << "\r\n";
+	stream << "\r\n:" << fdata.name << "//>\r\nFunction " << (int)fdata.pcount << " " << (int)fdata.stackSize << "\r\n";
 	for(size_t i = 0; i < fdata.Instructions.size(); i++)
 	{
 		if (fdata.Instructions[i]->getKind() == OK_Null)
