@@ -4993,15 +4993,9 @@ public:
 		else
 		{
 			string name = f->getNameAsString();
-			if (f->hasAttrs())
+			if (f->hasAttrs() && (f->hasAttr<NativeFuncAttr>() || f->hasAttr<IntrinsicFuncAttr>()))
 			{
-				AttrVec attrs = f->getAttrs();
-				for (uint32_t i = 0; i < attrs.size(); i++)
-				{
-					//these prototypes are reserved
-					if (strcmp(attrs[i]->getSpelling(), "native") || strcmp(attrs[i]->getSpelling(), "intrinsic"))
-						return false;
-				}
+				return false;
 			}
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i < f->getNumParams(); i++)
