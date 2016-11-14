@@ -1285,7 +1285,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 	if (CompressAndEncrypt)
 	{
 		// compressing and encrypting
-		uint8_t* CompressedData = nullptr;
+		vector<uint8_t> CompressedData;
 		uint32_t CompressedLen = 0;
 
 		switch (HLData->getBuildPlatform())
@@ -1295,33 +1295,35 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 				Utils::Compression::xCompress Compression;
 				Compression.xCompressInit();
 
-				vector<uint8_t> Compressed(BuildBuffer.size() + 8);
-				CompressedData = Compressed.data();
+				CompressedData.resize(BuildBuffer.size() + 8);
 				CompressedLen = 0;
 
-				Compression.Compress((uint8_t*)BuildBuffer.data(), BuildBuffer.size(), CompressedData + 8, (int32_t*)&CompressedLen);
+				Compression.Compress((uint8_t*)BuildBuffer.data(), BuildBuffer.size(), CompressedData.data() + 8, (int32_t*)&CompressedLen);
 
 				if (CompressedLen > 0)
 				{
-					*(uint32_t*)CompressedData = SwapEndian(0x0FF512F1);//LZX Signature?
-					*(uint32_t*)(CompressedData + 4) = SwapEndian(CompressedLen);
+					*(uint32_t*)CompressedData.data() = SwapEndian(0x0FF512F1);//LZX Signature?
+					*(uint32_t*)(CompressedData.data() + 4) = SwapEndian(CompressedLen);
 					CompressedLen += 8;
 				}
 				else Throw("Compression Failed");
+
+				CompressedData.resize(CompressedLen);
 			}
 			break;
 			case Platform::P_PS3:
 			{
-				CompressedLen = BuildBuffer.size();
-				vector<uint8_t> Compressed(BuildBuffer.size());
-				CompressedData = Compressed.data();
-
-				Utils::Compression::ZLIB_Compress(BuildBuffer.data(), BuildBuffer.size(), CompressedData, CompressedLen);
-				//fix length of compressed data
-
+				CompressedData.resize(BuildBuffer.size(), 0);
+				CompressedLen = 0;
+				uint8_t* DataPtr = CompressedData.data();
+				Utils::Compression::ZLIB_Compress(BuildBuffer.data(), BuildBuffer.size(), DataPtr, CompressedLen);
+				//int res = compress(DataPtr, (uLongf*)&CompressedLen, BuildBuffer.data(), BuildBuffer.size());
+				
 
 				if (CompressedLen == 0)
 					Throw("CSC Compressed Size Invalid");
+
+				CompressedData.resize(CompressedLen);
 			}
 			break;
 			case Platform::P_PC:
@@ -1331,8 +1333,8 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 
 
 
-		if (!Utils::Crypt::AES_Encrypt(CompressedData, CompressedLen))
-			Throw("Encryption Failed");
+		//if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedLen))
+		//	Throw("Encryption Failed");
 
 		const vector<uint32_t> CSR_Header =
 		{
@@ -1346,7 +1348,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 		if (file != NULL)
 		{
 			fwrite(CSR_Header.data(), 1, 16, file);//encrypted data
-			fwrite(CompressedData, 1, CompressedLen, file);//encrypted data
+			fwrite(CompressedData.data(), 1, CompressedLen, file);//encrypted data
 			fclose(file);
 		}
 		else

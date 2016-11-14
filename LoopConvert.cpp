@@ -6140,7 +6140,7 @@ int main(int argc, const char **argv) {
 		
 		string outDir = GetDir(op.getSourcePathList()[0]);
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
-		scriptData.reset(new Script(scriptName, BT_GTAV, P_XBOX));
+		scriptData.reset(new Script(scriptName, BuildType::BT_RDR_XSC, Platform::P_PS3));
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 		if (!ProcessingFailed)
 		{

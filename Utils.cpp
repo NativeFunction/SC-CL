@@ -315,19 +315,19 @@ namespace Utils {
 			defstream.zalloc = Z_NULL;
 			defstream.zfree = Z_NULL;
 			defstream.opaque = Z_NULL;
+			defstream.data_type = Z_BINARY;
 			// setup "a" as the input and "b" as the compressed output
-			defstream.avail_in = inSize; // size of input
+
 			defstream.next_in = in; // input char array
-			defstream.avail_out = outSize; // size of output
+			defstream.avail_in = inSize; // size of input
 			defstream.next_out = out; // output char array
-
-			int32_t res;
-
-			res = deflateInit(&defstream, Z_BEST_COMPRESSION);
+			defstream.avail_out = outSize; // size of output
+			
+			int32_t res = deflateInit(&defstream, Z_BEST_COMPRESSION);
 			if (res != Z_OK)
 			{
 				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				cout << "Error: " << zError(res) << '\n';
+				//cout << "Error: " << zError(res) << '\n';
 				Throw("ZLIB DeflateInit Failed");
 			}
 
@@ -335,7 +335,7 @@ namespace Utils {
 			if (!(res == Z_STREAM_END || res == Z_OK))
 			{
 				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				cout << "Error: " << zError(res) << '\n';
+				//cout << "Error: " << zError(res) << '\n';
 				Throw("ZLIB deflate Failed ");
 			}
 
@@ -343,12 +343,11 @@ namespace Utils {
 			if (res != Z_OK)
 			{
 				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				cout << "Error: " << zError(res) << '\n';
+				//cout << "Error: " << zError(res) << '\n';
 				Throw("ZLIB deflateEnd Failed");
 			}
 
 			outSize = defstream.next_out - out;
-
 		}
 		string ZLIB_ErrorCodeToStr(int32_t errorcode)
 		{
@@ -364,7 +363,7 @@ namespace Utils {
 				case Z_BUF_ERROR: return "Z_BUF_ERROR";
 				case Z_VERSION_ERROR: return "Z_VERSION_ERROR";
 			}
-			return "UNK_ERR";
+			return "UNK_ERR" + to_string(errorcode);
 		}
 
 	}

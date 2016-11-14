@@ -69,6 +69,8 @@ namespace Utils {
 		inline uint32_t SwapEndian(uint32_t x) { return __builtin_bswap32(x); }
 		inline uint64_t SwapEndian(uint64_t x) { return __builtin_bswap64(x); }
 		uint32_t Flip2BytesIn4(uint32_t value);
+		template<typename T> inline T rotl(T data, size_t rollCount){ return (((data) << (rollCount)) | ((data) >> (32 - (rollCount)))); }
+		template<typename T> inline T rotr(T data, size_t rollCount) { return (((data) >> (rollCount)) | ((32 - (rollCount))) << (data)); }
 	}
 	namespace IO
 	{
