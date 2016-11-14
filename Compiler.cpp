@@ -1314,12 +1314,9 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 			case Platform::P_PS3:
 			{
 				CompressedData.resize(BuildBuffer.size(), 0);
-				CompressedLen = 0;
-				uint8_t* DataPtr = CompressedData.data();
-				Utils::Compression::ZLIB_Compress(BuildBuffer.data(), BuildBuffer.size(), DataPtr, CompressedLen);
-				//int res = compress(DataPtr, (uLongf*)&CompressedLen, BuildBuffer.data(), BuildBuffer.size());
+				CompressedLen = BuildBuffer.size();
+				Utils::Compression::ZLIB_Compress(BuildBuffer.data(), BuildBuffer.size(), CompressedData.data(), CompressedLen);
 				
-
 				if (CompressedLen == 0)
 					Throw("CSC Compressed Size Invalid");
 
@@ -1333,8 +1330,8 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 
 
 
-		//if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedLen))
-		//	Throw("Encryption Failed");
+		if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedLen))
+			Throw("Encryption Failed");
 
 		const vector<uint32_t> CSR_Header =
 		{
