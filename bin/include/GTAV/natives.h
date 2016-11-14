@@ -5268,7 +5268,7 @@ extern _native64(0x498C1E05CE5F7877) any _network_shop_cash_transfer_set_telemet
 extern _native64(0x9507D4271988E1AE) bool _network_shop_set_telemetry_nonce_seed(any p0);
 extern _native64(0xFCA9373EF340AC0A) const char* _get_online_version();
 #pragma endregion //}
-#undef _native
+#undef _native64
 #pragma clang diagnostic pop
 #else
 #pragma region PLAYER //{
