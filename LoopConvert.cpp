@@ -12,7 +12,6 @@
 #include "ConstExpr.h"
 #include "Script.h"
 #include "Compiler.h"
-#include "CompilePC.h"
 
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h)
@@ -4995,7 +4994,7 @@ public:
 			if (f->hasAttrs())
 			{
 				AttrVec vec = f->getAttrs();
-				for(int i = 0; i < vec.size(); i++)
+				for(uint32_t i = 0; i < vec.size(); i++)
 					cout << vec[i]->getSpelling() << endl;
 			}
 			if (f->hasAttrs() && (f->hasAttr<NativeFuncAttr>() || f->hasAttr<IntrinsicFuncAttr>()))
@@ -6178,7 +6177,7 @@ void WriteScriptFile(string outDir)
 				break;
 				case P_PC:
 				{
-					CompileGTAPC c(*scriptData);
+					CompileGTAVPC c(*scriptData, 0);
 					c.Compile(outDir);
 				}
 				break;
@@ -6227,7 +6226,7 @@ int main(int argc, const char **argv) {
 		
 		string outDir = GetDir(op.getSourcePathList()[0]);
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
-		scriptData.reset(new Script(scriptName, BuildType::BT_GTAV, Platform::P_PC));
+		scriptData.reset(new Script(scriptName, BuildType::BT_RDR_XSC, Platform::P_PS3));
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 		if (!ProcessingFailed)
 		{

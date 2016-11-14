@@ -160,8 +160,8 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_Label:		AddLabel(DATA->getString()); return;
 		case OK_LabelLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); return;
 		case OK_FuncLoc:	AddFuncLoc(DATA->getFunctionData()); return;
-		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); return;
-		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); return;
+		case OK_ShiftLeft:	Shift_Left(); return;
+		case OK_ShiftRight:	Shift_Right(); return;
 		case OK_GetHash:	GetHash(); return;//gta5 needs to override
 		case OK_GoToStack:	GoToStack(); return;
 		case OK_JumpTable:	AddJumpTable(); return;
@@ -1806,6 +1806,230 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 		ChangeInt32inBuff(IntToPointerInt(SavedOffsets.CodePagePointers[i]), SavedOffsets.CodeBlocks + (i * 4));
 	for (uint32_t i = 0; i < SavedOffsets.StringPagePointers.size(); i++)
 		ChangeInt32inBuff(IntToPointerInt(SavedOffsets.StringPagePointers[i]), SavedOffsets.StringBlocks + (i * 4));
+	#pragma endregion
+
+	FILE* file = fopen(path, "wb");
+
+	#pragma region Write_File
+	if (AddRsc7Header)
+	{
+		const vector<uint32_t> rsc7 =
+		{
+			Utils::Bitwise::SwapEndian(0x52534337u),//magic
+			Utils::Bitwise::SwapEndian((uint32_t)ResourceType::ScriptContainer),//resourceType
+			Utils::Bitwise::SwapEndian(GetFlagFromSize(BuildBuffer.size())),//systemFlag
+			Utils::Bitwise::SwapEndian(0x90000000u)//graphicsFlag
+		};
+
+		fwrite(rsc7.data(), 1, 16, file);
+	}
+
+	fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
+	fclose(file);
+	#pragma endregion
+
+}
+#pragma endregion
+
+#pragma endregion
+
+#pragma region GTAVPC
+
+#pragma region Opcode_Functions
+void CompileGTAVPC::CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount)
+{
+	DoesOpcodeHaveRoom(4);
+
+	AddOpcode(CallNative);
+	if (hash == -1)
+	{
+		if (DATA->getNative()->getReturnCount() > 3)
+			Throw("Native Calls Can Only Have Three Returns");
+
+		const uint32_t index = AddNative(DATA->getNative()->getHash());
+		if (index >= 0xFFFF)
+			Throw("Native Call Index out of bounds");
+
+		AddInt8((DATA->getNative()->getParamCount() << 2) | (DATA->getNative()->getReturnCount() & 0x3));
+		AddInt16(Utils::Bitwise::SwapEndian((uint16_t)index));
+	}
+	else
+	{
+		if (returnCount > 3)
+			Utils::System::Throw("Native Calls Can Only Have Three Returns");
+
+		const uint32_t index = AddNative(hash);
+		if (index >= 0xFFFF)
+			Utils::System::Throw("Native Call Index out of bounds");
+
+		AddInt8((paramCount << 2) | (returnCount & 0x3));
+		AddInt16(Utils::Bitwise::SwapEndian((uint16_t)index));
+	}
+}
+#pragma endregion
+
+#pragma region Write_Functions
+void CompileGTAVPC::WriteHeader()
+{
+	headerLocation = BuildBuffer.size();
+	
+	AddInt64toBuff(0x1405A9E0D);//page base
+	AddInt64toBuff(0); //Unk1 ptr
+	AddInt64toBuff(0); //codeBlocksListOffsetPtr
+	AddInt32toBuff(0xB0AC45A4);//unk2
+	AddInt32toBuff(CodePageData.size());//code length
+	AddInt32toBuff(HLData->getParameterCount());//script ParameterCount (this needs to be implemented)
+	AddInt32toBuff(HLData->getStaticCount());//statics count
+	AddInt32toBuff(0);//GlobalsSize
+	AddInt32toBuff(NativeHashMap.size());//natives count
+	AddInt64toBuff(0); //Statics offset
+	AddInt64toBuff(0); //Globals ptr, stay 0
+	AddInt64toBuff(0); //native offset
+	AddInt64toBuff(0);//Unk3
+	AddInt64toBuff(0);//Unk4
+	AddInt32toBuff(Utils::Hashing::Joaat(HLData->getScriptName()));
+	AddInt32toBuff(1);//Unk5 typically 1
+	AddInt64toBuff(0); //script name offset
+	AddInt64toBuff(0); //strings offset
+	AddInt32toBuff(StringPageData.size());
+	AddInt32toBuff(0);//Unk6
+	AddInt64toBuff(0);//unk7
+
+	 //no need to pad as its divisible by 16
+}
+void CompileGTAVPC::WritePointers()
+{
+	//Write script name
+	const uint32_t StringSize = HLData->getScriptName().size() + 1;
+	if (GetSpaceLeft(16384) < StringSize)
+		FillPageDynamic(16384);
+
+	SavedOffsets.ScriptName = BuildBuffer.size();
+
+	BuildBuffer.resize(BuildBuffer.size() + StringSize);
+	memcpy(BuildBuffer.data() + BuildBuffer.size() - StringSize, HLData->getScriptName().data(), StringSize);
+	Pad();
+
+	//Write code page pointers
+	if (GetSpaceLeft(16384) < CodePageCount * 4)
+		FillPageDynamic(16384);
+
+	SavedOffsets.CodeBlocks = BuildBuffer.size();
+	BuildBuffer.resize(BuildBuffer.size() + CodePageCount * 8, 0);
+	Pad();
+
+	//Write string page pointers
+
+	if (StringPageCount)
+	{
+		if (GetSpaceLeft(16384) < StringPageCount * 8)
+			FillPageDynamic(16384);
+
+		SavedOffsets.StringBlocks = BuildBuffer.size();
+		BuildBuffer.resize(BuildBuffer.size() + StringPageCount * 8, 0);
+		Pad();
+	}
+	else
+	{
+		if (GetSpaceLeft(16384) < 16)
+			FillPageDynamic(16384);
+		SavedOffsets.StringBlocks = BuildBuffer.size();
+		ForcePad();
+	}
+
+	//write unk1
+	if (GetSpaceLeft(16384) < 16)
+		FillPageDynamic(16384);
+	SavedOffsets.Unk1 = BuildBuffer.size();
+	BuildBuffer.resize(BuildBuffer.size() + 24);
+	*(BuildBuffer.data() + BuildBuffer.size() - 24 + 8) = 1;
+
+	FillPageDynamic(16384 / 2);
+}
+void CompileGTAVPC::WriteNatives()
+{
+	if (NativeHashMap.size() > 0)
+	{
+		const size_t nativeByteSize = NativeHashMap.size() * 8;
+
+		if (GetSpaceLeft(16384) < nativeByteSize)
+			FillPageDynamic(16384);
+
+		SavedOffsets.Natives = BuildBuffer.size();
+
+		BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
+		for (unordered_map<uint64_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
+		{
+			*(uint64_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 8) = _rotr64(it->first, it->second + CodePageData.size());
+		}
+
+		Pad();
+	}
+	else
+	{
+		if (GetSpaceLeft(16384) < 16)
+			FillPageDynamic(16384);
+		SavedOffsets.Natives = BuildBuffer.size();
+		ForcePad();
+	}
+
+}
+void CompileGTAVPC::WriteStatics()
+{
+
+	if (HLData->getStaticCount() > 0)
+	{
+		const size_t staticByteSize = HLData->getStaticCount() * 8;
+
+		if (GetSpaceLeft(16384) < staticByteSize)
+			FillPageDynamic(16384);
+
+		SavedOffsets.Statics = BuildBuffer.size();
+
+		BuildBuffer.resize(BuildBuffer.size() + staticByteSize);
+		memcpy(BuildBuffer.data() + BuildBuffer.size() - staticByteSize, HLData->getNewStaticData(), staticByteSize);
+
+		Pad();
+
+	}
+	else
+	{
+		if (GetSpaceLeft(16384) < 16)
+			FillPageDynamic(16384);
+		SavedOffsets.Statics = BuildBuffer.size();
+		ForcePad();
+
+	}
+
+}
+void CompileGTAVPC::XSCWrite(const char* path, bool AddRsc7Header)
+{
+	FilePadding = 0;
+	ClearWriteVars();
+	CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
+	StringPageCount = Utils::Math::CeilDivInt(StringPageData.size(), 16384);
+
+	WriteHeader();
+	Write16384CodePages();
+	WriteFinalCodePage();
+	Write16384StringPages();
+	WriteFinalStringPage();
+	WriteNatives();
+	WriteStatics();
+	WritePointers();
+
+	#pragma region Fix_header_and_other_pointers
+	ChangeInt64inBuff(IntToPointerInt(SavedOffsets.Unk1), headerLocation + 8);
+	ChangeInt64inBuff(IntToPointerInt(SavedOffsets.CodeBlocks), headerLocation + 16);
+	ChangeInt64inBuff(IntToPointerInt(SavedOffsets.Statics), headerLocation + 48);
+	ChangeInt64inBuff(IntToPointerInt(SavedOffsets.Natives), headerLocation + 64);
+	ChangeInt64inBuff(IntToPointerInt(SavedOffsets.ScriptName), headerLocation + 96);
+	ChangeInt64inBuff(IntToPointerInt(SavedOffsets.StringBlocks), headerLocation + 104);
+
+	for (uint32_t i = 0; i < SavedOffsets.CodePagePointers.size(); i++)
+		ChangeInt64inBuff(IntToPointerInt(SavedOffsets.CodePagePointers[i]), SavedOffsets.CodeBlocks + (i * 8));
+	for (uint32_t i = 0; i < SavedOffsets.StringPagePointers.size(); i++)
+		ChangeInt64inBuff(IntToPointerInt(SavedOffsets.StringPagePointers[i]), SavedOffsets.StringBlocks + (i * 8));
 	#pragma endregion
 
 	FILE* file = fopen(path, "wb");

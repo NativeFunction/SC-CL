@@ -19,24 +19,21 @@ namespace Utils {
 
 	namespace IO
 	{
-		DLX LoadData(const char* loc) {
-			ifstream is(loc, std::ios::in | std::ios::binary | std::ios::ate);
-			DLX File;
+		void LoadData(const char* path, vector<uint8_t>& out) {
+			ifstream is(path, std::ios::in | std::ios::binary | std::ios::ate);
 
 			if (is.is_open()) {
 				is.seekg(0, is.end);
 				size_t datasize = is.tellg();
 				is.seekg(0, is.beg);
 
-				File.data = new char[datasize];
-				File.length = datasize;
-				is.read((char*)File.data, datasize);
+				out.resize(datasize, 0);
+				is.read((char*)out.data(), datasize);
 				is.close();
 			}
 			else
 				Throw("Input File Could Not Be Opened");
 
-			return File;
 		}
 
 	}

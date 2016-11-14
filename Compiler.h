@@ -3,12 +3,12 @@
 #include <cassert>
 #include <string>
 #include <vector>
-
 #include <unordered_map>
 #include "Utils.h"
 #include "OpcodeConsts.h"
 #include "ConstExpr.h"
 #include "Script.h"
+
 
 class CompileBase
 {
@@ -107,10 +107,32 @@ protected:
 	{
 		BaseOpcodes = &Op;
 		HLData = &data;
-		//												XBOX									PS3		PC
-		ReadBufferSize = !HLData->getBuildPlatform() ? 16384 : HLData->getBuildPlatform() == 1 ? 8192 : 16384;//TODO: Find pc read buffer
+		//														PS3				PC / XBOX
+		ReadBufferSize = HLData->getBuildPlatform() == Platform::P_PS3 ? 8192 : 16384;//TODO: Find pc read buffer
 		FunctionCount = Function_Count;
 		InstructionCount = Instruction_Count;
+
+		//Set Endian
+		if (HLData->getBuildPlatform() == Platform::P_PC)
+		{
+			AddInt16 = &CompileBase::AddInt16L;
+			AddInt24 = &CompileBase::AddInt24L;
+			AddInt32 = &CompileBase::AddInt32L;
+			AddFloat = &CompileBase::AddFloatL;
+			AddInt32toBuff = &CompileBase::AddInt32toBuffL;
+			ChangeInt32inBuff = &CompileBase::ChangeInt32inBuffL;
+			AddInt64toBuff = &CompileBase::AddInt64toBuffL;
+		}
+		else
+		{
+			AddInt16 = &CompileBase::AddInt16B;
+			AddInt24 = &CompileBase::AddInt24B;
+			AddInt32 = &CompileBase::AddInt32B;
+			AddFloat = &CompileBase::AddFloatB;
+			AddInt32toBuff = &CompileBase::AddInt32toBuffB;
+			ChangeInt32inBuff = &CompileBase::ChangeInt32inBuffB;
+			AddInt64toBuff = &CompileBase::AddInt64toBuffB;
+		}
 	}
 	virtual ~CompileBase(){}
 
@@ -125,25 +147,54 @@ protected:
 	{
 		CodePageData.push_back(b);
 	}
-	inline void AddInt16(const int16_t value)
+	
+	void (CompileBase::*AddInt16)(const int16_t value);
+	#define AddInt16 (this->*AddInt16)
+	inline void AddInt16B(const int16_t value)
 	{
 		CodePageData.resize(CodePageData.size() + 2, 0);
 		*((int16_t*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
-	inline void AddInt24(const uint32_t value)
+	inline void AddInt16L(const int16_t value)
+	{
+		CodePageData.resize(CodePageData.size() + 2, 0);
+		*((int16_t*)(CodePageData.data() + CodePageData.size()) - 1) = value;
+	}
+	void (CompileBase::*AddInt24)(const uint32_t value);
+	#define AddInt24 (this->*AddInt24)
+	inline void AddInt24B(const uint32_t value)
 	{
 		CodePageData.resize(CodePageData.size() + 3, 0);
 		*((uint32_t*)(CodePageData.data() + CodePageData.size()) - 1) |= Utils::Bitwise::SwapEndian(value & 0xFFFFFF);
 	}
-	inline void AddInt32(const int32_t value)
+	inline void AddInt24L(const uint32_t value)
+	{
+		CodePageData.resize(CodePageData.size() + 3, 0);
+		*((uint32_t*)(CodePageData.data() + CodePageData.size()) - 1) |= value & 0xFFFFFF;
+	}
+	void (CompileBase::*AddInt32)(const int32_t value);
+	#define AddInt32 (this->*AddInt32)
+	inline void AddInt32B(const int32_t value)
 	{
 		CodePageData.resize(CodePageData.size() + 4, 0);
 		*((int32_t*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
-	inline void AddFloat(const float value)
+	inline void AddInt32L(const int32_t value)
+	{
+		CodePageData.resize(CodePageData.size() + 4, 0);
+		*((int32_t*)(CodePageData.data() + CodePageData.size()) - 1) = value;
+	}
+	void (CompileBase::*AddFloat)(const float value);
+	#define AddFloat (this->*AddFloat)
+	inline void AddFloatB(const float value)
 	{
 		CodePageData.resize(CodePageData.size() + 4, 0);
 		*((float*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
+	}
+	inline void AddFloatL(const float value)
+	{
+		CodePageData.resize(CodePageData.size() + 4, 0);
+		*((float*)(CodePageData.data() + CodePageData.size()) - 1) = value;
 	}
 	inline void AddString(const std::string str)//Override: GTAV
 	{
@@ -288,6 +339,9 @@ protected:
 	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
 	virtual void GoToStack() = 0;
 	virtual void AddJumpTable() = 0;
+	virtual void Shift_Left() { CallNative(JoaatConst("shift_left"), 2, 1); }//Override: GTAVPC
+	virtual void Shift_Right() { CallNative(JoaatConst("shift_right"), 2, 1); }//Override: GTAVPC
+	
 	#pragma endregion
 
 	#pragma region Write_Functions
@@ -300,15 +354,51 @@ protected:
 		CodePageCount = 0;
 		BuildBuffer.clear();
 	}
-	void AddInt32toBuff(int32_t value)
+	void (CompileBase::*AddInt32toBuff)(int32_t value);
+	#define AddInt32toBuff (this->*AddInt32toBuff)
+	void AddInt32toBuffB(int32_t value)
 	{
 		BuildBuffer.resize(BuildBuffer.size() + 4, 0);
 		*((int32_t*)(BuildBuffer.data() + BuildBuffer.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
-	void ChangeInt32inBuff(int32_t value, uint32_t index)
+	void AddInt32toBuffL(int32_t value)
+	{
+		BuildBuffer.resize(BuildBuffer.size() + 4, 0);
+		*((int32_t*)(BuildBuffer.data() + BuildBuffer.size()) - 1) = value;
+	}
+	void (CompileBase::*ChangeInt32inBuff)(int32_t value, uint32_t index);
+	#define ChangeInt32inBuff (this->*ChangeInt32inBuff)
+	void ChangeInt32inBuffB(int32_t value, uint32_t index)
 	{
 		*(int32_t*)(BuildBuffer.data() + index) = Utils::Bitwise::SwapEndian(value);
 	}
+	void ChangeInt32inBuffL(int32_t value, uint32_t index)
+	{
+		*(int32_t*)(BuildBuffer.data() + index) = value;
+	}
+	void (CompileBase::*AddInt64toBuff)(int64_t value);
+	#define AddInt64toBuff (this->*CompileBase::AddInt64toBuff)
+	void AddInt64toBuffL(int64_t value)
+	{
+		BuildBuffer.resize(BuildBuffer.size() + 8, 0);
+		*((int32_t*)(BuildBuffer.data() + BuildBuffer.size()) - 1) = value;
+	}
+	void AddInt64toBuffB(int64_t value)
+	{
+		BuildBuffer.resize(BuildBuffer.size() + 8, 0);
+		*((int32_t*)(BuildBuffer.data() + BuildBuffer.size()) - 1) = Utils::Bitwise::SwapEndian(value);
+	}
+	void (CompileBase::*ChangeInt64inBuff)(int64_t value, uint32_t index);
+	#define ChangeInt64inBuff (this->*ChangeInt64inBuff)
+	void ChangeInt64inBuffL(int64_t value, uint32_t index)
+	{
+		*(int64_t*)(BuildBuffer.data() + index) = value;
+	}
+	void ChangeInt64inBuffB(int64_t value, uint32_t index)
+	{
+		*(int64_t*)(BuildBuffer.data() + index) = Utils::Bitwise::SwapEndian(value);
+	}
+	
 	uint32_t GetSpaceLeft(uint32_t size)
 	{
 		const uint32_t rem = size - (BuildBuffer.size() % size);
@@ -386,7 +476,7 @@ protected:
 class CompileRDR : CompileBase
 {
 public:
-	CompileRDR(Script& data) : CompileBase(RDROpcodes, data, 0, 0) { }
+	CompileRDR(const Script& data) : CompileBase(RDROpcodes, data, 0, 0) { }
 
 	void Compile(std::string outDirectory) override
 	{
@@ -485,8 +575,9 @@ private:
 
 class CompileGTAV : CompileBase
 {
+	friend class CompileGTAVPC;
 public:
-	CompileGTAV(Script& data) : CompileBase(GTAVOpcodes, data, 0, 0) { }
+	CompileGTAV(const Script& data) : CompileBase(GTAVOpcodes, data, 0, 0) { }
 
 	void Compile(std::string outDirectory) override
 	{
@@ -501,6 +592,7 @@ public:
 			break;
 		}
 	}
+
 private:
 	const OpCodes GTAVOpcodes = { VO_Nop, VO_Add, VO_Sub, VO_Mult, VO_Div, VO_Mod, VO_Not, VO_Neg, VO_CmpEq, VO_CmpNe, VO_CmpGt, VO_CmpGe, VO_CmpLt, VO_CmpLe, VO_fAdd, VO_fSub, VO_fMult, VO_fDiv, VO_fMod, VO_fNeg, VO_fCmpEq, VO_fCmpNe, VO_fCmpGt, VO_fCmpGe, VO_fCmpLt, VO_fCmpLe, VO_vAdd, VO_vSub, VO_vMult, VO_vDiv, VO_vNeg, VO_And, VO_Or, VO_Xor, VO_ItoF, VO_FtoI, VO_FtoV, VO_PushB, VO_PushB2, VO_PushB3, VO_Push, VO_PushF, VO_Dup, VO_Drop, VO_CallNative, VO_Function, VO_Return, VO_pGet, VO_pSet, VO_pPeekSet, VO_ToStack, VO_FromStack, VO_GetArrayP1, VO_GetArray1, VO_SetArray1, VO_GetFrameP1, VO_GetFrame1, VO_SetFrame1, VO_GetStaticP1, VO_GetStatic1, VO_SetStatic1, VO_Add1, VO_Mult1, VO_GetImm1, VO_SetImm1, VO_PushS, VO_Add2, VO_Mult2, VO_GetImm2, VO_SetImm2, VO_GetArrayP2, VO_GetArray2, VO_SetArray2, VO_GetFrameP2, VO_GetFrame2, VO_SetFrame2, VO_GetStaticP2, VO_GetStatic2, VO_SetStatic2, VO_GetGlobalP2, VO_GetGlobal2, VO_SetGlobal2, VO_Jump, VO_JumpFalse, VO_JumpNE, VO_JumpEQ, VO_JumpLE, VO_JumpLT, VO_JumpGE, VO_JumpGT, VO_Call, VO_GetGlobalp3, VO_GetGlobal3, VO_SetGlobal3, VO_PushI24, VO_Switch, VO_PushString, VO_StrCopy, VO_ItoS, VO_StrAdd, VO_StrAddi, VO_Memcopy, VO_Catch, VO_Throw, VO_pCall, VO_Push_Neg1, VO_Push_0, VO_Push_1, VO_Push_2, VO_Push_3, VO_Push_4, VO_Push_5, VO_Push_6, VO_Push_7, VO_PushF_Neg1, VO_PushF_0, VO_PushF_1, VO_PushF_2, VO_PushF_3, VO_PushF_4, VO_PushF_5, VO_PushF_6, VO_PushF_7, VO_GetImmP, VO_GetImmP1, VO_GetImmP2, VO_GetHash };
 
@@ -554,4 +646,73 @@ private:
 	void WriteFinalStringPage();
 	void XSCWrite(const char* path, bool CompressAndEncrypt = true);
 	#pragma endregion
+};
+
+class CompileGTAVPC : CompileGTAV
+{
+public:
+	
+	CompileGTAVPC(const Script& data, uint32_t pcVersion) : CompileGTAV(data)
+	{
+		Version = pcVersion;
+
+		//TODO: Check if PC_Natives.bin directory is parsed correctly
+		Utils::IO::LoadData("PC_Natives.bin", NativeFile);
+		
+
+	}
+
+	void Compile(std::string outDirectory)
+	{
+		BuildTables();
+		XSCWrite((outDirectory + HLData->getBuildFileName()).data());
+	}
+private:
+
+	#pragma region Parsed_Data_Vars
+
+	uint32_t Version = 0;
+	std::vector<uint8_t> NativeFile;
+
+	std::unordered_map<uint64_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
+	
+	#pragma endregion
+
+	#pragma region Data_Functions
+	inline uint32_t AddNative(const uint64_t hash)
+	{
+		std::unordered_map<uint64_t, uint32_t>::iterator findRes = NativeHashMap.find(hash);
+		const uint32_t size = NativeHashMap.size();
+		if (findRes != NativeHashMap.end())
+			return findRes->second;
+		else
+			NativeHashMap.insert({ hash, size });
+		return size;
+	}
+	inline uint32_t GetNativeIndex(const uint32_t hash)
+	{
+		std::unordered_map<uint64_t, uint32_t>::iterator it = NativeHashMap.find(hash);
+		if (it != NativeHashMap.end())
+			return it->second;
+		else
+			Utils::System::Throw("Native with hash \"" + std::to_string(hash) + "\" does not exist");
+		return 0;
+	}
+	#pragma endregion
+
+	#pragma region Opcode_Functions
+	void CallNative(const uint64_t hash = -1, const uint8_t paramCount = -1, const uint8_t returnCount = -1);
+	void Shift_Left() override { CallNative(0xEDD95A39E5544DE8, 2, 1); }
+	void Shift_Right() override { CallNative(0x97EF1E5BCE9DC075, 2, 1); }
+
+	#pragma endregion
+
+	#pragma region Write_Functions
+	void WriteHeader();
+	void WritePointers();
+	void WriteNatives();
+	void WriteStatics();
+	void XSCWrite(const char* path, bool AddRsc7Header = false);
+	#pragma endregion
+
 };
