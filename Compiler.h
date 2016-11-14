@@ -122,6 +122,7 @@ protected:
 			AddInt32toBuff = &CompileBase::AddInt32toBuffL;
 			ChangeInt32inBuff = &CompileBase::ChangeInt32inBuffL;
 			AddInt64toBuff = &CompileBase::AddInt64toBuffL;
+			ChangeInt64inBuff = &CompileBase::ChangeInt64inBuffL;
 		}
 		else
 		{
@@ -132,6 +133,7 @@ protected:
 			AddInt32toBuff = &CompileBase::AddInt32toBuffB;
 			ChangeInt32inBuff = &CompileBase::ChangeInt32inBuffB;
 			AddInt64toBuff = &CompileBase::AddInt64toBuffB;
+			ChangeInt64inBuff = &CompileBase::ChangeInt64inBuffB;
 		}
 	}
 	virtual ~CompileBase(){}
