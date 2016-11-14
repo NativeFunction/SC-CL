@@ -103,6 +103,7 @@ void FunctionData::addOpIsNotZero()
 		case OK_FCmpGe:
 		case OK_FCmpLt:
 		case OK_FCmpLe:
+		case OK_Not:
 			//dont need to worry about these cases
 			return;
 		default:

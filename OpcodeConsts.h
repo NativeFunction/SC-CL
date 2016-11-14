@@ -402,3 +402,197 @@ enum GTAIV_Opcodes
 
 };
 
+#pragma warning( disable : 4201 )//unnamed struct extention
+typedef union OpCodes {
+	const uint8_t A[164];
+	struct {
+		const uint8_t
+			Nop
+			, Add
+			, Sub
+			, Mult
+			, Div
+			, Mod
+			, Not
+			, Neg
+			, CmpEq
+			, CmpNe
+			, CmpGt
+			, CmpGe
+			, CmpLt
+			, CmpLe
+			, fAdd
+			, fSub
+			, fMult
+			, fDiv
+			, fMod
+			, fNeg
+			, fCmpEq
+			, fCmpNe
+			, fCmpGt
+			, fCmpGe
+			, fCmpLt
+			, fCmpLe
+			, vAdd
+			, vSub
+			, vMult
+			, vDiv
+			, vNeg
+			, And
+			, Or
+			, Xor
+			, ItoF
+			, FtoI
+			, FtoV
+			, PushB
+			, PushB2
+			, PushB3
+			, Push
+			, PushF
+			, Dup
+			, Drop
+			, CallNative
+			, Function
+			, Return
+			, pGet
+			, pSet
+			, pPeekSet
+			, ToStack
+			, FromStack
+			, GetArrayP1
+			, GetArray1
+			, SetArray1
+			, GetFrameP1
+			, GetFrame1
+			, SetFrame1
+			, GetStaticP1
+			, GetStatic1
+			, SetStatic1
+			, Add1
+			, Mult1
+			, GetImm1
+			, SetImm1
+			, PushS
+			, Add2
+			, Mult2
+			, GetImm2
+			, SetImm2
+			, GetArrayP2
+			, GetArray2
+			, SetArray2
+			, GetFrameP2
+			, GetFrame2
+			, SetFrame2
+			, GetStaticP2
+			, GetStatic2
+			, SetStatic2
+			, GetGlobalP2
+			, GetGlobal2
+			, SetGlobal2
+			, Jump
+			, JumpFalse
+			, JumpNE
+			, JumpEQ
+			, JumpLE
+			, JumpLT
+			, JumpGE
+			, JumpGT
+			, Call
+			, GetGlobalP3
+			, GetGlobal3
+			, SetGlobal3
+			, PushI24
+			, Switch
+			, PushString
+			, StrCopy
+			, ItoS
+			, StrAdd
+			, StrAddi
+			, MemCopy
+			, Catch
+			, Throw
+			, pCall
+			, Push_Neg1
+			, Push_0
+			, Push_1
+			, Push_2
+			, Push_3
+			, Push_4
+			, Push_5
+			, Push_6
+			, Push_7
+			, PushF_Neg1
+			, PushF_0
+			, PushF_1
+			, PushF_2
+			, PushF_3
+			, PushF_4
+			, PushF_5
+			, PushF_6
+			, PushF_7
+
+			///Extra GTAV Opcodes
+			, GetImmP
+			, GetImmP1
+			, GetImmP2
+			, GetHash
+
+
+			///Extra RDR Opcodes
+			, Call2
+			, Call2h1
+			, Call2h2
+			, Call2h3
+			, Call2h4
+			, Call2h5
+			, Call2h6
+			, Call2h7
+			, Call2h8
+			, Call2h9
+			, Call2hA
+			, Call2hB
+			, Call2hC
+			, Call2hD
+			, Call2hE
+			, Call2hF
+			, PushArrayP
+			, ReturnP0R0
+			, ReturnP0R1
+			, ReturnP0R2
+			, ReturnP0R3
+			, ReturnP1R0
+			, ReturnP1R1
+			, ReturnP1R2
+			, ReturnP1R3
+			, ReturnP2R0
+			, ReturnP2R1
+			, ReturnP2R2
+			, ReturnP2R3
+			, ReturnP3R0
+			, ReturnP3R1
+			, ReturnP3R2
+			, ReturnP3R3
+
+			///RDR and GTAIV Opcodes
+			, PushStringNull
+
+			///GTAIV Extra Opcodes
+			, JumpTrue
+			, GetFrameP0
+			, GetFrameP3
+			, GetFrameP4
+			, GetFrameP5
+			, GetFrameP6
+			, GetFrameP7
+			, GetFrameP
+			, GetGlobalP
+			, GetStaticP
+			, GetArrayP
+			, GetXProtect//PC
+			, SetXProtect//PC
+			, RefXProtect//PC
+			, Exit
+
+			;
+	};
+} OpCodes;

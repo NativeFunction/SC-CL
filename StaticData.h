@@ -149,6 +149,12 @@ public:
 		op->storage.staticData = staticData;
 		_dynamicInitialisation.push_back(op);
 	}
+	void addOpGetImmP(uint16_t imm)
+	{
+		Opcode * op = new Opcode(OK_GetImmP);
+		op->setUShort(imm, 0);
+		_dynamicInitialisation.push_back(op);
+	}
 	void addOpAddImm(int imm)
 	{
 		Opcode * op = new Opcode(OK_AddImm);
