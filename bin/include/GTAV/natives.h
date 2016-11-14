@@ -1,13 +1,9 @@
 #pragma once
 
-#include "types.h"
+#ifdef __YSC__
 
-#define _native __attribute((native))
-#define _native32(hash) __attribute((native(hash)))
 #define _native64(hash) __attribute((native(hash & 0xFFFFFFFF, hash >> 32)))
 
-
-#ifdef __YSC__
 #pragma region PLAYER //{
 extern _native64(0x43A66C31C68491C0) Ped get_player_ped(Player player);
 extern _native64(0x50FAC3A3E030A6E1) Ped get_player_ped_script_index(Player player);
@@ -5272,6 +5268,8 @@ extern _native64(0x498C1E05CE5F7877) any _network_shop_cash_transfer_set_telemet
 extern _native64(0x9507D4271988E1AE) bool _network_shop_set_telemetry_nonce_seed(any p0);
 extern _native64(0xFCA9373EF340AC0A) const char* _get_online_version();
 #pragma endregion //}
+#undef _native64
+
 #else
 #pragma region PLAYER //{
 extern _native Ped get_player_ped(Player player);
