@@ -702,6 +702,11 @@ private:
 	}
 	#pragma endregion
 
+	#pragma region Parse_Functions
+	void fixFunctionCalls() override;
+	void fixFunctionJumps() override;
+	#pragma endregion
+
 	#pragma region Opcode_Functions
 	void CallNative(const uint64_t hash = -1, const uint8_t paramCount = -1, const uint8_t returnCount = -1);
 	void Shift_Left() override { CallNative(0xEDD95A39E5544DE8, 2, 1); }

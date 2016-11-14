@@ -1834,6 +1834,50 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 #pragma endregion
 
 #pragma region GTAVPC
+#pragma region Parse_Functions
+void CompileGTAVPC::fixFunctionCalls()
+{
+	for (auto CallInfo : CallLocations)
+	{
+		auto it = FuncLocations.find(CallInfo.Function);
+		if (it == FuncLocations.end())
+		{
+			Utils::System::Throw("Function \"" + CallInfo.Function->getName() + "\" not found");
+		}
+		uint32_t pos = it->second;
+		if (pos >= 0x1000000)
+		{
+			Utils::System::Throw("Function \"" + CallInfo.Function->getName() + "\" out of call range");//realistally this is never going to happen
+		}
+		switch (CallInfo.InstructionType)
+		{
+			case CallInstructionType::FuncLoc:
+			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = pos << 8 | BaseOpcodes->PushI24;
+			break;
+			case CallInstructionType::Call:
+			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = pos << 8 | BaseOpcodes->Call;
+			break;
+			default: assert(false && "Invalid Call Instruction"); break;
+		}
+	}
+}
+void CompileGTAVPC::fixFunctionJumps()
+{
+	for (auto jTableItem : jumpTableLocs)
+	{
+		auto it = LabelLocations.find(jTableItem.labelName);
+		if (it == LabelLocations.end())
+		{
+			Throw("Jump table label '" + jTableItem.labelName + "' not found");
+		}
+		*(uint32_t*)(StringPageData.data() + jTableItem.tableOffset) = it->second.LabelLocation;
+	}
+	jumpTableLocs.clear();
+	JumpLocations.clear();
+	LabelLocations.clear();
+	SignedJumpLocationInc = UnsignedJumpLocationInc = 0;
+}
+#pragma endregion
 
 #pragma region Opcode_Functions
 void CompileGTAVPC::CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount)
