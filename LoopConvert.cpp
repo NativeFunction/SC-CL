@@ -4993,13 +4993,13 @@ public:
 		{
 			if (f->hasAttrs())
 			{
+				if (f->hasAttr<NativeFuncAttr>() || f->hasAttr<IntrinsicFuncAttr>())
+				{
+					return false;
+				}
 				AttrVec vec = f->getAttrs();
 				for(uint32_t i = 0; i < vec.size(); i++)
 					cout << vec[i]->getSpelling() << endl;
-			}
-			if (f->hasAttrs() && (f->hasAttr<NativeFuncAttr>() || f->hasAttr<IntrinsicFuncAttr>()))
-			{
-				return false;
 			}
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i < f->getNumParams(); i++)
@@ -6073,7 +6073,6 @@ public:
 		
 		DisableClangWarning("main-return-type");
 		DisableClangWarning("incompatible-library-redeclaration");
-		DisableClangWarning("shift-count-overflow");
 		ElevateClangWarning("return-type");
 		ElevateClangWarning("dangling-else");
 		

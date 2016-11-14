@@ -1,9 +1,9 @@
 #pragma once
 
 #ifdef __YSC__
-
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshift-count-overflow"
 #define _native64(hash) __attribute((native(hash & 0xFFFFFFFF, hash >> 32)))
-
 #pragma region PLAYER //{
 extern _native64(0x43A66C31C68491C0) Ped get_player_ped(Player player);
 extern _native64(0x50FAC3A3E030A6E1) Ped get_player_ped_script_index(Player player);
@@ -400,7 +400,7 @@ extern _native64(0x24B100C68C645951) bool is_ped_reloading(Ped ped);
 extern _native64(0x12534C348C6CB68B) bool is_ped_a_player(Ped ped);
 extern _native64(0x7DD959874C1FD534) Ped create_ped_inside_vehicle(Vehicle vehicle, int pedType, Hash modelHash, int seat, bool networkHandle, bool pedHandle);
 extern _native64(0xAA5A7ECE2AA8FE70) void set_ped_desired_heading(Ped ped, float heading);
-extern _native64(0xFF287323B0E2C69A) void unk_0xFF287323B0E2C69A(Ped ped);
+extern _native64(0xFF287323B0E2C69A) void _freeze_ped_camera_rotation(Ped ped);
 extern _native64(0xD71649DB0A545AA3) bool is_ped_facing_ped(Ped ped, Ped otherPed, float angle);
 extern _native64(0x4E209B2C1EAD5159) bool is_ped_in_melee_combat(Ped ped);
 extern _native64(0x530944F6F4B8A214) bool is_ped_stopped(Ped ped);
@@ -704,7 +704,7 @@ extern _native64(0xB195FFA8042FC5C3) void set_driver_ability(Ped driver, float a
 extern _native64(0xA731F608CA104E3C) void set_driver_aggressiveness(Ped driver, float aggressiveness);
 extern _native64(0x128F79EDCECE4FD5) bool can_ped_ragdoll(Ped ped);
 extern _native64(0xAE99FB955581844A) bool set_ped_to_ragdoll(Ped ped, int time1, int time2, int ragdollType, bool p4, bool p5, bool p6);
-extern _native64(0xD76632D99E4966C8) bool set_ped_to_ragdoll_with_fall(any p0, any p1, any p2, any p3, any p4, any p5, any p6, any p7, any p8, any p9, any p10, any p11, any p12, any p13);
+extern _native64(0xD76632D99E4966C8) bool set_ped_to_ragdoll_with_fall(any p0, Player p1, any p2, any p3, any p4, any p5, any p6, any p7, any p8, any p9, any p10, any p11, any p12, any p13);
 extern _native64(0xF0A4F1BBF4FA7497) void set_ped_ragdoll_on_collision(Ped ped, bool toggle);
 extern _native64(0x47E4E977581C5B55) bool is_ped_ragdoll(Ped ped);
 extern _native64(0xE3B6097CC25AA69E) bool is_ped_running_ragdoll_task(Ped ped);
@@ -1108,8 +1108,8 @@ extern _native64(0x102D125411A7B6E6) float get_total_duration_of_vehicle_recordi
 extern _native64(0x0E48D1C262390950) any get_total_duration_of_vehicle_recording(any p0, any p1);
 extern _native64(0x2DACD605FC681475) float get_position_in_recording(any p0);
 extern _native64(0x5746F3A7AB7FE544) float get_time_position_in_recording(any p0);
-extern _native64(0x3F878F92B3A7A071) void start_playback_recorded_vehicle(any p0, any p1, any* p2, bool p3);
-extern _native64(0x7D80FD645D4DA346) void start_playback_recorded_vehicle_with_flags(any p0, any p1, any* p2, any p3, any p4, any p5);
+extern _native64(0x3F878F92B3A7A071) void start_playback_recorded_vehicle(Vehicle vehicle, int p1, const char* playback, bool p3);
+extern _native64(0x7D80FD645D4DA346) void start_playback_recorded_vehicle_with_flags(Vehicle vehicle, any p1, const char* playback, any p3, any p4, any p5);
 extern _native64(0x1F2E4E06DEA8992B) void unk_0x1F2E4E06DEA8992B(any p0, bool p1);
 extern _native64(0x54833611C17ABDEA) void stop_playback_recorded_vehicle(any p0);
 extern _native64(0x632A689BF42301B1) void pause_playback_recorded_vehicle(any p0);
@@ -1167,7 +1167,7 @@ extern _native64(0xA5A9653A8D2CAF48) void set_vehicle_door_latched(Vehicle vehic
 extern _native64(0xFE3F9C29F7B32BD5) float get_vehicle_door_angle_ratio(Vehicle vehicle, int door);
 extern _native64(0x218297BF0CFD853B) Ped _get_ped_using_vehicle_door(Vehicle vehicle, int doorIndex);
 extern _native64(0x93D9BD300D7789E5) void set_vehicle_door_shut(Vehicle vehicle, int doorIndex, bool closeInstantly);
-extern _native64(0xD4D4F6A4AB575A33) void set_vehicle_door_broken(Vehicle vehicle, int doorIndex, bool createDoorObject);
+extern _native64(0xD4D4F6A4AB575A33) void set_vehicle_door_broken(Vehicle vehicle, int doorIndex, bool deleteDoor);
 extern _native64(0x59BF8C3D52C92F66) void set_vehicle_can_break(Vehicle vehicle, bool toggle);
 extern _native64(0x8AC862B0B32C5B80) bool does_vehicle_have_roof(Vehicle vehicle);
 extern _native64(0x9F243D3919F442FE) bool is_big_vehicle(Vehicle vehicle);
@@ -2067,7 +2067,7 @@ extern _native64(0xAA391C728106F7AF) void set_this_script_can_be_paused(bool tog
 extern _native64(0xB98236CAAECEF897) void set_this_script_can_remove_blips_created_by_any_script(bool toggle);
 extern _native64(0x071E2A839DE82D90) bool _has_button_combination_just_been_entered(Hash hash, int amount);
 extern _native64(0x557E43C447E700A8) bool _has_cheat_string_just_been_entered(Hash hash);
-extern _native64(0x9BAE5AD2508DF078) void _enable_mp_dlc_maps(bool toggle);
+extern _native64(0x9BAE5AD2508DF078) void _use_freemode_map_behavior(bool toggle);
 extern _native64(0xC5F0A8EBD3F361CE) void _set_unk_map_flag(int flag);
 extern _native64(0x7EA2B6AF97ECA6ED) bool is_frontend_fading();
 extern _native64(0x7472BB270D7B4F3E) void populate_now();
@@ -2308,7 +2308,7 @@ extern _native64(0x1B9025BDA76822B6) void blip_siren(Vehicle vehicle);
 extern _native64(0x3CDC1E622CCE0356) void override_veh_horn(Vehicle vehicle, bool mute, int p2);
 extern _native64(0x9D6BFC12B05C6121) bool is_horn_active(Vehicle vehicle);
 extern _native64(0x395BF71085D1B1D9) void set_aggressive_horns(bool toggle);
-extern _native64(0x02E93C796ABD3A97) void unk_0x02E93C796ABD3A97(any p0);
+extern _native64(0x02E93C796ABD3A97) void unk_0x02E93C796ABD3A97(bool p0);
 extern _native64(0x58BB377BEC7CD5F4) void unk_0x58BB377BEC7CD5F4(bool p0, bool p1);
 extern _native64(0xD11FA52EB849D978) bool is_stream_playing();
 extern _native64(0x4E72BBDBCA58A3DB) int get_stream_play_time();
@@ -2381,7 +2381,7 @@ extern _native64(0xD2CC78CD3D0B50F9) void unk_0xD2CC78CD3D0B50F9(any p0, bool p1
 extern _native64(0xBF4DC1784BE94DFA) void unk_0xBF4DC1784BE94DFA(any p0, bool p1, any p2);
 extern _native64(0x75773E11BA459E90) void unk_0x75773E11BA459E90(any p0, bool p1);
 extern _native64(0xD57AAAE0E2214D11) void unk_0xD57AAAE0E2214D11();
-extern _native64(0x552369F549563AD5) void unk_0x552369F549563AD5(bool p0);
+extern _native64(0x552369F549563AD5) void _force_ambient_siren(bool value);
 extern _native64(0x43FA0DFC5DF87815) void unk_0x43FA0DFC5DF87815(any p0, bool p1);
 extern _native64(0xB9EFD5C25018725A) void set_audio_flag(const char* flagName, bool toggle);
 extern _native64(0xC7ABCACA4985A766) any prepare_synchronized_audio_event(const char* p0, any p1);
@@ -2390,7 +2390,7 @@ extern _native64(0x8B2FD4560E55DD2D) bool play_synchronized_audio_event(any p0);
 extern _native64(0x92D6A88E64A94430) bool stop_synchronized_audio_event(any p0);
 extern _native64(0xC8EDE9BDBCCBA6D4) void unk_0xC8EDE9BDBCCBA6D4(any* p0, float p1, float p2, float p3);
 extern _native64(0x950A154B8DAB6185) void _set_synchronized_audio_event_position_this_frame(const char* p0, Entity p1);
-extern _native64(0x12561FCBB62D5B9C) void unk_0x12561FCBB62D5B9C(any p0);
+extern _native64(0x12561FCBB62D5B9C) void unk_0x12561FCBB62D5B9C(int p0);
 extern _native64(0x044DBAD7A7FA2BE5) void unk_0x044DBAD7A7FA2BE5(const char* p0, const char* p1);
 extern _native64(0xB4BBFD9CD8B3922B) void unk_0xB4BBFD9CD8B3922B(const char* p0);
 extern _native64(0xE4E6DD5566D28C82) void unk_0xE4E6DD5566D28C82();
@@ -2473,7 +2473,7 @@ extern _native64(0xA6575914D2A0B450) Hash _get_room_key_from_gameplay_cam();
 extern _native64(0x23B59D8912F94246) void unk_0x23B59D8912F94246();
 extern _native64(0xB0F7F8663821D9C3) int get_interior_at_coords(vector3 vec);
 extern _native64(0x3F6167F351168730) void add_pickup_to_interior_room_by_name(Pickup pickup, const char* roomName);
-extern _native64(0x2CA429C029CCF247) void unk_0x2CA429C029CCF247(int interiorID);
+extern _native64(0x2CA429C029CCF247) void _load_interior(int interiorID);
 extern _native64(0x261CCE7EED010641) void unpin_interior(int interiorID);
 extern _native64(0x6726BDCCC1932F0E) bool is_interior_ready(int interiorID);
 extern _native64(0x4C2330E61D3DEB56) any unk_0x4C2330E61D3DEB56(int interiorID);
@@ -2910,7 +2910,7 @@ extern _native64(0x63EB2B972A218CAC) void unk_0x63EB2B972A218CAC();
 extern _native64(0xFB199266061F820A) any unk_0xFB199266061F820A();
 extern _native64(0xF4A0DADB70F57FA6) void unk_0xF4A0DADB70F57FA6();
 extern _native64(0x5068F488DDB54DD8) any unk_0x5068F488DDB54DD8();
-extern _native64(0x3D245789CE12982C) void prefetch_srl(any* p0);
+extern _native64(0x3D245789CE12982C) void prefetch_srl(const char* srl);
 extern _native64(0xD0263801A4C5B0BB) bool is_srl_loaded();
 extern _native64(0x9BADDC94EF83B823) void begin_srl();
 extern _native64(0x0A41540E63C9EE17) void end_srl();
@@ -3023,7 +3023,7 @@ extern _native64(0xCD015E5BB0D96A57) void _draw_text(vector2 vector);
 extern _native64(0x54CE8AC98E120CAB) void _set_text_entry_for_width(const char* text);
 extern _native64(0x85F061DA64ED2F67) float _get_text_screen_width(bool p0);
 extern _native64(0x521FB041D93DD0E4) void _set_text_gxt_entry(const char* entry);
-extern _native64(0x9040DFB09BE75706) int unk_0x9040DFB09BE75706(float p0, float p1);
+extern _native64(0x9040DFB09BE75706) int _get_text_screen_line_count(vector2 screenPos);
 extern _native64(0x8509B634FBE7DA11) void _set_text_component_format(const char* inputType);
 extern _native64(0x238FFE5C7B0498A6) void _display_help_text_from_string_label(any p0, bool loop, bool beep, int shape);
 extern _native64(0x0A24DA3A41B718F5) void unk_0x0A24DA3A41B718F5(const char* p0);
@@ -3455,8 +3455,8 @@ extern _native64(0xD0F64B265C8C8B33) void draw_spot_light(vector3 pos, vector3 d
 extern _native64(0x5BCA583A583194DB) void _draw_spot_light_with_shadow(vector3 pos, vector3 dir, RGB color, float distance, float brightness, float roundness, float radius, float falloff, float shadow);
 extern _native64(0xC9B18B4619F48F7B) void unk_0xC9B18B4619F48F7B(float p0);
 extern _native64(0xDEADC0DEDEADC0DE) void unk_0xDEADC0DEDEADC0DE(Object object);
-extern _native64(0x28477EC23D892089) void draw_marker(int type, vector3 pos, vector3 dir, vector3 rot, vector3 scale, RGBA color, bool bobUpAndDown, bool faceCamera, int p19, bool rotate, const char* textureDict, const char* textureName, bool drawOnEnts);
-extern _native64(0x0134F0835AB6BFCB) int create_checkpoint(int type, vector3 pos1, vector3 pos2, float radius, RGBA color, int reserved);
+extern _native64(0x28477EC23D892089) void draw_marker(int type, vector3 pos, vector3 dir, vector3 rot, vector3 scale, RGBA colour, bool bobUpAndDown, bool faceCamera, int p19, bool rotate, const char* textureDict, const char* textureName, bool drawOnEnts);
+extern _native64(0x0134F0835AB6BFCB) int create_checkpoint(int type, vector3 pos1, vector3 pos2, float radius, RGBA colour, int reserved);
 extern _native64(0x4B5B4DA5D79F1943) void unk_0x4B5B4DA5D79F1943(int checkpoint, float p0);
 extern _native64(0x2707AAE9D9297D89) void set_checkpoint_cylinder_height(int checkpoint, float nearHeight, float farHeight, float radius);
 extern _native64(0x7167371E8AD747F7) void set_checkpoint_rgba(int checkpoint, RGBA colour);
@@ -3477,7 +3477,7 @@ extern _native64(0xE3A3DB414A373DAB) void _screen_draw_position_end();
 extern _native64(0xF5A2C681787E579D) void _screen_draw_position_ratio(vector2 vector, float p2, float p3);
 extern _native64(0x6DD8F5AA635EB4B2) void unk_0x6DD8F5AA635EB4B2(float p0, float p1, any* p2, any* p3);
 extern _native64(0xBAF107B6BB2C97F0) float get_safe_zone_size();
-extern _native64(0xE7FFAE5EBF23D890) void draw_sprite(const char* textureDict, const char* textureName, vector2 screen, Size scale, float heading, RGBA color);
+extern _native64(0xE7FFAE5EBF23D890) void draw_sprite(const char* textureDict, const char* textureName, vector2 screen, Size scale, float heading, RGBA colour);
 extern _native64(0x9CD43EEE12BF4DD0) any add_entity_icon(Entity entity, const char* icon);
 extern _native64(0xE0E8BEECCA96BA31) void set_entity_icon_visibility(Entity entity, bool toggle);
 extern _native64(0x1D5F595CCAE2E238) void set_entity_icon_color(Entity entity, RGBA colour);
@@ -5269,7 +5269,7 @@ extern _native64(0x9507D4271988E1AE) bool _network_shop_set_telemetry_nonce_seed
 extern _native64(0xFCA9373EF340AC0A) const char* _get_online_version();
 #pragma endregion //}
 #undef _native64
-
+#pragma clang diagnostic pop
 #else
 #pragma region PLAYER //{
 extern _native Ped get_player_ped(Player player);
@@ -5644,7 +5644,7 @@ extern _native bool is_ped_reloading(Ped ped);
 extern _native bool is_ped_a_player(Ped ped);
 extern _native Ped create_ped_inside_vehicle(Vehicle vehicle, int pedType, Hash modelHash, int seat, bool networkHandle, bool pedHandle);
 extern _native void set_ped_desired_heading(Ped ped, float heading);
-extern _native void unk_0x290421BE(Ped ped);
+extern _native32(0x290421BE) void _freeze_ped_camera_rotation(Ped ped);
 extern _native bool is_ped_facing_ped(Ped ped, Ped otherPed, float angle);
 extern _native bool is_ped_in_melee_combat(Ped ped);
 extern _native bool is_ped_stopped(Ped ped);
@@ -5912,7 +5912,7 @@ extern _native void set_driver_ability(Ped driver, float ability);
 extern _native void set_driver_aggressiveness(Ped driver, float aggressiveness);
 extern _native bool can_ped_ragdoll(Ped ped);
 extern _native bool set_ped_to_ragdoll(Ped ped, int time1, int time2, int ragdollType, bool p4, bool p5, bool p6);
-extern _native bool set_ped_to_ragdoll_with_fall(any p0, any p1, any p2, any p3, any p4, any p5, any p6, any p7, any p8, any p9, any p10, any p11, any p12, any p13);
+extern _native bool set_ped_to_ragdoll_with_fall(any p0, Player p1, any p2, any p3, any p4, any p5, any p6, any p7, any p8, any p9, any p10, any p11, any p12, any p13);
 extern _native void set_ped_ragdoll_on_collision(Ped ped, bool toggle);
 extern _native bool is_ped_ragdoll(Ped ped);
 extern _native bool is_ped_running_ragdoll_task(Ped ped);
@@ -6297,8 +6297,8 @@ extern _native float get_total_duration_of_vehicle_recording_id(any p0);
 extern _native any get_total_duration_of_vehicle_recording(any p0, any p1);
 extern _native float get_position_in_recording(any p0);
 extern _native float get_time_position_in_recording(any p0);
-extern _native void start_playback_recorded_vehicle(any p0, any p1, any* p2, bool p3);
-extern _native void start_playback_recorded_vehicle_with_flags(any p0, any p1, any* p2, any p3, any p4, any p5);
+extern _native void start_playback_recorded_vehicle(Vehicle vehicle, int p1, const char* playback, bool p3);
+extern _native void start_playback_recorded_vehicle_with_flags(Vehicle vehicle, any p1, const char* playback, any p3, any p4, any p5);
 extern _native void unk_0x01B91CD0(any p0, bool p1);
 extern _native void stop_playback_recorded_vehicle(any p0);
 extern _native void pause_playback_recorded_vehicle(any p0);
@@ -6354,7 +6354,7 @@ extern _native void set_vehicle_door_control(Vehicle vehicle, int doorIndex, int
 extern _native void set_vehicle_door_latched(Vehicle vehicle, int doorIndex, bool p2, bool p3, bool p4);
 extern _native float get_vehicle_door_angle_ratio(Vehicle vehicle, int door);
 extern _native void set_vehicle_door_shut(Vehicle vehicle, int doorIndex, bool closeInstantly);
-extern _native void set_vehicle_door_broken(Vehicle vehicle, int doorIndex, bool createDoorObject);
+extern _native void set_vehicle_door_broken(Vehicle vehicle, int doorIndex, bool deleteDoor);
 extern _native void set_vehicle_can_break(Vehicle vehicle, bool toggle);
 extern _native bool does_vehicle_have_roof(Vehicle vehicle);
 extern _native bool is_big_vehicle(Vehicle vehicle);
@@ -7179,7 +7179,7 @@ extern _native void set_game_paused(bool toggle);
 extern _native void set_this_script_can_be_paused(bool toggle);
 extern _native void set_this_script_can_remove_blips_created_by_any_script(bool toggle);
 extern _native32(0xFF6191E1) bool _has_button_combination_just_been_entered(Hash hash, int amount);
-extern _native32(0x721B2492) void _enable_mp_dlc_maps(bool toggle);
+extern _native32(0x721B2492) void _use_freemode_map_behavior(bool toggle);
 extern _native32(0xE202879D) void _set_unk_map_flag(int flag);
 extern _native bool is_frontend_fading();
 extern _native void populate_now();
@@ -7385,7 +7385,7 @@ extern _native void blip_siren(Vehicle vehicle);
 extern _native void override_veh_horn(Vehicle vehicle, bool mute, int p2);
 extern _native bool is_horn_active(Vehicle vehicle);
 extern _native void set_aggressive_horns(bool toggle);
-extern _native void unk_0x3C395AEE(any p0);
+extern _native void unk_0x3C395AEE(bool p0);
 extern _native void unk_0x8CE63FA1(bool p0, bool p1);
 extern _native bool is_stream_playing();
 extern _native int get_stream_play_time();
@@ -7453,7 +7453,7 @@ extern _native Hash get_vehicle_default_horn(Vehicle veh);
 extern _native any unk_0xFD4B5B3B(any p0);
 extern _native void reset_ped_audio_flags(any p0);
 extern _native void unk_0xC307D531(any p0, bool p1);
-extern _native void unk_0x13EB5861(bool p0);
+extern _native32(0x13EB5861) void _force_ambient_siren(bool value);
 extern _native void unk_0x7BED1872(any p0, bool p1);
 extern _native void set_audio_flag(const char* flagName, bool toggle);
 extern _native any prepare_synchronized_audio_event(const char* p0, any p1);
@@ -7462,7 +7462,7 @@ extern _native bool play_synchronized_audio_event(any p0);
 extern _native bool stop_synchronized_audio_event(any p0);
 extern _native void unk_0x55A21772(any* p0, float p1, float p2, float p3);
 extern _native32(0xA17F9AB0) void _set_synchronized_audio_event_position_this_frame(const char* p0, Entity p1);
-extern _native void unk_0x62B43677(any p0);
+extern _native void unk_0x62B43677(int p0);
 extern _native void unk_0x8AD670EC(const char* p0, const char* p1);
 extern _native void unk_0xD24B4D0C(const char* p0);
 extern _native void unk_0x7262B5BA();
@@ -7532,7 +7532,7 @@ extern _native32(0x4FF3D3F5) Hash _get_room_key_from_gameplay_cam();
 extern _native void unk_0x617DC75D();
 extern _native int get_interior_at_coords(vector3 vec);
 extern _native void add_pickup_to_interior_room_by_name(Pickup pickup, const char* roomName);
-extern _native void unk_0x3ADA414E(int interiorID);
+extern _native32(0x3ADA414E) void _load_interior(int interiorID);
 extern _native void unpin_interior(int interiorID);
 extern _native bool is_interior_ready(int interiorID);
 extern _native int get_interior_at_coords_with_type(vector3 vec, const char* interiorType);
@@ -7937,7 +7937,7 @@ extern _native void unk_0xF2CDD6A8();
 extern _native any unk_0x17B0A1CD();
 extern _native void unk_0x3DA7AA5D();
 extern _native any unk_0xDAB4BAC0();
-extern _native void prefetch_srl(any* p0);
+extern _native void prefetch_srl(const char* srl);
 extern _native bool is_srl_loaded();
 extern _native void begin_srl();
 extern _native void end_srl();
@@ -8034,7 +8034,7 @@ extern _native32(0x6F8350CE) void _draw_text(vector2 vector);
 extern _native32(0x51E7A037) void _set_text_entry_for_width(const char* text);
 extern _native32(0xD12A643A) float _get_text_screen_width(bool p0);
 extern _native32(0x94B82066) void _set_text_gxt_entry(const char* entry);
-extern _native int unk_0xAA318785(float p0, float p1);
+extern _native32(0xAA318785) int _get_text_screen_line_count(vector2 screenPos);
 extern _native32(0xB245FC10) void _set_text_component_format(const char* inputType);
 extern _native32(0xB59B530D) void _display_help_text_from_string_label(any p0, bool loop, bool beep, int shape);
 extern _native void unk_0x00E20F2D(const char* p0);
@@ -8431,8 +8431,8 @@ extern _native void draw_light_with_range(vector3 pos, RGB color, float range, f
 extern _native void draw_spot_light(vector3 pos, vector3 dir, RGB color, float distance, float brightness, float roundness, float radius, float falloff);
 extern _native32(0x32BF9598) void _draw_spot_light_with_shadow(vector3 pos, vector3 dir, RGB color, float distance, float brightness, float roundness, float radius, float falloff, float shadow);
 extern _native void unk_0x93628786(float p0);
-extern _native void draw_marker(int type, vector3 pos, vector3 dir, vector3 rot, vector3 scale, RGBA color, bool bobUpAndDown, bool faceCamera, int p19, bool rotate, const char* textureDict, const char* textureName, bool drawOnEnts);
-extern _native int create_checkpoint(int type, vector3 pos1, vector3 pos2, float radius, RGBA color, int reserved);
+extern _native void draw_marker(int type, vector3 pos, vector3 dir, vector3 rot, vector3 scale, RGBA colour, bool bobUpAndDown, bool faceCamera, int p19, bool rotate, const char* textureDict, const char* textureName, bool drawOnEnts);
+extern _native int create_checkpoint(int type, vector3 pos1, vector3 pos2, float radius, RGBA colour, int reserved);
 extern _native void unk_0x80151CCF(int checkpoint, float p0);
 extern _native void set_checkpoint_cylinder_height(int checkpoint, float nearHeight, float farHeight, float radius);
 extern _native void set_checkpoint_rgba(int checkpoint, RGBA colour);
@@ -8452,7 +8452,7 @@ extern _native32(0x228A2598) void _set_screen_draw_position(int x, int y);
 extern _native32(0x3FE33BD6) void _screen_draw_position_end();
 extern _native32(0x76C641E4) void _screen_draw_position_ratio(vector2 vector, float p2, float p3);
 extern _native float get_safe_zone_size();
-extern _native void draw_sprite(const char* textureDict, const char* textureName, vector2 screen, Size scale, float heading, RGBA color);
+extern _native void draw_sprite(const char* textureDict, const char* textureName, vector2 screen, Size scale, float heading, RGBA colour);
 extern _native any add_entity_icon(Entity entity, const char* icon);
 extern _native void set_entity_icon_visibility(Entity entity, bool toggle);
 extern _native void set_entity_icon_color(Entity entity, RGBA colour);
@@ -9934,11 +9934,5 @@ extern _native void unk_0x7D90EEE5(bool p0);
 extern _native32(0x734CFEDA) bool _is_ui_loading_multiplayer();
 extern _native void unk_0x8C227332(bool p0);
 extern _native void unk_0x5C350D78(bool p0);
-#pragma endregion //}
-#pragma region UNK1 //{
-#pragma endregion //}
-#pragma region UNK2 //{
-#pragma endregion //}
-#pragma region UNK3 //{
 #pragma endregion //}
 #endif
