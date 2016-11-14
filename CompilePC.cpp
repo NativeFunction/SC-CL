@@ -823,8 +823,8 @@ void CompileGTAPC::ParseGeneral(const OpcodeKind OK)
 		case OK_Label:		AddLabel(DATA->getString()); return;
 		case OK_LabelLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); return;
 		case OK_FuncLoc:	AddFuncLoc(DATA->getFunctionData()); return;
-		case OK_ShiftLeft:	CallNative(JoaatConst("shift_left"), 2, 1); return;
-		case OK_ShiftRight:	CallNative(JoaatConst("shift_right"), 2, 1); return;
+		case OK_ShiftLeft:	CallNative(0xEDD95A39E5544DE8, 2, 1); return;
+		case OK_ShiftRight:	CallNative(0x97EF1E5BCE9DC075, 2, 1); return;
 		case OK_GetHash:	GetHash(); return;
 		case OK_GoToStack:	GoToStack(); return;
 		case OK_JumpTable:	AddJumpTable(); return;
