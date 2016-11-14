@@ -4992,7 +4992,12 @@ public:
 		}
 		else
 		{
-			string name = f->getNameAsString();
+			if (f->hasAttrs())
+			{
+				AttrVec vec = f->getAttrs();
+				for(int i = 0; i < vec.size(); i++)
+					cout << vec[i]->getSpelling() << endl;
+			}
 			if (f->hasAttrs() && (f->hasAttr<NativeFuncAttr>() || f->hasAttr<IntrinsicFuncAttr>()))
 			{
 				return false;
@@ -5004,7 +5009,7 @@ public:
 			scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), false, true);
 
 
-			cout << "added prototype: " << name << endl;
+			cout << "added prototype: " << f->getNameAsString() << endl;
 		}
 
 		return true;
@@ -6222,7 +6227,7 @@ int main(int argc, const char **argv) {
 		
 		string outDir = GetDir(op.getSourcePathList()[0]);
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
-		scriptData.reset(new Script(scriptName, BuildType::BT_RDR_XSC, Platform::P_PS3));
+		scriptData.reset(new Script(scriptName, BuildType::BT_GTAV, Platform::P_PC));
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 		if (!ProcessingFailed)
 		{
