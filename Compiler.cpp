@@ -980,7 +980,7 @@ uint32_t CompileRDR::GetFlagFromReadbuffer(uint32_t buffer)
 #pragma endregion
 
 #pragma region Opcode_Functions
-void CompileRDR::CallNative(const uint32_t hash, const uint8_t paramCount, const uint8_t returnCount)
+void CompileRDR::CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount)
 {
 	// rdr 2 byte call loc based on index
 	DoesOpcodeHaveRoom(3);
@@ -1544,7 +1544,7 @@ void CompileGTAV::fixFunctionJumps()
 #pragma endregion
 
 #pragma region Opcode_Functions
-void CompileGTAV::CallNative(const uint32_t hash, const uint8_t paramCount, const uint8_t returnCount)
+void CompileGTAV::CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount)
 {
 	// gta5 1 byte param/return, 2 byte call loc
 

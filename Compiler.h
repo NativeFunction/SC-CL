@@ -307,7 +307,7 @@ protected:
 	virtual void PushFloat(const float Literal);//Override: GTAIV
 	void PushFloat(){ PushFloat(DATA->getFloat()); }
 	virtual void PushString();//Override: GTAV
-	virtual void CallNative(const uint32_t hash = -1, const uint8_t paramCount = -1, const uint8_t returnCount = -1) { assert(false && "CallNative has to be overridden"); };//Override: ALL
+	virtual void CallNative(const uint64_t hash = -1, const uint8_t paramCount = -1, const uint8_t returnCount = -1) { assert(false && "CallNative has to be overridden"); };//Override: ALL
 	virtual void Return() { DoesOpcodeHaveRoom(3); AddOpcode(Return); AddInt8(DATA->getByte(0)); AddInt8(DATA->getByte(1)); };//Override: RDR
 	virtual void GetArrayP();//Override: GTAIV
 	virtual void GetArray();//Override: GTAIV
@@ -549,7 +549,7 @@ private:
 	#pragma endregion
 	
 	#pragma region Opcode_Functions
-	void CallNative(const uint32_t hash, const uint8_t paramCount,const uint8_t returnCount) override;
+	void CallNative(const uint64_t hash, const uint8_t paramCount,const uint8_t returnCount) override;
 	void Return() override;
 	void GetHash() override { CallNative(JoaatConst("string_to_hash"), 1, 1); };
 	void Call() override;
@@ -630,7 +630,7 @@ private:
 	#pragma endregion
 
 	#pragma region Opcode_Functions
-	void CallNative(const uint32_t hash, const uint8_t paramCount, const uint8_t returnCount) override;
+	void CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount) override;
 	void GetHash() override { AddOpcode(GetHash); };
 	void Call() override;
 	void PushString() override;
@@ -708,7 +708,7 @@ private:
 	#pragma endregion
 
 	#pragma region Opcode_Functions
-	void CallNative(const uint64_t hash = -1, const uint8_t paramCount = -1, const uint8_t returnCount = -1);
+	void CallNative(const uint64_t hash = -1, const uint8_t paramCount = -1, const uint8_t returnCount = -1) override;
 	void Shift_Left() override { CallNative(0xEDD95A39E5544DE8, 2, 1); }
 	void Shift_Right() override { CallNative(0x97EF1E5BCE9DC075, 2, 1); }
 
