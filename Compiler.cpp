@@ -1047,7 +1047,7 @@ void CompileRDR::Call()
 		{
 			DoesOpcodeHaveRoom(3);
 			AddInt8(GetNewCallOpCode(it->second));
-			AddInt16(SwapEndian(GetNewCallOffset((uint16_t)it->second)));
+			AddInt16(GetNewCallOffset((uint16_t)it->second));
 		}
 	}
 
@@ -1139,7 +1139,7 @@ void CompileRDR::WriteHeader()
 {
 	headerLocation = BuildBuffer.size();
 	AddInt32toBuff(0xA8D74300);//Page Base
-	AddInt32toBuff(0); //Unk1 ptr
+	AddInt32toBuff(0); //Page Map ptr
 	AddInt32toBuff(0); //codeBlocksListOffsetPtr
 	AddInt32toBuff(CodePageData.size());//code length
 	AddInt32toBuff(HLData->getParameterCount());//script ParameterCount (this needs to be implemented)
