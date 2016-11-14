@@ -6074,7 +6074,6 @@ public:
 		
 		DisableClangWarning("main-return-type");
 		DisableClangWarning("incompatible-library-redeclaration");
-		DisableClangWarning("shift-count-overflow");
 		ElevateClangWarning("return-type");
 		ElevateClangWarning("dangling-else");
 		
