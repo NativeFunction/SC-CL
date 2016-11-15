@@ -6230,7 +6230,7 @@ int main(int argc, const char **argv) {
 		
 		string outDir = GetDir(op.getSourcePathList()[0]);
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
-		scriptData.reset(new Script(scriptName, BuildType::BT_GTAV, Platform::P_PC));
+		scriptData.reset(new Script(scriptName, BuildType::BT_GTAV, Platform::P_XBOX));
 		stackWidth = scriptData->getStackWidth();
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 		if (!ProcessingFailed)
