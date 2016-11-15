@@ -6176,7 +6176,7 @@ void WriteScriptFile(string outDir)
 				break;
 				case P_PC:
 				{
-					CompileGTAVPC c(*scriptData, 0);
+					CompileGTAVPC c(*scriptData, "877");
 					c.Compile(outDir);
 				}
 				break;
