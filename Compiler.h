@@ -88,7 +88,7 @@ protected:
 	#pragma endregion
 
 	#pragma region Parse_Data_Vars
-	uint32_t ReadBufferSize = 0;
+	const uint32_t ReadBufferSize = 0;
 	const OpCodes* BaseOpcodes;//dynamic opcode list
 	const Script* HLData;//data to parse(High Level Data)
 	uint32_t FunctionCount = 0;
@@ -109,15 +109,13 @@ protected:
 	#define DATA HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)
 	#define AddOpcode(op) AddInt8(BaseOpcodes->##op);
 
-	CompileBase(const OpCodes& Op, const Script& data, const uint32_t Function_Count, const uint32_t Instruction_Count)
+	CompileBase(const OpCodes& Op, const Script& data, const uint32_t Function_Count, const uint32_t Instruction_Count) : 
+		BaseOpcodes(&Op), 
+		HLData(&data), 
+		ReadBufferSize(HLData->getBuildPlatform() == Platform::P_PS3 ? 8192 : 16384),
+		FunctionCount(Function_Count),
+		InstructionCount(Instruction_Count)
 	{
-		BaseOpcodes = &Op;
-		HLData = &data;
-		//														PS3				PC / XBOX
-		ReadBufferSize = HLData->getBuildPlatform() == Platform::P_PS3 ? 8192 : 16384;//TODO: Find pc read buffer
-		FunctionCount = Function_Count;
-		InstructionCount = Instruction_Count;
-
 		//Set Endian
 		if (HLData->getBuildPlatform() == Platform::P_PC)
 		{
@@ -704,10 +702,8 @@ class CompileGTAVPC : CompileGTAV
 {
 public:
 	
-	CompileGTAVPC(const Script& data, uint32_t pcVersion) : CompileGTAV(data)
+	CompileGTAVPC(const Script& data, uint32_t pcVersion) : CompileGTAV(data), Version(pcVersion)
 	{
-		Version = pcVersion;
-
 		//TODO: Check if PC_Natives.bin directory is parsed correctly
 		Utils::IO::LoadData("PC_Natives.bin", NativeFile);
 		
@@ -723,7 +719,7 @@ private:
 
 	#pragma region Parsed_Data_Vars
 
-	uint32_t Version = 0;
+	const uint32_t Version = 0;
 	std::vector<uint8_t> NativeFile;
 
 	std::unordered_map<uint64_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
