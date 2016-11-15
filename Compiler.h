@@ -8,6 +8,7 @@
 #include "OpcodeConsts.h"
 #include "ConstExpr.h"
 #include "Script.h"
+#include "fstream"
 
 
 class CompileBase
@@ -700,14 +701,75 @@ private:
 
 class CompileGTAVPC : CompileGTAV
 {
+	class NativeTranslation
+	{
+		std::unordered_map<uint64_t, uint64_t> translation;
+		uint64_t _noTranslation(uint64_t nat)const { return nat; }
+		uint64_t _translate(uint64_t nat)const 
+		{
+			auto it = translation.find(nat);
+			if (it != translation.end())
+				return it->second;
+			return nat;
+		}
+		uint64_t(NativeTranslation::*translationFunction)(uint64_t) const;
+	public:
+		NativeTranslation(const char* versionString)
+		{
+			std::ifstream natFile("PC_Natives.bin", std::ios::in | std::ios::binary | std::ios::ate);
+			if (!natFile.is_open())
+			{
+				Utils::System::Warn("Couldnt open pc native translation table, check for file 'PC_Natives.bin' in directory");
+				translationFunction = &NativeTranslation::_noTranslation;
+				return;
+			}
+			natFile.seekg(0);
+			uint32_t verCount = 0, natCount = 0;
+			natFile.read((char*)&verCount, 4);
+			natFile.read((char*)&natCount, 4);
+			char buff[8];
+			natFile.read(buff, 8);
+			if (strcmp(versionString, buff) == 0)
+			{
+				natFile.close();
+				translationFunction = &NativeTranslation::_noTranslation;
+				return;
+			}
+			uint32_t usedVersion = -1;
+			for (uint32_t i = 0; i < verCount;i++)
+			{
+				natFile.read(buff, 8);
+				if (strcmp(versionString, buff) == 0)
+				{
+					usedVersion = i;
+					natFile.seekg((verCount - i - 1) * 8, std::ios_base::cur);//skip past rest of versions
+					break;
+				}
+			}
+			if (usedVersion == -1)
+			{
+				Utils::System::Warn("Version string '" + std::string(versionString) + "' was not found in translation data file, defaulting to latest game version");
+				usedVersion = verCount - 1;
+			}
+			translationFunction = &NativeTranslation::_translate;
+			for (uint32_t i = 0; i < natCount;i++)
+			{
+				uint64_t origNative, mappedNative;
+				natFile.read((char*)&origNative, 8);
+				natFile.seekg(usedVersion * 8, std::ios_base::cur);//skip past rest of versions
+				natFile.read((char*)&mappedNative, 8);
+				natFile.seekg((verCount - usedVersion - 1) * 8, std::ios_base::cur);
+				translation.insert({ origNative, mappedNative });
+			}
+			natFile.close();
+		}
+
+		uint64_t Translate(uint64_t originalHash)const { return (this->*translationFunction)(originalHash); }
+	}nativeTranslation;
 public:
 	
-	CompileGTAVPC(const Script& data, uint32_t pcVersion) : CompileGTAV(data), Version(pcVersion)
-	{
-		//TODO: Check if PC_Natives.bin directory is parsed correctly
-		Utils::IO::LoadData("PC_Natives.bin", NativeFile);
-		
-
+	CompileGTAVPC(const Script& data, const char* nativesVersion) : CompileGTAV(data), nativeTranslation(nativesVersion)
+	{		
 	}
 
 	void Compile(std::string outDirectory)
@@ -718,12 +780,7 @@ public:
 private:
 
 	#pragma region Parsed_Data_Vars
-
-	const uint32_t Version = 0;
-	std::vector<uint8_t> NativeFile;
-
 	std::unordered_map<uint64_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
-	
 	#pragma endregion
 
 	#pragma region Data_Functions
