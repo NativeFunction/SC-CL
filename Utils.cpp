@@ -65,17 +65,30 @@ namespace Utils {
 	{
 		string IntToHex(uint32_t val)
 		{
-			const char hex_str[] = "0123456789ABCDEF";
+			const string hex_str = "0123456789ABCDEF";
 			uint8_t* bin = (uint8_t*)&val;
 
-			string str("\0", 9);
+			string str(8, '\0');
 
 			for (uint32_t i = 0; i < 4; i++)
 			{
 				str[i * 2 + 0] = hex_str[(bin[i] >> 4) & 0x0F];
 				str[i * 2 + 1] = hex_str[(bin[i]) & 0x0F];
 			}
-			str[8] = '\0';
+			return str;
+		}
+		string IntToHex(uint16_t val)
+		{
+			const string hex_str = "0123456789ABCDEF";
+			uint8_t* bin = (uint8_t*)&val;
+
+			string str(4, '\0');
+
+			for (uint32_t i = 0; i < 2; i++)
+			{
+				str[i * 2 + 0] = hex_str[(bin[i] >> 4) & 0x0F];
+				str[i * 2 + 1] = hex_str[(bin[i]) & 0x0F];
+			}
 			return str;
 		}
 
@@ -110,9 +123,8 @@ namespace Utils {
 			for (; i < InSize; i++, InSizeLoop--)
 				OutArr[i] = InArr[InSizeLoop];
 		}
-		
-		
-	}
+
+}
 
 	namespace Hashing
 	{

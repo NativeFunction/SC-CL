@@ -34,6 +34,7 @@ namespace Utils {
 		inline float IntToFloat(int32_t x) { return *(float*)&x; }
 
 		std::string IntToHex(uint32_t val);
+		std::string IntToHex(uint16_t val);
 		inline int32_t IntToPointerInt(int32_t x) { return 0x50000000 | x; }
 		struct NamedUint32
 		{
@@ -44,14 +45,6 @@ namespace Utils {
 		std::vector<NamedUint32> ReorderUint32Vector_SmallToBig(std::vector<uint32_t> vec, std::vector<const char*> name);
 		void ArrayReverse(std::vector<uint8_t> InArr, std::vector<uint8_t>& OutArr);
 
-		//static const string base223_chars = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~¦€ü‚ƒ„…†‡ˆ‰Š‹ŒìŽÅÉ‘’“”•–—ÿ™š›œ¥žŸá¡¢£¤¥¦§¨©ª«¬¡®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ";
-
-		inline char Uint8ToBase223(uint8_t value)
-		{
-			if (value >= 0 && value < 223)
-				return  (char)(33 + value);
-			return '\0';
-		}
 	}
 	namespace Bitwise
 	{
@@ -169,7 +162,6 @@ namespace Utils {
 		void ZLIB_Compress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize);
 		std::string ZLIB_ErrorCodeToStr(int32_t errorcode);
 	}
-
 	namespace Crypt
 	{
 		bool AES_Decrypt(uint8_t * data, size_t length);

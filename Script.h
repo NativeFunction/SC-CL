@@ -52,7 +52,7 @@ public:
 	}
 
 	void setMainFunction(FunctionData* mainFunc){ 
-		assert(mainFunc->getName() == "!main" && "trying to set function not called main to mainFunction"); 
+		assert(mainFunc->getName() == "~main" && "trying to set function not called main to mainFunction"); 
 		assert(!mainFunction && "Trying to set main function twice");
 		mainFunction = mainFunc; 
 		if (mainFunction->getParamCount())

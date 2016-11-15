@@ -497,13 +497,14 @@ public:
 	}
 	string getNameForFunc(const FunctionDecl *decl) {
 
-		string FileId = "!";
+		string FileId = "";
 		if (decl->getStorageClass() == SC_Static)
 		{
 			assert(CurrentFileId && "File id 0 reserved for extern");
-			FileId = Utils::DataConversion::Uint8ToBase223(CurrentFileId);
-			assert(*FileId.data() && "File link count over 222");
+			assert(CurrentFileId <= 65535 && "File link count over 65535");
+			FileId += Utils::DataConversion::IntToHex(static_cast<uint16_t>(CurrentFileId - 1));
 		}
+		FileId += "~";
 
 		if (isa<CXXMethodDecl>(decl)) {
 			const CXXMethodDecl *methodDecl = cast<const CXXMethodDecl>(decl);
@@ -5284,13 +5285,16 @@ public:
 
 	string getNameForFunc(const FunctionDecl *decl) {
 
-		string FileId = "!";
+		string FileId = "";
 		if (decl->getStorageClass() == SC_Static)
 		{
 			assert(CurrentFileId && "File id 0 reserved for extern");
-			FileId = Utils::DataConversion::Uint8ToBase223(CurrentFileId);
-			assert(*FileId.data() && "File link count over 222");
+			assert(CurrentFileId <= 65535 && "File link count over 65535");
+			FileId += Utils::DataConversion::IntToHex(static_cast<uint16_t>(CurrentFileId - 1));
+			
+
 		}
+		FileId += "~";
 
 		if (isa<CXXMethodDecl>(decl)) {
 			const CXXMethodDecl *methodDecl = cast<const CXXMethodDecl>(decl);
