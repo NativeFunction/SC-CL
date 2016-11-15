@@ -215,7 +215,8 @@ void CompileBase::AddLabel(const string label)
 					else if (offset < -32768 || offset > 32767)
 						Utils::System::Throw("Jump label \"" + label + "\" out of jump range");
 
-					*(int16_t*)(CodePageData.data() + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = SwapEndian((int16_t)offset);
+					ChangeInt16InCodePage(offset, JumpLocations[it->second.JumpIndexes[i]].JumpLocation);
+
 					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
 				}
 				else
@@ -223,7 +224,8 @@ void CompileBase::AddLabel(const string label)
 					if (it->second.LabelLocation >= 0x1000000)
 						Utils::System::Throw("Get label loc \"" + label + "\" out of jump range");
 
-					*(uint32_t*)(CodePageData.data() - 1 + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = SwapEndian(it->second.LabelLocation) | BaseOpcodes->PushI24;
+					ChangeInt24InCodePage(it->second.LabelLocation, JumpLocations[it->second.JumpIndexes[i]].JumpLocation);
+					*(CodePageData.data() + JumpLocations[it->second.JumpIndexes[i]].JumpLocation - 1) = BaseOpcodes->PushI24;
 					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
 				}
 			}
@@ -332,7 +334,8 @@ void CompileBase::CheckSignedJumps()
 			if (offset > 32767)
 				Throw("Jump label \"" + JumpLocations[SignedJumpLocationInc].Label + "\" out of jump range on jump to jump " + to_string(offset));
 
-			*(int16_t*)(CodePageData.data() + JumpLocations[SignedJumpLocationInc].JumpLocation) = SwapEndian((int16_t)offset);
+			ChangeInt16InCodePage(offset, JumpLocations[SignedJumpLocationInc].JumpLocation);
+
 			JumpLocations[SignedJumpLocationInc].isSet = true;
 			cout << "fixed label " + JumpLocations[SignedJumpLocationInc].Label << " at index " << SignedJumpLocationInc << endl;
 
@@ -348,7 +351,7 @@ void CompileBase::CheckSignedJumps()
 
 
 		//set jump over jump
-		*(int16_t*)(CodePageData.data() + JumpOverOffset) = SwapEndian((int16_t)(CodePageData.size() - JumpOverOffset - 2));
+		ChangeInt16InCodePage(CodePageData.size() - JumpOverOffset - 2, JumpOverOffset);
 	}
 
 }
@@ -376,7 +379,7 @@ void CompileBase::CheckUnsignedJumps()
 			if (offset > 65535)
 				Throw("Jump label \"" + JumpLocations[UnsignedJumpLocationInc].Label + "\" out of jump range on jump to jump " + to_string(offset));
 
-			*(int16_t*)(CodePageData.data() + JumpLocations[UnsignedJumpLocationInc].JumpLocation) = SwapEndian((int16_t)offset);
+			ChangeInt16InCodePage(offset, JumpLocations[UnsignedJumpLocationInc].JumpLocation);
 			JumpLocations[UnsignedJumpLocationInc].isSet = true;
 			cout << "fixed label " + JumpLocations[UnsignedJumpLocationInc].Label << " at index " << UnsignedJumpLocationInc << endl;
 
@@ -392,7 +395,7 @@ void CompileBase::CheckUnsignedJumps()
 
 
 		//set jump over jump
-		*(int16_t*)(CodePageData.data() + JumpOverOffset) = SwapEndian((int16_t)(CodePageData.size() - JumpOverOffset - 2));
+		ChangeInt16InCodePage((CodePageData.size() - JumpOverOffset - 2), JumpOverOffset);
 	}
 
 }
@@ -641,7 +644,7 @@ void CompileBase::Switch(){
 				if (offset > 65535)
 					Throw("Jump label \"" + CasesToBeFixed[i].JumpInfo.Label + "\" out of jump range on jump to jump " + to_string(offset));
 
-				*(int16_t*)(CodePageData.data() + CasesToBeFixed[i].JumpInfo.JumpLocation) = SwapEndian((int16_t)offset);
+				ChangeInt16InCodePage(offset, CasesToBeFixed[i].JumpInfo.JumpLocation);
 
 				cout << "fixed switch jump " + CasesToBeFixed[i].JumpInfo.Label << endl;
 
@@ -662,7 +665,7 @@ void CompileBase::Switch(){
 
 
 			//set jump over jump
-			*(int16_t*)(CodePageData.data() + JumpOverOffset) = SwapEndian((int16_t)(CodePageData.size() - JumpOverOffset - 2));
+			ChangeInt16InCodePage(CodePageData.size() - JumpOverOffset - 2, JumpOverOffset);
 		}
 	}
 	if (switchStore->hasDefaultJumpLoc())
@@ -904,18 +907,20 @@ void CompileRDR::fixFunctionCalls()
 		switch (CallInfo.InstructionType)
 		{
 			case CallInstructionType::FuncLoc:
-				*(int32_t*)(CodePageData.data() - 1 + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
+				ChangeInt24InCodePage(pos, CallInfo.CallLocation);
+				*(CodePageData.data() + CallInfo.CallLocation - 1) = BaseOpcodes->PushI24;
 			break;
 			case CallInstructionType::Call:
 				if (pos > 1048575)
 				{
-					*(int32_t*)(CodePageData.data() + CallInfo.CallLocation) = SwapEndian(pos) | BaseOpcodes->PushI24;
+					ChangeInt24InCodePage(pos, CallInfo.CallLocation);
+					*(CodePageData.data() + CallInfo.CallLocation - 1) = BaseOpcodes->PushI24;
 					*(CodePageData.data() + CallInfo.CallLocation + 4) = RDROpcodes.pCall;
 				}
 				else
 				{
 					*(CodePageData.data() + CallInfo.CallLocation) = GetNewCallOpCode(pos);//any out of range errors already been caught
-					*(uint16_t*)(CodePageData.data() + CallInfo.CallLocation + 1) = SwapEndian(GetNewCallOffset((uint16_t)pos));
+					ChangeInt16InCodePage(GetNewCallOffset((uint16_t)pos), CallInfo.CallLocation + 1);
 				}
 			break;
 			default: assert(false && "Invalid Call Instruction"); break;
@@ -931,7 +936,7 @@ void CompileRDR::fixFunctionJumps()
 		{
 			Throw("Jump table label '" + jTableItem.labelName + "' not found");
 		}
-		*(uint32_t*)(CodePageData.data() + jTableItem.tableOffset) = SwapEndian(it->second.LabelLocation);
+		ChangeInt32InCodePage(it->second.LabelLocation, jTableItem.tableOffset);
 	}
 	jumpTableLocs.clear();
 	JumpLocations.clear();
@@ -1394,7 +1399,7 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 		else if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize))
 			Utils::System::Throw("SCO Encryption Failed");
 
-		vector<uint32_t> SCR_Header = //size: 12
+		const vector<uint32_t> SCR_Header = //size: 12
 		{ 
 		  Utils::Bitwise::SwapEndian(0x53435202u)//SCR.
 		, Utils::Bitwise::SwapEndian(0x349D018Au)//GlobalsSignature
@@ -1516,10 +1521,12 @@ void CompileGTAV::fixFunctionCalls()
 		switch (CallInfo.InstructionType)
 		{
 			case CallInstructionType::FuncLoc:
-			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = Utils::Bitwise::SwapEndian(pos) | BaseOpcodes->PushI24;
+			ChangeInt24InCodePage(pos, CallInfo.CallLocation);
+			*(CodePageData.data() + CallInfo.CallLocation - 1) = BaseOpcodes->PushI24;
 			break;
 			case CallInstructionType::Call:
-			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = Utils::Bitwise::SwapEndian(pos) | BaseOpcodes->Call;
+			ChangeInt24InCodePage(pos, CallInfo.CallLocation);
+			*(CodePageData.data() + CallInfo.CallLocation - 1) = BaseOpcodes->Call;
 			break;
 			default: assert(false && "Invalid Call Instruction"); break;
 		}
@@ -1534,7 +1541,7 @@ void CompileGTAV::fixFunctionJumps()
 		{
 			Throw("Jump table label '" + jTableItem.labelName + "' not found");
 		}
-		*(uint32_t*)(StringPageData.data() + jTableItem.tableOffset) = SwapEndian(it->second.LabelLocation);
+		ChangeInt32InStringPage(it->second.LabelLocation, jTableItem.tableOffset);
 	}
 	jumpTableLocs.clear();
 	JumpLocations.clear();
@@ -1834,179 +1841,6 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 #pragma endregion
 
 #pragma region GTAVPC
-#pragma region Parse_Functions
-void CompileGTAVPC::fixFunctionCalls()
-{
-	for (auto CallInfo : CallLocations)
-	{
-		auto it = FuncLocations.find(CallInfo.Function);
-		if (it == FuncLocations.end())
-		{
-			Utils::System::Throw("Function \"" + CallInfo.Function->getName() + "\" not found");
-		}
-		uint32_t pos = it->second;
-		if (pos >= 0x1000000)
-		{
-			Utils::System::Throw("Function \"" + CallInfo.Function->getName() + "\" out of call range");//realistally this is never going to happen
-		}
-		switch (CallInfo.InstructionType)
-		{
-			case CallInstructionType::FuncLoc:
-			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = pos << 8 | BaseOpcodes->PushI24;
-			break;
-			case CallInstructionType::Call:
-			*(int*)(CodePageData.data() - 1 + CallInfo.CallLocation) = pos << 8 | BaseOpcodes->Call;
-			break;
-			default: assert(false && "Invalid Call Instruction"); break;
-		}
-	}
-}
-void CompileGTAVPC::fixFunctionJumps()
-{
-	for (auto jTableItem : jumpTableLocs)
-	{
-		auto it = LabelLocations.find(jTableItem.labelName);
-		if (it == LabelLocations.end())
-		{
-			Throw("Jump table label '" + jTableItem.labelName + "' not found");
-		}
-		*(uint32_t*)(StringPageData.data() + jTableItem.tableOffset) = it->second.LabelLocation;
-	}
-	jumpTableLocs.clear();
-	JumpLocations.clear();
-	LabelLocations.clear();
-	SignedJumpLocationInc = UnsignedJumpLocationInc = 0;
-}
-void CompileGTAVPC::CheckSignedJumps()
-{
-	if (!FindNextSignedJumpLocation())
-		return;
-
-	int32_t offset = (CodePageData.size() + 3) - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
-	if (offset > 31135)//to make this easier im going on the assumption that the max size of an opcode is 1532 (nothing can be added that is 1632) 100 bytes of leeway
-	{
-		//jump to jump code
-
-		DoesOpcodeHaveRoom(3);
-		AddOpcode(Jump);
-		uint32_t JumpOverOffset = CodePageData.size();
-		AddInt16(0);
-
-		//need to update jumps of same label that are out of bounds to jumps that are already added. instead of adding another jump to jump.
-
-		offset = CodePageData.size() - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
-
-		do
-		{
-			if (offset > 32767)
-				Throw("Jump label \"" + JumpLocations[SignedJumpLocationInc].Label + "\" out of jump range on jump to jump " + to_string(offset));
-
-			*(int16_t*)(CodePageData.data() + JumpLocations[SignedJumpLocationInc].JumpLocation) = (int16_t)offset;
-			JumpLocations[SignedJumpLocationInc].isSet = true;
-			cout << "fixed label " + JumpLocations[SignedJumpLocationInc].Label << " at index " << SignedJumpLocationInc << endl;
-
-			DoesOpcodeHaveRoom(3);
-			AddOpcode(Jump);
-			AddJumpLoc(JumpInstructionType::Jump, JumpLocations[SignedJumpLocationInc].Label);
-
-			if (!FindNextSignedJumpLocation())
-				return;
-
-			offset = CodePageData.size() - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
-		} while (offset > 30000);
-
-
-		//set jump over jump
-		*(int16_t*)(CodePageData.data() + JumpOverOffset) = (int16_t)(CodePageData.size() - JumpOverOffset - 2);
-	}
-}
-void CompileGTAVPC::CheckUnsignedJumps()
-{
-	if (!FindNextUnsignedJumpLocation())
-		return;
-
-	int32_t offset = (CodePageData.size() + 3) - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
-	if (offset > 63903)//to make this easier im going on the assumption that the max size of an opcode is 1532 (nothing can be added that is 1632) 10 bytes of leeway
-	{
-		//jump to jump code
-
-		DoesOpcodeHaveRoom(3);
-		AddOpcode(Jump);
-		uint32_t JumpOverOffset = CodePageData.size();
-		AddInt16(0);
-
-		//need to update jumps of same label that are out of bounds to jumps that are already added. instead of adding another jump to jump.
-
-		offset = CodePageData.size() - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
-
-		do
-		{
-			if (offset > 65535)
-				Throw("Jump label \"" + JumpLocations[UnsignedJumpLocationInc].Label + "\" out of jump range on jump to jump " + to_string(offset));
-
-			*(int16_t*)(CodePageData.data() + JumpLocations[UnsignedJumpLocationInc].JumpLocation) = (int16_t)offset;
-			JumpLocations[UnsignedJumpLocationInc].isSet = true;
-			cout << "fixed label " + JumpLocations[UnsignedJumpLocationInc].Label << " at index " << UnsignedJumpLocationInc << endl;
-
-			DoesOpcodeHaveRoom(3);
-			AddOpcode(Jump);
-			AddJumpLoc(JumpInstructionType::Jump, JumpLocations[UnsignedJumpLocationInc].Label);
-
-			if (!FindNextUnsignedJumpLocation())
-				return;
-
-			offset = CodePageData.size() - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
-		} while (offset > 63903);
-
-
-		//set jump over jump
-		*(int16_t*)(CodePageData.data() + JumpOverOffset) = (int16_t)(CodePageData.size() - JumpOverOffset - 2);
-	}
-}
-void CompileGTAVPC::AddLabel(const std::string label)
-{
-	auto it = LabelLocations.find(label);
-	if (it == LabelLocations.end())
-	{
-		LabelLocations.insert({ label,{ CodePageData.size(), true } });
-	}
-	else if (!it->second.isSet)
-	{
-		it->second.isSet = true;
-		it->second.LabelLocation = CodePageData.size();
-		for (uint32_t i = 0; i < it->second.JumpIndexes.size(); i++)
-		{
-			//Fix jump forwards that are in range. Out of range jumps should have already been fixed.
-
-			if (!JumpLocations[it->second.JumpIndexes[i]].isSet)
-			{
-				if (JumpLocations[it->second.JumpIndexes[i]].InstructionType != JumpInstructionType::LabelLoc)
-				{
-					const int32_t offset = it->second.LabelLocation - JumpLocations[it->second.JumpIndexes[i]].JumpLocation - 2;
-
-					if (JumpLocations[it->second.JumpIndexes[i]].InstructionType == JumpInstructionType::Switch && (offset < 0 || offset > 65535))
-						Utils::System::Throw("Switch label \"" + label + "\" out of jump range");
-					else if (offset < -32768 || offset > 32767)
-						Utils::System::Throw("Jump label \"" + label + "\" out of jump range");
-
-					*(int16_t*)(CodePageData.data() + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = (int16_t)offset;
-					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
-				}
-				else
-				{
-					if (it->second.LabelLocation >= 0x1000000)
-						Utils::System::Throw("Get label loc \"" + label + "\" out of jump range");
-
-					*(uint32_t*)(CodePageData.data() - 1 + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = it->second.LabelLocation << 8 | BaseOpcodes->PushI24;
-					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
-				}
-			}
-		}
-	}
-	else
-		Utils::System::Throw("Cannot add label. Label \"" + label + "\" already exists.");
-}
-#pragma endregion
 
 #pragma region Opcode_Functions
 void CompileGTAVPC::CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount)

@@ -79,6 +79,12 @@ protected:
 	std::vector<CallData> CallLocations;//CallLocations to fill after building the CodePageData
 	std::unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
 	std::vector<JumpTableData> jumpTableLocs;
+
+	//			GTAV Vars
+	//---------------------------------
+	std::vector<uint8_t> StringPageData;
+	std::unordered_map<std::string, uint32_t> StringPageDataIndexing;
+	uint32_t StringPageCount = 0;
 	#pragma endregion
 
 	#pragma region Parse_Data_Vars
@@ -123,6 +129,10 @@ protected:
 			ChangeInt32inBuff = &CompileBase::ChangeInt32inBuffL;
 			AddInt64toBuff = &CompileBase::AddInt64toBuffL;
 			ChangeInt64inBuff = &CompileBase::ChangeInt64inBuffL;
+			ChangeInt16InCodePage = &CompileBase::ChangeInt16InCodePageL;
+			ChangeInt24InCodePage = &CompileBase::ChangeInt24InCodePageL;
+			ChangeInt32InCodePage = &CompileBase::ChangeInt32InCodePageL;
+			ChangeInt32InStringPage = &CompileBase::ChangeInt32InStringPageL;
 		}
 		else
 		{
@@ -134,6 +144,10 @@ protected:
 			ChangeInt32inBuff = &CompileBase::ChangeInt32inBuffB;
 			AddInt64toBuff = &CompileBase::AddInt64toBuffB;
 			ChangeInt64inBuff = &CompileBase::ChangeInt64inBuffB;
+			ChangeInt16InCodePage = &CompileBase::ChangeInt16InCodePageB;
+			ChangeInt24InCodePage = &CompileBase::ChangeInt24InCodePageB;
+			ChangeInt32InCodePage = &CompileBase::ChangeInt32InCodePageB;
+			ChangeInt32InStringPage = &CompileBase::ChangeInt32InStringPageB;
 		}
 	}
 	virtual ~CompileBase(){}
@@ -172,7 +186,7 @@ protected:
 	inline void AddInt24L(const uint32_t value)
 	{
 		CodePageData.resize(CodePageData.size() + 3, 0);
-		*((uint32_t*)(CodePageData.data() + CodePageData.size()) - 1) |= value & 0xFFFFFF;
+		*((uint32_t*)(CodePageData.data() + CodePageData.size()) - 1) |= (value & 0xFFFFFF) << 8;
 	}
 	void (CompileBase::*AddInt32)(const int32_t value);
 	#define AddInt32 (this->*AddInt32)
@@ -277,6 +291,48 @@ protected:
 
 		return UnsignedJumpLocationInc < JumpLocations.size();
 	}
+	void (CompileBase::*ChangeInt16InCodePage)(const int16_t value, const uint32_t index);
+	#define ChangeInt16InCodePage (this->*ChangeInt16InCodePage)
+	inline void ChangeInt16InCodePageB(const int16_t value, const uint32_t index)
+	{
+		*(int16_t*)(CodePageData.data() + index) = Utils::Bitwise::SwapEndian((int16_t)value);
+	}
+	inline void ChangeInt16InCodePageL(const int16_t value, const uint32_t index)
+	{
+		*(int16_t*)(CodePageData.data() + index) = Utils::Bitwise::SwapEndian((int16_t)value);
+	}
+	void (CompileBase::*ChangeInt24InCodePage)(const uint32_t value, const uint32_t index);
+	#define ChangeInt24InCodePage (this->*ChangeInt24InCodePage)
+	inline void ChangeInt24InCodePageB(const uint32_t value, const uint32_t index)
+	{
+		*((uint32_t*)(CodePageData.data() + index) - 1) |= Utils::Bitwise::SwapEndian(value & 0xFFFFFF);
+	}
+	inline void ChangeInt24InCodePageL(const uint32_t value, const uint32_t index)
+	{
+		*((uint32_t*)(CodePageData.data() + index) - 1) |= (value & 0xFFFFFF) << 8;
+	}
+	void (CompileBase::*ChangeInt32InCodePage)(const uint32_t value, const uint32_t index);
+	#define ChangeInt32InCodePage (this->*ChangeInt32InCodePage)
+	inline void ChangeInt32InCodePageB(const uint32_t value, const uint32_t index)
+	{
+		*(uint32_t*)(CodePageData.data() + index) = Utils::Bitwise::SwapEndian(value);
+	}
+	inline void ChangeInt32InCodePageL(const uint32_t value, const uint32_t index)
+	{
+		*(uint32_t*)(CodePageData.data() + index) = value;
+	}
+	void (CompileBase::*ChangeInt32InStringPage)(const uint32_t value, const uint32_t index);
+	#define ChangeInt32InStringPage (this->*ChangeInt32InStringPage)
+	inline void ChangeInt32InStringPageB(const uint32_t value, const uint32_t index)
+	{
+		*(uint32_t*)(StringPageData.data() + index) = Utils::Bitwise::SwapEndian(value);
+	}
+	inline void ChangeInt32InStringPageL(const uint32_t value, const uint32_t index)
+	{
+		*(uint32_t*)(StringPageData.data() + index) = value;
+	}
+
+
 	#pragma endregion
 
 	#pragma region Opcode_Functions
@@ -613,12 +669,6 @@ private:
 	};
 	#pragma endregion
 
-	#pragma region Parsed_Data_Vars
-	std::vector<uint8_t> StringPageData;
-	std::unordered_map<std::string, uint32_t> StringPageDataIndexing;
-	uint32_t StringPageCount = 0;
-	#pragma endregion
-
 	#pragma region Parse_Functions
 	int32_t GetSizeFromFlag(uint32_t flag, int32_t baseSize);
 	int32_t GetSizeFromSystemFlag(uint32_t flag);
@@ -702,13 +752,6 @@ private:
 	}
 	#pragma endregion
 
-	#pragma region Parse_Functions
-	void fixFunctionCalls() override;
-	void fixFunctionJumps() override;
-	void CheckSignedJumps() override;
-	void CheckUnsignedJumps() override;
-	void AddLabel(const std::string label) override;
-	#pragma endregion
 
 	#pragma region Opcode_Functions
 	void CallNative(const uint64_t hash = -1, const uint8_t paramCount = -1, const uint8_t returnCount = -1) override;
