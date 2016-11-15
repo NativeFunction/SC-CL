@@ -1877,6 +1877,135 @@ void CompileGTAVPC::fixFunctionJumps()
 	LabelLocations.clear();
 	SignedJumpLocationInc = UnsignedJumpLocationInc = 0;
 }
+void CompileGTAVPC::CheckSignedJumps()
+{
+	if (!FindNextSignedJumpLocation())
+		return;
+
+	int32_t offset = (CodePageData.size() + 3) - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
+	if (offset > 31135)//to make this easier im going on the assumption that the max size of an opcode is 1532 (nothing can be added that is 1632) 100 bytes of leeway
+	{
+		//jump to jump code
+
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(Jump);
+		uint32_t JumpOverOffset = CodePageData.size();
+		AddInt16(0);
+
+		//need to update jumps of same label that are out of bounds to jumps that are already added. instead of adding another jump to jump.
+
+		offset = CodePageData.size() - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
+
+		do
+		{
+			if (offset > 32767)
+				Throw("Jump label \"" + JumpLocations[SignedJumpLocationInc].Label + "\" out of jump range on jump to jump " + to_string(offset));
+
+			*(int16_t*)(CodePageData.data() + JumpLocations[SignedJumpLocationInc].JumpLocation) = (int16_t)offset;
+			JumpLocations[SignedJumpLocationInc].isSet = true;
+			cout << "fixed label " + JumpLocations[SignedJumpLocationInc].Label << " at index " << SignedJumpLocationInc << endl;
+
+			DoesOpcodeHaveRoom(3);
+			AddOpcode(Jump);
+			AddJumpLoc(JumpInstructionType::Jump, JumpLocations[SignedJumpLocationInc].Label);
+
+			if (!FindNextSignedJumpLocation())
+				return;
+
+			offset = CodePageData.size() - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
+		} while (offset > 30000);
+
+
+		//set jump over jump
+		*(int16_t*)(CodePageData.data() + JumpOverOffset) = (int16_t)(CodePageData.size() - JumpOverOffset - 2);
+	}
+}
+void CompileGTAVPC::CheckUnsignedJumps()
+{
+	if (!FindNextUnsignedJumpLocation())
+		return;
+
+	int32_t offset = (CodePageData.size() + 3) - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
+	if (offset > 63903)//to make this easier im going on the assumption that the max size of an opcode is 1532 (nothing can be added that is 1632) 10 bytes of leeway
+	{
+		//jump to jump code
+
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(Jump);
+		uint32_t JumpOverOffset = CodePageData.size();
+		AddInt16(0);
+
+		//need to update jumps of same label that are out of bounds to jumps that are already added. instead of adding another jump to jump.
+
+		offset = CodePageData.size() - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
+
+		do
+		{
+			if (offset > 65535)
+				Throw("Jump label \"" + JumpLocations[UnsignedJumpLocationInc].Label + "\" out of jump range on jump to jump " + to_string(offset));
+
+			*(int16_t*)(CodePageData.data() + JumpLocations[UnsignedJumpLocationInc].JumpLocation) = (int16_t)offset;
+			JumpLocations[UnsignedJumpLocationInc].isSet = true;
+			cout << "fixed label " + JumpLocations[UnsignedJumpLocationInc].Label << " at index " << UnsignedJumpLocationInc << endl;
+
+			DoesOpcodeHaveRoom(3);
+			AddOpcode(Jump);
+			AddJumpLoc(JumpInstructionType::Jump, JumpLocations[UnsignedJumpLocationInc].Label);
+
+			if (!FindNextUnsignedJumpLocation())
+				return;
+
+			offset = CodePageData.size() - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
+		} while (offset > 63903);
+
+
+		//set jump over jump
+		*(int16_t*)(CodePageData.data() + JumpOverOffset) = (int16_t)(CodePageData.size() - JumpOverOffset - 2);
+	}
+}
+void CompileGTAVPC::AddLabel(const std::string label)
+{
+	auto it = LabelLocations.find(label);
+	if (it == LabelLocations.end())
+	{
+		LabelLocations.insert({ label,{ CodePageData.size(), true } });
+	}
+	else if (!it->second.isSet)
+	{
+		it->second.isSet = true;
+		it->second.LabelLocation = CodePageData.size();
+		for (uint32_t i = 0; i < it->second.JumpIndexes.size(); i++)
+		{
+			//Fix jump forwards that are in range. Out of range jumps should have already been fixed.
+
+			if (!JumpLocations[it->second.JumpIndexes[i]].isSet)
+			{
+				if (JumpLocations[it->second.JumpIndexes[i]].InstructionType != JumpInstructionType::LabelLoc)
+				{
+					const int32_t offset = it->second.LabelLocation - JumpLocations[it->second.JumpIndexes[i]].JumpLocation - 2;
+
+					if (JumpLocations[it->second.JumpIndexes[i]].InstructionType == JumpInstructionType::Switch && (offset < 0 || offset > 65535))
+						Utils::System::Throw("Switch label \"" + label + "\" out of jump range");
+					else if (offset < -32768 || offset > 32767)
+						Utils::System::Throw("Jump label \"" + label + "\" out of jump range");
+
+					*(int16_t*)(CodePageData.data() + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = (int16_t)offset;
+					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
+				}
+				else
+				{
+					if (it->second.LabelLocation >= 0x1000000)
+						Utils::System::Throw("Get label loc \"" + label + "\" out of jump range");
+
+					*(uint32_t*)(CodePageData.data() - 1 + JumpLocations[it->second.JumpIndexes[i]].JumpLocation) = it->second.LabelLocation << 8 | BaseOpcodes->PushI24;
+					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
+				}
+			}
+		}
+	}
+	else
+		Utils::System::Throw("Cannot add label. Label \"" + label + "\" already exists.");
+}
 #pragma endregion
 
 #pragma region Opcode_Functions

@@ -203,7 +203,7 @@ protected:
 		CodePageData.resize(CodePageData.size() + str.size() + 1);
 		memcpy(CodePageData.data() + CodePageData.size() - str.size() - 1, str.data(), str.size() + 1);
 	}
-	void AddLabel(const std::string label);
+	virtual void AddLabel(const std::string label);
 	inline void AddFuncLabel(const FunctionData* function)
 	{
 		if (FuncLocations.find(function) == FuncLocations.end())
@@ -263,8 +263,8 @@ protected:
 			CheckUnsignedJumps();
 		}
 	}
-	void CheckSignedJumps();
-	void CheckUnsignedJumps();
+	virtual void CheckSignedJumps();
+	virtual void CheckUnsignedJumps();
 	inline bool FindNextSignedJumpLocation()
 	{
 		for (; SignedJumpLocationInc < JumpLocations.size() && (JumpLocations[SignedJumpLocationInc].isSet || JumpLocations[SignedJumpLocationInc].InstructionType == JumpInstructionType::LabelLoc || JumpLocations[SignedJumpLocationInc].InstructionType == JumpInstructionType::Switch);  SignedJumpLocationInc++);
@@ -705,6 +705,9 @@ private:
 	#pragma region Parse_Functions
 	void fixFunctionCalls() override;
 	void fixFunctionJumps() override;
+	void CheckSignedJumps() override;
+	void CheckUnsignedJumps() override;
+	void AddLabel(const std::string label) override;
 	#pragma endregion
 
 	#pragma region Opcode_Functions
