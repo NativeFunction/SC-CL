@@ -24,10 +24,11 @@
 !StaticData.h
 !StaticData.cpp
 !bin/
-!bin/Debug/
-!bin/include/
-!bin/Release/
-!bin/projects/
+!Debug/
+!include/
+!Release/
+!projects/
+!testing/
 !RDR/
 !GTAV/
 !compiler/
@@ -37,3 +38,11 @@ compiler/XscCompilerRaw (RDR)/obj/
 compiler/XscCompilerRaw (RDR)/bin/
 compiler/XscCompilerRaw/bin/
 compiler/XscCompilerRaw/obj/New Text Document.txt
+bin/Debug/*.exe
+bin/Debug/*.ilk
+bin/projects/*/*.xsc
+bin/projects/*/*.xsa*
+bin/projects/*/*.csc
+bin/projects/*/*.csa*
+bin/projects/*/*.sca*
+bin/projects/*/*.ysa*
