@@ -501,8 +501,8 @@ public:
 		if (decl->getStorageClass() == SC_Static)
 		{
 			assert(CurrentFileId && "File id 0 reserved for extern");
-			assert(CurrentFileId <= 65535 && "File link count over 65535");
-			FileId += Utils::DataConversion::IntToHex(static_cast<uint16_t>(CurrentFileId - 1)) += "~";
+			char buf[9] = {};
+			FileId += string(itoa(CurrentFileId - 1, buf, 36)) += "~";
 			//this works without collision going on the notion that no one can add "~" to a function name
 		}
 
@@ -5289,8 +5289,8 @@ public:
 		if (decl->getStorageClass() == SC_Static)
 		{
 			assert(CurrentFileId && "File id 0 reserved for extern");
-			assert(CurrentFileId <= 65535 && "File link count over 65535");
-			FileId += Utils::DataConversion::IntToHex(static_cast<uint16_t>(CurrentFileId - 1)) += "~";
+			char buf[9] = {};
+			FileId += string(itoa(CurrentFileId - 1, buf, 36)) += "~";
 			//this works without collision going on the notion that no one can add "~" to a function name
 			
 		}

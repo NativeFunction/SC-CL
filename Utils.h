@@ -34,7 +34,6 @@ namespace Utils {
 		inline float IntToFloat(int32_t x) { return *(float*)&x; }
 
 		std::string IntToHex(uint32_t val);
-		std::string IntToHex(uint16_t val);
 		inline int32_t IntToPointerInt(int32_t x) { return 0x50000000 | x; }
 		struct NamedUint32
 		{
