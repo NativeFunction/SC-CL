@@ -305,11 +305,11 @@ protected:
 	#define ChangeInt24InCodePage (this->*ChangeInt24InCodePage)
 	inline void ChangeInt24InCodePageB(const uint32_t value, const uint32_t index)
 	{
-		*((uint32_t*)(CodePageData.data() + index) - 1) |= Utils::Bitwise::SwapEndian(value & 0xFFFFFF);
+		*(uint32_t*)(CodePageData.data() + index - 1) |= Utils::Bitwise::SwapEndian(value & 0xFFFFFF);
 	}
 	inline void ChangeInt24InCodePageL(const uint32_t value, const uint32_t index)
 	{
-		*((uint32_t*)(CodePageData.data() + index) - 1) |= (value & 0xFFFFFF) << 8;
+		*(uint32_t*)(CodePageData.data() + index - 1) |= (value & 0xFFFFFF) << 8;
 	}
 	void (CompileBase::*ChangeInt32InCodePage)(const uint32_t value, const uint32_t index);
 	#define ChangeInt32InCodePage (this->*ChangeInt32InCodePage)
@@ -761,8 +761,8 @@ private:
 	#pragma endregion
 
 	#pragma region Write_Functions
-	void WriteHeader();
-	void WritePointers();
+	void WriteHeader() override;
+	void WritePointers() override;
 	void WriteNatives();
 	void WriteStatics();
 	void XSCWrite(const char* path, bool AddRsc7Header = false);
