@@ -521,13 +521,13 @@ if (value <= 0xFFFF)\
 {\
 	DoesOpcodeHaveRoom(3);\
 	AddInt8(BaseOpcodes->##op##2);\
-	AddInt8(value);\
+	AddInt16(value);\
 }\
 else if (value <= 0xFFFFFF)\
 {\
 	DoesOpcodeHaveRoom(4);\
 	AddInt8(BaseOpcodes->##op##3);\
-	AddInt16(value);\
+	AddInt24(value);\
 }\
 else{\
 assert(false && errorstr);\

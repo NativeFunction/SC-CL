@@ -37,9 +37,12 @@ typedef int Sphere;
 typedef int ScrHandle;
 
 
-typedef struct vector2
+typedef union vector2
 {
-	float X, Y;
+	struct { float x, y; };
+	struct { float width, height; };
+	struct { float w, h; };
+	float v[2];
 } Point, Size, vector2;
 
 typedef union vector3
@@ -54,24 +57,50 @@ typedef union quaternion
 	float v[4];
 } quaternion;
 
-typedef struct RGBA
+typedef union RGBA
 {//Colour struct where values range from 0 - 255
-	int Red, Green, Blue, Alpha;
+	struct
+	{
+		union{int Red; int red;};
+		union{int Green; int green;};
+		union{int Blue; int blue;};
+		union{int Opacity; int opacity; int Alpha; int alpha;};
+	};
+	int col[4];
 } RGBA;
 
-typedef struct RGB
+typedef union RGB
 {//Colour struct where values range from 0 - 255
-	int Red, Green, Blue;
+	struct
+	{
+		union{int Red; int red;};
+		union{int Green; int green;};
+		union{int Blue; int blue;};
+	};
+	int col[3];
 } RGB;
 
-typedef struct FloatRGBA
-{
-	float Red, Green, Blue, Alpha;//Colour struct where values range from 0.0 - 1.0
+typedef union FloatRGBA
+{//Colour struct where values range from 0.0 - 1.0
+	struct
+	{
+		union{float Red; float red;};
+		union{float Green; float green;};
+		union{float Blue; float blue;};
+		union{float Opacity; float opacity; float Alpha; float alpha;};
+	};
+	float col[4];
 } FloatRGBA;
 
-typedef struct FloatRGB
-{
-	float Red, Green, Blue;//Colour struct where values range from 0.0 - 1.0
+typedef union FloatRGB
+{//Colour struct where values range from 0.0 - 1.0
+	struct
+	{
+		union{float Red; float red;};
+		union{float Green; float green;};
+		union{float Blue; float blue;};
+	};
+	float col[3];
 } FloatRGB;
 
 typedef union any

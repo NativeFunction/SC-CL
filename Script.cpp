@@ -1,5 +1,6 @@
 #include "Script.h"
 #include "Utils.h"
+#include "ConstExpr.h"
 
 using namespace std;
 
@@ -74,6 +75,29 @@ void Script::finaliseEntryFunction()
 {
 	if (mainFunction)
 	{
+		if (isSingleton())
+		{
+			switch (getBuildType())
+			{
+				case BT_GTAV:
+					entryFunction->addOpNative("get_this_script_name", (getBuildPlatform() == P_PC ? 0x442E0A7EDE4A738A : JoaatConst("get_this_script_name")), 0, 1);
+					entryFunction->addOpGetHash();
+					entryFunction->addOpNative("_get_number_of_instances_of_streamed_script", (getBuildPlatform() == P_PC ? 0x2C83A9DA6BFFC4F9 : 0x029D3841), 1, 1);
+					entryFunction->addOpPushInt(1);
+					entryFunction->addOpJumpGT("__builtin__singleton__");
+					break;
+				case BT_RDR_SCO:
+				case BT_RDR_XSC:
+					entryFunction->addOpNative("get_script_name", (getBuildPlatform() == P_PC ? 0x442E0A7EDE4A738A : JoaatConst("get_script_name")), 0, 1);
+					entryFunction->addOpGetHash();
+					entryFunction->addOpNative("_get_number_of_instances_of_streamed_script", 0x029D3841, 1, 1);//fixme
+					entryFunction->addOpPushInt(1);
+					entryFunction->addOpJumpGT("__builtin__singleton__");
+					break;
+				default:
+					Utils::System::Throw("Invalid Build Type");
+			}
+		}
 		entryFunction->addUsedFunc(mainFunction);
 		if (scriptParams)
 		{
@@ -107,6 +131,10 @@ void Script::finaliseEntryFunction()
 		{
 			entryFunction->addOpDrop();
 			entryFunction->pushComment("dropping main returns");
+		}
+		if (isSingleton())
+		{
+			entryFunction->addOpLabel("__builtin__singleton__");
 		}
 		entryFunction->addOpReturn();
 		entryFunction->setProcessed();
