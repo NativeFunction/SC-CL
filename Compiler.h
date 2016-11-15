@@ -9,7 +9,7 @@
 #include "ConstExpr.h"
 #include "Script.h"
 #include "fstream"
-
+extern std::string globalDirectory;
 
 class CompileBase
 {
@@ -705,18 +705,27 @@ class CompileGTAVPC : CompileGTAV
 	{
 		std::unordered_map<uint64_t, uint64_t> translation;
 		uint64_t _noTranslation(uint64_t nat)const { return nat; }
+		std::string gameVersionStr;
 		uint64_t _translate(uint64_t nat)const 
 		{
 			auto it = translation.find(nat);
 			if (it != translation.end())
-				return it->second;
+			{
+				auto translated = it->second;
+				if (translated == 0)
+				{
+					Utils::System::Throw("Couldn't translate native '0x" + Utils::DataConversion::IntToHex(nat) + "' for game version '" + gameVersionStr + "'");
+				}
+				return translated;
+			}
+			Utils::System::Warn("Couldn't find native '0x" + Utils::DataConversion::IntToHex(nat) + "' in the native translation table.");
 			return nat;
 		}
 		uint64_t(NativeTranslation::*translationFunction)(uint64_t) const;
 	public:
-		NativeTranslation(const char* versionString)
+		NativeTranslation(const char* versionString) : gameVersionStr(versionString)
 		{
-			std::ifstream natFile("PC_Natives.bin", std::ios::in | std::ios::binary | std::ios::ate);
+			std::ifstream natFile(globalDirectory + "PC_Natives.bin", std::ios::in | std::ios::binary | std::ios::ate);
 			if (!natFile.is_open())
 			{
 				Utils::System::Warn("Couldnt open pc native translation table, check for file 'PC_Natives.bin' in directory");
@@ -728,13 +737,6 @@ class CompileGTAVPC : CompileGTAV
 			natFile.read((char*)&verCount, 4);
 			natFile.read((char*)&natCount, 4);
 			char buff[8];
-			natFile.read(buff, 8);
-			if (strcmp(versionString, buff) == 0)
-			{
-				natFile.close();
-				translationFunction = &NativeTranslation::_noTranslation;
-				return;
-			}
 			uint32_t usedVersion = -1;
 			for (uint32_t i = 0; i < verCount;i++)
 			{

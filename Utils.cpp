@@ -63,20 +63,6 @@ namespace Utils {
 
 	namespace DataConversion
 	{
-		string IntToHex(uint32_t val)
-		{
-			const string hex_str = "0123456789ABCDEF";
-			uint8_t* bin = (uint8_t*)&val;
-
-			string str(8, '\0');
-
-			for (uint32_t i = 0; i < 4; i++)
-			{
-				str[i * 2 + 0] = hex_str[(bin[i] >> 4) & 0x0F];
-				str[i * 2 + 1] = hex_str[(bin[i]) & 0x0F];
-			}
-			return str;
-		}
 
 		vector<NamedUint32> ReorderUint32Vector_SmallToBig(vector<uint32_t> vec, vector<const char*> name)
 		{
