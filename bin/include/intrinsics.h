@@ -21,12 +21,13 @@
 
 #pragma region String //{
 extern __intrinsic void memset(void* dest, byte value, size_t len);
-extern __intrinsic void memcpy(void* dest, void* src, size_t len);
-extern __intrinsic void strcpy(char* dest, char* src, const byte destBufferLen);
-extern __intrinsic void stradd(char* dest, char* src, const byte destBufferLen);
+extern __intrinsic void memcpy(void* dest, const void* src, size_t len);
+extern __intrinsic void strcpy(char* dest, const char* src, const byte destBufferLen);
+extern __intrinsic void stradd(char* dest, const char* src, const byte destBufferLen);
 extern __intrinsic void straddi(char* dest, int value, const byte destBufferLen);
 extern __intrinsic void itos(char* dest, int value, const byte destBufferLen);
 extern __intrinsic int getHashKey(char *string);
+
 #pragma endregion //}
 
 #pragma region Misc_Opcodes //{
@@ -61,6 +62,10 @@ extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Div(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Neg(vector3 vector);
 extern __intrinsic float fMod(float divend, float divisor);
+extern __intrinsic bool bit_test(int value, const byte bitIndex);
+extern __intrinsic void bit_set(int* address, const byte bitIndex);
+extern __intrinsic void bit_reset(int* address, const byte bitIndex);
+extern __intrinsic void bit_flip(int* address, const byte bitIndex);
 #pragma endregion //}
 
 #pragma region Unsafe_Math //{
