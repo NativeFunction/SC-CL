@@ -299,7 +299,7 @@ protected:
 	}
 	inline void ChangeInt16InCodePageL(const int16_t value, const uint32_t index)
 	{
-		*(int16_t*)(CodePageData.data() + index) = Utils::Bitwise::SwapEndian((int16_t)value);
+		*(int16_t*)(CodePageData.data() + index) = (int16_t)value;
 	}
 	void (CompileBase::*ChangeInt24InCodePage)(const uint32_t value, const uint32_t index);
 	#define ChangeInt24InCodePage (this->*ChangeInt24InCodePage)
