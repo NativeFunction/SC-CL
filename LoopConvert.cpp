@@ -502,9 +502,9 @@ public:
 		{
 			assert(CurrentFileId && "File id 0 reserved for extern");
 			assert(CurrentFileId <= 65535 && "File link count over 65535");
-			FileId += Utils::DataConversion::IntToHex(static_cast<uint16_t>(CurrentFileId - 1));
+			FileId += Utils::DataConversion::IntToHex(static_cast<uint16_t>(CurrentFileId - 1)) += "~";
+			//this works without collision going on the notion that no one can add "~" to a function name
 		}
-		FileId += "~";
 
 		if (isa<CXXMethodDecl>(decl)) {
 			const CXXMethodDecl *methodDecl = cast<const CXXMethodDecl>(decl);
@@ -5290,11 +5290,10 @@ public:
 		{
 			assert(CurrentFileId && "File id 0 reserved for extern");
 			assert(CurrentFileId <= 65535 && "File link count over 65535");
-			FileId += Utils::DataConversion::IntToHex(static_cast<uint16_t>(CurrentFileId - 1));
+			FileId += Utils::DataConversion::IntToHex(static_cast<uint16_t>(CurrentFileId - 1)) += "~";
+			//this works without collision going on the notion that no one can add "~" to a function name
 			
-
 		}
-		FileId += "~";
 
 		if (isa<CXXMethodDecl>(decl)) {
 			const CXXMethodDecl *methodDecl = cast<const CXXMethodDecl>(decl);
