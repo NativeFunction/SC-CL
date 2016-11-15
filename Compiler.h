@@ -113,7 +113,7 @@ protected:
 	CompileBase(const OpCodes& Op, const Script& data, const uint32_t Function_Count, const uint32_t Instruction_Count) : 
 		BaseOpcodes(&Op), 
 		HLData(&data), 
-		ReadBufferSize(HLData->getBuildPlatform() == Platform::P_PS3 ? 8192 : 16384),
+		ReadBufferSize(data.getBuildPlatform() == Platform::P_PS3 ? 8192 : 16384),
 		FunctionCount(Function_Count),
 		InstructionCount(Instruction_Count)
 	{
