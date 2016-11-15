@@ -33,7 +33,21 @@ namespace Utils {
 		inline float UIntToFloat(uint32_t x) { return *(float*)&x; }
 		inline float IntToFloat(int32_t x) { return *(float*)&x; }
 
-		std::string IntToHex(uint32_t val);
+		template<typename IntType>
+		std::string IntToHex(IntType val)
+		{
+			const char* hex_str = "0123456789ABCDEF";
+			uint8_t* bin = (uint8_t*)&val;
+
+			std::string str(sizeof(IntType) * 2, '\0');
+
+			for (uint32_t i = 0; i < sizeof(IntType); i++)
+			{
+				str[i * 2 + 0] = hex_str[(bin[i] >> 4) & 0x0F];
+				str[i * 2 + 1] = hex_str[(bin[i]) & 0x0F];
+			}
+			return str;
+		}
 		inline int32_t IntToPointerInt(int32_t x) { return 0x50000000 | x; }
 		struct NamedUint32
 		{

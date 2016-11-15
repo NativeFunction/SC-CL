@@ -12,6 +12,7 @@
 #include "ConstExpr.h"
 #include "Script.h"
 #include "Compiler.h"
+std::string globalDirectory;
 
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h)
@@ -6203,7 +6204,7 @@ string GetBaseNameFromDir(string &Dir)
 		return Dir.substr(BaseStartPos, BaseExtPos);
 	return Dir.substr(BaseStartPos, BaseExtPos - BaseStartPos);
 }
-string GetDir(string &Dir)
+string GetDir(const string &Dir)
 {
 	const size_t BaseExtPos = Dir.find_last_of("/\\") + 1;
 	return BaseExtPos == Dir.npos ? "" : Dir.substr(0, BaseExtPos);
@@ -6213,6 +6214,7 @@ int main(int argc, const char **argv) {
 	cout << "Starting Clang 3.8.1\r\n";
 
 	CommonOptionsParser op(argc, argv, ToolingSampleCategory);
+	globalDirectory = GetDir(string(argv[0]));
 	ClangTool Tool(op.getCompilations(), op.getSourcePathList());
 	bool ProcessingFailed = true;
 
@@ -6228,7 +6230,7 @@ int main(int argc, const char **argv) {
 		
 		string outDir = GetDir(op.getSourcePathList()[0]);
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
-		scriptData.reset(new Script(scriptName, BuildType::BT_RDR_XSC, Platform::P_PS3));
+		scriptData.reset(new Script(scriptName, BuildType::BT_GTAV, Platform::P_XBOX));
 		stackWidth = scriptData->getStackWidth();
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 		if (!ProcessingFailed)
