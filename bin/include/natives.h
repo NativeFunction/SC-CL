@@ -1,20 +1,17 @@
 #pragma once
-#include "types.h"
-#define _native __attribute((native))
-#define _native32(hash) __attribute((native(hash)))
 
 #ifdef __RDR__
 
-#include "RDR/natives.h"
+	#include "RDR/natives32.h"
 
 #else
-	
-#ifdef __GTAV__
+	#ifdef __GTAV__
 
-#include "GTAV/natives.h"
-
+		#ifdef __YSC__
+			#include "GTAV/natives64.h"
+		#else
+			#include "GTAV/natives32.h"
+		#endif
+		
+	#endif
 #endif
-#endif
-
-#undef _native
-#undef _native32

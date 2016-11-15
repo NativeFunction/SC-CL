@@ -1,4 +1,9 @@
 #pragma once
+#include "types.h"
+
+#define _native __attribute((native))
+#define _native32(hash) __attribute((native(hash)))
+
 
 #define sin sin_degree
 #define cos cos_degree
@@ -3065,3 +3070,6 @@ extern _native int set_cutsceneinputs_target_guid(int pram0, int pram1, int pram
 extern _native int unk_0x8701F1F6();
 extern _native int unk_0xB5401D4A();
 extern _native int unk_0x80B30545();
+
+#undef _native
+#undef _native32

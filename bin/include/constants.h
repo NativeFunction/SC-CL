@@ -12,12 +12,17 @@
 
 #ifdef __RDR__
 
-#include "RDR/consts.h"
+#include "RDR/consts32.h"
 
 #else
-#ifdef	__GTAV__
-
-#include "GTAV/consts.h"
-
-#endif
+	#ifdef	__GTAV__
+		#include "GTAV/constsShared.h"
+		
+		#ifdef __YSC__
+			#include "GTAV/consts64.h"
+		#else
+			#include "GTAV/consts32.h"
+		#endif
+		
+	#endif
 #endif
