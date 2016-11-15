@@ -24,7 +24,10 @@
 !StaticData.h
 !StaticData.cpp
 !bin/
+!bin/Debug/
 !bin/include/
+!bin/Release/
+!bin/projects/
 !RDR/
 !GTAV/
 !compiler/
