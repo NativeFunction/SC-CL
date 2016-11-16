@@ -705,7 +705,7 @@ class CompileGTAVPC : CompileGTAV
 	{
 		std::unordered_map<uint64_t, uint64_t> translation;
 		uint64_t _noTranslation(uint64_t nat)const { return nat; }
-		std::string gameVersionStr;
+		const std::string gameVersionStr;
 		uint64_t _translate(uint64_t nat)const 
 		{
 			auto it = translation.find(nat);
@@ -723,7 +723,7 @@ class CompileGTAVPC : CompileGTAV
 		}
 		uint64_t(NativeTranslation::*translationFunction)(uint64_t) const;
 	public:
-		NativeTranslation(std::string versionString) : gameVersionStr(versionString)
+		NativeTranslation(uint32_t versionString) : gameVersionStr(std::to_string(versionString))
 		{
 			std::ifstream natFile(globalDirectory + "PC_Natives.bin", std::ios::in | std::ios::binary | std::ios::ate);
 			if (!natFile.is_open())
@@ -741,7 +741,7 @@ class CompileGTAVPC : CompileGTAV
 			for (uint32_t i = 0; i < verCount;i++)
 			{
 				natFile.read(buff, 8);
-				if (strcmp(versionString.data(), buff) == 0)
+				if (strcmp(gameVersionStr.data(), buff) == 0)
 				{
 					usedVersion = i;
 					natFile.seekg((verCount - i - 1) * 8, std::ios_base::cur);//skip past rest of versions
@@ -750,7 +750,7 @@ class CompileGTAVPC : CompileGTAV
 			}
 			if (usedVersion == -1)
 			{
-				Utils::System::Warn("Version string '" + std::string(versionString) + "' was not found in translation data file, defaulting to latest game version");
+				Utils::System::Warn("Version string '" + gameVersionStr + "' was not found in translation data file, defaulting to latest game version");
 				usedVersion = verCount - 1;
 			}
 			translationFunction = &NativeTranslation::_translate;
@@ -770,7 +770,7 @@ class CompileGTAVPC : CompileGTAV
 	}nativeTranslation;
 public:
 	
-	CompileGTAVPC(const Script& data, std::string nativesVersion) : CompileGTAV(data), nativeTranslation(nativesVersion)
+	CompileGTAVPC(const Script& data, uint32_t nativesVersion) : CompileGTAV(data), nativeTranslation(nativesVersion)
 	{		
 	}
 

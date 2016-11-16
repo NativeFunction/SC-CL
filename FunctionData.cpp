@@ -348,7 +348,7 @@ int FunctionData::getSizeEstimate(int incDecl) const
 	return size;
 }
 
-void FunctionData::codeLayoutRandomisation(int maxBlockSize, int minBlockSize, bool keepEndReturn, bool makeJumpTable)
+void FunctionData::codeLayoutRandomisation(uint32_t maxBlockSize, uint32_t minBlockSize, bool keepEndReturn, bool makeJumpTable)
 {
 	int maxSize = Instructions.size();
 	if (!maxSize)

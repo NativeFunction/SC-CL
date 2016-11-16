@@ -84,13 +84,13 @@ static cl::opt<bool> SingletonOption(
 	cl::cat(OptCategory)
 );
 //void codeLayoutRandomisation(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
-static cl::list<int> ObfuscateOption(
-	"obfuscate", cl::desc("Options: int maxBlockSize, int minBlockSize, bool keepEndReturn, bool makeJumpTable"),
+static cl::list<uint32_t> ObfuscateOption(
+	"obfuscate", cl::desc("Options: uint maxBlockSize = 10, uint minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false"),
 	cl::ValueRequired,
 	cl::cat(OptCategory),
 	cl::multi_val(4)
 );
-static cl::opt<int> PCVerisonOption(
+static cl::opt<uint32_t> PCVerisonOption(
 	"pc_version", cl::desc("Sets the pc version for use in the native translation table"),
 	cl::ValueRequired,
 	cl::cat(OptCategory)
@@ -6225,7 +6225,7 @@ void WriteScriptFile(string outDir)
 				break;
 				case P_PC:
 				{
-					CompileGTAVPC c(*scriptData, to_string(PCVerisonOption));
+					CompileGTAVPC c(*scriptData, PCVerisonOption);
 					c.Compile(outDir);
 				}
 				break;

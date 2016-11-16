@@ -92,7 +92,7 @@ public:
 	bool isBuiltIn()const{ return _isBuiltIn; }
 	void setBuiltIn(){ _isBuiltIn = true; }
 
-	void codeLayoutRandomisation(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
+	void codeLayoutRandomisation(uint32_t maxBlockSize = 10, uint32_t minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
 
 	void setUnsafe(){ allowUnsafe = true; }
 	bool isUnsafe()const{ return allowUnsafe; }
