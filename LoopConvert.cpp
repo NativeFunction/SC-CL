@@ -6331,15 +6331,8 @@ private:
 	}
 };
 
-
-int main(int argc, const char **argv) {
-	globalDirectory = GetDir(string(argv[0]));
-
-	cl::SetVersionPrinter(PrintVersion);
-
-	
-	std::unique_ptr<CompilationDatabase> Compilations;
-
+void ParseCommandLine(int argc, const char **argv, unique_ptr<CompilationDatabase>& Compilations)
+{
 	Compilations.reset(FixedCompilationDatabase::loadFromCommandLine(argc, argv));
 	cl::ParseCommandLineOptions(argc, argv, " XSC-CL\n");
 
@@ -6355,43 +6348,43 @@ int main(int argc, const char **argv) {
 		}
 	}
 	auto AdjustingCompilations = llvm::make_unique<ArgumentsAdjustingCompilations>(std::move(Compilations));
-	
+
 	AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsBefore, ArgumentInsertPosition::BEGIN));
 	AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
 	Compilations = std::move(AdjustingCompilations);
-	
-	ClangTool Tool(*Compilations, SourcePaths);
-	bool ProcessingFailed = true;
+}
 
-	/// ClangTool::run accepts a FrontendActionFactory, which is then used to
-	/// create new objects implementing the FrontendAction interface. Here we use
-	/// the helper newFrontendActionFactory to create a default factory that will
-	/// return a new MyFrontendAction object every time.
-	/// To further customize this, we could create our own factory class.
-	
+int ProcessFiles(ClangTool &Tool)
+{
+	bool ProcessingFailed = true;
 	if (SourcePaths.size() > 0)
 	{
 		//this is temporary. script name should be set from the file that the main function is in
-		
+
 		string outDir = GetDir(SourcePaths[0]);
 		string scriptName = GetBaseNameFromDir(SourcePaths[0]);
 		scriptData.reset(new Script(scriptName, Option_BuildType, Option_Platform));
 
-		if(Option_Singleton)
+		if (Option_Singleton)
 			scriptData->setSingleton();
 
 		if (Option_DisableFunctionNames)
 			scriptData->setEntryFunctionPadding();
-		
+
 		stackWidth = scriptData->getStackWidth();
 
 		cout << "Starting Clang 3.8.1\r\n";
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
+		/// ClangTool::run accepts a FrontendActionFactory, which is then used to
+		/// create new objects implementing the FrontendAction interface. Here we use
+		/// the helper newFrontendActionFactory to create a default factory that will
+		/// return a new MyFrontendAction object every time.
+		/// To further customize this, we could create our own factory class.
 		if (!ProcessingFailed)
 		{
 			//ProcessingSuccess
 			scriptData->finaliseEntryFunction();
-			
+
 			WriteAsmFile(outDir);
 			WriteScriptFile(outDir);
 
@@ -6401,6 +6394,15 @@ int main(int argc, const char **argv) {
 			//ProcessingFailed
 		}
 	}
-
 	return (int)ProcessingFailed;
+}
+
+int main(int argc, const char **argv) {
+
+	globalDirectory = GetDir(string(argv[0]));
+	cl::SetVersionPrinter(PrintVersion);
+	unique_ptr<CompilationDatabase> Compilations;
+	ParseCommandLine(argc, argv, Compilations);
+	ClangTool Tool(*Compilations, SourcePaths);
+	return ProcessFiles(Tool);
 }
