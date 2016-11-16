@@ -83,10 +83,11 @@ extern __unsafeIntrinsic vector3 stackVNeg();
 #pragma region Variables //{
 extern __unsafeIntrinsic void setframe(const uint index);
 extern __intrinsic int getframe(const uint index);
-extern __intrinsic int getframep(const uint index);
+extern __intrinsic void* getframep(const uint index);
 extern __intrinsic void setglobal(const uint index, int value);
 extern __intrinsic int getglobal(const uint index);
-extern __intrinsic int getglobalp(const uint index);
+extern __intrinsic void* getglobalp(const uint index);
+extern __intrinsic void* getArrayP(const void* array, int index, const int arrayItemSize);
 #pragma endregion //}
 
 #undef __asm_unsafe

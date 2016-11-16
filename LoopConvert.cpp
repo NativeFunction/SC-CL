@@ -1386,6 +1386,43 @@ public:
 				}
 			}
 			break;
+			case JoaatCasedConst("getArrayP"):
+			{
+				ChkHashCol("getArrayP");
+				if (argCount == 3 && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
+				{
+					llvm::APSInt itemSize;
+					if (argArray[2]->EvaluateAsInt(itemSize, *context))
+					{
+						if (itemSize.getSExtValue() < 1 || itemSize.getSExtValue() > 0xFFFF)
+						{
+							Throw("getArrayP item size expected a value between 1 and 65536, got'" + to_string(itemSize.getSExtValue()) + "'", rewriter, argArray[2]->getSourceRange());
+						}
+						llvm::APSInt index;
+						if (Option_OptimizationLevel > OptLevel::O1 && argArray[1]->EvaluateAsInt(index ,*context))
+						{
+							parseExpression(argArray[0], false, true);
+							AddInstruction(GetImmP, 1 + itemSize.getSExtValue() * index.getSExtValue());
+						}
+						else
+						{
+							//get_arrayp
+							parseExpression(argArray[1], false, true);
+							parseExpression(argArray[0], false, true);
+							AddInstruction(GetArrayP, itemSize.getSExtValue());
+							return true;
+						}
+					}
+					else
+					{
+						Throw("getArrayP itemSize must be a compile time constant", rewriter, argArray[2]->getSourceRange());
+					}
+				}
+				else
+				{
+					Throw("getArrayP must have signature \"extern __intrinsic void* getArrayP(const void* array, int index, const int arrayItemSize);\"", rewriter, callee->getSourceRange());
+				}
+			}
 			case JoaatCasedConst("stacktop"):
 			{
 
