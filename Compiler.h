@@ -154,77 +154,77 @@ protected:
 	virtual void Compile(const std::string& outDirectory) = 0;
 
 	#pragma region Data_Functions
-	inline void AddPadding(const uint16_t value)
+	void AddPadding(const uint16_t value)
 	{
 		CodePageData.resize(CodePageData.size() + value);
 	}
-	inline void AddInt8(const uint8_t b)
+	void AddInt8(const uint8_t b)
 	{
 		CodePageData.push_back(b);
 	}
 	
 	void (CompileBase::*AddInt16)(const int16_t value);
 	#define AddInt16 (this->*AddInt16)
-	inline void AddInt16B(const int16_t value)
+	void AddInt16B(const int16_t value)
 	{
 		CodePageData.resize(CodePageData.size() + 2, 0);
 		*((int16_t*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
-	inline void AddInt16L(const int16_t value)
+	void AddInt16L(const int16_t value)
 	{
 		CodePageData.resize(CodePageData.size() + 2, 0);
 		*((int16_t*)(CodePageData.data() + CodePageData.size()) - 1) = value;
 	}
 	void (CompileBase::*AddInt24)(const uint32_t value);
 	#define AddInt24 (this->*AddInt24)
-	inline void AddInt24B(const uint32_t value)
+	void AddInt24B(const uint32_t value)
 	{
 		CodePageData.resize(CodePageData.size() + 3, 0);
 		*((uint32_t*)(CodePageData.data() + CodePageData.size()) - 1) |= Utils::Bitwise::SwapEndian(value & 0xFFFFFF);
 	}
-	inline void AddInt24L(const uint32_t value)
+	void AddInt24L(const uint32_t value)
 	{
 		CodePageData.resize(CodePageData.size() + 3, 0);
 		*((uint32_t*)(CodePageData.data() + CodePageData.size()) - 1) |= (value & 0xFFFFFF) << 8;
 	}
 	void (CompileBase::*AddInt32)(const int32_t value);
 	#define AddInt32 (this->*AddInt32)
-	inline void AddInt32B(const int32_t value)
+	void AddInt32B(const int32_t value)
 	{
 		CodePageData.resize(CodePageData.size() + 4, 0);
 		*((int32_t*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
-	inline void AddInt32L(const int32_t value)
+	void AddInt32L(const int32_t value)
 	{
 		CodePageData.resize(CodePageData.size() + 4, 0);
 		*((int32_t*)(CodePageData.data() + CodePageData.size()) - 1) = value;
 	}
 	void (CompileBase::*AddFloat)(const float value);
 	#define AddFloat (this->*AddFloat)
-	inline void AddFloatB(const float value)
+	void AddFloatB(const float value)
 	{
 		CodePageData.resize(CodePageData.size() + 4, 0);
 		*((float*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
-	inline void AddFloatL(const float value)
+	void AddFloatL(const float value)
 	{
 		CodePageData.resize(CodePageData.size() + 4, 0);
 		*((float*)(CodePageData.data() + CodePageData.size()) - 1) = value;
 	}
-	inline void AddString(const std::string& str)//Override: GTAV
+	void AddString(const std::string& str)//Override: GTAV
 	{
 		CodePageData.resize(CodePageData.size() + str.size() + 1);
 		memcpy(CodePageData.data() + CodePageData.size() - str.size() - 1, str.data(), str.size() + 1);
 	}
 	virtual void AddLabel(const std::string& label);
-	inline void AddFuncLabel(const FunctionData* function)
+	void AddFuncLabel(const FunctionData* function)
 	{
 		if (FuncLocations.find(function) == FuncLocations.end())
 			FuncLocations.insert({ function, CodePageData.size() });
 		else
 			Utils::System::Throw("Cannot add function. function \"" + function->getName() + "\" already exists.");
 	}
-	inline void AddJumpLoc(const JumpInstructionType it, const std::string& label)
+	void AddJumpLoc(const JumpInstructionType it, const std::string& label)
 	{
 		// this should only be called on jump forward
 		JumpLocations.push_back({ CodePageData.size(), it, label, false });
@@ -246,7 +246,7 @@ protected:
 	}
 	virtual void AddJump(const JumpInstructionType type, const std::string& label);//Override: GTAIV
 	virtual JumpLabelData AddSwitchJump(const JumpInstructionType type, const std::string& label);
-	inline uint32_t AddNative(const uint32_t hash)
+	uint32_t AddNative(const uint32_t hash)
 	{
 		std::unordered_map<uint32_t, uint32_t>::iterator findRes = NativeHashMap.find(hash);
 		const uint32_t size = NativeHashMap.size();
@@ -256,16 +256,7 @@ protected:
 			NativeHashMap.insert({ hash, size });
 		return size;
 	}
-	inline uint32_t GetNativeIndex(const uint32_t hash)
-	{
-		std::unordered_map<uint32_t, uint32_t>::iterator it = NativeHashMap.find(hash);
-		if (it != NativeHashMap.end())
-			return it->second;
-		else
-			Utils::System::Throw("Native with hash \""+ std::to_string(hash)+"\" does not exist");
-		return 0;
-	}
-	inline void DoesOpcodeHaveRoom(const size_t OpcodeLen)
+	void DoesOpcodeHaveRoom(const size_t OpcodeLen)
 	{
 		size_t size = CodePageData.size();
 		uint32_t amount = (size + OpcodeLen) % 16384;
@@ -278,13 +269,13 @@ protected:
 	}
 	virtual void CheckSignedJumps();
 	virtual void CheckUnsignedJumps();
-	inline bool FindNextSignedJumpLocation()
+	bool FindNextSignedJumpLocation()
 	{
 		for (; SignedJumpLocationInc < JumpLocations.size() && (JumpLocations[SignedJumpLocationInc].isSet || JumpLocations[SignedJumpLocationInc].InstructionType == JumpInstructionType::LabelLoc || JumpLocations[SignedJumpLocationInc].InstructionType == JumpInstructionType::Switch);  SignedJumpLocationInc++);
 
 		return SignedJumpLocationInc < JumpLocations.size();
 	}
-	inline bool FindNextUnsignedJumpLocation()
+	bool FindNextUnsignedJumpLocation()
 	{
 		for (; UnsignedJumpLocationInc < JumpLocations.size() && (JumpLocations[UnsignedJumpLocationInc].isSet || JumpLocations[UnsignedJumpLocationInc].InstructionType != JumpInstructionType::Switch); UnsignedJumpLocationInc++);
 
@@ -292,41 +283,41 @@ protected:
 	}
 	void (CompileBase::*ChangeInt16InCodePage)(const int16_t value, const uint32_t index);
 	#define ChangeInt16InCodePage (this->*ChangeInt16InCodePage)
-	inline void ChangeInt16InCodePageB(const int16_t value, const uint32_t index)
+	void ChangeInt16InCodePageB(const int16_t value, const uint32_t index)
 	{
 		*(int16_t*)(CodePageData.data() + index) = Utils::Bitwise::SwapEndian(value);
 	}
-	inline void ChangeInt16InCodePageL(const int16_t value, const uint32_t index)
+	void ChangeInt16InCodePageL(const int16_t value, const uint32_t index)
 	{
 		*(int16_t*)(CodePageData.data() + index) = value;
 	}
 	void (CompileBase::*ChangeInt24InCodePage)(const uint32_t value, const uint32_t index);
 	#define ChangeInt24InCodePage (this->*ChangeInt24InCodePage)
-	inline void ChangeInt24InCodePageB(const uint32_t value, const uint32_t index)
+	void ChangeInt24InCodePageB(const uint32_t value, const uint32_t index)
 	{
 		*(uint32_t*)(CodePageData.data() + index - 1) |= Utils::Bitwise::SwapEndian(value & 0xFFFFFF);
 	}
-	inline void ChangeInt24InCodePageL(const uint32_t value, const uint32_t index)
+	void ChangeInt24InCodePageL(const uint32_t value, const uint32_t index)
 	{
 		*(uint32_t*)(CodePageData.data() + index - 1) |= (value & 0xFFFFFF) << 8;
 	}
 	void (CompileBase::*ChangeInt32InCodePage)(const uint32_t value, const uint32_t index);
 	#define ChangeInt32InCodePage (this->*ChangeInt32InCodePage)
-	inline void ChangeInt32InCodePageB(const uint32_t value, const uint32_t index)
+	void ChangeInt32InCodePageB(const uint32_t value, const uint32_t index)
 	{
 		*(uint32_t*)(CodePageData.data() + index) = Utils::Bitwise::SwapEndian(value);
 	}
-	inline void ChangeInt32InCodePageL(const uint32_t value, const uint32_t index)
+	void ChangeInt32InCodePageL(const uint32_t value, const uint32_t index)
 	{
 		*(uint32_t*)(CodePageData.data() + index) = value;
 	}
 	void (CompileBase::*ChangeInt32InStringPage)(const uint32_t value, const uint32_t index);
 	#define ChangeInt32InStringPage (this->*ChangeInt32InStringPage)
-	inline void ChangeInt32InStringPageB(const uint32_t value, const uint32_t index)
+	void ChangeInt32InStringPageB(const uint32_t value, const uint32_t index)
 	{
 		*(uint32_t*)(StringPageData.data() + index) = Utils::Bitwise::SwapEndian(value);
 	}
-	inline void ChangeInt32InStringPageL(const uint32_t value, const uint32_t index)
+	void ChangeInt32InStringPageL(const uint32_t value, const uint32_t index)
 	{
 		*(uint32_t*)(StringPageData.data() + index) = value;
 	}
@@ -570,27 +561,27 @@ private:
 	#pragma endregion
 
 	#pragma region CallParsing
-	inline const uint8_t GetNewCallOpCode(const uint32_t needOffset) const { 
+	const uint8_t GetNewCallOpCode(const uint32_t needOffset) const { 
 		return needOffset >= 1048576 ? 255 : 82 + (needOffset >> 16); 
 	}
-	inline const uint16_t GetNewCallOffset(const uint32_t needOffset) const { 
+	const uint16_t GetNewCallOffset(const uint32_t needOffset) const { 
 		return needOffset - (((needOffset >> 16)) << 16); 
 	}
-	inline const int32_t GetCallOffset(const int32_t readOffset, const int32_t opCode) const {
+	const int32_t GetCallOffset(const int32_t readOffset, const int32_t opCode) const {
 		return readOffset | ((opCode - 82) << 16); 
 	}
 	#pragma endregion
 	#pragma region NativeParsing
-	inline const int32_t GetArgCountFromIndex(const uint16_t* Indblock) const {
+	const int32_t GetArgCountFromIndex(const uint16_t* Indblock) const {
 		return (((uint8_t*)Indblock)[0] & 0x3e) >> 1; 
 	}
-	inline const int32_t GetIndex(const uint16_t val) const {
+	const int32_t GetIndex(const uint16_t val) const {
 		return (((val & 0xFF) << 2) & 0x300) | ((val >> 8) & 0xFF);
 	}
-	inline const bool FunctionHasReturn(const uint16_t* data) const { 
+	const bool FunctionHasReturn(const uint16_t* data) const { 
 		return (((uint8_t*)data)[0] & 1) == 1 ? true : false; 
 	}
-	inline const uint16_t SetNewIndex(const uint16_t index, const int parameterCount, const bool ret) const { 
+	const uint16_t SetNewIndex(const uint16_t index, const int parameterCount, const bool ret) const { 
 		return Utils::Bitwise::SwapEndian((uint16_t)(((index & 0xFF00) >> 2) | ((index & 0xFF) << 8) | (ret ? 1 : 0) | (parameterCount << 1)));
 	}
 	#pragma endregion
@@ -786,7 +777,7 @@ private:
 	#pragma endregion
 
 	#pragma region Data_Functions
-	inline uint32_t AddNative(const uint64_t hash)
+	uint32_t AddNative(const uint64_t hash)
 	{
 		std::unordered_map<uint64_t, uint32_t>::iterator findRes = NativeHashMap.find(hash);
 		const uint32_t size = NativeHashMap.size();
@@ -796,15 +787,7 @@ private:
 			NativeHashMap.insert({ hash, size });
 		return size;
 	}
-	inline uint32_t GetNativeIndex(const uint64_t hash)
-	{
-		std::unordered_map<uint64_t, uint32_t>::iterator it = NativeHashMap.find(hash);
-		if (it != NativeHashMap.end())
-			return it->second;
-		else
-			Utils::System::Throw("Native with hash \"" + std::to_string(hash) + "\" does not exist");
-		return 0;
-	}
+
 	#pragma endregion
 
 
