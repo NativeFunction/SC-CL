@@ -1,6 +1,8 @@
 #include "ClangUtils.h"
 
 using namespace std;
+using namespace clang::tooling;
+using namespace llvm;
 
 namespace Utils {
 
@@ -215,4 +217,5 @@ namespace Utils {
 		}
 
 	}
+
 }

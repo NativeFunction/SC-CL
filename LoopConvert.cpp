@@ -6295,65 +6295,6 @@ void PrintVersion()
 	cout << "Version: " << Version << endl;
 }
 
-class ArgumentsAdjustingCompilations : public CompilationDatabase {
-public:
-	ArgumentsAdjustingCompilations(
-		std::unique_ptr<CompilationDatabase> Compilations)
-		: Compilations(std::move(Compilations)) {}
-
-	void appendArgumentsAdjuster(ArgumentsAdjuster Adjuster) {
-		Adjusters.push_back(Adjuster);
-	}
-
-	std::vector<CompileCommand>
-		getCompileCommands(StringRef FilePath) const override {
-		return adjustCommands(Compilations->getCompileCommands(FilePath));
-	}
-
-	std::vector<std::string> getAllFiles() const override {
-		return Compilations->getAllFiles();
-	}
-
-	std::vector<CompileCommand> getAllCompileCommands() const override {
-		return adjustCommands(Compilations->getAllCompileCommands());
-	}
-
-private:
-	std::unique_ptr<CompilationDatabase> Compilations;
-	std::vector<ArgumentsAdjuster> Adjusters;
-
-	std::vector<CompileCommand>
-		adjustCommands(std::vector<CompileCommand> Commands) const {
-		for (CompileCommand &Command : Commands)
-			for (const auto &Adjuster : Adjusters)
-				Command.CommandLine = Adjuster(Command.CommandLine, Command.Filename);
-		return Commands;
-	}
-};
-
-void ParseCommandLine(int argc, const char **argv, unique_ptr<CompilationDatabase>& Compilations)
-{
-	Compilations.reset(FixedCompilationDatabase::loadFromCommandLine(argc, argv));
-	cl::ParseCommandLineOptions(argc, argv, " XSC-CL\n");
-
-	if (!Compilations) {
-		std::string ErrorMessage;
-		if (!BuildPath.empty())
-			Compilations = CompilationDatabase::autoDetectFromDirectory(BuildPath, ErrorMessage);
-		else
-			Compilations = CompilationDatabase::autoDetectFromSource(SourcePaths[0], ErrorMessage);
-		if (!Compilations) {
-			llvm::errs() << "Error while trying to load a compilation database:\n" << ErrorMessage << "Running without flags.\n";
-			Compilations.reset(new FixedCompilationDatabase(".", std::vector<std::string>()));
-		}
-	}
-	auto AdjustingCompilations = llvm::make_unique<ArgumentsAdjustingCompilations>(std::move(Compilations));
-
-	AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsBefore, ArgumentInsertPosition::BEGIN));
-	AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
-	Compilations = std::move(AdjustingCompilations);
-}
-
 int ProcessFiles(ClangTool &Tool)
 {
 	bool ProcessingFailed = true;
@@ -6396,13 +6337,35 @@ int ProcessFiles(ClangTool &Tool)
 	}
 	return (int)ProcessingFailed;
 }
+void ParseCommandLine(int argc, const char **argv, const char* Overview, unique_ptr<CompilationDatabase>& Compilations)
+{
+	Compilations.reset(FixedCompilationDatabase::loadFromCommandLine(argc, argv));
+	cl::ParseCommandLineOptions(argc, argv, Overview);
 
+	if (!Compilations) {
+		string ErrorMessage;
+		if (!BuildPath.empty())
+			Compilations = CompilationDatabase::autoDetectFromDirectory(BuildPath, ErrorMessage);
+		else
+			Compilations = CompilationDatabase::autoDetectFromSource(SourcePaths[0], ErrorMessage);
+		if (!Compilations) {
+			llvm::errs() << "Error while trying to load a compilation database:\n" << ErrorMessage << "Running without flags.\n";
+			Compilations.reset(new FixedCompilationDatabase(".", std::vector<std::string>()));
+		}
+	}
+	auto AdjustingCompilations = llvm::make_unique<ArgumentsAdjustingCompilations>(std::move(Compilations));
+
+	AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsBefore, ArgumentInsertPosition::BEGIN));
+	AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
+	Compilations = std::move(AdjustingCompilations);
+}
 int main(int argc, const char **argv) {
 
 	globalDirectory = GetDir(string(argv[0]));
 	cl::SetVersionPrinter(PrintVersion);
 	unique_ptr<CompilationDatabase> Compilations;
-	ParseCommandLine(argc, argv, Compilations);
+	ParseCommandLine(argc, argv, " XSC-CL\n", Compilations);
+
 	ClangTool Tool(*Compilations, SourcePaths);
 	return ProcessFiles(Tool);
 }
