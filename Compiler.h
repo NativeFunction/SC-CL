@@ -796,7 +796,7 @@ private:
 			NativeHashMap.insert({ hash, size });
 		return size;
 	}
-	inline uint32_t GetNativeIndex(const uint32_t hash)
+	inline uint32_t GetNativeIndex(const uint64_t hash)
 	{
 		std::unordered_map<uint64_t, uint32_t>::iterator it = NativeHashMap.find(hash);
 		if (it != NativeHashMap.end())
