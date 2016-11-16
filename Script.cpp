@@ -102,16 +102,16 @@ void Script::finaliseEntryFunction()
 					entryFunction->addOpPushInt(1);
 					entryFunction->addOpJumpGT("__builtin__singleton__");
 					break;
-				case BT_RDR_SCO:
-				case BT_RDR_XSC:
-					entryFunction->addOpNative("get_script_name", (getBuildPlatform() == P_PC ? 0x442E0A7EDE4A738A : JoaatConst("get_script_name")), 0, 1);
-					entryFunction->addOpGetHash();
-					entryFunction->addOpNative("_get_number_of_instances_of_streamed_script", 0x029D3841, 1, 1);//fixme
+				case BT_GTAIV:
+					entryFunction->addOpPushString(getScriptName());//no native for getting the name of a script at runtime
+					entryFunction->addOpNative("get_number_of_instances_of_streamed_script", 1, 1);// iv native takes a string
 					entryFunction->addOpPushInt(1);
 					entryFunction->addOpJumpGT("__builtin__singleton__");
+					Utils::System::Warn("Singleton scripts for GTA IV only work when you dont change the name of the output sco file");
 					break;
 				default:
-					Utils::System::Throw("Invalid Build Type");
+					Utils::System::Warn("Singleton scripts are only supported on GTA IV and GTA V");
+					break;
 			}
 		}
 		entryFunction->addUsedFunc(mainFunction);

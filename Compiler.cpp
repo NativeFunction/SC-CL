@@ -189,7 +189,7 @@ void CompileBase::BuildTables()
 #pragma endregion
 
 #pragma region Data_Functions
-void CompileBase::AddLabel(const string label)
+void CompileBase::AddLabel(const string& label)
 {
 	auto it = LabelLocations.find(label);
 	if (it == LabelLocations.end())
@@ -234,7 +234,7 @@ void CompileBase::AddLabel(const string label)
 	else
 		Utils::System::Throw("Cannot add label. Label \"" + label + "\" already exists.");
 }
-void CompileBase::AddJump(const JumpInstructionType type, const string label)
+void CompileBase::AddJump(const JumpInstructionType type, const string& label)
 {
 	auto it = LabelLocations.find(label);
 	if (it == LabelLocations.end() || !it->second.isSet)
@@ -285,7 +285,7 @@ void CompileBase::AddJump(const JumpInstructionType type, const string label)
 	}
 	
 }
-CompileBase::JumpLabelData CompileBase::AddSwitchJump(const JumpInstructionType type, const string label)
+CompileBase::JumpLabelData CompileBase::AddSwitchJump(const JumpInstructionType type, const string& label)
 {
 	if (type != JumpInstructionType::Switch)
 		assert(false && "Invalid JumpInstructionType");
@@ -1481,7 +1481,7 @@ uint32_t CompileGTAV::GetFlagFromSize(int32_t size)
 	assert(false && "GetFlagFromSize: Size Not Found");
 	return 0;
 }
-const uint32_t CompileGTAV::AddStringToStringPage(const string str)
+const uint32_t CompileGTAV::AddStringToStringPage(const string& str)
 {
 	//if string is in table
 	auto it = StringPageDataIndexing.find(str);

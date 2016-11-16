@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
+#include "Script.h"
 
 
 using namespace std;
@@ -72,7 +73,7 @@ FunctionData::~FunctionData()
 	}
 }
 
-void FunctionData::pushComment(string comment)
+void FunctionData::pushComment(const string& comment)
 {
 #ifdef _DEBUG
 	if (Instructions.size()){//instruction stack can be empty in the rare case you're dropping the first instruction of a function
@@ -254,7 +255,7 @@ void FunctionData::AddSimpleOp(OpcodeKind operation)
 		assert(false && "Not a simple operation passed");
 	}
 }
-bool FunctionData::endsWithInlineReturn(string position) const
+bool FunctionData::endsWithInlineReturn(const string& position) const
 {
 	return Instructions.size() && Instructions.back()->getKind() == OK_Jump && Instructions.back()->getString() == position;
 }
@@ -298,7 +299,7 @@ string FunctionData::toString() const
 	return stream.str();
 }
 
-void FunctionData::addSwitchCase(int caseVal, string jumpLoc)
+void FunctionData::addSwitchCase(int caseVal, const string& jumpLoc)
 {
 	assert(Instructions.size() && "Instruction stack empty, cant add switch case");
 	Opcode *end = Instructions.back();
@@ -313,7 +314,7 @@ void FunctionData::addSwitchCase(int caseVal, string jumpLoc)
 	}
 }
 
-void FunctionData::setSwitchDefaultCaseLoc(string jumpLoc)
+void FunctionData::setSwitchDefaultCaseLoc(const string& jumpLoc)
 {
 	assert(Instructions.size() && "Instruction stack empty, cant add switch case");
 	Opcode *end = Instructions.back();
@@ -348,7 +349,7 @@ int FunctionData::getSizeEstimate(int incDecl) const
 	return size;
 }
 
-void FunctionData::codeLayoutRandomisation(uint32_t maxBlockSize, uint32_t minBlockSize, bool keepEndReturn, bool makeJumpTable)
+void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t maxBlockSize, uint32_t minBlockSize, bool keepEndReturn, bool makeJumpTable)
 {
 	int maxSize = Instructions.size();
 	if (!maxSize)
@@ -371,6 +372,12 @@ void FunctionData::codeLayoutRandomisation(uint32_t maxBlockSize, uint32_t minBl
 	bool isFirstNop = first->getKind() == OK_Nop;
 	if (makeJumpTable)
 	{
+		int pcFrameIndex = 0;
+		if (scriptData.getBuildType() == BT_GTAV && scriptData.getBuildPlatform() == P_PC)
+		{
+			pcFrameIndex = getStackSize() - getParamCount();
+			stackSize++;
+		}
 		vector<string> jumpTableLocations;
 		vector<size_t> jumpTableRandomisation;
 		auto JumpTable = new JumpTableStorage();
@@ -381,7 +388,19 @@ void FunctionData::codeLayoutRandomisation(uint32_t maxBlockSize, uint32_t minBl
 		Opcode *label = new Opcode(OK_Label);
 		label->setString("__builtin__jumpTable");
 		jTableBlock.push_back(label);
+		if (pcFrameIndex)
+		{
+			auto setFrame = new Opcode(OK_SetFrame);
+			setFrame->setUShort(pcFrameIndex, 0);
+			jTableBlock.push_back(setFrame);
+		}
 		jTableBlock.push_back(jtableOp);
+		if (pcFrameIndex)
+		{
+			auto getFrame = new Opcode(OK_GetFrame);
+			getFrame->setUShort(pcFrameIndex, 0);
+			jTableBlock.push_back(getFrame);
+		}
 		jTableBlock.push_back(new Opcode(OK_Add));
 		jTableBlock.push_back(new Opcode(OK_PGet));
 		jTableBlock.push_back(new Opcode(OK_GoToStack));
@@ -1058,7 +1077,7 @@ void FunctionData::addOpDrop()
 #endif
 }
 
-void FunctionData::addOpNative(string name, uint8_t pCount, uint8_t rCount)
+void FunctionData::addOpNative(const string& name, uint8_t pCount, uint8_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
 	op->storage.native = new NativeStorage(name, pCount, rCount);
@@ -1072,7 +1091,7 @@ void FunctionData::addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount)
 	Instructions.push_back(op);
 }
 
-void FunctionData::addOpNative(string name, uint64_t hash, uint8_t pCount, uint8_t rCount)
+void FunctionData::addOpNative(const string& name, uint64_t hash, uint8_t pCount, uint8_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
 	op->storage.native = new NativeStorage(name, hash, pCount, rCount);
@@ -1466,7 +1485,7 @@ void FunctionData::addOpSetImm(uint16_t index)
 #endif
 }
 
-void FunctionData::addOpJumpFalse(string loc)
+void FunctionData::addOpJumpFalse(const string& loc)
 {
 #ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add JumpFalse Instruction");

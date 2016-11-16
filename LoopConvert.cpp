@@ -170,7 +170,7 @@ struct local_scope
 			scopeLocals.pop_back();
 		}
 	}
-	bool find(string key, int* outIndex)
+	bool find(const string& key, int* outIndex)
 	{
 		for (int i = scopeLevel; i >= 0; i--)
 		{
@@ -199,7 +199,7 @@ struct local_scope
 		}
 		return cursize;
 	}
-	int addDecl(string key, int size)//size being number of 4 byte variables it takes up
+	int addDecl(const string& key, int size)//size being number of 4 byte variables it takes up
 	{
 		assert(size > 0);
 		int prevSize = getCurrentSize();
@@ -639,7 +639,7 @@ public:
 
 	#pragma region Decl_Handling
 	//handleParamVarDecl
-	void printDeclWithKey(string key, bool isAddr, bool isLtoRValue, bool isAssign, const DeclRefExpr* declref) {
+	void printDeclWithKey(const string& key, bool isAddr, bool isLtoRValue, bool isAssign, const DeclRefExpr* declref) {
 		int index = -1;
 		const Type* type = declref->getType().getTypePtr();
 		const VarDecl *varDecl = dyn_cast<VarDecl>(declref->getDecl());
@@ -5060,8 +5060,8 @@ public:
 			}
 			func->setProcessed();
 
-			if(Option_Obfuscate.size() == 4)
-				func->codeLayoutRandomisation(Option_Obfuscate[0], Option_Obfuscate[1], static_cast<bool>(Option_Obfuscate[2]), static_cast<bool>(Option_Obfuscate[3]));
+			if(ObfuscateOption.size() == 4)
+				func->codeLayoutRandomisation(scriptData, Option_Obfuscate[0], Option_Obfuscate[1], static_cast<bool>(Option_Obfuscate[2]), static_cast<bool>(Option_Obfuscate[3]));
 			
 			scriptData.clearCurrentFunction();
 		}
@@ -6186,7 +6186,7 @@ private:
 #pragma endregion
 
 
-void WriteAsmFile(string outDir)
+void WriteAsmFile(const string& outDir)
 {
 	string Out = outDir  + scriptData->getASMFileName();
 	FILE* file = fopen(Out.data(), "wb");
@@ -6220,7 +6220,7 @@ void WriteAsmFile(string outDir)
 
 }
 
-void WriteScriptFile(string outDir)
+void WriteScriptFile(const string& outDir)
 {
 	switch (scriptData->getBuildType())
 	{
@@ -6268,7 +6268,7 @@ void WriteScriptFile(string outDir)
 	}
 }
 
-string GetBaseNameFromDir(string &Dir)
+string GetBaseNameFromDir(const string &Dir)
 {
 	const size_t BaseStartPos = Dir.find_last_of("/\\") + 1;
 	const size_t BaseExtPos = Dir.find_last_of('.');
