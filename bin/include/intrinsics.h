@@ -88,6 +88,7 @@ extern __intrinsic void setglobal(const uint index, int value);
 extern __intrinsic int getglobal(const uint index);
 extern __intrinsic void* getglobalp(const uint index);
 extern __intrinsic void* getArrayP(const void* array, int index, const int arrayItemSize);
+extern __intrinsic void* getImmP(const void* pointer, const int immIndex);
 #pragma endregion //}
 
 #undef __asm_unsafe

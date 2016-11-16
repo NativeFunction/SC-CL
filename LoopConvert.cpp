@@ -1363,14 +1363,14 @@ public:
 			case JoaatCasedConst("getArrayP"):
 			{
 				ChkHashCol("getArrayP");
-				if (argCount == 3 && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
+				if (argCount == 3 && callee->getReturnType()->isPointerType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
 				{
 					llvm::APSInt itemSize;
 					if (argArray[2]->EvaluateAsInt(itemSize, *context))
 					{
 						if (itemSize.getSExtValue() < 1 || itemSize.getSExtValue() > 0xFFFF)
 						{
-							Throw("getArrayP item size expected a value between 1 and 65536, got'" + to_string(itemSize.getSExtValue()) + "'", rewriter, argArray[2]->getSourceRange());
+							Throw("getArrayP item size expected a value between 1 and 65535, got'" + to_string(itemSize.getSExtValue()) + "'", rewriter, argArray[2]->getSourceRange());
 						}
 						llvm::APSInt index;
 						if (Option_OptimizationLevel > OptLevel::O1 && argArray[1]->EvaluateAsInt(index ,*context))
@@ -1397,6 +1397,33 @@ public:
 					Throw("getArrayP must have signature \"extern __intrinsic void* getArrayP(const void* array, int index, const int arrayItemSize);\"", rewriter, callee->getSourceRange());
 				}
 			}
+			break;
+			case JoaatCasedConst("getImmP"):
+			{
+				ChkHashCol("getImmP");
+				if (argCount == 2 && callee->getReturnType()->isPointerType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType())
+				{
+					llvm::APSInt index;
+					if (argArray[1]->EvaluateAsInt(index, *context))
+					{
+						if (index.getSExtValue() < 0 || index.getSExtValue() > 0xFFFF)
+						{
+							Throw("getArrayP item size expected a value between 0 and 65535, got'" + to_string(index.getSExtValue()) + "'", rewriter, argArray[1]->getSourceRange());
+						}
+						parseExpression(argArray[0], false, true);
+						AddInstruction(GetImmP, index.getSExtValue());
+					}
+					else
+					{
+						Throw("getImmP index must be a compile time constant", rewriter, argArray[1]->getSourceRange());
+					}
+				}
+				else
+				{
+					Throw("getImmP must have signature \"extern __intrinsic void* getArrayP(const void* pointer, const int index);\"", rewriter, callee->getSourceRange());
+				}
+			}
+			break;
 			case JoaatCasedConst("stacktop"):
 			{
 
