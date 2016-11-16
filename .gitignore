@@ -15,8 +15,6 @@
 !ClangUtils.h
 !Compiler.cpp
 !Compiler.h
-!CompilePC.cpp
-!CompilePC.h
 !ConstExpr.h
 !OpcodeConsts.h
 !Script.h
