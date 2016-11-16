@@ -66,7 +66,7 @@ public:
 		stackSize = newSize;
 	}
 	uint32_t getHash()const{ return hash; }
-	std::string getName()const{ return name; }
+	const std::string& getName()const{ return name; }
 	void setUsed(Script& scriptBase);
 	bool IsUsed()const{ return used; }
 	friend std::ostream& operator << (std::ostream& stream, const FunctionData& fdata);
