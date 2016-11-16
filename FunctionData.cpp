@@ -255,7 +255,7 @@ void FunctionData::AddSimpleOp(OpcodeKind operation)
 		assert(false && "Not a simple operation passed");
 	}
 }
-bool FunctionData::endsWithInlineReturn(string position) const
+bool FunctionData::endsWithInlineReturn(const string& position) const
 {
 	return Instructions.size() && Instructions.back()->getKind() == OK_Jump && Instructions.back()->getString() == position;
 }
@@ -299,7 +299,7 @@ string FunctionData::toString() const
 	return stream.str();
 }
 
-void FunctionData::addSwitchCase(int caseVal, string jumpLoc)
+void FunctionData::addSwitchCase(int caseVal, const string& jumpLoc)
 {
 	assert(Instructions.size() && "Instruction stack empty, cant add switch case");
 	Opcode *end = Instructions.back();
@@ -314,7 +314,7 @@ void FunctionData::addSwitchCase(int caseVal, string jumpLoc)
 	}
 }
 
-void FunctionData::setSwitchDefaultCaseLoc(string jumpLoc)
+void FunctionData::setSwitchDefaultCaseLoc(const string& jumpLoc)
 {
 	assert(Instructions.size() && "Instruction stack empty, cant add switch case");
 	Opcode *end = Instructions.back();
@@ -1077,7 +1077,7 @@ void FunctionData::addOpDrop()
 #endif
 }
 
-void FunctionData::addOpNative(string name, uint8_t pCount, uint8_t rCount)
+void FunctionData::addOpNative(const string& name, uint8_t pCount, uint8_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
 	op->storage.native = new NativeStorage(name, pCount, rCount);
@@ -1091,7 +1091,7 @@ void FunctionData::addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount)
 	Instructions.push_back(op);
 }
 
-void FunctionData::addOpNative(string name, uint64_t hash, uint8_t pCount, uint8_t rCount)
+void FunctionData::addOpNative(const string& name, uint64_t hash, uint8_t pCount, uint8_t rCount)
 {
 	Opcode* op = new Opcode(OK_Native);
 	op->storage.native = new NativeStorage(name, hash, pCount, rCount);

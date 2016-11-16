@@ -57,7 +57,7 @@ public:
 	void pushComment(const std::string& comment);
 	void AddSimpleOp(OpcodeKind operation);
 	bool endsWithReturn() const{ return Instructions.size() && Instructions.back()->getKind() == OK_Return; }//this will get confused by if else having a return, but it will just return false when there actually is a return so no harm
-	bool endsWithInlineReturn(std::string position) const;
+	bool endsWithInlineReturn(const std::string& position) const;
 	void RemoveLast(){ Instructions.pop_back(); }
 	uint8_t getParamCount()const { return pcount; }
 	uint8_t getReturnCount()const{ return rcount; }
@@ -71,8 +71,8 @@ public:
 	bool IsUsed()const{ return used; }
 	friend std::ostream& operator << (std::ostream& stream, const FunctionData& fdata);
 	std::string toString() const;
-	void addSwitchCase(int caseVal, std::string jumpLoc);
-	void setSwitchDefaultCaseLoc(std::string jumpLoc);
+	void addSwitchCase(int caseVal, const std::string& jumpLoc);
+	void setSwitchDefaultCaseLoc(const std::string& jumpLoc);
 	void addUsedFunc(FunctionData *func);
 	void addUsedStatic(StaticData *staticData);
 	int getSizeEstimate(int incDecl) const;//only to be used when seeing if a function should be inlined
@@ -224,9 +224,9 @@ public:
 
 	void addOpDup(){ Instructions.push_back(new Opcode(OK_Dup)); }
 	void addOpDrop();
-	void addOpNative(std::string name, uint8_t pCount, uint8_t rCount);
+	void addOpNative(const std::string& name, uint8_t pCount, uint8_t rCount);
 	void addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount);
-	void addOpNative(std::string name, uint64_t hash, uint8_t pCount, uint8_t rCount);
+	void addOpNative(const std::string& name, uint64_t hash, uint8_t pCount, uint8_t rCount);
 	void addOpReturn()
 	{
 		Opcode* op = new Opcode(OK_Return);
