@@ -55,7 +55,8 @@ using namespace std;
 using namespace llvm;
 
 #pragma region Global_Misc_Clang_Decls
-static cl::OptionCategory OptCategory("Options", "Option Category");
+static cl::OptionCategory OptCategory("Compiler Options");
+
 static cl::opt<Platform> PlatformOption(
 	"platform", cl::desc("Choose Target Platform:"),
 	cl::Required,
@@ -86,6 +87,7 @@ static cl::opt<bool> SingletonOption(
 //void codeLayoutRandomisation(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
 static cl::list<uint32_t> ObfuscateOption(
 	"obfuscate", cl::desc("Options: uint maxBlockSize = 10, uint minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false"),
+	cl::value_desc("uint[4]"),
 	cl::ValueRequired,
 	cl::cat(OptCategory),
 	cl::multi_val(4)
