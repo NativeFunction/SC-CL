@@ -339,16 +339,17 @@ protected:
 			AddInt16(function->getStackSize());
 			AddInt8(0);//unused function name
 		}
-		else
+		else		
 		{
-			DoesOpcodeHaveRoom(5 + function->getName().size());
+			const std::string& name = function->getName();
+			DoesOpcodeHaveRoom(5 + name.size());
 			AddFuncLabel(function);
 			AddOpcode(Function);
 			AddInt8(function->getParamCount());
 			AddInt16(function->getStackSize());
 			AddInt8(function->getName().size());
-			CodePageData.resize(CodePageData.size() + function->getName().size());
-			memcpy(CodePageData.data() + CodePageData.size() - function->getName().size(), function->getName().data(), function->getName().size());
+			CodePageData.resize(CodePageData.size() + name.size());
+			memcpy(CodePageData.data() + CodePageData.size() - name.size(), name.data(), name.size());
 		}
 	}
 	virtual void PushInt(const int32_t Literal);//Override: GTAIV
