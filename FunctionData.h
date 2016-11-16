@@ -54,7 +54,7 @@ public:
 	{
 	}
 	~FunctionData();
-	void pushComment(std::string comment);
+	void pushComment(const std::string& comment);
 	void AddSimpleOp(OpcodeKind operation);
 	bool endsWithReturn() const{ return Instructions.size() && Instructions.back()->getKind() == OK_Return; }//this will get confused by if else having a return, but it will just return false when there actually is a return so no harm
 	bool endsWithInlineReturn(std::string position) const;
@@ -92,7 +92,7 @@ public:
 	bool isBuiltIn()const{ return _isBuiltIn; }
 	void setBuiltIn(){ _isBuiltIn = true; }
 
-	void codeLayoutRandomisation(uint32_t maxBlockSize = 10, uint32_t minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
+	void codeLayoutRandomisation(const Script& scriptData, uint32_t maxBlockSize = 10, uint32_t minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
 
 	void setUnsafe(){ allowUnsafe = true; }
 	bool isUnsafe()const{ return allowUnsafe; }
@@ -317,49 +317,49 @@ public:
 		Instructions.push_back(op);
 	}
 #pragma region Jumps
-	void addOpJump(std::string loc)
+	void addOpJump(const std::string& loc)
 	{
 		Opcode* op = new Opcode(OK_Jump);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpTrue(std::string loc)
+	void addOpJumpTrue(const std::string& loc)
 	{
 		addOpNot();
 		addOpJumpFalse(loc);
 	}
-	void addOpJumpFalse(std::string loc);
-	void addOpJumpEQ(std::string loc)
+	void addOpJumpFalse(const std::string& loc);
+	void addOpJumpEQ(const std::string& loc)
 	{
 		Opcode* op = new Opcode(OK_JumpEQ);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpNE(std::string loc)
+	void addOpJumpNE(const std::string& loc)
 	{
 		Opcode* op = new Opcode(OK_JumpNE);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpGT(std::string loc)
+	void addOpJumpGT(const std::string& loc)
 	{
 		Opcode* op = new Opcode(OK_JumpGT);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpGE(std::string loc)
+	void addOpJumpGE(const std::string& loc)
 	{
 		Opcode* op = new Opcode(OK_JumpGE);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpLT(std::string loc)
+	void addOpJumpLT(const std::string& loc)
 	{
 		Opcode* op = new Opcode(OK_JumpLT);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
-	void addOpJumpLE(std::string loc)
+	void addOpJumpLE(const std::string& loc)
 	{
 		Opcode* op = new Opcode(OK_JumpLE);
 		op->setString(loc);
@@ -382,7 +382,7 @@ public:
 		op->storage.switchCase = new SwitchStorage();
 		Instructions.push_back(op);
 	}
-	void addOpPushString(std::string str)
+	void addOpPushString(const std::string& str)
 	{
 		Opcode* op = new Opcode(OK_PushString);
 		op->setString(str);
@@ -414,14 +414,14 @@ public:
 	}
 	void addOpMemCopy(){ Instructions.push_back(new Opcode(OK_MemCpy)); }
 	void addOpPCall(){ Instructions.push_back(new Opcode(OK_PCall)); }
-	void addOpLabel(std::string loc)
+	void addOpLabel(const std::string& loc)
 	{
 		Opcode* op = new Opcode(OK_Label);
 		op->setString(loc);
 		Instructions.push_back(op);
 	}
 	void addOpLabel(unsigned int rawEncoding){ addOpLabel(std::to_string(rawEncoding)); }
-	void addOpLabelLoc(std::string loc)
+	void addOpLabelLoc(const std::string& loc)
 	{
 		Opcode* op = new Opcode(OK_LabelLoc);
 		op->setString(loc);
@@ -442,7 +442,7 @@ public:
 		op->storage.jTable = new JumpTableStorage();
 		Instructions.push_back(op);
 	}
-	void addJumpTableLoc(std::string jumpLoc)
+	void addJumpTableLoc(const std::string& jumpLoc)
 	{
 		assert(Instructions.size() && Instructions.back()->getKind() == OK_JumpTable && "Cannot add a jump table case when last instruction isnt a jump table");
 		Instructions.back()->storage.jTable->addJumpLoc(jumpLoc);

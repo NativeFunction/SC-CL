@@ -151,7 +151,7 @@ protected:
 	}
 	virtual ~CompileBase(){}
 
-	virtual void Compile(std::string outDirectory) = 0;
+	virtual void Compile(const std::string& outDirectory) = 0;
 
 	#pragma region Data_Functions
 	inline void AddPadding(const uint16_t value)
@@ -211,12 +211,12 @@ protected:
 		CodePageData.resize(CodePageData.size() + 4, 0);
 		*((float*)(CodePageData.data() + CodePageData.size()) - 1) = value;
 	}
-	inline void AddString(const std::string str)//Override: GTAV
+	inline void AddString(const std::string& str)//Override: GTAV
 	{
 		CodePageData.resize(CodePageData.size() + str.size() + 1);
 		memcpy(CodePageData.data() + CodePageData.size() - str.size() - 1, str.data(), str.size() + 1);
 	}
-	virtual void AddLabel(const std::string label);
+	virtual void AddLabel(const std::string& label);
 	inline void AddFuncLabel(const FunctionData* function)
 	{
 		if (FuncLocations.find(function) == FuncLocations.end())
@@ -224,7 +224,7 @@ protected:
 		else
 			Utils::System::Throw("Cannot add function. function \"" + function->getName() + "\" already exists.");
 	}
-	inline void AddJumpLoc(const JumpInstructionType it, const std::string label)
+	inline void AddJumpLoc(const JumpInstructionType it, const std::string& label)
 	{
 		// this should only be called on jump forward
 		JumpLocations.push_back({ CodePageData.size(), it, label, false });
@@ -244,8 +244,8 @@ protected:
 			default: assert(false && "Invalid Type");
 		}
 	}
-	virtual void AddJump(const JumpInstructionType type, const std::string label);//Override: GTAIV
-	virtual JumpLabelData AddSwitchJump(const JumpInstructionType type, const std::string label);
+	virtual void AddJump(const JumpInstructionType type, const std::string& label);//Override: GTAIV
+	virtual JumpLabelData AddSwitchJump(const JumpInstructionType type, const std::string& label);
 	inline uint32_t AddNative(const uint32_t hash)
 	{
 		std::unordered_map<uint32_t, uint32_t>::iterator findRes = NativeHashMap.find(hash);
@@ -535,7 +535,7 @@ class CompileRDR : CompileBase
 public:
 	CompileRDR(const Script& data) : CompileBase(RDROpcodes, data, 0, 0) { }
 
-	void Compile(std::string outDirectory) override
+	void Compile(const std::string& outDirectory) override
 	{
 		BuildTables();
 		switch (HLData->getBuildType())
@@ -636,7 +636,7 @@ class CompileGTAV : CompileBase
 public:
 	CompileGTAV(const Script& data) : CompileBase(GTAVOpcodes, data, 0, 0) { }
 
-	void Compile(std::string outDirectory) override
+	virtual void Compile(const std::string& outDirectory) override
 	{
 		BuildTables();
 		switch (HLData->getBuildType())
@@ -673,7 +673,7 @@ private:
 	int32_t GetSizeFromSystemFlag(uint32_t flag);
 	int32_t GetSizeFromGraphicsFlag(uint32_t flag);
 	uint32_t GetFlagFromSize(int32_t size);
-	const uint32_t AddStringToStringPage(const std::string str);
+	const uint32_t AddStringToStringPage(const std::string& str);
 	void fixFunctionCalls() override;
 	void fixFunctionJumps() override;
 	#pragma endregion
@@ -705,7 +705,7 @@ class CompileGTAVPC : CompileGTAV
 	{
 		std::unordered_map<uint64_t, uint64_t> translation;
 		uint64_t _noTranslation(uint64_t nat)const { return nat; }
-		const std::string gameVersionStr;
+		std::string gameVersionStr;
 		uint64_t _translate(uint64_t nat)const 
 		{
 			auto it = translation.find(nat);
@@ -774,7 +774,7 @@ public:
 	{		
 	}
 
-	void Compile(std::string outDirectory)
+	void Compile(const std::string& outDirectory) override
 	{
 		BuildTables();
 		XSCWrite((outDirectory + HLData->getBuildFileName()).data());

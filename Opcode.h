@@ -117,7 +117,7 @@ public:
 	{
 	return llvm::StringRef(pointer, length);
 	}*/
-	StringStorage(std::string str)
+	StringStorage(const std::string& str)
 	{
 		length = str.length();
 		pointer = new char[length + 1];
@@ -154,7 +154,7 @@ private:
 	std::string _jumpLoc;
 	SwitchCaseStorage* _next;
 public:
-	SwitchCaseStorage(int caseVal, std::string jumpLoc) : _caseVal(caseVal), _jumpLoc(jumpLoc), _next(NULL) {}
+	SwitchCaseStorage(int caseVal, const std::string& jumpLoc) : _caseVal(caseVal), _jumpLoc(jumpLoc), _next(NULL) {}
 	~SwitchCaseStorage()
 	{
 		if (_next)
@@ -170,7 +170,7 @@ public:
 		assert(!_next && "Already a next case defined");
 		_next = next;
 	}
-	void setNextCase(int caseVal, std::string jumpLoc)
+	void setNextCase(int caseVal, const std::string& jumpLoc)
 	{
 		assert(!_next && "Already a next case defined");
 		_next = new SwitchCaseStorage(caseVal, jumpLoc);
@@ -197,7 +197,7 @@ public:
 		}
 	}
 
-	void addCase(int caseVal, std::string caseLoc)
+	void addCase(int caseVal, const std::string& caseLoc)
 	{
 		_count++;
 		assert(_count < 256 && "Error switch has too many cases");
@@ -215,7 +215,7 @@ public:
 	}
 	const SwitchCaseStorage* getFirstCase() const { return _first; }
 	uint32_t getCount() const{ return _count; }
-	void setDefaultJumpLoc(std::string defCase)
+	void setDefaultJumpLoc(const std::string& defCase)
 	{
 		assert(!_defaultJumpLoc && "Default jump case alread specified");
 		_defaultJumpLoc = new StringStorage(defCase);
@@ -237,14 +237,14 @@ private:
 	StringStorage *_name;
 	uint8_t _pCount, _rCount;
 public:
-	NativeStorage(std::string name, uint64_t hash, uint8_t pCount, uint8_t rCount) :
+	NativeStorage(const std::string& name, uint64_t hash, uint8_t pCount, uint8_t rCount) :
 		_hash(hash),
 		_name(new StringStorage(name)),
 		_pCount(pCount),
 		_rCount(rCount)
 	{
 	}
-	NativeStorage(std::string name, uint8_t pCount, uint8_t rCount) :
+	NativeStorage(const std::string& name, uint8_t pCount, uint8_t rCount) :
 		_hash((!strnicmp(name.c_str(), "unk_0x", 6) ? strtoull(name.c_str() + 6, NULL, 16) : Utils::Hashing::Joaat(name.c_str()))),
 		_name(new StringStorage(name)),
 		_pCount(pCount),
@@ -278,7 +278,7 @@ public:
 	JumpTableStorage(){}
 	uint32_t getByteSize()const{ return jumpLocs.size() << 2; }
 	uint32_t getItemCount()const{ return jumpLocs.size(); }
-	void addJumpLoc(std::string jumpLoc){ jumpLocs.push_back(new StringStorage(jumpLoc)); }
+	void addJumpLoc(const std::string& jumpLoc){ jumpLocs.push_back(new StringStorage(jumpLoc)); }
 	void addJumpLoc(llvm::StringRef jumpLoc){ jumpLocs.push_back(new StringStorage(jumpLoc)); }
 	void addJumpLoc(StringStorage* jumpLoc){ jumpLocs.push_back(jumpLoc); }
 	const StringStorage* getJumpLoc(unsigned index) const
@@ -315,7 +315,7 @@ class Opcode
 	StringStorage *_comment = NULL;
 #endif
 	Opcode(OpcodeKind kind) : opcodeKind(kind){ }
-	void setString(std::string str)
+	void setString(const std::string& str)
 	{
 		if (storage.string)
 			delete storage.string;
@@ -364,15 +364,19 @@ public:
 
 	~Opcode();
 	OpcodeKind getKind() const{ return opcodeKind; }
-	void setComment(std::string comment)
+	void setComment(const std::string& comment)
 	{
 #ifdef _DEBUG
 		if (_comment)
 		{
-			comment = _comment->toString() + " - " + comment;
+			auto nComment = new StringStorage(_comment->toString() + " - " + comment);
 			delete _comment;
+			_comment = nComment;
 		}
-		_comment = new StringStorage(comment);
+		else
+		{
+			_comment = new StringStorage(comment);
+		}
 #endif
 	}
 	std::string getComment() const

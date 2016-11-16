@@ -5034,7 +5034,7 @@ public:
 			func->setProcessed();
 
 			if(ObfuscateOption.size() == 4)
-				func->codeLayoutRandomisation(ObfuscateOption[0], ObfuscateOption[1], static_cast<bool>(ObfuscateOption[2]), static_cast<bool>(ObfuscateOption[3]));
+				func->codeLayoutRandomisation(scriptData, ObfuscateOption[0], ObfuscateOption[1], static_cast<bool>(ObfuscateOption[2]), static_cast<bool>(ObfuscateOption[3]));
 			
 			scriptData.clearCurrentFunction();
 		}
