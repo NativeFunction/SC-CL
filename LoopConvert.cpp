@@ -12,7 +12,6 @@
 #include "ConstExpr.h"
 #include "Script.h"
 #include "Compiler.h"
-std::string globalDirectory;
 
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h)
@@ -54,14 +53,25 @@ using namespace clang::tooling;
 using namespace std;
 using namespace llvm;
 
+#pragma region Global_Decls
+string globalDirectory;
+const string Version = "0.0.0";
+#pragma endregion
+
 #pragma region Global_Misc_Clang_Decls
-static cl::OptionCategory OptCategory("Compiler Options");
+static cl::OptionCategory ClangOptions("Clang Options");
+static cl::OptionCategory CompilerOptions("Compiler Options");
+
+static cl::opt<bool> Help("h", cl::desc("Alias for -help"), cl::Hidden, cl::cat(ClangOptions));
+static cl::opt<std::string> BuildPath("p", cl::desc("Build path"), cl::Optional, cl::cat(ClangOptions));
+static cl::list<std::string> SourcePaths(cl::Positional, cl::desc("<source0> [... <sourceN>]"), cl::OneOrMore, cl::cat(ClangOptions));
+
 
 static cl::opt<Platform> Option_Platform(
 	"platform", cl::desc("Choose target platform:"),
 	cl::Required,
 	cl::ValueRequired,
-	cl::cat(OptCategory),
+	cl::cat(CompilerOptions),
 	cl::values(
 	clEnumValN(Platform::P_XBOX, "XBOX", "Target Xbox (32 bit, big endian)"),
 	clEnumValN(Platform::P_PS3, "PS3", "Target PS3 (32 bit, big endian)"),
@@ -72,7 +82,7 @@ static cl::opt<BuildType> Option_BuildType(
 	"build_type", cl::desc("Choose build type:"),
 	cl::Required,
 	cl::ValueRequired,
-	cl::cat(OptCategory),
+	cl::cat(CompilerOptions),
 	cl::values(
 	//clEnumValN(BuildType::BT_GTAIV, "XBOX", "Grand Theft Auto IV (sco output)"),
 	clEnumValN(BuildType::BT_GTAV, "GTAV", "Grand Theft Auto V (#sc output)"),
@@ -80,23 +90,39 @@ static cl::opt<BuildType> Option_BuildType(
 	clEnumValN(BuildType::BT_RDR_XSC, "RDR_XSC", "Red Dead Redemption (#sc output)"),
 	clEnumValEnd
 ));
-//void codeLayoutRandomisation(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
-static cl::list<uint32_t> Option_Obfuscate(
-	"obfuscate", cl::desc("Options: uint maxBlockSize = 10, uint minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false"),
-	cl::value_desc("uint[4]"),
-	cl::ValueRequired,
-	cl::cat(OptCategory),
-	cl::multi_val(4)
-);
+
+typedef enum ObfLevel { 
+	obf_none,
+	obf_low = 1,
+	F1 = 1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = false, bool makeJumpTable = false
+	obf_default = 2,
+	F2 = 2, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_high = 3,
+	F3 = 3, //high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_veryhigh = 4,
+	F4 = 4 //very high: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
+} ObfLevel;
+
+static cl::opt<ObfLevel> Option_ObfuscationLevel(
+	cl::desc("Choose obfuscation level:"),
+	cl::cat(CompilerOptions),
+	cl::values(
+	clEnumVal(F1, "Enable low obfuscations"),
+	clEnumVal(F2, "Enable default obfuscations"),
+	clEnumVal(F3, "Enable high obfuscations"),
+	clEnumVal(F4, "Enable very high obfuscations"),
+	clEnumValEnd
+));
+
 static cl::opt<uint32_t> Option_PCVerison(
 	"pc_version", cl::desc("Sets the pc version for use in the native translation table"),
 	cl::ValueRequired,
-	cl::cat(OptCategory)
+	cl::cat(CompilerOptions)
 );
 typedef enum OptLevel { g, O1, O2, O3 } OptLevel;
 static cl::opt<OptLevel> Option_OptimizationLevel(
 	cl::desc("Choose optimization level:"),
-	cl::cat(OptCategory),
+	cl::cat(CompilerOptions),
 	cl::values(
 	clEnumVal(g, "No optimizations, enable debugging"),
 	clEnumVal(O1, "Enable trivial optimizations"),
@@ -110,18 +136,18 @@ static cl::opt<OptLevel> Option_OptimizationLevel(
 static cl::opt<bool> Option_Singleton(
 	"s", cl::desc("Limits script to one instance on runtime (GTAV)"),
 	cl::Grouping,
-	cl::cat(OptCategory)
+	cl::cat(CompilerOptions)
 );
 static cl::opt<bool> Option_DisableFunctionNames(
 	"n", cl::desc("Disable function names in script output"),
 	cl::Grouping,
-	cl::cat(OptCategory)
+	cl::cat(CompilerOptions)
 );
 static cl::opt<bool> Option_EntryFunctionPadding(
 	"b", cl::desc("Adds buffer to the entry function to allow script injection"),
 	cl::Hidden,
 	cl::Grouping,
-	cl::cat(OptCategory)
+	cl::cat(CompilerOptions)
 );
 #pragma endregion
 
@@ -5124,9 +5150,21 @@ public:
 			}
 			func->setProcessed();
 
-			if(Option_Obfuscate.size() == 4)
-				func->codeLayoutRandomisation(scriptData, Option_Obfuscate[0], Option_Obfuscate[1], static_cast<bool>(Option_Obfuscate[2]), static_cast<bool>(Option_Obfuscate[3]));
-			
+			//F1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = false, bool makeJumpTable = false
+			//	F2, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
+			//	F3, //high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
+			//	F4 //very high: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
+
+			switch (Option_ObfuscationLevel)
+			{
+				case obf_none: break;
+				case obf_low: func->codeLayoutRandomisation(scriptData, 50, 30, false, false); break;
+				case obf_default: func->codeLayoutRandomisation(scriptData, 30, 15, false, true); break;
+				case obf_high: func->codeLayoutRandomisation(scriptData, 15, 5, false, true); break;
+				case obf_veryhigh: func->codeLayoutRandomisation(scriptData, 5, 1, false, true); break;
+				default: Throw("Unknown Obfuscation Level: " + Option_ObfuscationLevel);
+			}
+				
 			scriptData.clearCurrentFunction();
 		}
 		else
@@ -6347,12 +6385,19 @@ string GetDir(const string &Dir)
 	const size_t BaseExtPos = Dir.find_last_of("/\\") + 1;
 	return BaseExtPos == Dir.npos ? "" : Dir.substr(0, BaseExtPos);
 }
+void PrintVersion()
+{
+	cout << "Version: " << Version << endl;
+}
 
 int main(int argc, const char **argv) {
-	
 	globalDirectory = GetDir(string(argv[0]));
 
-	CommonOptionsParser op(argc, argv, OptCategory, " XSC-CL\n");
+	cl::SetVersionPrinter(PrintVersion);
+
+	cl::ParseCommandLineOptions(argc, argv, " XSC-CL\n");
+
+	CommonOptionsParser op(argc, argv, CompilerOptions);
 	ClangTool Tool(op.getCompilations(), op.getSourcePathList());
 	bool ProcessingFailed = true;
 
