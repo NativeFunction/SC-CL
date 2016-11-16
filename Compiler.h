@@ -504,9 +504,9 @@ protected:
 	void Write16384CodePages();
 	void WriteFinalCodePage();
 	void WriteNativesNoPadding();
-	void WriteNatives();
+	virtual void WriteNatives();
 	void WriteStaticsNoPadding();
-	void WriteStatics();
+	virtual void WriteStatics();
 	virtual void WriteHeader() = 0;
 	virtual void WritePointers() = 0;
 	
@@ -686,7 +686,7 @@ private:
 	void WritePointers() override;
 	void Write16384StringPages();
 	void WriteFinalStringPage();
-	void XSCWrite(const char* path, bool CompressAndEncrypt = true);
+	virtual void XSCWrite(const char* path, bool CompressAndEncrypt = true);
 	#pragma endregion
 };
 
@@ -801,9 +801,9 @@ private:
 	#pragma region Write_Functions
 	void WriteHeader() override;
 	void WritePointers() override;
-	void WriteNatives();
-	void WriteStatics();
-	void XSCWrite(const char* path, bool AddRsc7Header = false);
+	void WriteNatives() override;
+	void WriteStatics() override;
+	void XSCWrite(const char* path, bool AddRsc7Header = false) override;
 	#pragma endregion
 
 };
