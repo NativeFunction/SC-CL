@@ -2116,6 +2116,7 @@ public:
 						}
 						parseExpression(argArray[0], false, true);
 						AddInstruction(GetImmP, index.getSExtValue());
+						return true;
 					}
 					else
 					{
