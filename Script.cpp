@@ -75,6 +75,22 @@ void Script::finaliseEntryFunction()
 {
 	if (mainFunction)
 	{
+		if (doesEntryFunctionHavePadding())
+		{
+			/* Size: 9
+			Nop//Push_0
+			Nop//CallNative wait 1 0
+			Nop
+			Nop
+			Nop
+			Nop//Push_0
+			Nop//JumpFalse @-4 
+			Nop
+			Nop
+			*/
+			
+			entryFunction->addOpNop(9);
+		}
 		if (isSingleton())
 		{
 			switch (getBuildType())

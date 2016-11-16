@@ -57,8 +57,8 @@ using namespace llvm;
 #pragma region Global_Misc_Clang_Decls
 static cl::OptionCategory OptCategory("Compiler Options");
 
-static cl::opt<Platform> PlatformOption(
-	"platform", cl::desc("Choose Target Platform:"),
+static cl::opt<Platform> Option_Platform(
+	"platform", cl::desc("Choose target platform:"),
 	cl::Required,
 	cl::ValueRequired,
 	cl::cat(OptCategory),
@@ -68,8 +68,8 @@ static cl::opt<Platform> PlatformOption(
 	clEnumValN(Platform::P_PC, "PC", "Target PC (64 bit, little endian)"),
 	clEnumValEnd
 ));
-static cl::opt<BuildType> BuildTypeOption(
-	"build_type", cl::desc("Choose Build Type:"),
+static cl::opt<BuildType> Option_BuildType(
+	"build_type", cl::desc("Choose build type:"),
 	cl::Required,
 	cl::ValueRequired,
 	cl::cat(OptCategory),
@@ -80,23 +80,50 @@ static cl::opt<BuildType> BuildTypeOption(
 	clEnumValN(BuildType::BT_RDR_XSC, "RDR_XSC", "Red Dead Redemption (#sc output)"),
 	clEnumValEnd
 ));
-static cl::opt<bool> SingletonOption(
-	"singleton", cl::desc("Limits script to one instance on runtime"),
-	cl::cat(OptCategory)
-);
 //void codeLayoutRandomisation(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
-static cl::list<uint32_t> ObfuscateOption(
+static cl::list<uint32_t> Option_Obfuscate(
 	"obfuscate", cl::desc("Options: uint maxBlockSize = 10, uint minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false"),
 	cl::value_desc("uint[4]"),
 	cl::ValueRequired,
 	cl::cat(OptCategory),
 	cl::multi_val(4)
 );
-static cl::opt<uint32_t> PCVerisonOption(
+static cl::opt<uint32_t> Option_PCVerison(
 	"pc_version", cl::desc("Sets the pc version for use in the native translation table"),
 	cl::ValueRequired,
 	cl::cat(OptCategory)
 );
+typedef enum OptLevel { g, O1, O2, O3 } OptLevel;
+static cl::opt<OptLevel> Option_OptimizationLevel(
+	cl::desc("Choose optimization level:"),
+	cl::cat(OptCategory),
+	cl::values(
+	clEnumVal(g, "No optimizations, enable debugging"),
+	clEnumVal(O1, "Enable trivial optimizations"),
+	clEnumVal(O2, "Enable default optimizations"),
+	clEnumVal(O3, "Enable expensive optimizations"),
+	clEnumValEnd
+));
+
+#pragma region Bool_Group
+//Grouping is for multi bool set support ex: -snb
+static cl::opt<bool> Option_Singleton(
+	"s", cl::desc("Limits script to one instance on runtime (GTAV)"),
+	cl::Grouping,
+	cl::cat(OptCategory)
+);
+static cl::opt<bool> Option_DisableFunctionNames(
+	"n", cl::desc("Disable function names in script output"),
+	cl::Grouping,
+	cl::cat(OptCategory)
+);
+static cl::opt<bool> Option_EntryFunctionPadding(
+	"b", cl::desc("Adds buffer to the entry function to allow script injection"),
+	cl::Hidden,
+	cl::Grouping,
+	cl::cat(OptCategory)
+);
+#pragma endregion
 
 //static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 //static cl::extrahelp ProgramHelp("\nTemp text...\n");
@@ -5033,8 +5060,8 @@ public:
 			}
 			func->setProcessed();
 
-			if(ObfuscateOption.size() == 4)
-				func->codeLayoutRandomisation(ObfuscateOption[0], ObfuscateOption[1], static_cast<bool>(ObfuscateOption[2]), static_cast<bool>(ObfuscateOption[3]));
+			if(Option_Obfuscate.size() == 4)
+				func->codeLayoutRandomisation(Option_Obfuscate[0], Option_Obfuscate[1], static_cast<bool>(Option_Obfuscate[2]), static_cast<bool>(Option_Obfuscate[3]));
 			
 			scriptData.clearCurrentFunction();
 		}
@@ -6205,7 +6232,7 @@ void WriteScriptFile(string outDir)
 				case P_XBOX:
 				case P_PS3:
 				{
-					CompileRDR c(*scriptData);
+					CompileRDR c(*scriptData, Option_DisableFunctionNames);
 					c.Compile(outDir);
 				}
 				break;
@@ -6221,13 +6248,13 @@ void WriteScriptFile(string outDir)
 				case P_XBOX:
 				case P_PS3:
 				{
-					CompileGTAV c(*scriptData);
+					CompileGTAV c(*scriptData, Option_DisableFunctionNames);
 					c.Compile(outDir);
 				}
 				break;
 				case P_PC:
 				{
-					CompileGTAVPC c(*scriptData, PCVerisonOption);
+					CompileGTAVPC c(*scriptData, Option_PCVerison, Option_DisableFunctionNames);
 					c.Compile(outDir);
 				}
 				break;
@@ -6278,10 +6305,13 @@ int main(int argc, const char **argv) {
 		
 		string outDir = GetDir(op.getSourcePathList()[0]);
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
-		scriptData.reset(new Script(scriptName, BuildTypeOption, PlatformOption));
+		scriptData.reset(new Script(scriptName, Option_BuildType, Option_Platform));
 
-		if(SingletonOption)
+		if(Option_Singleton)
 			scriptData->setSingleton();
+
+		if (Option_DisableFunctionNames)
+			scriptData->setEntryFunctionPadding();
 		
 		stackWidth = scriptData->getStackWidth();
 

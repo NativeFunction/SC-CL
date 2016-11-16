@@ -174,7 +174,7 @@ void CompileBase::BuildTables()
 	{
 		if (HLData->getFunctionFromIndex(FunctionCount)->IsUsed())
 		{
-			AddFunction(HLData->getFunctionFromIndex(FunctionCount));
+			AddFunction(HLData->getFunctionFromIndex(FunctionCount), DisableFunctionNames);
 			for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
 			{
 				ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());

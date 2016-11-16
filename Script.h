@@ -28,7 +28,8 @@ class Script
 	uint8_t _stackWidth;
 	std::string _scriptName;
 	std::unique_ptr<StaticData> scriptParams;
-	bool _isSingleton = false;
+	bool _isSingleton = false,
+		EntryFunctionPadding = false;
 public:
 	Script(std::string scriptName, BuildType buildType, Platform platform);
 
@@ -71,6 +72,9 @@ public:
 
 	void setSingleton(bool makeSingleton = true){ _isSingleton = makeSingleton; }
 	bool isSingleton()const{ return _isSingleton; }
+
+	void setEntryFunctionPadding(bool Entry_Function_Padding = true) { EntryFunctionPadding = Entry_Function_Padding; }
+	bool doesEntryFunctionHavePadding()const { return EntryFunctionPadding; }
 
 	void finaliseEntryFunction();
 

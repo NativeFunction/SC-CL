@@ -94,6 +94,7 @@ protected:
 	const Script* HLData;//data to parse(High Level Data)
 	uint32_t FunctionCount = 0;
 	uint32_t InstructionCount = 0;
+	const bool DisableFunctionNames = false;
 	#pragma endregion
 
 	#pragma region Write_Data_Vars
@@ -110,12 +111,13 @@ protected:
 	#define DATA HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)
 	#define AddOpcode(op) AddInt8(BaseOpcodes->##op);
 
-	CompileBase(const OpCodes& Op, const Script& data, const uint32_t Function_Count, const uint32_t Instruction_Count) : 
+	CompileBase(const OpCodes& Op, const Script& data, const uint32_t Function_Count, const uint32_t Instruction_Count, bool Disable_Function_Names) :
 		BaseOpcodes(&Op), 
 		HLData(&data), 
 		ReadBufferSize(data.getBuildPlatform() == Platform::P_PS3 ? 8192 : 16384),
 		FunctionCount(Function_Count),
-		InstructionCount(Instruction_Count)
+		InstructionCount(Instruction_Count),
+		DisableFunctionNames(Disable_Function_Names)
 	{
 		//Set Endian
 		if (HLData->getBuildPlatform() == Platform::P_PC)
@@ -335,26 +337,29 @@ protected:
 	#pragma endregion
 
 	#pragma region Opcode_Functions
-	virtual void AddFunction(const FunctionData* function)
+	void AddFunction(const FunctionData* function, bool disableFunctionName)
 	{
-#if _DEBUG
-		std::string name = function->getName();
-		DoesOpcodeHaveRoom(5 + name.size());
-		AddFuncLabel(function);
-		AddOpcode(Function);
-		AddInt8(function->getParamCount());
-		AddInt16(function->getStackSize());
-		AddInt8(name.size());
-		CodePageData.resize(CodePageData.size() + name.size());
-		memcpy(CodePageData.data() + CodePageData.size() - name.size(), name.data(), name.size());
-#else
-		DoesOpcodeHaveRoom(5);
-		AddFuncLabel(function);
-		AddOpcode(Function);
-		AddInt8(function->getParamCount());
-		AddInt16(function->getStackSize());
-		AddInt8(0);//unused function name
-#endif
+		if (disableFunctionName)
+		{
+			DoesOpcodeHaveRoom(5);
+			AddFuncLabel(function);
+			AddOpcode(Function);
+			AddInt8(function->getParamCount());
+			AddInt16(function->getStackSize());
+			AddInt8(0);//unused function name
+		}
+		else
+		{
+			std::string name = function->getName();
+			DoesOpcodeHaveRoom(5 + name.size());
+			AddFuncLabel(function);
+			AddOpcode(Function);
+			AddInt8(function->getParamCount());
+			AddInt16(function->getStackSize());
+			AddInt8(name.size());
+			CodePageData.resize(CodePageData.size() + name.size());
+			memcpy(CodePageData.data() + CodePageData.size() - name.size(), name.data(), name.size());
+		}
 	}
 	virtual void PushInt(const int32_t Literal);//Override: GTAIV
 	void PushInt(){ PushInt(DATA->getInt()); }
@@ -533,7 +538,7 @@ protected:
 class CompileRDR : CompileBase
 {
 public:
-	CompileRDR(const Script& data) : CompileBase(RDROpcodes, data, 0, 0) { }
+	CompileRDR(const Script& data, bool Disable_Function_Names) : CompileBase(RDROpcodes, data, 0, 0, Disable_Function_Names) { }
 
 	void Compile(std::string outDirectory) override
 	{
@@ -634,7 +639,7 @@ class CompileGTAV : CompileBase
 {
 	friend class CompileGTAVPC;
 public:
-	CompileGTAV(const Script& data) : CompileBase(GTAVOpcodes, data, 0, 0) { }
+	CompileGTAV(const Script& data, bool Disable_Function_Names) : CompileBase(GTAVOpcodes, data, 0, 0, Disable_Function_Names) { }
 
 	void Compile(std::string outDirectory) override
 	{
@@ -770,7 +775,7 @@ class CompileGTAVPC : CompileGTAV
 	}nativeTranslation;
 public:
 	
-	CompileGTAVPC(const Script& data, uint32_t nativesVersion) : CompileGTAV(data), nativeTranslation(nativesVersion)
+	CompileGTAVPC(const Script& data, uint32_t nativesVersion, bool Disable_Function_Names) : CompileGTAV(data, Disable_Function_Names), nativeTranslation(nativesVersion)
 	{		
 	}
 
