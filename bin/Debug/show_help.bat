@@ -1,4 +1,4 @@
 @echo off
-loop-convert.exe -help-hidden
+loop-convert.exe -help
 pause > nul
 cls
