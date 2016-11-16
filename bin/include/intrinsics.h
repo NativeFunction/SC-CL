@@ -5,6 +5,7 @@
 #define __intrinsic __attribute((intrinsic(false)))
 #define __unsafeIntrinsic __attribute((intrinsic(true)))
 
+
 #define offsetof(st, m) ((uint)&(((st *)0)->m))
 #define countof(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 #define stacksizeof(x) ((sizeof(x) + 3) >> 2)

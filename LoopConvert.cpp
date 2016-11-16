@@ -52,9 +52,53 @@ using namespace Utils::Hashing;
 using namespace clang;
 using namespace clang::tooling;
 using namespace std;
+using namespace llvm;
 
 #pragma region Global_Misc_Clang_Decls
-static llvm::cl::OptionCategory ToolingSampleCategory("Tooling Sample");
+static cl::OptionCategory OptCategory("Options", "Option Category");
+static cl::opt<Platform> PlatformOption(
+	"platform", cl::desc("Choose Target Platform:"),
+	cl::Required,
+	cl::ValueRequired,
+	cl::cat(OptCategory),
+	cl::values(
+	clEnumValN(Platform::P_XBOX, "XBOX", "Target Xbox (32 bit, big endian)"),
+	clEnumValN(Platform::P_PS3, "PS3", "Target PS3 (32 bit, big endian)"),
+	clEnumValN(Platform::P_PC, "PC", "Target PC (64 bit, little endian)"),
+	clEnumValEnd
+));
+static cl::opt<BuildType> BuildTypeOption(
+	"build_type", cl::desc("Choose Build Type:"),
+	cl::Required,
+	cl::ValueRequired,
+	cl::cat(OptCategory),
+	cl::values(
+	//clEnumValN(BuildType::BT_GTAIV, "XBOX", "Grand Theft Auto IV (sco output)"),
+	clEnumValN(BuildType::BT_GTAV, "GTAV", "Grand Theft Auto V (#sc output)"),
+	clEnumValN(BuildType::BT_RDR_SCO, "RDR_SCO", "Red Dead Redemption (sco output)"),
+	clEnumValN(BuildType::BT_RDR_XSC, "RDR_XSC", "Red Dead Redemption (#sc output)"),
+	clEnumValEnd
+));
+static cl::opt<bool> SingletonOption(
+	"singleton", cl::desc("Limits script to one instance on runtime"),
+	cl::cat(OptCategory)
+);
+//void codeLayoutRandomisation(int maxBlockSize = 10, int minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
+static cl::list<int> ObfuscateOption(
+	"obfuscate", cl::desc("Options: int maxBlockSize, int minBlockSize, bool keepEndReturn, bool makeJumpTable"),
+	cl::ValueRequired,
+	cl::cat(OptCategory),
+	cl::multi_val(4)
+);
+static cl::opt<int> PCVerisonOption(
+	"pc_version", cl::desc("Sets the pc version for use in the native translation table"),
+	cl::ValueRequired,
+	cl::cat(OptCategory)
+);
+
+//static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
+//static cl::extrahelp ProgramHelp("\nTemp text...\n");
+
 static Rewriter rewriter;
 #pragma endregion
 
@@ -420,8 +464,6 @@ uint32_t getNumVirtMethods(const CXXRecordDecl *classDecl) {
 	return numVirt;
 }
 #pragma endregion
-
-
 
 #pragma region Global_Opcode_Functions
 #pragma region Opcodes_Push
@@ -4988,7 +5030,10 @@ public:
 				func->setStackSize(LocalVariables.maxIndex);
 			}
 			func->setProcessed();
-			func->codeLayoutRandomisation(5, 1, false);
+
+			if(ObfuscateOption.size() == 4)
+				func->codeLayoutRandomisation(ObfuscateOption[0], ObfuscateOption[1], static_cast<bool>(ObfuscateOption[2]), static_cast<bool>(ObfuscateOption[3]));
+			
 			scriptData.clearCurrentFunction();
 		}
 		else
@@ -6180,7 +6225,7 @@ void WriteScriptFile(string outDir)
 				break;
 				case P_PC:
 				{
-					CompileGTAVPC c(*scriptData, "877");
+					CompileGTAVPC c(*scriptData, to_string(PCVerisonOption));
 					c.Compile(outDir);
 				}
 				break;
@@ -6211,12 +6256,13 @@ string GetDir(const string &Dir)
 }
 
 int main(int argc, const char **argv) {
-	cout << "Starting Clang 3.8.1\r\n";
-
-	CommonOptionsParser op(argc, argv, ToolingSampleCategory);
+	
 	globalDirectory = GetDir(string(argv[0]));
+
+	CommonOptionsParser op(argc, argv, OptCategory, " XSC-CL\n");
 	ClangTool Tool(op.getCompilations(), op.getSourcePathList());
 	bool ProcessingFailed = true;
+
 
 	/// ClangTool::run accepts a FrontendActionFactory, which is then used to
 	/// create new objects implementing the FrontendAction interface. Here we use
@@ -6230,9 +6276,14 @@ int main(int argc, const char **argv) {
 		
 		string outDir = GetDir(op.getSourcePathList()[0]);
 		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
-		scriptData.reset(new Script(scriptName, BuildType::BT_GTAV, Platform::P_PC));
-		scriptData->setSingleton();
+		scriptData.reset(new Script(scriptName, BuildTypeOption, PlatformOption));
+
+		if(SingletonOption)
+			scriptData->setSingleton();
+		
 		stackWidth = scriptData->getStackWidth();
+
+		cout << "Starting Clang 3.8.1\r\n";
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 		if (!ProcessingFailed)
 		{

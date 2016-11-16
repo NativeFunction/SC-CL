@@ -6,6 +6,20 @@
 short int: SwapEndian16(x), unsigned short int: SwapEndian16(x),\
 default: SwapEndian32(x))
 
+void print(char* str, int ms)
+{
+	#ifdef __GTAV__
+		_set_text_entry_2("STRING");
+		add_text_component_substring_player_name(str);
+		_draw_subtitle_timed(ms, 1);
+	#else
+		#ifdef __RDR__
+			_clear_prints();
+			_print_subtitle(str, ms ? (float)ms / 1000.0 : 0, true, 2, 1, 0, 0, 0);
+		#endif
+	#endif
+}
+
 int SwapEndian32(int value)
 {
 	return ((((value) & 0xff000000) >> 24) | (((value) & 0x00ff0000) >>  8) | (((value) & 0x0000ff00) <<  8) | (((value) & 0x000000ff) << 24));
@@ -117,7 +131,7 @@ vector3 RotationLookAtPoint(vector3 pos, vector3 endpos)
 }
 
 #ifndef __GTAV__
-float acos(float number)
+unsafe float acos(float number)
 {
 	//this works fine for floats as negitive ints and floats both have msb set
 	if (reinterpretFloatToInt(number) < 0)
@@ -141,7 +155,7 @@ float acos(float number)
 	pushFloat(stackFAdd(1.5707288f));
 	return stackFMult(sqrt(1.0 - number));
 }
-float asin(float number)
+unsafe float asin(float number)
 {
 	//this works fine for floats as negitive ints and floats both have msb set
 	if (reinterpretFloatToInt(number) < 0)

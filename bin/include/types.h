@@ -1,7 +1,8 @@
 #pragma once
 
-#define __global(index) __attribute((scriptglobal(index)))
-#define __noinline __attribute((noinline))
+#define global(index) __attribute((scriptglobal(index)))
+#define noinline __attribute((noinline))
+#define unsafe __attribute((unsafe))
 
 //calculation range is -2,147,483,648 to 2,147,483,647
 //any value above or below that will be automatically cast to a signed int

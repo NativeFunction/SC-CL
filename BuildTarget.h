@@ -1,21 +1,21 @@
 #pragma once
-enum Platform
+typedef enum Platform
 {
 	P_XBOX,
 	P_PS3,
 	P_PC
-};
+} Platform;
 
-enum BuildType
+typedef enum BuildType
 {
 	BT_GTAIV,
 	BT_RDR_XSC,
 	BT_RDR_SCO,
 	BT_GTAV
-};
+} BuildType;
 
-enum Endian
+typedef enum Endian
 {
 	END_BIG,
 	END_LITTLE
-};
+} Endian;

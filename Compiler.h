@@ -723,7 +723,7 @@ class CompileGTAVPC : CompileGTAV
 		}
 		uint64_t(NativeTranslation::*translationFunction)(uint64_t) const;
 	public:
-		NativeTranslation(const char* versionString) : gameVersionStr(versionString)
+		NativeTranslation(std::string versionString) : gameVersionStr(versionString)
 		{
 			std::ifstream natFile(globalDirectory + "PC_Natives.bin", std::ios::in | std::ios::binary | std::ios::ate);
 			if (!natFile.is_open())
@@ -741,7 +741,7 @@ class CompileGTAVPC : CompileGTAV
 			for (uint32_t i = 0; i < verCount;i++)
 			{
 				natFile.read(buff, 8);
-				if (strcmp(versionString, buff) == 0)
+				if (strcmp(versionString.data(), buff) == 0)
 				{
 					usedVersion = i;
 					natFile.seekg((verCount - i - 1) * 8, std::ios_base::cur);//skip past rest of versions
@@ -770,7 +770,7 @@ class CompileGTAVPC : CompileGTAV
 	}nativeTranslation;
 public:
 	
-	CompileGTAVPC(const Script& data, const char* nativesVersion) : CompileGTAV(data), nativeTranslation(nativesVersion)
+	CompileGTAVPC(const Script& data, std::string nativesVersion) : CompileGTAV(data), nativeTranslation(nativesVersion)
 	{		
 	}
 

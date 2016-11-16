@@ -1,4 +1,3 @@
-#define noinline __attribute__((__noinline__))
 int addrptrtest = ((short)1000000 + 5);
 
 short* testok = (5 + 5) + (short*)&addrptrtest;
