@@ -62,9 +62,11 @@ const string Version = "0.0.0";
 static cl::OptionCategory ClangOptions("Clang Options");
 static cl::OptionCategory CompilerOptions("Compiler Options");
 
-static cl::opt<bool> Help("h", cl::desc("Alias for -help"), cl::Hidden, cl::cat(ClangOptions));
+static cl::opt<bool> Help("h", cl::desc("Alias for -help"), cl::Hidden);
 static cl::opt<std::string> BuildPath("p", cl::desc("Build path"), cl::Optional, cl::cat(ClangOptions));
-static cl::list<std::string> SourcePaths(cl::Positional, cl::desc("<source0> [... <sourceN>]"), cl::OneOrMore, cl::cat(ClangOptions));
+static cl::list<std::string> SourcePaths(cl::Positional, cl::desc("<source0> [... <sourceN>]"), cl::cat(ClangOptions));
+static cl::list<std::string> ArgsAfter("extra-arg", cl::desc("Additional argument to append to the compiler command line"), cl::cat(ClangOptions));
+static cl::list<std::string> ArgsBefore("extra-arg-before", cl::desc("Additional argument to prepend to the compiler command line"), cl::cat(ClangOptions));
 
 
 static cl::opt<Platform> Option_Platform(
@@ -945,530 +947,14 @@ public:
 
 		switch (JoaatCased(const_cast<char*>(funcName.c_str())))
 		{
-			case JoaatCasedConst("nop"):
-			{
-				ChkHashCol("nop");
-				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
-				{
-					llvm::APSInt result;
-					
-					if (argArray[0]->EvaluateAsInt(result, *context) && result.getSExtValue() > 0 && result.getSExtValue() <= 4096)
-					{
-						AddInstruction(Nop, result.getSExtValue());
-					}
-					else
-					{
-						Throw("nopCount argument must be a constant integer between 1 and 4096", rewriter, argArray[0]->getSourceRange());
-					}
-					
-					return true;
-				}
-				else
-				{
-					Throw("nop must have signature \"extern __intrinsic void nop(const int nopCount);\"", rewriter, callee->getSourceRange());
-				}
-			}
-			break;
-			case JoaatCasedConst("strcpy"):
-			{
-				ChkHashCol("strcpy");
-				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[1], false, true);
-					if (isPushString(argArray[0]))
-					{
-						Throw("strcpy called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
-					}
-					parseExpression(argArray[0], false, true);
-
-					llvm::APSInt result;
-					if (argArray[2]->EvaluateAsInt(result, *context))
-					{
-						int iValue = result.getSExtValue();
-						if (iValue > 0 && iValue < 256)
-						{
-							AddInstruction(StrCopy, iValue);
-							return true;
-						}
-						else
-							Throw("Integer constant for string max length argument in strcpy must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
-					}
-					else
-						Throw("Expected integer constant for string max length argument in strcpy", rewriter, argArray[2]->getSourceRange());
-				}
-				else
-					Throw("strcpy must have signature \"extern __intrinsic void strcpy(char* dst, char* src, const byte len);\"", rewriter, callee->getSourceRange());
-				
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stradd"):
-			{
-				ChkHashCol("stradd");
-				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[1], false, true);
-					if (isPushString(argArray[0]))
-					{
-						Throw("stradd called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
-					}
-					parseExpression(argArray[0], false, true);
-
-					llvm::APSInt result;
-					if (argArray[2]->EvaluateAsInt(result, *context))
-					{
-						int iValue = result.getSExtValue();
-						if (iValue > 0 && iValue < 256)
-						{
-							AddInstruction(StrAdd, iValue);
-							return true;
-						}
-						else
-							Throw("Integer constant for string max length argument in stradd must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
-					}
-					else
-						Throw("Expected integer constant for string max length argument in stradd", rewriter, argArray[2]->getSourceRange());
-				}
-				else
-					Throw("stradd must have signature \"extern __intrinsic void stradd(char* dst, char* append, const byte len);\"", rewriter, callee->getSourceRange());
-				
-				return false;
-			}
-			break;
-			case JoaatCasedConst("straddi"):
-			{
-				ChkHashCol("straddi");
-				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[1], false, true);
-					if (isPushString(argArray[0]))
-					{
-						Throw("straddi called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
-					}
-					parseExpression(argArray[0], false, true);
-
-					llvm::APSInt result;
-					if (argArray[2]->EvaluateAsInt(result, *context))
-					{
-						int iValue = result.getSExtValue();
-						if (iValue > 0 && iValue < 256)
-						{
-							AddInstruction(StrAddI, iValue);
-							return true;
-						}
-						else
-							Throw("Integer constant for string max length argument in straddi must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
-					}
-					else
-						Throw("Expected integer constant for string max length argument in straddi", rewriter, argArray[2]->getSourceRange());
-				}
-				else
-					Throw("straddi must have signature \"extern __intrinsic void straddi(char* dst, int append, const byte len);\"", rewriter, callee->getSourceRange());
-				
-				return false;
-			}
-			break;
-			case JoaatCasedConst("itos"):
-			{
-				ChkHashCol("itos");
-				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[1], false, true);
-					if (isPushString(argArray[0]))
-					{
-						Throw("itos called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
-					}
-					parseExpression(argArray[0], false, true);
-
-					llvm::APSInt result;
-					if (argArray[2]->EvaluateAsInt(result, *context))
-					{
-						int iValue = result.getSExtValue();
-						if (iValue > 0 && iValue < 256)
-						{
-							AddInstruction(ItoS, iValue);
-							return true;
-						}
-						else
-							Throw("Integer constant for string max length argument in itos must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
-					}
-					else
-						Throw("Expected integer constant for string max length argument in itos", rewriter, argArray[2]->getSourceRange());
-				}
-				else
-					Throw("itos must have signature \"extern __intrinsic void itos(char* dst, int value, const byte len);\"", rewriter, callee->getSourceRange());
-				
-				return false;
-			}
-			break;
-			case JoaatCasedConst("pop"):
-			{
-				ChkHashCol("pop");
-				if (argCount == 0 && callee->getReturnType()->isVoidType())
-				{
-					AddInstruction(Drop);
-					return true;
-				}
-				Throw("pop must have signature \"extern __intrinsic void pop();\"", rewriter, callee->getSourceRange());
-			}
-			break;
-			case JoaatCasedConst("popMult"):
-			{
-				ChkHashCol("popMult");
-				//	out << call->getExprLoc().
-				if (argCount == 1 && callee->getReturnType()->isVoidType())
-				{
-					llvm::APSInt result;
-					if (argArray[0]->getType()->isIntegerType())
-					{
-						if (argArray[0]->EvaluateAsInt(result, *context))
-						{
-							int intValue = result.getSExtValue();
-							if (intValue <= 0)
-							{
-								Throw("Expected positive integer constant for pop amount argument in popMult, got " + to_string(intValue), rewriter, argArray[0]->getSourceRange());
-								return false;
-							}
-							for (int i = 0; i < intValue; i++)
-							{
-								AddInstruction(Drop);
-							}
-							return true;;
-						}
-						Throw("Expected positive integer constant for pop amount argument in popMult", rewriter, argArray[0]->getSourceRange());
-						return false;
-					}
-				}
-				Throw("popMult must have signature \"extern __intrinsic void popMult(const int amount);\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("pcall"):
-			{
-				ChkHashCol("pcall");
-				if (argCount >= 1 && callee->getReturnType()->isVoidType())
-				{
-					if (argCount > 1)
-						for (int i = 1; i < argCount; i++)
-							parseExpression(argArray[i], false, true);
-
-					parseExpression(argArray[0], false, true);
-
-					Warn("PCall unused returns must be dropped handled by user!", rewriter, call->getSourceRange());
-					AddInstruction(PCall);
-					return true;
-				}
-				Throw("pCall must have signature \"extern __intrinsic void pcall(void* funcAddr, ... args);\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackAdd"):
-			{
-				ChkHashCol("stackAdd");
-				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(Add);//let FunctionOpcode optimise this
-					return true;
-				}
-				Throw("stackAdd must have signature \"extern __intrinsic int stackAdd(int value);\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackSub"):
-			{
-				ChkHashCol("stackSub");
-				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(Sub);//let FunctionOpcode optimise this
-					return true;
-				}
-				Throw("stackSub must have signature \"extern __intrinsic int stackSub(int value);\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackMult"):
-			{
-				ChkHashCol("stackMult");
-				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(Mult);//let FunctionOpcode optimise this
-				}
-				Throw("stackMult must have signature \"extern __intrinsic int stackMult(int value);\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackDiv"):
-			{
-				ChkHashCol("stackDiv");
-				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[0], false, true);
-					bool zeroDiv;
-					AddInstruction(Div, &zeroDiv);
-					if (zeroDiv) {
-						Warn("Zero division error detected", rewriter, argArray[0]->getSourceRange());//just warn the user of the undefined behaviour)
-					}
-					return true;
-				}
-				Throw("stackDiv must have signature \"extern __intrinsic int stackDiv(int value);\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackNeg"):
-			{
-				ChkHashCol("stackNeg");
-				if (argCount == 0 && callee->getReturnType()->isIntegerType())
-				{
-					AddInstruction(Neg);
-					return true;
-				}
-				Throw("stackNeg must have signature \"extern __intrinsic int stackNeg();\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("getframe"):
-			{
-				ChkHashCol("getframe");
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						AddInstruction(GetFrame, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got getframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else
-				{
-					Throw("getframe must have signature \"extern __intrinsic int getframe(const int index);\"", rewriter, callee->getSourceRange());
-				}
-			}
-			break;
-			case JoaatCasedConst("getframep"):
-			{
-				ChkHashCol("getframep");
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						AddInstruction(GetFrameP, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got getframep must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else {
-					Throw("getframep must have signature \"extern __intrinsic int getframep(int index);\"", rewriter, callee->getSourceRange());
-				}
-			}
-			break;
-			case JoaatCasedConst("setframe"):
-			{
-				ChkHashCol("setframe");
-
-				if (argCount == 1 && callee->getReturnType()->isVoidType())
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						AddInstruction(SetFrame, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						parseExpression(argArray[1], false, true);
-						AddInstruction(SetFrame, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else
-				{
-					Throw("setframe must have signature \"extern __intrinsic void setframe(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
-				}
-			}
-			break;
-			case JoaatCasedConst("getglobal"):
-			{
-				ChkHashCol("getglobal");
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						AddInstruction(GetGlobal, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got getglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else {
-					Throw("getglobal must have signature \"extern __intrinsic int getglobal(const int index);\"", rewriter, callee->getSourceRange());
-				}
-			}
-			break;
-			case JoaatCasedConst("setglobal"):
-			{
-				ChkHashCol("setglobal");
-				if (argCount == 1 && callee->getReturnType()->isVoidType())
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						AddInstruction(SetGlobal, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						parseExpression(argArray[1], false, true);
-						AddInstruction(SetGlobal, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got setglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else {
-					Throw("setglobal must have signature \"extern __intrinsic void setglobal(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
-				}
-			}
-			break;
-			case JoaatCasedConst("getglobalp"):
-			{
-				ChkHashCol("getglobalp");
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						AddInstruction(GetGlobalP, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got getglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else {
-					Throw("getglobal must have signature \"extern __intrinsic int getglobal(const int index);\"", rewriter, callee->getSourceRange());
-				}
-			}
-			break;
-			case JoaatCasedConst("getArrayP"):
-			{
-				ChkHashCol("getArrayP");
-				if (argCount == 3 && callee->getReturnType()->isPointerType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
-				{
-					llvm::APSInt itemSize;
-					if (argArray[2]->EvaluateAsInt(itemSize, *context))
-					{
-						if (itemSize.getSExtValue() < 1 || itemSize.getSExtValue() > 0xFFFF)
-						{
-							Throw("getArrayP item size expected a value between 1 and 65535, got'" + to_string(itemSize.getSExtValue()) + "'", rewriter, argArray[2]->getSourceRange());
-						}
-						llvm::APSInt index;
-						if (Option_OptimizationLevel > OptLevel::O1 && argArray[1]->EvaluateAsInt(index ,*context))
-						{
-							parseExpression(argArray[0], false, true);
-							AddInstruction(GetImmP, 1 + itemSize.getSExtValue() * index.getSExtValue());
-						}
-						else
-						{
-							//get_arrayp
-							parseExpression(argArray[1], false, true);
-							parseExpression(argArray[0], false, true);
-							AddInstruction(GetArrayP, itemSize.getSExtValue());
-							return true;
-						}
-					}
-					else
-					{
-						Throw("getArrayP itemSize must be a compile time constant", rewriter, argArray[2]->getSourceRange());
-					}
-				}
-				else
-				{
-					Throw("getArrayP must have signature \"extern __intrinsic void* getArrayP(const void* array, int index, const int arrayItemSize);\"", rewriter, callee->getSourceRange());
-				}
-			}
-			break;
-			case JoaatCasedConst("getImmP"):
-			{
-				ChkHashCol("getImmP");
-				if (argCount == 2 && callee->getReturnType()->isPointerType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType())
-				{
-					llvm::APSInt index;
-					if (argArray[1]->EvaluateAsInt(index, *context))
-					{
-						if (index.getSExtValue() < 0 || index.getSExtValue() > 0xFFFF)
-						{
-							Throw("getArrayP item size expected a value between 0 and 65535, got'" + to_string(index.getSExtValue()) + "'", rewriter, argArray[1]->getSourceRange());
-						}
-						parseExpression(argArray[0], false, true);
-						AddInstruction(GetImmP, index.getSExtValue());
-					}
-					else
-					{
-						Throw("getImmP index must be a compile time constant", rewriter, argArray[1]->getSourceRange());
-					}
-				}
-				else
-				{
-					Throw("getImmP must have signature \"extern __intrinsic void* getArrayP(const void* pointer, const int index);\"", rewriter, callee->getSourceRange());
-				}
-			}
-			break;
-			case JoaatCasedConst("stacktop"):
-			{
-
-				ChkHashCol("stacktop");
-				if (argCount != 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) != 1)
-				{
-					Throw("stacktop must have signature \"extern __intrinsic int stacktop();\"", rewriter, callee->getSourceRange());
-				}
-				return true;
-			}
-			break;
-			case JoaatCasedConst("memcpy"):
-			{
+			#pragma region String
+			case JoaatCasedConst("memcpy"):{
 				ChkHashCol("memcpy");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
 					llvm::APSInt apCount;
 					int iCount;
-					if (argArray[2]->EvaluateAsInt(apCount, *context) && (iCount = apCount.getSExtValue(), iCount > 0) && iCount & ~(stackWidth-1))
+					if (argArray[2]->EvaluateAsInt(apCount, *context) && (iCount = apCount.getSExtValue(), iCount > 0) && iCount & ~(stackWidth - 1))
 					{
 						int itemCount = iCount / stackWidth;
 						if (itemCount == 1)
@@ -1543,10 +1029,8 @@ public:
 				else
 					Throw("memcpy must have signature \"extern __intrinsic void memcpy(void* dst, void* src, int len);\"", rewriter, callee->getSourceRange());
 				return true;
-			}
-			break;
-			case JoaatCasedConst("memset"):
-			{
+			} break;
+			case JoaatCasedConst("memset"):{
 				ChkHashCol("memset");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isCharType() && argArray[2]->getType()->isIntegerType())
 				{
@@ -1565,14 +1049,14 @@ public:
 						parseExpression(argArray[0], true, true);//dest
 						AddInstruction(SetFrame, destIndex);
 
-						for (int i = 0; i < count;i++)
+						for (int i = 0; i < count; i++)
 						{
 							AddInstruction(PushInt, pushVal);
 							AddInstruction(GetFrame, destIndex);
 							AddInstruction(AddImm, i << 2);
 							AddInstruction(PSet);
 						}
-						
+
 						LocalVariables.removeLevel();
 					}
 					else
@@ -1626,34 +1110,233 @@ public:
 				else
 					Throw("memset must have signature \"extern __intrinsic void memset(void* dst, byte src, size_t len);\"", rewriter, callee->getSourceRange());
 				return true;
-			}
-			break;
-			case JoaatCasedConst("reinterpretIntToFloat"):
-			{
-				ChkHashCol("reinterpretIntToFloat");
-				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isIntegerType())
+			} break;
+			case JoaatCasedConst("strcpy"):{
+				ChkHashCol("strcpy");
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
+				{
+					parseExpression(argArray[1], false, true);
+					if (isPushString(argArray[0]))
+					{
+						Throw("strcpy called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+					}
+					parseExpression(argArray[0], false, true);
+
+					llvm::APSInt result;
+					if (argArray[2]->EvaluateAsInt(result, *context))
+					{
+						int iValue = result.getSExtValue();
+						if (iValue > 0 && iValue < 256)
+						{
+							AddInstruction(StrCopy, iValue);
+							return true;
+						}
+						else
+							Throw("Integer constant for string max length argument in strcpy must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+					}
+					else
+						Throw("Expected integer constant for string max length argument in strcpy", rewriter, argArray[2]->getSourceRange());
+				}
+				else
+					Throw("strcpy must have signature \"extern __intrinsic void strcpy(char* dst, char* src, const byte len);\"", rewriter, callee->getSourceRange());
+
+				return false;
+			} break;
+			case JoaatCasedConst("stradd"):{
+				ChkHashCol("stradd");
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
+				{
+					parseExpression(argArray[1], false, true);
+					if (isPushString(argArray[0]))
+					{
+						Throw("stradd called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+					}
+					parseExpression(argArray[0], false, true);
+
+					llvm::APSInt result;
+					if (argArray[2]->EvaluateAsInt(result, *context))
+					{
+						int iValue = result.getSExtValue();
+						if (iValue > 0 && iValue < 256)
+						{
+							AddInstruction(StrAdd, iValue);
+							return true;
+						}
+						else
+							Throw("Integer constant for string max length argument in stradd must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+					}
+					else
+						Throw("Expected integer constant for string max length argument in stradd", rewriter, argArray[2]->getSourceRange());
+				}
+				else
+					Throw("stradd must have signature \"extern __intrinsic void stradd(char* dst, char* append, const byte len);\"", rewriter, callee->getSourceRange());
+
+				return false;
+			} break;
+			case JoaatCasedConst("straddi"):{
+				ChkHashCol("straddi");
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
+				{
+					parseExpression(argArray[1], false, true);
+					if (isPushString(argArray[0]))
+					{
+						Throw("straddi called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+					}
+					parseExpression(argArray[0], false, true);
+
+					llvm::APSInt result;
+					if (argArray[2]->EvaluateAsInt(result, *context))
+					{
+						int iValue = result.getSExtValue();
+						if (iValue > 0 && iValue < 256)
+						{
+							AddInstruction(StrAddI, iValue);
+							return true;
+						}
+						else
+							Throw("Integer constant for string max length argument in straddi must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+					}
+					else
+						Throw("Expected integer constant for string max length argument in straddi", rewriter, argArray[2]->getSourceRange());
+				}
+				else
+					Throw("straddi must have signature \"extern __intrinsic void straddi(char* dst, int append, const byte len);\"", rewriter, callee->getSourceRange());
+
+				return false;
+			} break;
+			case JoaatCasedConst("itos"):{
+				ChkHashCol("itos");
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
+				{
+					parseExpression(argArray[1], false, true);
+					if (isPushString(argArray[0]))
+					{
+						Throw("itos called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+					}
+					parseExpression(argArray[0], false, true);
+
+					llvm::APSInt result;
+					if (argArray[2]->EvaluateAsInt(result, *context))
+					{
+						int iValue = result.getSExtValue();
+						if (iValue > 0 && iValue < 256)
+						{
+							AddInstruction(ItoS, iValue);
+							return true;
+						}
+						else
+							Throw("Integer constant for string max length argument in itos must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+					}
+					else
+						Throw("Expected integer constant for string max length argument in itos", rewriter, argArray[2]->getSourceRange());
+				}
+				else
+					Throw("itos must have signature \"extern __intrinsic void itos(char* dst, int value, const byte len);\"", rewriter, callee->getSourceRange());
+
+				return false;
+			} break;
+			case JoaatCasedConst("getHashKey"): {
+				ChkHashCol("getHashKey");
+				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isCharType())
 				{
 					parseExpression(argArray[0], false, true);
+					AddInstruction(GetHash);
 					return true;
 				}
-				Throw("reinterpretIntToFloat must have signature \"extern __intrinsic float reinterpretIntToFloat(int intValue);\"", rewriter, callee->getSourceRange());
+				Throw("getHashKey must have signature \"extern __intrinsic int getHashKey(char *string);\"", rewriter, callee->getSourceRange());
 				return false;
-			}
-			break;
-			case JoaatCasedConst("reinterpretFloatToInt"):
-			{
-				ChkHashCol("reinterpretFloatToInt");
-				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isRealFloatingType())
+			} break;
+			#pragma endregion
+			#pragma region Misc_Opcodes
+			case JoaatCasedConst("nopMult"):{
+				ChkHashCol("nopMult");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
 				{
-					parseExpression(argArray[0], false, true);
+					llvm::APSInt result;
+					
+					if (argArray[0]->EvaluateAsInt(result, *context) && result.getSExtValue() > 0 && result.getSExtValue() <= 4096)
+					{
+						AddInstruction(Nop, result.getSExtValue());
+					}
+					else
+					{
+						Throw("nopCount argument must be a constant integer between 1 and 4096", rewriter, argArray[0]->getSourceRange());
+					}
+					
 					return true;
 				}
-				Throw("reinterpretFloatToInt must have signature \"extern __intrinsic int reinterpretFloatToInt(float floatValue);\"", rewriter, callee->getSourceRange());
+				else
+				{
+					Throw("nop must have signature \"extern __intrinsic void nop(const int nopCount);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("pcall"):{
+				ChkHashCol("pcall");
+				if (argCount >= 1 && callee->getReturnType()->isVoidType())
+				{
+					if (argCount > 1)
+						for (int i = 1; i < argCount; i++)
+							parseExpression(argArray[i], false, true);
+
+					parseExpression(argArray[0], false, true);
+
+					Warn("PCall unused returns must be dropped handled by user!", rewriter, call->getSourceRange());
+					AddInstruction(PCall);
+					return true;
+				}
+				Throw("pCall must have signature \"extern __intrinsic void pcall(void* funcAddr, ... args);\"", rewriter, callee->getSourceRange());
 				return false;
-			}
-			break;
-			case JoaatCasedConst("pushFloat"):;
-			{
+			} break;
+			#pragma endregion
+			#pragma region Stack_Operations
+			case JoaatCasedConst("stackTop"):{
+
+				ChkHashCol("stackTop");
+				if (argCount != 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) != 1)
+				{
+					Throw("stacktop must have signature \"extern __intrinsic int stacktop();\"", rewriter, callee->getSourceRange());
+				}
+				return true;
+			} break;
+			case JoaatCasedConst("pop"): {
+				ChkHashCol("pop");
+				if (argCount == 0 && callee->getReturnType()->isVoidType())
+				{
+					AddInstruction(Drop);
+					return true;
+				}
+				Throw("pop must have signature \"extern __intrinsic void pop();\"", rewriter, callee->getSourceRange());
+			} break;
+			case JoaatCasedConst("popMult"): {
+				ChkHashCol("popMult");
+				//	out << call->getExprLoc().
+				if (argCount == 1 && callee->getReturnType()->isVoidType())
+				{
+					llvm::APSInt result;
+					if (argArray[0]->getType()->isIntegerType())
+					{
+						if (argArray[0]->EvaluateAsInt(result, *context))
+						{
+							int intValue = result.getSExtValue();
+							if (intValue <= 0)
+							{
+								Throw("Expected positive integer constant for pop amount argument in popMult, got " + to_string(intValue), rewriter, argArray[0]->getSourceRange());
+								return false;
+							}
+							for (int i = 0; i < intValue; i++)
+							{
+								AddInstruction(Drop);
+							}
+							return true;;
+						}
+						Throw("Expected positive integer constant for pop amount argument in popMult", rewriter, argArray[0]->getSourceRange());
+						return false;
+					}
+				}
+				Throw("popMult must have signature \"extern __intrinsic void popMult(const int amount);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("pushFloat"): {
 				ChkHashCol("pushFloat");
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isRealFloatingType())
 				{
@@ -1662,10 +1345,8 @@ public:
 				}
 				Throw("pushFloat must have signature \"extern __intrinsic void pushFloat(float floatValue);\"", rewriter, callee->getSourceRange());
 				return false;
-			}
-			break;
-			case JoaatCasedConst("pushInt"):
-			{
+			} break;
+			case JoaatCasedConst("pushInt"): {
 				ChkHashCol("pushInt");
 
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
@@ -1675,10 +1356,8 @@ public:
 				}
 				Throw("pushInt must have signature \"extern __intrinsic void pushInt(int intValue);\"", rewriter, callee->getSourceRange());
 				return false;
-			}
-			break;
-			case JoaatCasedConst("pushVector3"):
-			{
+			} break;
+			case JoaatCasedConst("pushVector3"): {
 				ChkHashCol("pushVector3");
 
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
@@ -1688,44 +1367,18 @@ public:
 				}
 				Throw("pushVector3 must have signature \"extern __intrinsic void pushVector3(vector3 vec3Value);\"", rewriter, callee->getSourceRange());
 				return false;
-			}
-			break;
-			case JoaatCasedConst("popFloat"):
-			{
-				ChkHashCol("popFloat");
-				if (argCount == 0 && callee->getReturnType()->isRealFloatingType())
-				{
-					return true;
-				}
-				Throw("popFloat must have signature \"extern __intrinsic float pushFloat();\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("popInt"):;
-			{
-				ChkHashCol("popInt");
-				if (argCount == 0 && callee->getReturnType()->isIntegerType())
-				{
-					return true;
-				}
-				Throw("popInt must have signature \"extern __intrinsic int pushInt();\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("popVector3"):
-			{
-				ChkHashCol("popVector3");
+			} break;
+			case JoaatCasedConst("dupStackTop"): {
+				ChkHashCol("dupStackTop");
 
-				if (argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
+				if (argCount == 0 && callee->getReturnType()->isVoidType())
 				{
+					AddInstruction(Dup);
 					return true;
 				}
-				Throw("popVector3 must have signature \"extern __intrinsic vector3 popVector3();\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("pushStruct"):
-			{
+				Throw("dupStackTop must have signature \"extern __intrinsic void dupStackTop();\"", rewriter, callee->getSourceRange());
+			} break;
+			case JoaatCasedConst("pushStruct"): {
 				ChkHashCol("pushStruct");
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
 				{
@@ -1746,10 +1399,8 @@ public:
 				}
 				Throw("pushStruct must have signature \"extern __intrinsic void pushStruct(void *Struct);\"", rewriter, callee->getSourceRange());
 				return false;;
-			}
-			break;
-			case JoaatCasedConst("popStruct"):
-			{
+			} break;
+			case JoaatCasedConst("popStruct"): {
 				ChkHashCol("popStruct");
 
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
@@ -1771,263 +1422,8 @@ public:
 				}
 				Throw("popStruct must have signature \"extern __intrinsic void popStruct(void *Struct);\"", rewriter, callee->getSourceRange());
 				return false;;
-			}
-			break;
-			case JoaatCasedConst("dupStackTop"):
-			{
-				ChkHashCol("dupStackTop");
-
-				if (argCount == 0 && callee->getReturnType()->isVoidType())
-				{
-					AddInstruction(Dup);
-					return true;
-				}
-				Throw("dupStackTop must have signature \"extern __intrinsic void dupStackTop();\"", rewriter, callee->getSourceRange());
-			}
-			break;
-			case JoaatCasedConst("toVector3"):
-			{
-				ChkHashCol("toVector3");
-
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && argArray[0]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(FtoV);
-					return true;
-				}
-				Throw("tovector3 must have signature \"extern __intrinsic vector3 tovector3(float value);\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("vector3Add"):
-			{
-				ChkHashCol("vector3Add");
-
-				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
-				{
-
-					parseExpression(argArray[0], false, true);
-					parseExpression(argArray[1], false, true);
-					AddInstruction(VAdd);
-					return true;
-				}
-				Throw("vector3Add must have signature \"extern __intrinsic vector3 vector3Add(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("vector3Sub"):
-			{
-				ChkHashCol("vector3Sub");
-
-				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
-				{
-
-					parseExpression(argArray[0], false, true);
-					parseExpression(argArray[1], false, true);
-					AddInstruction(VSub);
-					return true;
-				}
-				Throw("vector3Sub must have signature \"extern __intrinsic vector3 vector3Sub(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("vector3Mult"):
-			{
-				ChkHashCol("vector3Mult");
-
-				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
-				{
-
-					parseExpression(argArray[0], false, true);
-					parseExpression(argArray[1], false, true);
-					AddInstruction(VMult);
-					return true;
-				}
-				Throw("vector3Mult must have signature \"extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("vector3Div"):
-			{
-				ChkHashCol("vector3Div");
-
-				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
-				{
-
-					parseExpression(argArray[0], false, true);
-					parseExpression(argArray[1], false, true);
-					AddInstruction(VDiv);
-					return true;
-				}
-				Throw("vector3Div must have signature \"extern __intrinsic vector3 vector3Div(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("vector3Neg"):
-			{
-				ChkHashCol("vector3Neg");
-
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-				{
-
-					parseExpression(argArray[0], false, true);
-					AddInstruction(VNeg);
-					return true;
-				}
-				Throw("vector3Neg must have signature \"extern __intrinsic vector3 vector3Neg(vector3 vector)\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("fMod"):
-			{
-				ChkHashCol("fMod");
-				if (argCount == 2 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType() && argArray[1]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					parseExpression(argArray[1], false, true);
-					AddInstruction(FMod);
-				}
-			}
-			case JoaatCasedConst("stackFAdd"):
-			{
-				ChkHashCol("stackFAdd");
-				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(FAdd);//FunctionOpcode will optimise
-					return true;
-				}
-				Throw("stackFAdd must have signature \"extern __intrinsic float stackFAdd(float value);\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackFSub"):
-			{
-				ChkHashCol("stackFSub");
-				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(FSub);//FunctionOpcode will optimise
-					return true;
-				}
-				Throw("stackFSub must have signature \"extern __intrinsic float stackFSub(float value);\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackFMult"):
-			{
-				ChkHashCol("stackFMult");
-				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(FMult);//FunctionOpcode will optimise
-					return true;
-				}
-				Throw("stackFMult must have signature \"extern __intrinsic float stackFMult(float value);\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackFDiv"):
-			{
-				ChkHashCol("stackFDiv");
-				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					bool zeroDiv;
-					AddInstruction(FDiv, &zeroDiv);//FunctionOpcode will optimise
-					if (zeroDiv)
-					{
-						Warn("Zero division error detected", rewriter, argArray[0]->getSourceRange());//just warn the user of the undefined behaviour
-					}
-					return true;
-				}
-				Throw("stackFDiv must have signature \"extern __intrinsic float stackFDiv(float value);\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackFNeg"):
-			{
-				ChkHashCol("stackFNeg");
-				if (argCount == 0 && callee->getReturnType()->isRealFloatingType())
-				{
-					AddInstruction(FNeg);
-					return true;
-				}
-				Throw("stackFNeg must have signature \"extern __intrinsic float stackFNeg();\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackVAdd"):
-			{
-				ChkHashCol("stackVAdd");
-
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(VAdd);
-					return true;
-				}
-				Throw("stackVAdd must have signature \"extern __intrinsic vector3 stackVAdd(vector3 value)\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackVSub"):
-			{
-				ChkHashCol("stackVSub");
-
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(VSub);
-					return true;
-				}
-				Throw("stackVSub must have signature \"extern __intrinsic vector3 stackVSub(vector3 value)\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackVMult"):
-			{
-				ChkHashCol("stackVMult");
-
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(VMult);
-					return true;
-				}
-				Throw("stackVMult must have signature \"extern __intrinsic vector3 stackVMult(vector3 value)\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackVDiv"):
-			{
-				ChkHashCol("stackVDiv");
-
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(VDiv);
-					return true;
-				}
-				Throw("stackVDiv must have signature \"extern __intrinsic vector3 stackVDiv(vector3 value)\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("stackVNeg"):
-			{
-				ChkHashCol("stackVNeg");
-
-				if (argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
-				{
-					AddInstruction(VNeg);
-					return true;
-				}
-				Throw("stackVNeg must have signature \"extern __intrinsic vector3 stackVNeg()\"", rewriter, callee->getSourceRange());
-				return false;
-			}
-			break;
-			case JoaatCasedConst("rev"):
-			{
+			} break;
+			case JoaatCasedConst("rev"): {
 				ChkHashCol("rev");
 
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
@@ -2066,10 +1462,8 @@ public:
 				}
 				Throw("rev must have signature \"extern __intrinsic void rev(const int numItems);\"", rewriter, callee->getSourceRange());
 				return false;
-			}
-			break;
-			case JoaatCasedConst("exchange"):
-			{
+			} break;
+			case JoaatCasedConst("exchange"): {
 				ChkHashCol("exchange");
 
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
@@ -2129,23 +1523,149 @@ public:
 				}
 				Throw("exchange must have signature \"extern __intrinsic void exchange(const int structStackSize);\"", rewriter, callee->getSourceRange());
 				return false;
-			}
-			break;
-			case JoaatCasedConst("getHashKey"):
-			{
-				ChkHashCol("getHashKey");
-				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isCharType())
+			} break;
+			case JoaatCasedConst("popFloat"): {
+				ChkHashCol("popFloat");
+				if (argCount == 0 && callee->getReturnType()->isRealFloatingType())
 				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(GetHash);
 					return true;
 				}
-				Throw("getHashKey must have signature \"extern __intrinsic int getHashKey(char *string);\"", rewriter, callee->getSourceRange());
+				Throw("popFloat must have signature \"extern __intrinsic float pushFloat();\"", rewriter, callee->getSourceRange());
 				return false;
-			}
-			break;
-			case JoaatCasedConst("bit_test"):
-			{
+			} break;
+			case JoaatCasedConst("popInt"): {
+				ChkHashCol("popInt");
+				if (argCount == 0 && callee->getReturnType()->isIntegerType())
+				{
+					return true;
+				}
+				Throw("popInt must have signature \"extern __intrinsic int pushInt();\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("popVector3"): {
+				ChkHashCol("popVector3");
+
+				if (argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
+				{
+					return true;
+				}
+				Throw("popVector3 must have signature \"extern __intrinsic vector3 popVector3();\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+
+			#pragma endregion
+			#pragma region Math/Conversions
+			case JoaatCasedConst("reinterpretIntToFloat"): {
+				ChkHashCol("reinterpretIntToFloat");
+				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isIntegerType())
+				{
+					parseExpression(argArray[0], false, true);
+					return true;
+				}
+				Throw("reinterpretIntToFloat must have signature \"extern __intrinsic float reinterpretIntToFloat(int intValue);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("reinterpretFloatToInt"): {
+				ChkHashCol("reinterpretFloatToInt");
+				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					return true;
+				}
+				Throw("reinterpretFloatToInt must have signature \"extern __intrinsic int reinterpretFloatToInt(float floatValue);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("toVector3"): {
+				ChkHashCol("toVector3");
+
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && argArray[0]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(FtoV);
+					return true;
+				}
+				Throw("tovector3 must have signature \"extern __intrinsic vector3 tovector3(float value);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("vector3Add"): {
+				ChkHashCol("vector3Add");
+
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				{
+
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(VAdd);
+					return true;
+				}
+				Throw("vector3Add must have signature \"extern __intrinsic vector3 vector3Add(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("vector3Sub"): {
+				ChkHashCol("vector3Sub");
+
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				{
+
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(VSub);
+					return true;
+				}
+				Throw("vector3Sub must have signature \"extern __intrinsic vector3 vector3Sub(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("vector3Mult"): {
+				ChkHashCol("vector3Mult");
+
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				{
+
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(VMult);
+					return true;
+				}
+				Throw("vector3Mult must have signature \"extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("vector3Div"): {
+				ChkHashCol("vector3Div");
+
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				{
+
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(VDiv);
+					return true;
+				}
+				Throw("vector3Div must have signature \"extern __intrinsic vector3 vector3Div(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("vector3Neg"): {
+				ChkHashCol("vector3Neg");
+
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+				{
+
+					parseExpression(argArray[0], false, true);
+					AddInstruction(VNeg);
+					return true;
+				}
+				Throw("vector3Neg must have signature \"extern __intrinsic vector3 vector3Neg(vector3 vector)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("fMod"): {
+				ChkHashCol("fMod");
+				if (argCount == 2 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType() && argArray[1]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(FMod);
+				}
+			} break;
+			case JoaatCasedConst("bit_test"): {
 				ChkHashCol("bit_test");
 				if (argCount == 2 && callee->getReturnType()->isBooleanType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
@@ -2163,9 +1683,8 @@ public:
 					Throw("bitIndex argument for bit_test must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
 				}
 				Throw("bit_test must have signature \"extern __intrinsic bool bit_test(int value, const byte bitIndex);\"", rewriter, callee->getSourceRange());
-			}
-			case JoaatCasedConst("bit_set"):
-			{
+			} break;
+			case JoaatCasedConst("bit_set"): {
 				ChkHashCol("bit_set");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
@@ -2183,9 +1702,8 @@ public:
 					Throw("bitIndex argument for bit_set must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
 				}
 				Throw("bit_set must have signature \"extern __intrinsic bool bit_set(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
-			}
-			case JoaatCasedConst("bit_reset"):
-			{
+			} break;
+			case JoaatCasedConst("bit_reset"): {
 				ChkHashCol("bit_reset");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
@@ -2203,9 +1721,8 @@ public:
 					Throw("bitIndex argument for bit_reset must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
 				}
 				Throw("bit_reset must have signature \"extern __intrinsic bool bit_reset(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
-			}
-			case JoaatCasedConst("bit_flip"):
-			{
+			} break;
+			case JoaatCasedConst("bit_flip"): {
 				ChkHashCol("bit_flip");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
@@ -2223,7 +1740,395 @@ public:
 					Throw("bitIndex argument for bit_flip must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
 				}
 				Throw("bit_flip must have signature \"extern __intrinsic bool bit_flip(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
-			}
+			} break;
+			#pragma endregion
+			#pragma region Unsafe_Math
+			case JoaatCasedConst("stackAdd"): {
+				ChkHashCol("stackAdd");
+				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(Add);//let FunctionOpcode optimise this
+					return true;
+				}
+				Throw("stackAdd must have signature \"extern __intrinsic int stackAdd(int value);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackSub"): {
+				ChkHashCol("stackSub");
+				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(Sub);//let FunctionOpcode optimise this
+					return true;
+				}
+				Throw("stackSub must have signature \"extern __intrinsic int stackSub(int value);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackMult"): {
+				ChkHashCol("stackMult");
+				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(Mult);//let FunctionOpcode optimise this
+				}
+				Throw("stackMult must have signature \"extern __intrinsic int stackMult(int value);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackDiv"): {
+				ChkHashCol("stackDiv");
+				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
+				{
+					parseExpression(argArray[0], false, true);
+					bool zeroDiv;
+					AddInstruction(Div, &zeroDiv);
+					if (zeroDiv) {
+						Warn("Zero division error detected", rewriter, argArray[0]->getSourceRange());//just warn the user of the undefined behaviour)
+					}
+					return true;
+				}
+				Throw("stackDiv must have signature \"extern __intrinsic int stackDiv(int value);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackNeg"): {
+				ChkHashCol("stackNeg");
+				if (argCount == 0 && callee->getReturnType()->isIntegerType())
+				{
+					AddInstruction(Neg);
+					return true;
+				}
+				Throw("stackNeg must have signature \"extern __intrinsic int stackNeg();\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+
+			case JoaatCasedConst("stackFAdd"): {
+				ChkHashCol("stackFAdd");
+				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(FAdd);//FunctionOpcode will optimise
+					return true;
+				}
+				Throw("stackFAdd must have signature \"extern __intrinsic float stackFAdd(float value);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackFSub"): {
+				ChkHashCol("stackFSub");
+				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(FSub);//FunctionOpcode will optimise
+					return true;
+				}
+				Throw("stackFSub must have signature \"extern __intrinsic float stackFSub(float value);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackFMult"): {
+				ChkHashCol("stackFMult");
+				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(FMult);//FunctionOpcode will optimise
+					return true;
+				}
+				Throw("stackFMult must have signature \"extern __intrinsic float stackFMult(float value);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackFDiv"): {
+				ChkHashCol("stackFDiv");
+				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					bool zeroDiv;
+					AddInstruction(FDiv, &zeroDiv);//FunctionOpcode will optimise
+					if (zeroDiv)
+					{
+						Warn("Zero division error detected", rewriter, argArray[0]->getSourceRange());//just warn the user of the undefined behaviour
+					}
+					return true;
+				}
+				Throw("stackFDiv must have signature \"extern __intrinsic float stackFDiv(float value);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackFNeg"): {
+				ChkHashCol("stackFNeg");
+				if (argCount == 0 && callee->getReturnType()->isRealFloatingType())
+				{
+					AddInstruction(FNeg);
+					return true;
+				}
+				Throw("stackFNeg must have signature \"extern __intrinsic float stackFNeg();\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackVAdd"): {
+				ChkHashCol("stackVAdd");
+
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(VAdd);
+					return true;
+				}
+				Throw("stackVAdd must have signature \"extern __intrinsic vector3 stackVAdd(vector3 value)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackVSub"): {
+				ChkHashCol("stackVSub");
+
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(VSub);
+					return true;
+				}
+				Throw("stackVSub must have signature \"extern __intrinsic vector3 stackVSub(vector3 value)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackVMult"): {
+				ChkHashCol("stackVMult");
+
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(VMult);
+					return true;
+				}
+				Throw("stackVMult must have signature \"extern __intrinsic vector3 stackVMult(vector3 value)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackVDiv"): {
+				ChkHashCol("stackVDiv");
+
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(VDiv);
+					return true;
+				}
+				Throw("stackVDiv must have signature \"extern __intrinsic vector3 stackVDiv(vector3 value)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("stackVNeg"): {
+				ChkHashCol("stackVNeg");
+
+				if (argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
+				{
+					AddInstruction(VNeg);
+					return true;
+				}
+				Throw("stackVNeg must have signature \"extern __intrinsic vector3 stackVNeg()\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+
+			#pragma endregion
+			#pragma region Variables 
+			case JoaatCasedConst("getframe"):{
+				ChkHashCol("getframe");
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						AddInstruction(GetFrame, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got getframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
+				}
+				else
+				{
+					Throw("getframe must have signature \"extern __intrinsic int getframe(const int index);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("getframep"):{
+				ChkHashCol("getframep");
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						AddInstruction(GetFrameP, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got getframep must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
+				}
+				else {
+					Throw("getframep must have signature \"extern __intrinsic int getframep(int index);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("setframe"):{
+				ChkHashCol("setframe");
+
+				if (argCount == 1 && callee->getReturnType()->isVoidType())
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						AddInstruction(SetFrame, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
+				}
+				else if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						parseExpression(argArray[1], false, true);
+						AddInstruction(SetFrame, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
+				}
+				else
+				{
+					Throw("setframe must have signature \"extern __intrinsic void setframe(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("getglobal"):{
+				ChkHashCol("getglobal");
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						AddInstruction(GetGlobal, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got getglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
+				}
+				else {
+					Throw("getglobal must have signature \"extern __intrinsic int getglobal(const int index);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("setglobal"):{
+				ChkHashCol("setglobal");
+				if (argCount == 1 && callee->getReturnType()->isVoidType())
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						AddInstruction(SetGlobal, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
+				}
+				else if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						parseExpression(argArray[1], false, true);
+						AddInstruction(SetGlobal, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got setglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
+				}
+				else {
+					Throw("setglobal must have signature \"extern __intrinsic void setglobal(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("getglobalp"):{
+				ChkHashCol("getglobalp");
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						AddInstruction(GetGlobalP, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got getglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
+				}
+				else {
+					Throw("getglobal must have signature \"extern __intrinsic int getglobal(const int index);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("getArrayP"):{
+				ChkHashCol("getArrayP");
+				if (argCount == 3 && callee->getReturnType()->isPointerType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
+				{
+					llvm::APSInt itemSize;
+					if (argArray[2]->EvaluateAsInt(itemSize, *context))
+					{
+						if (itemSize.getSExtValue() < 1 || itemSize.getSExtValue() > 0xFFFF)
+						{
+							Throw("getArrayP item size expected a value between 1 and 65535, got'" + to_string(itemSize.getSExtValue()) + "'", rewriter, argArray[2]->getSourceRange());
+						}
+						llvm::APSInt index;
+						if (Option_OptimizationLevel > OptLevel::O1 && argArray[1]->EvaluateAsInt(index ,*context))
+						{
+							parseExpression(argArray[0], false, true);
+							AddInstruction(GetImmP, 1 + itemSize.getSExtValue() * index.getSExtValue());
+						}
+						else
+						{
+							//get_arrayp
+							parseExpression(argArray[1], false, true);
+							parseExpression(argArray[0], false, true);
+							AddInstruction(GetArrayP, itemSize.getSExtValue());
+							return true;
+						}
+					}
+					else
+					{
+						Throw("getArrayP itemSize must be a compile time constant", rewriter, argArray[2]->getSourceRange());
+					}
+				}
+				else
+				{
+					Throw("getArrayP must have signature \"extern __intrinsic void* getArrayP(const void* array, int index, const int arrayItemSize);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("getImmP"):{
+				ChkHashCol("getImmP");
+				if (argCount == 2 && callee->getReturnType()->isPointerType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType())
+				{
+					llvm::APSInt index;
+					if (argArray[1]->EvaluateAsInt(index, *context))
+					{
+						if (index.getSExtValue() < 0 || index.getSExtValue() > 0xFFFF)
+						{
+							Throw("getArrayP item size expected a value between 0 and 65535, got'" + to_string(index.getSExtValue()) + "'", rewriter, argArray[1]->getSourceRange());
+						}
+						parseExpression(argArray[0], false, true);
+						AddInstruction(GetImmP, index.getSExtValue());
+					}
+					else
+					{
+						Throw("getImmP index must be a compile time constant", rewriter, argArray[1]->getSourceRange());
+					}
+				}
+				else
+				{
+					Throw("getImmP must have signature \"extern __intrinsic void* getArrayP(const void* pointer, const int index);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			#pragma endregion
+			
 			default:
 		_IntrinsicNotFound:
 			Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
@@ -6390,17 +6295,73 @@ void PrintVersion()
 	cout << "Version: " << Version << endl;
 }
 
+class ArgumentsAdjustingCompilations : public CompilationDatabase {
+public:
+	ArgumentsAdjustingCompilations(
+		std::unique_ptr<CompilationDatabase> Compilations)
+		: Compilations(std::move(Compilations)) {}
+
+	void appendArgumentsAdjuster(ArgumentsAdjuster Adjuster) {
+		Adjusters.push_back(Adjuster);
+	}
+
+	std::vector<CompileCommand>
+		getCompileCommands(StringRef FilePath) const override {
+		return adjustCommands(Compilations->getCompileCommands(FilePath));
+	}
+
+	std::vector<std::string> getAllFiles() const override {
+		return Compilations->getAllFiles();
+	}
+
+	std::vector<CompileCommand> getAllCompileCommands() const override {
+		return adjustCommands(Compilations->getAllCompileCommands());
+	}
+
+private:
+	std::unique_ptr<CompilationDatabase> Compilations;
+	std::vector<ArgumentsAdjuster> Adjusters;
+
+	std::vector<CompileCommand>
+		adjustCommands(std::vector<CompileCommand> Commands) const {
+		for (CompileCommand &Command : Commands)
+			for (const auto &Adjuster : Adjusters)
+				Command.CommandLine = Adjuster(Command.CommandLine, Command.Filename);
+		return Commands;
+	}
+};
+
+
 int main(int argc, const char **argv) {
 	globalDirectory = GetDir(string(argv[0]));
 
 	cl::SetVersionPrinter(PrintVersion);
 
+	
+	std::unique_ptr<CompilationDatabase> Compilations;
+
+	Compilations.reset(FixedCompilationDatabase::loadFromCommandLine(argc, argv));
 	cl::ParseCommandLineOptions(argc, argv, " XSC-CL\n");
 
-	CommonOptionsParser op(argc, argv, CompilerOptions);
-	ClangTool Tool(op.getCompilations(), op.getSourcePathList());
+	if (!Compilations) {
+		std::string ErrorMessage;
+		if (!BuildPath.empty())
+			Compilations = CompilationDatabase::autoDetectFromDirectory(BuildPath, ErrorMessage);
+		else
+			Compilations = CompilationDatabase::autoDetectFromSource(SourcePaths[0], ErrorMessage);
+		if (!Compilations) {
+			llvm::errs() << "Error while trying to load a compilation database:\n" << ErrorMessage << "Running without flags.\n";
+			Compilations.reset(new FixedCompilationDatabase(".", std::vector<std::string>()));
+		}
+	}
+	auto AdjustingCompilations = llvm::make_unique<ArgumentsAdjustingCompilations>(std::move(Compilations));
+	
+	AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsBefore, ArgumentInsertPosition::BEGIN));
+	AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
+	Compilations = std::move(AdjustingCompilations);
+	
+	ClangTool Tool(*Compilations, SourcePaths);
 	bool ProcessingFailed = true;
-
 
 	/// ClangTool::run accepts a FrontendActionFactory, which is then used to
 	/// create new objects implementing the FrontendAction interface. Here we use
@@ -6408,12 +6369,12 @@ int main(int argc, const char **argv) {
 	/// return a new MyFrontendAction object every time.
 	/// To further customize this, we could create our own factory class.
 	
-	if (op.getSourcePathList().size() > 0)
+	if (SourcePaths.size() > 0)
 	{
 		//this is temporary. script name should be set from the file that the main function is in
 		
-		string outDir = GetDir(op.getSourcePathList()[0]);
-		string scriptName = GetBaseNameFromDir(op.getSourcePathList()[0]);
+		string outDir = GetDir(SourcePaths[0]);
+		string scriptName = GetBaseNameFromDir(SourcePaths[0]);
 		scriptData.reset(new Script(scriptName, Option_BuildType, Option_Platform));
 
 		if(Option_Singleton)

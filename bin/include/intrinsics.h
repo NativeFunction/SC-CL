@@ -17,17 +17,17 @@ extern __intrinsic void strcpy(char* dest, const char* src, const byte destBuffe
 extern __intrinsic void stradd(char* dest, const char* src, const byte destBufferLen);
 extern __intrinsic void straddi(char* dest, int value, const byte destBufferLen);
 extern __intrinsic void itos(char* dest, int value, const byte destBufferLen);
-extern __intrinsic int getHashKey(const char *string);
+extern __intrinsic int getHashKey(const char* str);
 
 #pragma endregion //}
 
 #pragma region Misc_Opcodes //{
 extern __unsafeIntrinsic void pcall(void* funcAddr, ...);//params with types like floats must be implicitly set (1.0f)
-extern __intrinsic void nop(const int count);
+extern __intrinsic void nopMult(const int count);
 #pragma endregion //}
 
 #pragma region Stack_Operations //{
-extern __unsafeIntrinsic any stacktop();
+extern __unsafeIntrinsic any stackTop();
 extern __unsafeIntrinsic void pop();
 extern __unsafeIntrinsic void popMult(const uint count);
 extern __unsafeIntrinsic void pushFloat(float floatValue);
@@ -47,7 +47,6 @@ extern __unsafeIntrinsic vector3 popVector3();
 extern __intrinsic float reinterpretIntToFloat(int intValue);
 extern __intrinsic int reinterpretFloatToInt(float floatValue);
 extern __intrinsic vector3 toVector3(float value);
-extern __intrinsic vector3 makeVector3(float x, float y, float z);
 extern __intrinsic vector3 vector3Add(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Sub(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right);
