@@ -93,6 +93,11 @@ static cl::opt<BuildType> Option_BuildType(
 	clEnumValEnd
 ));
 
+static cl::opt<std::string> Option_OutputFileName(
+	"name", cl::desc("File name of output script, defaults to input file name"),
+	cl::ValueRequired,
+	cl::cat(CompilerOptions));
+
 typedef enum ObfLevel { 
 	obf_none,
 	obf_low = 1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = false, bool makeJumpTable = false
@@ -6301,7 +6306,7 @@ int ProcessFiles(ClangTool &Tool)
 		//this is temporary. script name should be set from the file that the main function is in
 
 		string outDir = GetDir(SourcePaths[0]);
-		string scriptName = GetBaseNameFromDir(SourcePaths[0]);
+		string scriptName = (Option_OutputFileName != "" ? Option_OutputFileName : GetBaseNameFromDir(SourcePaths[0]));
 		scriptData.reset(new Script(scriptName, Option_BuildType, Option_Platform));
 
 		if (Option_Singleton)
