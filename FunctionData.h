@@ -2,32 +2,30 @@
 #include "Opcode.h"
 #include "StaticData.h"
 
-
-#define USE_OPTIMISATIONS
-
-#ifdef USE_OPTIMISATIONS
-#define SimpleOpCheck(Op, OpName) int i1, i2; \
-if (tryPop2Ints(i1, i2)) \
-{ \
-	addOpPushInt(i1 ##Op i2); \
-} \
-else \
-{ \
+#define SimpleOpCheck(Op, OpName) if (getOptLevel() > OptimisationLevel::OL_None){ \
+	int i1, i2; \
+	if (tryPop2Ints(i1, i2)) \
+	{ \
+		addOpPushInt(i1 ##Op i2); \
+	} \
+	else { \
+		Instructions.push_back(new Opcode(OK_##OpName)); \
+	} \
+} else { \
 	Instructions.push_back(new Opcode(OK_##OpName)); \
 }
-#define SimpleFloatOpCheck(Op, OpName) float f1, f2; \
-if (tryPop2Floats(f1, f2)) \
-{ \
-	addOpPushFloat(f1 ##Op f2); \
-} \
-else \
-{ \
+#define SimpleFloatOpCheck(Op, OpName) if (getOptLevel() > OptimisationLevel::OL_None){ \
+	float f1, f2; \
+	if (tryPop2Floats(f1, f2)) \
+	{ \
+		addOpPushFloat(f1 ##Op f2); \
+	} \
+	else { \
+		Instructions.push_back(new Opcode(OK_##OpName)); \
+	} \
+} else { \
 	Instructions.push_back(new Opcode(OK_##OpName)); \
 }
-#else
-#define SimpleOpCheck(Op, OpName) Instructions.push_back(new Opcode(OK_##OpName))
-#define SimpleFloatOpCheck(Op, OpName) Instructions.push_back(new Opcode(OK_##OpName))
-#endif
 
 class Script;
 
@@ -48,6 +46,7 @@ class FunctionData
 	std::vector<FunctionData *> usedFuncs;
 	std::vector<StaticData*> _usedStatics;
 	bool allowUnsafe = false;
+	OptimisationLevel _optLevel = OptimisationLevel::OL_None;
 public:
 	
 	FunctionData(std::string name, uint8_t pcount, uint8_t rcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount), rcount(rcount)
@@ -91,6 +90,9 @@ public:
 	}
 	bool isBuiltIn()const{ return _isBuiltIn; }
 	void setBuiltIn(){ _isBuiltIn = true; }
+
+	OptimisationLevel getOptLevel()const{ return _optLevel; }
+	void setOptLevel(OptimisationLevel optLevel){ _optLevel = optLevel; }
 
 	void codeLayoutRandomisation(const Script& scriptData, uint32_t maxBlockSize = 10, uint32_t minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
 
@@ -143,7 +145,12 @@ public:
 	void addOpItoF();
 	void addOpFtoI();
 	void addOpFtoV(){ Instructions.push_back(new Opcode(OK_FtoV)); }
-	void addOpPushInt(int immediate);
+	void addOpPushInt(int immediate)
+	{
+		Opcode* op = new Opcode(OK_PushInt);
+		op->setInt(immediate);
+		Instructions.push_back(op);
+	}
 	void addOpPushFloat(float immediate)
 	{
 		Opcode* op = new Opcode(OK_PushFloat);
@@ -473,13 +480,12 @@ public:
 	void addOpGoToStack()
 	{
 		assert(Instructions.size() && "Cannot add a GoToStack when instruction stack is empty");
-#ifdef USE_OPTIMISATIONS
-		if (Instructions.back()->getKind() == OK_LabelLoc)
+
+		if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_LabelLoc)
 		{
 			Instructions.back()->setKind(OK_Jump);
 		}
 		else
-#endif
 		{
 			Instructions.push_back(new Opcode(OK_GoToStack));
 		}
@@ -490,3 +496,4 @@ public:
 };
 
 #undef SimpleOpCheck
+#undef SimpleFloatOpCheck

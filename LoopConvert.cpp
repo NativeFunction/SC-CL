@@ -93,26 +93,27 @@ static cl::opt<BuildType> Option_BuildType(
 	clEnumValEnd
 ));
 
+static cl::opt<std::string> Option_OutputFileName(
+	"name", cl::desc("File name of output script, defaults to input file name"),
+	cl::ValueRequired,
+	cl::cat(CompilerOptions));
+
 typedef enum ObfLevel { 
 	obf_none,
-	obf_low = 1,
-	F1 = 1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = false, bool makeJumpTable = false
-	obf_default = 2,
-	F2 = 2, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
-	obf_high = 3,
-	F3 = 3, //high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
-	obf_veryhigh = 4,
-	F4 = 4 //very high: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_low = 1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = false, bool makeJumpTable = false
+	obf_default = 2, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_high = 3, //high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_veryhigh = 4, //very high: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
 } ObfLevel;
 
 static cl::opt<ObfLevel> Option_ObfuscationLevel(
 	cl::desc("Choose obfuscation level:"),
 	cl::cat(CompilerOptions),
 	cl::values(
-	clEnumVal(F1, "Enable low obfuscations"),
-	clEnumVal(F2, "Enable default obfuscations"),
-	clEnumVal(F3, "Enable high obfuscations"),
-	clEnumVal(F4, "Enable very high obfuscations"),
+	clEnumValN(obf_low, "F1", "Enable low obfuscations"),
+	clEnumValN(obf_default, "F2", "Enable default obfuscations"),
+	clEnumValN(obf_high, "F3", "Enable high obfuscations"),
+	clEnumValN(obf_veryhigh, "F4", "Enable very high obfuscations"),
 	clEnumValEnd
 ));
 
@@ -121,15 +122,14 @@ static cl::opt<uint32_t> Option_PCVerison(
 	cl::ValueRequired,
 	cl::cat(CompilerOptions)
 );
-typedef enum OptLevel { g, O1, O2, O3 } OptLevel;
-static cl::opt<OptLevel> Option_OptimizationLevel(
+static cl::opt<OptimisationLevel> Option_OptimizationLevel(
 	cl::desc("Choose optimization level:"),
 	cl::cat(CompilerOptions),
 	cl::values(
-	clEnumVal(g, "No optimizations, enable debugging"),
-	clEnumVal(O1, "Enable trivial optimizations"),
-	clEnumVal(O2, "Enable default optimizations"),
-	clEnumVal(O3, "Enable expensive optimizations"),
+	clEnumValN(OptimisationLevel::OL_None, "g","No optimizations, enable debugging"),
+	clEnumValN(OptimisationLevel::OL_Trivial, "O1", "Enable trivial optimizations"),
+	clEnumValN(OptimisationLevel::OL_Normal, "O2", "Enable default optimizations"),
+	clEnumValN(OptimisationLevel::OL_Full, "O3", "Enable expensive optimizations"),
 	clEnumValEnd
 ));
 
@@ -141,7 +141,7 @@ static cl::opt<bool> Option_Singleton(
 	cl::cat(CompilerOptions)
 );
 static cl::opt<bool> Option_DisableFunctionNames(
-	"n", cl::desc("Disable function names in script output"),
+	"n", cl::desc("Disable function names in script output, Enabled when optimisations are turned on"),
 	cl::Grouping,
 	cl::cat(CompilerOptions)
 );
@@ -968,7 +968,7 @@ public:
 				{
 					llvm::APSInt apCount;
 					int iCount;
-					if (argArray[2]->EvaluateAsInt(apCount, *context) && (iCount = apCount.getSExtValue(), iCount > 0) && iCount & ~(stackWidth - 1))
+					if (argArray[2]->EvaluateAsInt(apCount, *context) && (iCount = apCount.getSExtValue(), iCount > 0) && iCount % stackWidth == 0)
 					{
 						int itemCount = iCount / stackWidth;
 						if (itemCount == 1)
@@ -1963,7 +1963,7 @@ public:
 							Throw("getArrayP item size expected a value between 1 and 65535, got'" + to_string(itemSize.getSExtValue()) + "'", rewriter, argArray[2]->getSourceRange());
 						}
 						llvm::APSInt index;
-						if (Option_OptimizationLevel > OptLevel::O1 && argArray[1]->EvaluateAsInt(index ,*context))
+						if (Option_OptimizationLevel > OptimisationLevel::OL_Trivial && argArray[1]->EvaluateAsInt(index ,*context))
 						{
 							parseExpression(argArray[0], false, true);
 							AddInstruction(GetImmP, 1 + itemSize.getSExtValue() * index.getSExtValue());
@@ -3046,86 +3046,88 @@ public:
 				else
 				{
 					bool inlined = false;
-					if (const FunctionDecl * cDecl = call->getDirectCallee())
-					{
-						string name = getNameForFunc(cDecl);
-						string curName = dumpName(cast<NamedDecl>(currFunction));
-						if (cDecl->hasBody() && !scriptData.isFunctionInInlineStack(name) && curName != name)
+					if (Option_OptimizationLevel > OptimisationLevel::OL_None){
+						if (const FunctionDecl * cDecl = call->getDirectCallee())
 						{
-							CompoundStmt *body = cast<CompoundStmt>(cDecl->getBody());
-							Stmt *subBody = body;
-							bool isEmpty = false;
-							if (!cDecl->hasAttr<NoInlineAttr>())
+							string name = getNameForFunc(cDecl);
+							string curName = dumpName(cast<NamedDecl>(currFunction));
+							if (cDecl->hasBody() && !scriptData.isFunctionInInlineStack(name) && curName != name)
 							{
-								if (body->size() == 0)
+								CompoundStmt *body = cast<CompoundStmt>(cDecl->getBody());
+								Stmt *subBody = body;
+								bool isEmpty = false;
+								if (!cDecl->hasAttr<NoInlineAttr>())
 								{
-									isEmpty = true;
-								}
-								else if (body->size() == 1)
-								{
-									subBody = body->body_front();
-								}
-								if (isEmpty)
-								{
-									inlined = true;
-									for (uint32_t i = 0; i < cDecl->getNumParams(); i++)
+									if (body->size() == 0)
 									{
-										for (int32_t paramSize = getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr())); paramSize--;)
-										{
-											AddInstruction(Drop);
-										}
+										isEmpty = true;
 									}
-								}
-								else
-								{
-									bool isRet = isa<ReturnStmt>(subBody);
-									bool isExpr = isa<Expr>(subBody);
-									bool inlineSpec = cDecl->isInlineSpecified();
-									if (isRet || isExpr || inlineSpec) //inline it
+									else if (body->size() == 1)
+									{
+										subBody = body->body_front();
+									}
+									if (isEmpty)
 									{
 										inlined = true;
-										if (!scriptData.addFunctionInline(name, to_string(e->getLocEnd().getRawEncoding())))
-										{
-											assert(false);
-										}
-										LocalVariables.addLevel();
-										int Index = LocalVariables.getCurrentSize();
-										int32_t paramSize = 0;
 										for (uint32_t i = 0; i < cDecl->getNumParams(); i++)
 										{
-											paramSize += getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr()));
-											handleParmVarDecl((ParmVarDecl*)(cDecl->getParamDecl(i)));
-										}
-										if (paramSize == 1)
-										{
-											AddInstructionComment(SetFrame, "Inline Argument Setting",Index);
-										}
-										else if (paramSize > 1)
-										{
-											AddInstruction(PushInt, paramSize);
-											AddInstruction(GetFrameP, Index);
-											AddInstructionComment(FromStack, "Inline Argument Setting");
-										}
-										if (isRet) {
-											parseExpression(cast<ReturnStmt>(subBody)->getRetValue(), false, true);
-										}
-										else if (isExpr)
-										{
-											parseExpression(cast<Expr>(subBody));
-										}
-										else
-										{
-											parseStatement(body, -1, -1);
-											if (scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()))
+											for (int32_t paramSize = getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr())); paramSize--;)
 											{
-												scriptData.getCurrentFunction()->RemoveLast();
-												//remove the last jump, but keep the label, just incase other places in the function have returns
+												AddInstruction(Drop);
 											}
-											AddInstructionComment(Label, "Inline return location",scriptData.getInlineJumpLabelAppend());
 										}
-										LocalVariables.removeLevel();
-										scriptData.removeFunctionInline(name);
+									}
+									else
+									{
+										bool isRet = isa<ReturnStmt>(subBody);
+										bool isExpr = isa<Expr>(subBody);
+										bool inlineSpec = cDecl->isInlineSpecified();
+										if (isRet || isExpr || inlineSpec) //inline it
+										{
+											inlined = true;
+											if (!scriptData.addFunctionInline(name, to_string(e->getLocEnd().getRawEncoding())))
+											{
+												assert(false);
+											}
+											LocalVariables.addLevel();
+											int Index = LocalVariables.getCurrentSize();
+											int32_t paramSize = 0;
+											for (uint32_t i = 0; i < cDecl->getNumParams(); i++)
+											{
+												paramSize += getSizeFromBytes(getSizeOfType(cDecl->getParamDecl(i)->getType().getTypePtr()));
+												handleParmVarDecl((ParmVarDecl*)(cDecl->getParamDecl(i)));
+											}
+											if (paramSize == 1)
+											{
+												AddInstructionComment(SetFrame, "Inline Argument Setting", Index);
+											}
+											else if (paramSize > 1)
+											{
+												AddInstruction(PushInt, paramSize);
+												AddInstruction(GetFrameP, Index);
+												AddInstructionComment(FromStack, "Inline Argument Setting");
+											}
+											if (isRet) {
+												parseExpression(cast<ReturnStmt>(subBody)->getRetValue(), false, true);
+											}
+											else if (isExpr)
+											{
+												parseExpression(cast<Expr>(subBody));
+											}
+											else
+											{
+												parseStatement(body, -1, -1);
+												if (scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()))
+												{
+													scriptData.getCurrentFunction()->RemoveLast();
+													//remove the last jump, but keep the label, just incase other places in the function have returns
+												}
+												AddInstructionComment(Label, "Inline return location", scriptData.getInlineJumpLabelAppend());
+											}
+											LocalVariables.removeLevel();
+											scriptData.removeFunctionInline(name);
 
+										}
 									}
 								}
 							}
@@ -6484,7 +6486,7 @@ void WriteScriptFile(const string& outDir)
 				case P_XBOX:
 				case P_PS3:
 				{
-					CompileRDR c(*scriptData, Option_DisableFunctionNames);
+					CompileRDR c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
 					c.Compile(outDir);
 				}
 				break;
@@ -6500,13 +6502,13 @@ void WriteScriptFile(const string& outDir)
 				case P_XBOX:
 				case P_PS3:
 				{
-					CompileGTAV c(*scriptData, Option_DisableFunctionNames);
+					CompileGTAV c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
 					c.Compile(outDir);
 				}
 				break;
 				case P_PC:
 				{
-					CompileGTAVPC c(*scriptData, Option_PCVerison, Option_DisableFunctionNames);
+					CompileGTAVPC c(*scriptData, Option_PCVerison, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
 					c.Compile(outDir);
 				}
 				break;
@@ -6548,14 +6550,16 @@ int ProcessFiles(ClangTool &Tool)
 		//this is temporary. script name should be set from the file that the main function is in
 
 		string outDir = GetDir(SourcePaths[0]);
-		string scriptName = GetBaseNameFromDir(SourcePaths[0]);
+		string scriptName = (Option_OutputFileName != "" ? Option_OutputFileName : GetBaseNameFromDir(SourcePaths[0]));
 		scriptData.reset(new Script(scriptName, Option_BuildType, Option_Platform));
 
 		if (Option_Singleton)
 			scriptData->setSingleton();
 
-		if (Option_DisableFunctionNames)
+		if (Option_EntryFunctionPadding)
 			scriptData->setEntryFunctionPadding();
+
+		scriptData->setOptLevel(Option_OptimizationLevel);
 
 		stackWidth = scriptData->getStackWidth();
 

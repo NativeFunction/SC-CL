@@ -84,38 +84,40 @@ void FunctionData::pushComment(const string& comment)
 
 void FunctionData::addOpIsNotZero()
 {
-#ifdef USE_OPTIMISATIONS
-	assert(Instructions.size() && "Cannot add IsNotZero on an empty instruction stack");
-	Opcode *last = Instructions.back();
-	switch (last->getKind())
-	{
-		case OK_PushInt:
-			last->setInt(last->getInt() != 0);
-			return;
-		case OK_CmpEq:
-		case OK_CmpNe:
-		case OK_CmpGt:
-		case OK_CmpGe:
-		case OK_CmpLt:
-		case OK_CmpLe:
-		case OK_FCmpEq:
-		case OK_FCmpNe:
-		case OK_FCmpGt:
-		case OK_FCmpGe:
-		case OK_FCmpLt:
-		case OK_FCmpLe:
-		case OK_Not:
-			//dont need to worry about these cases
-			return;
-		default:
-			addOpPushInt(0);
-			addOpCmpNe();
-			return;
+	if (getOptLevel() > OptimisationLevel::OL_None){
+		assert(Instructions.size() && "Cannot add IsNotZero on an empty instruction stack");
+		Opcode *last = Instructions.back();
+		switch (last->getKind())
+		{
+			case OK_PushInt:
+			case OK_PushFloat://kind of weird including this, but this is how it would be ran
+				last->setInt(last->getInt() != 0);
+				break;
+			case OK_CmpEq:
+			case OK_CmpNe:
+			case OK_CmpGt:
+			case OK_CmpGe:
+			case OK_CmpLt:
+			case OK_CmpLe:
+			case OK_FCmpEq:
+			case OK_FCmpNe:
+			case OK_FCmpGt:
+			case OK_FCmpGe:
+			case OK_FCmpLt:
+			case OK_FCmpLe:
+			case OK_Not:
+				//dont need to worry about these cases
+				break;
+			default:
+				addOpPushInt(0);
+				addOpCmpNe();
+				break;
+		}
 	}
-#else
-	addOpPushInt(0);
-	addOpCmpNe();
-#endif
+	else{
+		addOpPushInt(0);
+		addOpCmpNe();
+	}
 }
 
 void FunctionData::addOpGetConv(int size, bool isSigned)
@@ -152,15 +154,13 @@ void FunctionData::addOpSetConv(int size)
 	const uint32_t shiftSize = size == 1 ? 24 : size == 2 ? 16 : 0;
 	const string type = size == 1 ? "Char Type" : size == 2 ? "Short Type" : "";
 
-	#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Cannot add convert a type on an empty instruction stack");
 	Opcode *last = Instructions.back();
-	if (last->getKind() == OK_PushInt)
+	if (getOptLevel() > OptimisationLevel::OL_None && last->getKind() == OK_PushInt)
 	{
 		last->setInt(last->getInt() << shiftSize);
 	}
 	else
-		#endif
 	{
 		addOpShiftLeft(shiftSize);
 		pushComment(type);
@@ -627,9 +627,9 @@ void FunctionData::moveInto(std::vector<Opcode*>& source)
 
 void FunctionData::addOpAdd()
 {
-#ifdef USE_OPTIMISATIONS
+
 	assert(Instructions.size() && "Instruction stack empty, cant add Add Instruction");
-	if (Instructions.back()->getKind() == OK_PushInt)
+	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushInt)
 	{
 		if (Instructions.back()->getInt() == 0)
 		{
@@ -648,16 +648,12 @@ void FunctionData::addOpAdd()
 	{
 		Instructions.push_back(new Opcode(OK_Add));
 	}
-#else
-	Instructions.push_back(new Opcode(OK_Add));
-#endif
 }
 
 void FunctionData::addOpSub()
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add Sub Instruction");
-	if (Instructions.back()->getKind() == OK_PushInt)
+	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushInt)
 	{
 		int i = Instructions.back()->getInt();
 		if (i == 0)
@@ -677,16 +673,12 @@ void FunctionData::addOpSub()
 	{
 		Instructions.push_back(new Opcode(OK_Sub));
 	}
-#else
-	Instructions.push_back(new Opcode(OK_Sub));
-#endif
 }
 
 void FunctionData::addOpMult()
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add Mult Instruction");
-	if (Instructions.back()->getKind() == OK_PushInt)
+	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushInt)
 	{
 		int i = Instructions.back()->getInt();
 		if (i == 0)
@@ -711,20 +703,17 @@ void FunctionData::addOpMult()
 	{
 		Instructions.push_back(new Opcode(OK_Mult));
 	}
-#else
-	Instructions.push_back(new Opcode(OK_Mult));
-#endif
 }
 
 void FunctionData::addOpDiv(bool *isZeroDivDetected)
 {
-#ifdef USE_OPTIMISATIONS
+
 	assert(Instructions.size() && "Instruction stack empty, cant add Div Instruction");
 	if (isZeroDivDetected)
 	{
 		*isZeroDivDetected = false;
 	}
-	if (Instructions.back()->getKind() == OK_PushInt)
+	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushInt)
 	{
 		int i = Instructions.back()->getInt();
 		if (i == 0)
@@ -755,326 +744,321 @@ void FunctionData::addOpDiv(bool *isZeroDivDetected)
 	{
 		Instructions.push_back(new Opcode(OK_Div));
 	}
-#else
-	Instructions.push_back(new Opcode(OK_Div));
-#endif
 }
 
 void FunctionData::addOpNot()
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add Not Instruction");
-	Opcode* back = Instructions.back();
-	switch (back->getKind())
-	{
-	case OK_CmpEq:
-		back->setKind(OK_CmpNe);
-		return;
-	case OK_CmpNe:
-		back->setKind(OK_CmpEq);
-		return;
-	case OK_CmpGe:
-		back->setKind(OK_CmpLt);
-		return;
-	case OK_CmpGt:
-		back->setKind(OK_CmpLe);
-		return;
-	case OK_CmpLe:
-		back->setKind(OK_CmpGt);
-		return;
-	case OK_CmpLt:
-		back->setKind(OK_CmpGe);
-		return;
-	case OK_FCmpEq:
-		back->setKind(OK_FCmpNe);
-		return;
-	case OK_FCmpNe:
-		back->setKind(OK_FCmpEq);
-		return;
-	case OK_FCmpGe:
-		back->setKind(OK_FCmpLt);
-		return;
-	case OK_FCmpGt:
-		back->setKind(OK_FCmpLe);
-		return;
-	case OK_FCmpLe:
-		back->setKind(OK_FCmpGt);
-		return;
-	case OK_FCmpLt:
-		back->setKind(OK_FCmpGe);
-		return;
-	case OK_PushInt:
-		back->setInt(Instructions.back()->getInt() == 0);
-		return;
-	default:
-		Instructions.push_back(new Opcode(OK_Not));
-		return;
+	if (getOptLevel() > OptimisationLevel::OL_None){
+		Opcode* back = Instructions.back();
+		switch (back->getKind())
+		{
+			case OK_CmpEq:
+				back->setKind(OK_CmpNe);
+				return;
+			case OK_CmpNe:
+				back->setKind(OK_CmpEq);
+				return;
+			case OK_CmpGe:
+				back->setKind(OK_CmpLt);
+				return;
+			case OK_CmpGt:
+				back->setKind(OK_CmpLe);
+				return;
+			case OK_CmpLe:
+				back->setKind(OK_CmpGt);
+				return;
+			case OK_CmpLt:
+				back->setKind(OK_CmpGe);
+				return;
+			case OK_FCmpEq:
+				back->setKind(OK_FCmpNe);
+				return;
+			case OK_FCmpNe:
+				back->setKind(OK_FCmpEq);
+				return;
+			case OK_FCmpGe:
+				back->setKind(OK_FCmpLt);
+				return;
+			case OK_FCmpGt:
+				back->setKind(OK_FCmpLe);
+				return;
+			case OK_FCmpLe:
+				back->setKind(OK_FCmpGt);
+				return;
+			case OK_FCmpLt:
+				back->setKind(OK_FCmpGe);
+				return;
+			case OK_PushInt:
+				back->setInt(Instructions.back()->getInt() == 0);
+				return;
+			default:
+				Instructions.push_back(new Opcode(OK_Not));
+				return;
+		}
 	}
-#else
-	Instructions.push_back(new Opcode(OK_Not));
-#endif
+	else{
+		Instructions.push_back(new Opcode(OK_Not));
+	}
 }
 
 void FunctionData::addOpNeg()
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add Neg Instruction");
-	Opcode *back = Instructions.back();
-	if (back->getKind() == OK_PushInt || back->getKind() == OK_MultImm)//treat pushInt and MultImm as the same
-	{
-		back->setInt(-back->getInt());
+	if (getOptLevel() > OptimisationLevel::OL_None){
+		Opcode *back = Instructions.back();
+		if (back->getKind() == OK_PushInt || back->getKind() == OK_MultImm)//treat pushInt and MultImm as the same
+		{
+			back->setInt(-back->getInt());
+		}
+		else
+		{
+			Instructions.push_back(new Opcode(OK_Neg));
+		}
 	}
-	else
-	{
+	else{
 		Instructions.push_back(new Opcode(OK_Neg));
 	}
-#else
-	Instructions.push_back(new Opcode(OK_Neg));
-#endif
 }
 
 void FunctionData::addOpFAdd()
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add FAdd Instruction");
-	Opcode *back = Instructions.back();
-	if (back->getKind() == OK_PushFloat)
-	{
-		float imm = back->getFloat();
-		delete back;
-		Instructions.pop_back();
-		addOpFAddImm(imm);
+	if (getOptLevel() > OptimisationLevel::OL_None){
+		Opcode *back = Instructions.back();
+		if (back->getKind() == OK_PushFloat)
+		{
+			float imm = back->getFloat();
+			delete back;
+			Instructions.pop_back();
+			addOpFAddImm(imm);
+		}
+		else
+		{
+			Instructions.push_back(new Opcode(OK_FAdd));
+		}
 	}
-	else
-	{
+	else{
 		Instructions.push_back(new Opcode(OK_FAdd));
 	}
-#else
-	Instructions.push_back(new Opcode(OK_FAdd));
-#endif
 }
 
 void FunctionData::addOpFSub()
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add FSub Instruction");
-	Opcode *back = Instructions.back();
-	if (back->getKind() == OK_PushFloat)
-	{
-		float imm = back->getFloat();
-		delete back;
-		Instructions.pop_back();
-		addOpFAddImm(-imm);
+	if (getOptLevel() > OptimisationLevel::OL_None){
+		Opcode *back = Instructions.back();
+		if (back->getKind() == OK_PushFloat)
+		{
+			float imm = back->getFloat();
+			delete back;
+			Instructions.pop_back();
+			addOpFAddImm(-imm);
+		}
+		else
+		{
+			Instructions.push_back(new Opcode(OK_FSub));
+		}
 	}
-	else
-	{
+	else{
 		Instructions.push_back(new Opcode(OK_FSub));
 	}
-#else
-	Instructions.push_back(new Opcode(OK_FSub));
-#endif
 }
 
 void FunctionData::addOpFMult()
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add FMult Instruction");
-	Opcode *back = Instructions.back();
-	if (back->getKind() == OK_PushFloat)
-	{
-		float imm = back->getFloat();
-		delete back;
-		Instructions.pop_back();
-		addOpFMultImm(imm);
+	if (getOptLevel() > OptimisationLevel::OL_None){
+		Opcode *back = Instructions.back();
+		if (back->getKind() == OK_PushFloat)
+		{
+			float imm = back->getFloat();
+			delete back;
+			Instructions.pop_back();
+			addOpFMultImm(imm);
+		}
+		else
+		{
+			Instructions.push_back(new Opcode(OK_FMult));
+		}
 	}
-	else
-	{
+	else{
 		Instructions.push_back(new Opcode(OK_FMult));
 	}
-#else
-	Instructions.push_back(new Opcode(OK_FMult));
-#endif
 }
 
 void FunctionData::addOpFDiv(bool * isZeroDivDetected)
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add FDiv Instruction");
-	Opcode *back = Instructions.back();
-	if (back->getKind() == OK_PushFloat)
-	{
-		float imm = back->getFloat();
-		if (imm == 0)
+	if (getOptLevel() > OptimisationLevel::OL_None){
+		Opcode *back = Instructions.back();
+		if (back->getKind() == OK_PushFloat)
 		{
-			Instructions.push_back(new Opcode(OK_FDiv));//still parse the instruction as FDiv, but warn user
-			if (isZeroDivDetected)
+			float imm = back->getFloat();
+			if (imm == 0)
 			{
-				*isZeroDivDetected = true;
+				Instructions.push_back(new Opcode(OK_FDiv));//still parse the instruction as FDiv, but warn user
+				if (isZeroDivDetected)
+				{
+					*isZeroDivDetected = true;
+				}
+			}
+			else
+			{
+				delete back;
+				Instructions.pop_back();
+				addOpFMultImm(1.0f / imm);
+				if (isZeroDivDetected)
+				{
+					*isZeroDivDetected = false;
+				}
 			}
 		}
 		else
 		{
-			delete back;
-			Instructions.pop_back();
-			addOpFMultImm(1.0f / imm);
+			Instructions.push_back(new Opcode(OK_FDiv));
 			if (isZeroDivDetected)
 			{
 				*isZeroDivDetected = false;
 			}
 		}
 	}
-	else
-	{
+	else{
 		Instructions.push_back(new Opcode(OK_FDiv));
-		if (isZeroDivDetected)
-		{
-			*isZeroDivDetected = false;
-		}
 	}
-#else
-	Instructions.push_back(new Opcode(OK_FDiv));
-#endif
 }
 
 void FunctionData::addOpFNeg()
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Instruction stack empty, cant add FNeg Instruction");
-	Opcode *back = Instructions.back();
-	if (back->getKind() == OK_PushFloat || back->getKind() == OK_FMultImm)//treat pushFloat and FMultImm as the same
-	{
-		back->setFloat(-back->getFloat());
+	if (getOptLevel() > OptimisationLevel::OL_None){
+		Opcode *back = Instructions.back();
+		if (back->getKind() == OK_PushFloat || back->getKind() == OK_FMultImm)//treat pushFloat and FMultImm as the same
+		{
+			back->setFloat(-back->getFloat());
+		}
+		else
+		{
+			Instructions.push_back(new Opcode(OK_FNeg));
+		}
 	}
-	else
-	{
+	else{
 		Instructions.push_back(new Opcode(OK_FNeg));
 	}
-#else
-	Instructions.push_back(new Opcode(OK_FNeg));
-#endif
 }
 
 void FunctionData::addOpItoF()
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Cannot add ItoF to empty instruction stack");
-	Opcode *last = Instructions.back();
-	switch(last->getKind())
+	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushInt)
 	{
-	case OK_PushInt:
+		Opcode *last = Instructions.back();
 		last->setKind(OK_PushFloat);
 		last->setFloat((float)last->getInt());
-		return;
-	default:
+	}
+	else{
 		Instructions.push_back(new Opcode(OK_ItoF));
 	}
-#else
-	Instructions.push_back(new Opcode(OK_ItoF));
-#endif
 }
 
 void FunctionData::addOpFtoI()
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Cannot add ItoF to empty instruction stack");
-	Opcode* last = Instructions.back();
-	if (last->getKind() == OK_PushFloat){
+	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushFloat)
+	{
+		Opcode *last = Instructions.back();
 		last->setKind(OK_PushInt);
-		last->setInt((int)last->getFloat());
+		last->setInt((int)last->getInt());
 	}
-	else
-#endif
-	Instructions.push_back(new Opcode(OK_FtoI));
-}
-
-void FunctionData::addOpPushInt(int immediate)
-{
-	Opcode* op = new Opcode(OK_PushInt);
-	op->setInt(immediate);
-	Instructions.push_back(op);
+	else{
+		Instructions.push_back(new Opcode(OK_FtoI));
+	}
 }
 
 void FunctionData::addOpDrop()
 {
-#ifdef USE_OPTIMISATIONS
-	switch(Instructions.back()->getKind())
+	if (getOptLevel() > OptimisationLevel::OL_None)
 	{
-	case OK_PushInt:
-	case OK_PushFloat:
-	case OK_PushString:
-	case OK_GetFrameP:
-	case OK_GetFrame:
-	case OK_GetStaticP:
-	case OK_GetStatic:
-	case OK_GetGlobalP:
-	case OK_GetGlobal:
-	case OK_Dup:
-	case OK_LabelLoc:
-		//delete instrucions that just push a value to the stack
-		delete Instructions.back();
-		Instructions.pop_back();
-		break;
-	case OK_FtoV:
-		//this case would only ever come up if you have
-		// toVector3(1.0f); and dont use the result, in which case it would recursively get cancelled down 
-		Instructions.back()->setKind(OK_Dup);//replace fToV(dup2) with dup
-		break;
-	case OK_AddImm:
-	case OK_MultImm:
-	case OK_PGet:
-	case OK_ItoF:
-	case OK_FtoI:
-	case OK_GetArrayP:
-	case OK_GetArray:
-	case OK_GetImmP:
-	case OK_GetImm:
-	case OK_Neg:
-	case OK_FNeg:
-	case OK_Not:
-		//replace instructions that just replace item at top of the stack with a drop
-		delete Instructions.back();
-		Instructions.pop_back();
-		addOpDrop();
-		break;
-	case OK_ShiftLeft:
-	case OK_ShiftRight:
-	case OK_Add:
-	case OK_Sub:
-	case OK_Mult:
-	case OK_Div:
-	case OK_Mod:
-	case OK_CmpEq:
-	case OK_CmpNe:
-	case OK_CmpGt:
-	case OK_CmpGe:
-	case OK_CmpLt:
-	case OK_CmpLe:
-	case OK_FAdd:
-	case OK_FSub:
-	case OK_FMult:
-	case OK_FDiv:
-	case OK_FMod:
-	case OK_FCmpEq:
-	case OK_FCmpNe:
-	case OK_FCmpGt:
-	case OK_FCmpGe:
-	case OK_FCmpLt:
-	case OK_FCmpLe:
-	case OK_And:
-	case OK_Or:
-	case OK_Xor:
-		delete Instructions.back();
-		Instructions.pop_back();
-		addOpDrop();
-		addOpDrop();
-		break;
-	default:
-		Instructions.push_back(new Opcode(OK_Drop));
-		break;
+		switch (Instructions.back()->getKind())
+		{
+			case OK_PushInt:
+			case OK_PushFloat:
+			case OK_PushString:
+			case OK_GetFrameP:
+			case OK_GetFrame:
+			case OK_GetStaticP:
+			case OK_GetStatic:
+			case OK_GetGlobalP:
+			case OK_GetGlobal:
+			case OK_Dup:
+			case OK_LabelLoc:
+				//delete instrucions that just push a value to the stack
+				delete Instructions.back();
+				Instructions.pop_back();
+				break;
+			case OK_FtoV:
+				//this case would only ever come up if you have
+				// toVector3(1.0f); and dont use the result, in which case it would recursively get cancelled down 
+				Instructions.back()->setKind(OK_Dup);//replace fToV(dup2) with dup
+				break;
+			case OK_AddImm:
+			case OK_MultImm:
+			case OK_PGet:
+			case OK_ItoF:
+			case OK_FtoI:
+			case OK_GetArrayP:
+			case OK_GetArray:
+			case OK_GetImmP:
+			case OK_GetImm:
+			case OK_Neg:
+			case OK_FNeg:
+			case OK_Not:
+				//replace instructions that just replace item at top of the stack with a drop
+				delete Instructions.back();
+				Instructions.pop_back();
+				addOpDrop();
+				break;
+			case OK_ShiftLeft:
+			case OK_ShiftRight:
+			case OK_Add:
+			case OK_Sub:
+			case OK_Mult:
+			case OK_Div:
+			case OK_Mod:
+			case OK_CmpEq:
+			case OK_CmpNe:
+			case OK_CmpGt:
+			case OK_CmpGe:
+			case OK_CmpLt:
+			case OK_CmpLe:
+			case OK_FAdd:
+			case OK_FSub:
+			case OK_FMult:
+			case OK_FDiv:
+			case OK_FMod:
+			case OK_FCmpEq:
+			case OK_FCmpNe:
+			case OK_FCmpGt:
+			case OK_FCmpGe:
+			case OK_FCmpLt:
+			case OK_FCmpLe:
+			case OK_And:
+			case OK_Or:
+			case OK_Xor:
+				delete Instructions.back();
+				Instructions.pop_back();
+				addOpDrop();
+				addOpDrop();
+				break;
+			default:
+				Instructions.push_back(new Opcode(OK_Drop));
+				break;
+		}
 	}
-#else
-	Instructions.push_back(new Opcode(OK_Drop));
-#endif
+	else
+	{
+		Instructions.push_back(new Opcode(OK_Drop));
+	}
 }
 
 void FunctionData::addOpNative(const string& name, uint8_t pCount, uint8_t rCount)
@@ -1100,95 +1084,97 @@ void FunctionData::addOpNative(const string& name, uint64_t hash, uint8_t pCount
 
 void FunctionData::addOpPGet()
 {
-#ifdef USE_OPTIMISATIONS
-	assert(Instructions.size() && "Cannot add PGet to empty instruction stack");
-	Opcode* op = Instructions.back();
-	switch (op->getKind())
-	{
-	case OK_GetArrayP:
-		Instructions.back()->setKind(OK_GetArray);
-		return;
-	case OK_GetFrameP:
-		Instructions.back()->setKind(OK_GetFrame);
-		return;
-	case OK_GetGlobalP:
-		Instructions.back()->setKind(OK_GetGlobal);
-		return;
-	case OK_GetStaticP:
-		Instructions.back()->setKind(OK_GetStatic);
-		return;
-	case OK_GetImmP:
-		Instructions.back()->setKind(OK_GetImm);
-		return;
-	default:
-		Instructions.push_back(new Opcode(OK_PGet));
-		return;
+	if (getOptLevel() > OptimisationLevel::OL_Trivial){
+		assert(Instructions.size() && "Cannot add PGet to empty instruction stack");
+		Opcode* op = Instructions.back();
+		switch (op->getKind())
+		{
+			case OK_GetArrayP:
+				Instructions.back()->setKind(OK_GetArray);
+				return;
+			case OK_GetFrameP:
+				Instructions.back()->setKind(OK_GetFrame);
+				return;
+			case OK_GetGlobalP:
+				Instructions.back()->setKind(OK_GetGlobal);
+				return;
+			case OK_GetStaticP:
+				Instructions.back()->setKind(OK_GetStatic);
+				return;
+			case OK_GetImmP:
+				Instructions.back()->setKind(OK_GetImm);
+				return;
+			default:
+				Instructions.push_back(new Opcode(OK_PGet));
+				return;
+		}
 	}
-#else
-	Instructions.push_back(new Opcode(OK_PGet));
-#endif
+	else{
+		Instructions.push_back(new Opcode(OK_PGet));
+	}
 }
 
 void FunctionData::addOpPSet()
 {
-#ifdef USE_OPTIMISATIONS
-	assert(Instructions.size() && "Cannot add PSet to empty instruction stack");
-	switch (Instructions.back()->getKind())
-	{
-	case OK_GetArrayP:
-		Instructions.back()->setKind(OK_SetArray);
-		return;
-	case OK_GetFrameP:
-		Instructions.back()->setKind(OK_SetFrame);
-		return;
-	case OK_GetGlobalP:
-		Instructions.back()->setKind(OK_SetGlobal);
-		return;
-	case OK_GetStaticP:
-		Instructions.back()->setKind(OK_SetStatic);
-		return;
-	case OK_GetImmP:
-		Instructions.back()->setKind(OK_SetImm);
-		return;
-	default:
-		Instructions.push_back(new Opcode(OK_PSet));
-		return;
+	if (getOptLevel() > OptimisationLevel::OL_Trivial){
+		assert(Instructions.size() && "Cannot add PSet to empty instruction stack");
+		switch (Instructions.back()->getKind())
+		{
+			case OK_GetArrayP:
+				Instructions.back()->setKind(OK_SetArray);
+				return;
+			case OK_GetFrameP:
+				Instructions.back()->setKind(OK_SetFrame);
+				return;
+			case OK_GetGlobalP:
+				Instructions.back()->setKind(OK_SetGlobal);
+				return;
+			case OK_GetStaticP:
+				Instructions.back()->setKind(OK_SetStatic);
+				return;
+			case OK_GetImmP:
+				Instructions.back()->setKind(OK_SetImm);
+				return;
+			default:
+				Instructions.push_back(new Opcode(OK_PSet));
+				return;
+		}
 	}
-#else
-	Instructions.push_back(new Opcode(OK_PSet));
-#endif
+	else{
+		Instructions.push_back(new Opcode(OK_PSet));
+	}
 }
 
 void FunctionData::addOpGetFrame(uint16_t index)
 {
-#ifdef USE_OPTIMISATIONS
-	if (Instructions.size())
-	{
-		Opcode *back = Instructions.back();
-		if (back->getKind() == OK_GetFrame && back->getUShort(0) == index - 1)
+	if (getOptLevel() > OptimisationLevel::OL_Normal){
+		if (Instructions.size())
 		{
-			back->setKind(OK_PushInt);
-			back->setInt(2);
-			addOpGetFrameP(index - 1);
-			addOpToStack();
-			return;
-		}
-		else if (back->getKind() == OK_ToStack)
-		{
-			size_t size = Instructions.size();
-			assert(size > 2 && "To Stack called with invalid args");
-			Opcode* ptrOp = Instructions[size - 2],* sizeOp = Instructions[size - 3];
-			if (ptrOp->getKind() == OK_GetFrameP && sizeOp->getKind() == OK_PushInt)
+			Opcode *back = Instructions.back();
+			if (back->getKind() == OK_GetFrame && back->getUShort(0) == index - 1)
 			{
-				if (index - ptrOp->getUShort(0) == sizeOp->getInt())
+				back->setKind(OK_PushInt);
+				back->setInt(2);
+				addOpGetFrameP(index - 1);
+				addOpToStack();
+				return;
+			}
+			else if (back->getKind() == OK_ToStack)
+			{
+				size_t size = Instructions.size();
+				assert(size > 2 && "To Stack called with invalid args");
+				Opcode* ptrOp = Instructions[size - 2], *sizeOp = Instructions[size - 3];
+				if (ptrOp->getKind() == OK_GetFrameP && sizeOp->getKind() == OK_PushInt)
 				{
-					sizeOp->setInt(sizeOp->getInt() + 1);
-					return;
+					if (index - ptrOp->getUShort(0) == sizeOp->getInt())
+					{
+						sizeOp->setInt(sizeOp->getInt() + 1);
+						return;
+					}
 				}
 			}
 		}
 	}
-#endif
 
 	Opcode* op = new Opcode(OK_GetFrame);
 	op->setUShort(index, 0);
@@ -1235,60 +1221,63 @@ void FunctionData::addOpGetFrame(uint16_t index)
 
 void FunctionData::addOpGetGlobal(int index)
 {
-#ifdef USE_OPTIMISATIONS
-	if (Instructions.size())
-	{
-		Opcode *back = Instructions.back();
-		if (back->getKind() == OK_GetGlobal && back->getInt() == index - 1)
+	if (getOptLevel() > OptimisationLevel::OL_Normal){
+		if (Instructions.size())
 		{
-			back->setKind(OK_PushInt);
-			back->setInt(2);
-			addOpGetGlobalP(index - 1);
-			addOpToStack();
-			return;
-		}
-		else if (back->getKind() == OK_ToStack)
-		{
-			size_t size = Instructions.size();
-			assert(size > 2 && "To Stack called with invalid args");
-			Opcode* ptrOp = Instructions[size - 2], *sizeOp = Instructions[size - 3];
-			if (ptrOp->getKind() == OK_GetGlobalP && sizeOp->getKind() == OK_PushInt)
+			Opcode *back = Instructions.back();
+			if (back->getKind() == OK_GetGlobal && back->getInt() == index - 1)
 			{
-				if (index - ptrOp->getInt() == sizeOp->getInt())
+				back->setKind(OK_PushInt);
+				back->setInt(2);
+				addOpGetGlobalP(index - 1);
+				addOpToStack();
+				return;
+			}
+			else if (back->getKind() == OK_ToStack)
+			{
+				size_t size = Instructions.size();
+				assert(size > 2 && "To Stack called with invalid args");
+				Opcode* ptrOp = Instructions[size - 2], *sizeOp = Instructions[size - 3];
+				if (ptrOp->getKind() == OK_GetGlobalP && sizeOp->getKind() == OK_PushInt)
 				{
-					sizeOp->setInt(sizeOp->getInt() + 1);
-					return;
+					if (index - ptrOp->getInt() == sizeOp->getInt())
+					{
+						sizeOp->setInt(sizeOp->getInt() + 1);
+						return;
+					}
 				}
 			}
 		}
 	}
-#endif
-	{
-		Opcode* op = new Opcode(OK_GetGlobal);
-		op->setInt(index);
-		Instructions.push_back(op);
-	}
+	Opcode* op = new Opcode(OK_GetGlobal);
+	op->setInt(index);
+	Instructions.push_back(op);
 }
 
 void FunctionData::addOpAddImm(int immediate)
 {
-#ifdef USE_OPTIMISATIONS
-	assert(Instructions.size() && "Cannot add AddImm to empty instruction stack");
-	Opcode *last = Instructions.back();
-	if (last->getKind() == OK_PushInt)
-	{
-		last->setInt(last->getInt() + immediate);
+	if (getOptLevel() > OptimisationLevel::OL_Trivial){
+		assert(Instructions.size() && "Cannot add AddImm to empty instruction stack");
+		Opcode *last = Instructions.back();
+		if (last->getKind() == OK_PushInt)
+		{
+			last->setInt(last->getInt() + immediate);
+		}
+		else if (last->getKind() == OK_AddImm)
+		{
+			int val = last->getInt() + immediate;
+			delete last;
+			Instructions.pop_back();
+			addOpAddImm(val);
+		}
+		else if (immediate != 0)
+		{
+			Opcode* op = new Opcode(OK_AddImm);
+			op->setInt(immediate);
+			Instructions.push_back(op);
+		}
 	}
-	else if (last->getKind() == OK_AddImm)
-	{
-		int val = last->getInt() + immediate;
-		delete last;
-		Instructions.pop_back();
-		addOpAddImm(val);
-	}
-	else if (immediate != 0)
-#endif
-	{
+	else{
 		Opcode* op = new Opcode(OK_AddImm);
 		op->setInt(immediate);
 		Instructions.push_back(op);
@@ -1297,32 +1286,37 @@ void FunctionData::addOpAddImm(int immediate)
 
 void FunctionData::addOpMultImm(int immediate)
 {
-#ifdef USE_OPTIMISATIONS
-	assert(Instructions.size() && "Cannot add MultImm to empty instruction stack");
-	Opcode *last = Instructions.back();
-	if (last->getKind() == OK_PushInt)
-	{
-		last->setInt(last->getInt() * immediate);
+	if (getOptLevel() > OptimisationLevel::OL_Trivial){
+		assert(Instructions.size() && "Cannot add MultImm to empty instruction stack");
+		Opcode *last = Instructions.back();
+		if (last->getKind() == OK_PushInt)
+		{
+			last->setInt(last->getInt() * immediate);
+		}
+		else if (last->getKind() == OK_MultImm)
+		{
+			int val = last->getInt() * immediate;
+			delete last;
+			Instructions.pop_back();
+			addOpMultImm(val);
+		}
+		else if (immediate == -1)
+		{
+			addOpNeg();
+		}
+		else if (immediate == 0)
+		{
+			addOpDrop();
+			addOpPushInt(0);
+		}
+		else if (immediate != 1)
+		{
+			Opcode* op = new Opcode(OK_MultImm);
+			op->setInt(immediate);
+			Instructions.push_back(op);
+		}
 	}
-	else if (last->getKind() == OK_MultImm)
-	{
-		int val = last->getInt() * immediate;
-		delete last;
-		Instructions.pop_back();
-		addOpMultImm(val);
-	}
-	else if (immediate == -1)
-	{
-		addOpNeg();
-	}
-	else if (immediate == 0)
-	{
-		addOpDrop();
-		addOpPushInt(0);
-	}
-	else if (immediate != 1)
-#endif
-	{
+	else{
 		Opcode* op = new Opcode(OK_MultImm);
 		op->setInt(immediate);
 		Instructions.push_back(op);
@@ -1331,27 +1325,32 @@ void FunctionData::addOpMultImm(int immediate)
 
 void FunctionData::addOpFAddImm(float immediate)
 {
-#ifdef USE_OPTIMISATIONS
-	assert(Instructions.size() && "Cannot add FAddImm to empty instruction stack");
-	Opcode *last = Instructions.back();
-	if (last->getKind() == OK_PushFloat)
-	{
-		last->setFloat(last->getFloat() + immediate);
+	if (getOptLevel() > OptimisationLevel::OL_Trivial){
+		assert(Instructions.size() && "Cannot add FAddImm to empty instruction stack");
+		Opcode *last = Instructions.back();
+		if (last->getKind() == OK_PushFloat)
+		{
+			last->setFloat(last->getFloat() + immediate);
+		}
+		else if (last->getKind() == OK_FAddImm)
+		{
+			float val = immediate + last->getFloat();
+			delete last;
+			Instructions.pop_back();
+			addOpFAddImm(val);
+		}
+		else if (immediate == 0.0f)
+		{
+			//do nothing
+		}
+		else
+		{
+			Opcode* op = new Opcode(OK_FAddImm);
+			op->setFloat(immediate);
+			Instructions.push_back(op);
+		}
 	}
-	else if (last->getKind() == OK_FAddImm)
-	{
-		float val = immediate + last->getFloat();
-		delete last;
-		Instructions.pop_back();
-		addOpFAddImm(val);
-	}
-	else if (immediate == 0.0f)
-	{
-		//do nothing
-	}
-	else
-#endif
-	{
+	else{
 		Opcode* op = new Opcode(OK_FAddImm);
 		op->setFloat(immediate);
 		Instructions.push_back(op);
@@ -1361,36 +1360,41 @@ void FunctionData::addOpFAddImm(float immediate)
 
 void FunctionData::addOpFMultImm(float immediate)
 {
-#ifdef USE_OPTIMISATIONS
-	assert(Instructions.size() && "Cannot add FMultImm to empty instruction stack");
-	Opcode *last = Instructions.back();
-	if (last->getKind() == OK_PushFloat)
-	{
-		last->setFloat(last->getFloat() * immediate);
+	if (getOptLevel() > OptimisationLevel::OL_Trivial){
+		assert(Instructions.size() && "Cannot add FMultImm to empty instruction stack");
+		Opcode *last = Instructions.back();
+		if (last->getKind() == OK_PushFloat)
+		{
+			last->setFloat(last->getFloat() * immediate);
+		}
+		else if (last->getKind() == OK_FMultImm)
+		{
+			float val = immediate * last->getFloat();
+			delete last;
+			Instructions.pop_back();
+			addOpFMultImm(val);
+		}
+		else if (immediate == 0.0f)
+		{
+			addOpDrop();
+			addOpPushFloat(0.0f);
+		}
+		else if (immediate == -1.0f)
+		{
+			addOpFNeg();
+		}
+		else if (immediate == 1.0f)
+		{
+			//do nothing
+		}
+		else
+		{
+			Opcode* op = new Opcode(OK_FMultImm);
+			op->setFloat(immediate);
+			Instructions.push_back(op);
+		}
 	}
-	else if (last->getKind() == OK_FMultImm)
-	{
-		float val = immediate * last->getFloat();
-		delete last;
-		Instructions.pop_back();
-		addOpFMultImm(val);
-	}
-	else if (immediate == 0.0f)
-	{
-		addOpDrop();
-		addOpPushFloat(0.0f);
-	}
-	else if (immediate == -1.0f)
-	{
-		addOpFNeg();
-	}
-	else if (immediate == 1.0f)
-	{
-		//do nothing
-	}
-	else
-#endif
-	{
+	else{
 		Opcode* op = new Opcode(OK_FMultImm);
 		op->setFloat(immediate);
 		Instructions.push_back(op);
@@ -1399,21 +1403,24 @@ void FunctionData::addOpFMultImm(float immediate)
 
 void FunctionData::addOpGetImmP(uint16_t index)
 {
-#ifdef USE_OPTIMISATIONS
-	if (index != 0)
-#endif
-	{
+	if (index != 0 && getOptLevel() > OptimisationLevel::OL_Trivial){
 		assert(Instructions.size() && "Cannot add GetImmP to empty instruction stack");
-		switch(Instructions.back()->getKind())
+		switch (Instructions.back()->getKind())
 		{
 			case OK_GetFrameP:
 			case OK_GetGlobalP:
 			case OK_GetImmP:
 				Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
-				return;
+				break;
 			default:
+				Opcode* op = new Opcode(OK_GetImmP);
+				op->setUShort(index, 0);
+				Instructions.push_back(op);
 				break;
 		}
+
+	}
+	else{
 		Opcode* op = new Opcode(OK_GetImmP);
 		op->setUShort(index, 0);
 		Instructions.push_back(op);
@@ -1422,131 +1429,131 @@ void FunctionData::addOpGetImmP(uint16_t index)
 
 void FunctionData::addOpGetImm(uint16_t index)
 {
-#ifdef USE_OPTIMISATIONS
-	if (index != 0)
-	{
-		assert(Instructions.size() && "Cannot add GetImm to empty instruction stack");
-		switch (Instructions.back()->getKind())
-		{
-			case OK_GetFrameP:
-			case OK_GetGlobalP:
-			case OK_GetImmP:
-				Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
-				addOpPGet();//pget will turn these
-				return;
-			default:
-				break;
+	if (getOptLevel() > OptimisationLevel::OL_Trivial){
+		if (index != 0){
+			assert(Instructions.size() && "Cannot add GetImm to empty instruction stack");
+			switch (Instructions.back()->getKind())
+			{
+				case OK_GetFrameP:
+				case OK_GetGlobalP:
+				case OK_GetImmP:
+					Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
+					addOpPGet();//pget will turn these
+					return;
+				default:
+					break;
+			}
+			Opcode* op = new Opcode(OK_GetImm);
+			op->setUShort(index, 0);
+			Instructions.push_back(op);
 		}
+		else{
+			addOpPGet();
+		}
+	}
+	else
+	{
 		Opcode* op = new Opcode(OK_GetImm);
 		op->setUShort(index, 0);
 		Instructions.push_back(op);
 	}
-	else
-	{
-		addOpPGet();
-	}
-#else
-	Opcode* op = new Opcode(OK_GetImm);
-	op->setUShort(index, 0);
-	Instructions.push_back(op);
-#endif
 }
 
 void FunctionData::addOpSetImm(uint16_t index)
 {
-#ifdef USE_OPTIMISATIONS
-	if (index != 0)
-	{
-		assert(Instructions.size() && "Cannot add SetImm to empty instruction stack");
-		switch (Instructions.back()->getKind())
-		{
-			case OK_GetFrameP:
-			case OK_GetStaticP:
-			case OK_GetGlobalP:
-			case OK_GetImmP:
-				Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
-				addOpPSet();
-				return;
-			default:
-				break;
+	if (getOptLevel() > OptimisationLevel::OL_Trivial){
+		if (index != 0){
+			assert(Instructions.size() && "Cannot add GetImm to empty instruction stack");
+			switch (Instructions.back()->getKind())
+			{
+				case OK_GetFrameP:
+				case OK_GetGlobalP:
+				case OK_GetImmP:
+					Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
+					addOpPSet();//pget will turn these
+					return;
+				default:
+					break;
+			}
+			Opcode* op = new Opcode(OK_SetImm);
+			op->setUShort(index, 0);
+			Instructions.push_back(op);
 		}
+		else{
+			addOpPSet();
+		}
+	}
+	else
+	{
 		Opcode* op = new Opcode(OK_SetImm);
 		op->setUShort(index, 0);
 		Instructions.push_back(op);
 	}
-	else
-	{
-		addOpPSet();
-	}
-#else
-	Opcode* op = new Opcode(OK_SetImm);
-	op->setUShort(index, 0);
-	Instructions.push_back(op);
-#endif
 }
 
 void FunctionData::addOpJumpFalse(const string& loc)
 {
-#ifdef USE_OPTIMISATIONS
-	assert(Instructions.size() && "Instruction stack empty, cant add JumpFalse Instruction");
-	Opcode *op = Instructions.back();
-	switch (op->getKind())
-	{
-	case OK_CmpEq:
-		op->setKind(OK_JumpNE);
-		op->setString(loc);
-		return;
-	case OK_CmpNe:
-		op->setKind(OK_JumpEQ);
-		op->setString(loc);
-		return;
-	case OK_CmpGt:
-		op->setKind(OK_JumpLE);
-		op->setString(loc);
-		return;
-	case OK_CmpGe:
-		op->setKind(OK_JumpLT);
-		op->setString(loc);
-		return;
-	case OK_CmpLt:
-		op->setKind(OK_JumpGE);
-		op->setString(loc);
-		return;
-	case OK_CmpLe:
-		op->setKind(OK_JumpGT);
-		op->setString(loc);
-		return;
-	case OK_PushInt:
-		if (op->getInt())
+	if (getOptLevel() > OptimisationLevel::OL_None){
+		assert(Instructions.size() && "Instruction stack empty, cant add JumpFalse Instruction");
+		Opcode *op = Instructions.back();
+		switch (op->getKind())
 		{
-			delete op;//JumpFalse on something not zero never gets executed
-			Instructions.pop_back();
+			case OK_CmpEq:
+				op->setKind(OK_JumpNE);
+				op->setString(loc);
+				break;
+			case OK_CmpNe:
+				op->setKind(OK_JumpEQ);
+				op->setString(loc);
+				break;
+			case OK_CmpGt:
+				op->setKind(OK_JumpLE);
+				op->setString(loc);
+				break;
+			case OK_CmpGe:
+				op->setKind(OK_JumpLT);
+				op->setString(loc);
+				break;
+			case OK_CmpLt:
+				op->setKind(OK_JumpGE);
+				op->setString(loc);
+				break;
+			case OK_CmpLe:
+				op->setKind(OK_JumpGT);
+				op->setString(loc);
+				break;
+			case OK_PushInt:
+				if (op->getInt())
+				{
+					delete op;//JumpFalse on something not zero never gets executed
+					Instructions.pop_back();
+				}
+				else
+				{
+					delete op;//JumpFalse on zero always branches
+					op = new Opcode(OK_Jump);
+					op->setString(loc);
+					Instructions.back() = op;
+				}
+				break;
+			default:
+				op = new Opcode(OK_JumpFalse);
+				op->setString(loc);
+				Instructions.push_back(op);
+				break;
 		}
-		else
-		{
-			delete op;//JumpFalse on zero always branches
-			op = new Opcode(OK_Jump);
-			op->setString(loc);
-			Instructions.back() = op;
-		}
-	default:
-		op = new Opcode(OK_JumpFalse);
+	}
+	else{
+		Opcode *op = new Opcode(OK_JumpFalse);
 		op->setString(loc);
 		Instructions.push_back(op);
-		return;
 	}
-#else
-	Opcode *op = new Opcode(OK_JumpFalse);
-	op->setString(loc);
-	Instructions.push_back(op);
-#endif
 }
 
 void FunctionData::addOpGetHash()
 {
-#ifdef USE_OPTIMISATIONS
 	assert(Instructions.size() && "Cannot add OpGetHash to empty instruction stack");
-	if (Instructions.back()->getKind() == OK_PushString)
+	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushString)
 	{
 		string str = Instructions.back()->getString();
 		delete Instructions.back();
@@ -1555,7 +1562,6 @@ void FunctionData::addOpGetHash()
 		pushComment("GetHash(\"" + str + "\")");
 	}
 	else
-#endif
 	{
 		Instructions.push_back(new Opcode(OK_GetHash));
 	}
