@@ -954,7 +954,7 @@ public:
 				{
 					llvm::APSInt apCount;
 					int iCount;
-					if (argArray[2]->EvaluateAsInt(apCount, *context) && (iCount = apCount.getSExtValue(), iCount > 0) && iCount & ~(stackWidth - 1))
+					if (argArray[2]->EvaluateAsInt(apCount, *context) && (iCount = apCount.getSExtValue(), iCount > 0) && iCount % stackWidth == 0)
 					{
 						int itemCount = iCount / stackWidth;
 						if (itemCount == 1)
