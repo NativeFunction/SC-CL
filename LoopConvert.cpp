@@ -141,7 +141,7 @@ static cl::opt<bool> Option_Singleton(
 	cl::cat(CompilerOptions)
 );
 static cl::opt<bool> Option_DisableFunctionNames(
-	"n", cl::desc("Disable function names in script output"),
+	"n", cl::desc("Disable function names in script output, Enabled when optimisations are turned on"),
 	cl::Grouping,
 	cl::cat(CompilerOptions)
 );
@@ -6240,7 +6240,7 @@ void WriteScriptFile(const string& outDir)
 				case P_XBOX:
 				case P_PS3:
 				{
-					CompileRDR c(*scriptData, Option_DisableFunctionNames);
+					CompileRDR c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptLevel::g);
 					c.Compile(outDir);
 				}
 				break;
@@ -6256,13 +6256,13 @@ void WriteScriptFile(const string& outDir)
 				case P_XBOX:
 				case P_PS3:
 				{
-					CompileGTAV c(*scriptData, Option_DisableFunctionNames);
+					CompileGTAV c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptLevel::g);
 					c.Compile(outDir);
 				}
 				break;
 				case P_PC:
 				{
-					CompileGTAVPC c(*scriptData, Option_PCVerison, Option_DisableFunctionNames);
+					CompileGTAVPC c(*scriptData, Option_PCVerison, Option_DisableFunctionNames || Option_OptimizationLevel > OptLevel::g);
 					c.Compile(outDir);
 				}
 				break;
