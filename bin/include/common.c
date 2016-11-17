@@ -16,7 +16,7 @@ void print(char* str, int ms)
 	#else
 		#ifdef __RDR__
 			_clear_prints();
-			_print_subtitle(str, ms ? (float)ms / 1000.0 : 0, true, 2, 1, 0, 0, 0);
+			_print_subtitle(str, ms != 0 ? (float)ms / 1000.0f : 0, true, 2, 1, 0, 0, 0);
 		#endif
 	#endif
 }

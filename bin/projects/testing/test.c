@@ -12,6 +12,8 @@ static void test()
 }
 void main(int* data, int size)
 {
+	__push(5);
+	__neg();
 	float klm = acos(6.0f);
 	short *t, *s;
 	while((*t++ = *s++)) ;

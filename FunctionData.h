@@ -112,7 +112,8 @@ public:
 	void addOpAdd();
 	void addOpSub();
 	void addOpMult();
-	void addOpDiv(bool *isZeroDivDetected = nullptr);
+	void addOpDiv(bool *isZeroDivDetected);
+	void addOpDiv() { addOpDiv(nullptr); }
 	void addOpMod(){ SimpleOpCheck(%, Mod); }
 	void addOpNot();
 	void addOpNeg();
@@ -125,7 +126,8 @@ public:
 	void addOpFAdd();
 	void addOpFSub();
 	void addOpFMult();
-	void addOpFDiv(bool *isZeroDivDetected = nullptr);
+	void addOpFDiv(bool *isZeroDivDetected);
+	void addOpFDiv() { addOpFDiv(nullptr); }
 	void addOpFMod(){ Instructions.push_back(new Opcode(OK_FMod)); }
 	void addOpFNeg();
 	void addOpFCmpEq(){ SimpleFloatOpCheck(== , FCmpEq); }
