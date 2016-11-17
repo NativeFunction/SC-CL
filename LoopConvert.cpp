@@ -95,24 +95,20 @@ static cl::opt<BuildType> Option_BuildType(
 
 typedef enum ObfLevel { 
 	obf_none,
-	obf_low = 1,
-	F1 = 1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = false, bool makeJumpTable = false
-	obf_default = 2,
-	F2 = 2, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
-	obf_high = 3,
-	F3 = 3, //high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
-	obf_veryhigh = 4,
-	F4 = 4 //very high: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_low = 1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = false, bool makeJumpTable = false
+	obf_default = 2, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_high = 3, //high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_veryhigh = 4, //very high: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
 } ObfLevel;
 
 static cl::opt<ObfLevel> Option_ObfuscationLevel(
 	cl::desc("Choose obfuscation level:"),
 	cl::cat(CompilerOptions),
 	cl::values(
-	clEnumVal(F1, "Enable low obfuscations"),
-	clEnumVal(F2, "Enable default obfuscations"),
-	clEnumVal(F3, "Enable high obfuscations"),
-	clEnumVal(F4, "Enable very high obfuscations"),
+	clEnumValN(obf_low, "F1", "Enable low obfuscations"),
+	clEnumValN(obf_default, "F2", "Enable default obfuscations"),
+	clEnumValN(obf_high, "F3", "Enable high obfuscations"),
+	clEnumValN(obf_veryhigh, "F4", "Enable very high obfuscations"),
 	clEnumValEnd
 ));
 
@@ -125,10 +121,10 @@ static cl::opt<OptimisationLevel> Option_OptimizationLevel(
 	cl::desc("Choose optimization level:"),
 	cl::cat(CompilerOptions),
 	cl::values(
-	"g", OptimisationLevel::OL_None, "No optimizations, enable debugging",
-	"O1", OptimisationLevel::OL_Trivial, "Enable trivial optimizations",
-	"O2", OptimisationLevel::OL_Normal, "Enable default optimizations",
-	"O3", OptimisationLevel::OL_Full, "Enable expensive optimizations",
+	clEnumValN(OptimisationLevel::OL_None, "g","No optimizations, enable debugging"),
+	clEnumValN(OptimisationLevel::OL_Trivial, "O1", "Enable trivial optimizations"),
+	clEnumValN(OptimisationLevel::OL_Normal, "O2", "Enable default optimizations"),
+	clEnumValN(OptimisationLevel::OL_Full, "O3", "Enable expensive optimizations"),
 	clEnumValEnd
 ));
 
