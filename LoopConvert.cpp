@@ -6310,7 +6310,7 @@ int ProcessFiles(ClangTool &Tool)
 		if (Option_Singleton)
 			scriptData->setSingleton();
 
-		if (Option_DisableFunctionNames)
+		if (Option_EntryFunctionPadding)
 			scriptData->setEntryFunctionPadding();
 
 		stackWidth = scriptData->getStackWidth();
