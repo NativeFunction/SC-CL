@@ -934,6 +934,20 @@ public:
 		}
 		return false;
 	}
+	bool EvaluateAsString(const Expr* cExpr, string& outStr)
+	{
+		Expr* expr = (Expr*)cExpr;
+		while (isa<ImplicitCastExpr>(expr)) {
+			const ImplicitCastExpr *icast = cast<const ImplicitCastExpr>(expr);
+			expr = (Expr*)icast->getSubExpr();
+		}
+		if (isa<StringLiteral>(expr))
+		{
+			outStr = cast<const StringLiteral>(expr)->getString().str();
+			return true;
+		}
+		return false;
+	}
 
 	bool checkIntrinsic(const CallExpr *call) {
 		const FunctionDecl* callee = call->getDirectCallee();
@@ -957,20 +971,22 @@ public:
 		
 		#define ChkHashCol(str) if(strcmp(funcName.c_str(), str) != 0) goto _IntrinsicNotFound;
 		#define BadIntrin else Throw("Intrinsic not correctly defined", rewriter, callee->getSourceRange());
-		#define EvalFailed else Throw("Value must be a integer literal", rewriter, callee->getSourceRange());
-		#define EvalFailedStr else Throw("Value must be a string literal", rewriter, callee->getSourceRange());
-		
+		#define EvalFailed else Throw("Value must be a integer literal", rewriter, call->getSourceRange());
+		#define EvalFailedStr else Throw("Value must be a string literal", rewriter, call->getSourceRange());
+		#define BadIntrinArgC else Throw("Bad arg count", rewriter, call->getSourceRange());
 
-		auto AddVoidIntrinsic = [&](const char* str, void(FunctionData::*func)(void)) -> void
+
+		auto AddAsmIntrinsic = [&](const char* str, void(FunctionData::*func)(void)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
 				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
 			if (argCount == 0 && callee->getReturnType()->isVoidType()) {
 				(scriptData.getCurrentFunction()->*func)();
 				ret = true;
+				return;
 			} BadIntrin
 		};
-		auto AddVoidUInt8Intrinsic = [&](const char* str, void(FunctionData::*func)(uint8_t)) -> void
+		auto AddAsmIntrinsic8 = [&](const char* str, void(FunctionData::*func)(uint8_t)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
 				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
@@ -979,10 +995,11 @@ public:
 				if (argArray[0]->EvaluateAsInt(apCount, *context)) {
 					(scriptData.getCurrentFunction()->*func)(apCount.getSExtValue());
 					ret = true;
+					return;
 				} EvalFailed
 			} BadIntrin
 		};
-		auto AddVoidUInt16Intrinsic = [&](const char* str, void(FunctionData::*func)(uint16_t)) -> void
+		auto AddAsmIntrinsic16 = [&](const char* str, void(FunctionData::*func)(uint16_t)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
 				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
@@ -991,10 +1008,11 @@ public:
 				if (argArray[0]->EvaluateAsInt(apCount, *context)) {
 					(scriptData.getCurrentFunction()->*func)(apCount.getSExtValue());
 					ret = true;
+					return;
 				} EvalFailed
 			} BadIntrin
 		};
-		auto AddVoidIntIntrinsic = [&](const char* str, void(FunctionData::*func)(int)) -> void
+		auto AddAsmIntrinsic32 = [&](const char* str, void(FunctionData::*func)(int)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
 				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
@@ -1003,10 +1021,27 @@ public:
 				if (argArray[0]->EvaluateAsInt(apCount, *context)) {
 					(scriptData.getCurrentFunction()->*func)(apCount.getSExtValue());
 					ret = true;
+					return;
 				} EvalFailed
 			} BadIntrin
 		};
-		
+		auto AddAsmIntrinsicJump = [&](const char* str, void(FunctionData::*func)(const string&)) -> void
+		{
+			if (strcmp(funcName.c_str(), str) != 0)
+				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+
+			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isCharType()) {
+				string str;
+				if (EvaluateAsString(argArray[0], str))
+				{
+					(scriptData.getCurrentFunction()->*func)(str + scriptData.getInlineJumpLabelAppend());
+					ret = true;
+					return;
+				} EvalFailedStr
+			} BadIntrin
+		};
+
+
 		switch (JoaatCased(const_cast<char*>(funcName.c_str())))
 		{
 			#pragma region String
@@ -2075,42 +2110,42 @@ public:
 						Throw("nopCount argument must be a constant integer between 1 and 4096", rewriter, argArray[0]->getSourceRange());
 				} BadIntrin
 			} break;
-			case JoaatCasedConst("__add"):			AddVoidIntrinsic("__add", GetInsPtr(Add)); break;
-			case JoaatCasedConst("__sub"):			AddVoidIntrinsic("__sub", GetInsPtr(Sub)); break;
-			case JoaatCasedConst("__mult"):			AddVoidIntrinsic("__mult", GetInsPtr(Mult)); break;
-			case JoaatCasedConst("__div"):			AddVoidIntrinsic("__div", GetInsPtr(Div)); break;
-			case JoaatCasedConst("__mod"):			AddVoidIntrinsic("__mod", GetInsPtr(Mod)); break;
-			case JoaatCasedConst("__not"):			AddVoidIntrinsic("__not", GetInsPtr(Not)); break;
-			case JoaatCasedConst("__neg"):			AddVoidIntrinsic("__neg", GetInsPtr(Neg)); break;
-			case JoaatCasedConst("__cmpEq"):		AddVoidIntrinsic("__cmpEq", GetInsPtr(CmpEq)); break;
-			case JoaatCasedConst("__cmpNe"):		AddVoidIntrinsic("__cmpNe", GetInsPtr(CmpNe)); break;
-			case JoaatCasedConst("__cmpGt"):		AddVoidIntrinsic("__cmpGt", GetInsPtr(CmpGt)); break;
-			case JoaatCasedConst("__cmpGe"):		AddVoidIntrinsic("__cmpGe", GetInsPtr(CmpGe)); break;
-			case JoaatCasedConst("__cmpLt"):		AddVoidIntrinsic("__cmpLt", GetInsPtr(CmpLt)); break;
-			case JoaatCasedConst("__cmpLe"):		AddVoidIntrinsic("__cmpLe", GetInsPtr(CmpLe)); break;
-			case JoaatCasedConst("__addF"):			AddVoidIntrinsic("__addF", GetInsPtr(FAdd)); break;
-			case JoaatCasedConst("__subF"):			AddVoidIntrinsic("__subF", GetInsPtr(FSub)); break;
-			case JoaatCasedConst("__multF"):		AddVoidIntrinsic("__multF", GetInsPtr(FMult)); break;
-			case JoaatCasedConst("__divF"):			AddVoidIntrinsic("__divF", GetInsPtr(FDiv)); break;
-			case JoaatCasedConst("__modF"):			AddVoidIntrinsic("__modF", GetInsPtr(FMod)); break;
-			case JoaatCasedConst("__negF"):			AddVoidIntrinsic("__negF", GetInsPtr(FNeg)); break;
-			case JoaatCasedConst("__cmpEqF"):		AddVoidIntrinsic("__cmpEqF", GetInsPtr(FCmpEq)); break;
-			case JoaatCasedConst("__cmpNeF"):		AddVoidIntrinsic("__cmpNeF", GetInsPtr(FCmpNe)); break;
-			case JoaatCasedConst("__cmpGtF"):		AddVoidIntrinsic("__cmpGtF", GetInsPtr(FCmpGt)); break;
-			case JoaatCasedConst("__cmpGeF"):		AddVoidIntrinsic("__cmpGeF", GetInsPtr(FCmpGe)); break;
-			case JoaatCasedConst("__cmpLtF"):		AddVoidIntrinsic("__cmpLtF", GetInsPtr(FCmpLt)); break;
-			case JoaatCasedConst("__cmpLeF"):		AddVoidIntrinsic("__cmpLeF", GetInsPtr(FCmpLe)); break;
-			case JoaatCasedConst("__addV"):			AddVoidIntrinsic("__addV", GetInsPtr(VAdd)); break;
-			case JoaatCasedConst("__subV"):			AddVoidIntrinsic("__subV", GetInsPtr(VSub)); break;
-			case JoaatCasedConst("__multV"):		AddVoidIntrinsic("__multV", GetInsPtr(VMult)); break;
-			case JoaatCasedConst("__divV"):			AddVoidIntrinsic("__divV", GetInsPtr(VDiv)); break;
-			case JoaatCasedConst("__negV"):			AddVoidIntrinsic("__negV", GetInsPtr(VNeg)); break;
-			case JoaatCasedConst("__and"):			AddVoidIntrinsic("__and", GetInsPtr(And)); break;
-			case JoaatCasedConst("__or"):			AddVoidIntrinsic("__or", GetInsPtr(Or)); break;
-			case JoaatCasedConst("__xor"):			AddVoidIntrinsic("__xor", GetInsPtr(Xor)); break;
-			case JoaatCasedConst("__iToF"):			AddVoidIntrinsic("__iToF", GetInsPtr(ItoF)); break;
-			case JoaatCasedConst("__fToI"):			AddVoidIntrinsic("__fToI", GetInsPtr(FtoI)); break;
-			case JoaatCasedConst("__fToV"):			AddVoidIntrinsic("__fToV", GetInsPtr(FtoV)); break;
+			case JoaatCasedConst("__add"):			AddAsmIntrinsic("__add", GetInsPtr(Add)); break;
+			case JoaatCasedConst("__sub"):			AddAsmIntrinsic("__sub", GetInsPtr(Sub)); break;
+			case JoaatCasedConst("__mult"):			AddAsmIntrinsic("__mult", GetInsPtr(Mult)); break;
+			case JoaatCasedConst("__div"):			AddAsmIntrinsic("__div", GetInsPtr(Div)); break;
+			case JoaatCasedConst("__mod"):			AddAsmIntrinsic("__mod", GetInsPtr(Mod)); break;
+			case JoaatCasedConst("__not"):			AddAsmIntrinsic("__not", GetInsPtr(Not)); break;
+			case JoaatCasedConst("__neg"):			AddAsmIntrinsic("__neg", GetInsPtr(Neg)); break;
+			case JoaatCasedConst("__cmpEq"):		AddAsmIntrinsic("__cmpEq", GetInsPtr(CmpEq)); break;
+			case JoaatCasedConst("__cmpNe"):		AddAsmIntrinsic("__cmpNe", GetInsPtr(CmpNe)); break;
+			case JoaatCasedConst("__cmpGt"):		AddAsmIntrinsic("__cmpGt", GetInsPtr(CmpGt)); break;
+			case JoaatCasedConst("__cmpGe"):		AddAsmIntrinsic("__cmpGe", GetInsPtr(CmpGe)); break;
+			case JoaatCasedConst("__cmpLt"):		AddAsmIntrinsic("__cmpLt", GetInsPtr(CmpLt)); break;
+			case JoaatCasedConst("__cmpLe"):		AddAsmIntrinsic("__cmpLe", GetInsPtr(CmpLe)); break;
+			case JoaatCasedConst("__addF"):			AddAsmIntrinsic("__addF", GetInsPtr(FAdd)); break;
+			case JoaatCasedConst("__subF"):			AddAsmIntrinsic("__subF", GetInsPtr(FSub)); break;
+			case JoaatCasedConst("__multF"):		AddAsmIntrinsic("__multF", GetInsPtr(FMult)); break;
+			case JoaatCasedConst("__divF"):			AddAsmIntrinsic("__divF", GetInsPtr(FDiv)); break;
+			case JoaatCasedConst("__modF"):			AddAsmIntrinsic("__modF", GetInsPtr(FMod)); break;
+			case JoaatCasedConst("__negF"):			AddAsmIntrinsic("__negF", GetInsPtr(FNeg)); break;
+			case JoaatCasedConst("__cmpEqF"):		AddAsmIntrinsic("__cmpEqF", GetInsPtr(FCmpEq)); break;
+			case JoaatCasedConst("__cmpNeF"):		AddAsmIntrinsic("__cmpNeF", GetInsPtr(FCmpNe)); break;
+			case JoaatCasedConst("__cmpGtF"):		AddAsmIntrinsic("__cmpGtF", GetInsPtr(FCmpGt)); break;
+			case JoaatCasedConst("__cmpGeF"):		AddAsmIntrinsic("__cmpGeF", GetInsPtr(FCmpGe)); break;
+			case JoaatCasedConst("__cmpLtF"):		AddAsmIntrinsic("__cmpLtF", GetInsPtr(FCmpLt)); break;
+			case JoaatCasedConst("__cmpLeF"):		AddAsmIntrinsic("__cmpLeF", GetInsPtr(FCmpLe)); break;
+			case JoaatCasedConst("__addV"):			AddAsmIntrinsic("__addV", GetInsPtr(VAdd)); break;
+			case JoaatCasedConst("__subV"):			AddAsmIntrinsic("__subV", GetInsPtr(VSub)); break;
+			case JoaatCasedConst("__multV"):		AddAsmIntrinsic("__multV", GetInsPtr(VMult)); break;
+			case JoaatCasedConst("__divV"):			AddAsmIntrinsic("__divV", GetInsPtr(VDiv)); break;
+			case JoaatCasedConst("__negV"):			AddAsmIntrinsic("__negV", GetInsPtr(VNeg)); break;
+			case JoaatCasedConst("__and"):			AddAsmIntrinsic("__and", GetInsPtr(And)); break;
+			case JoaatCasedConst("__or"):			AddAsmIntrinsic("__or", GetInsPtr(Or)); break;
+			case JoaatCasedConst("__xor"):			AddAsmIntrinsic("__xor", GetInsPtr(Xor)); break;
+			case JoaatCasedConst("__iToF"):			AddAsmIntrinsic("__iToF", GetInsPtr(ItoF)); break;
+			case JoaatCasedConst("__fToI"):			AddAsmIntrinsic("__fToI", GetInsPtr(FtoI)); break;
+			case JoaatCasedConst("__fToV"):			AddAsmIntrinsic("__fToV", GetInsPtr(FtoV)); break;
 			case JoaatCasedConst("__pushB2"): {
 				ChkHashCol("__pushB2");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType()) {
@@ -2140,7 +2175,7 @@ public:
 					} EvalFailed
 				} BadIntrin
 			} break;
-			case JoaatCasedConst("__push"):			AddVoidIntIntrinsic("__push", GetInsPtr(PushInt)); break;
+			case JoaatCasedConst("__push"):			AddAsmIntrinsic32("__push", GetInsPtr(PushInt)); break;
 			case JoaatCasedConst("__pushF"): {
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isRealFloatingType()) {
 					APSInt apCount;
@@ -2150,75 +2185,165 @@ public:
 					} EvalFailed
 				} BadIntrin
 			} break;
-			case JoaatCasedConst("__dup"):			AddVoidIntrinsic("__dup", GetInsPtr(Dup)); break;
-			case JoaatCasedConst("__drop"):			AddVoidIntrinsic("__drop", GetInsPtr(Drop)); break;
-				//__callNative
-				//__callNativePC
+			case JoaatCasedConst("__dup"):			AddAsmIntrinsic("__dup", GetInsPtr(Dup)); break;
+			case JoaatCasedConst("__drop"):			AddAsmIntrinsic("__drop", GetInsPtr(Drop)); break;
+			case JoaatCasedConst("__callNative"): {
+				ChkHashCol("__callNative");
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType()) {
+					APSInt apCount, apCount1, apCount2;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						if (argArray[1]->EvaluateAsInt(apCount1, *context)) {
+							if (argArray[2]->EvaluateAsInt(apCount2, *context)) {
+								AddInstruction(Native, apCount.getSExtValue(), apCount1.getSExtValue(), apCount2.getSExtValue());
+								return true;
+							} EvalFailed
+						} EvalFailed
+					} EvalFailed
+				}  BadIntrin
+			} break;
+			case JoaatCasedConst("__callNativePc"): {
+				ChkHashCol("__callNativePc");
+				if (argCount == 4 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType() && argArray[3]->getType()->isIntegerType()) {
+					APSInt apCount, apCount1, apCount2, apCount3;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						if (argArray[1]->EvaluateAsInt(apCount1, *context)) {
+							if (argArray[2]->EvaluateAsInt(apCount2, *context)) {
+								if (argArray[3]->EvaluateAsInt(apCount2, *context)) {
+									AddInstruction(Native, (apCount.getSExtValue() << 32) | apCount1.getSExtValue(), apCount2.getSExtValue(), apCount3.getSExtValue());
+									return true;
+								} EvalFailed
+							} EvalFailed
+						} EvalFailed
+					} EvalFailed
+				}  BadIntrin
+			} break;
 			case JoaatCasedConst("__return"): {
 				ChkHashCol("__return");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType()) {
 					APSInt apCount, apCount1;
 					if (argArray[0]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
-						if (argArray[1]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
-							AddInstruction(PushInt, apCount.getSExtValue());
+						if (argArray[1]->EvaluateAsInt(apCount1, *context) && apCount.getSExtValue() <= 255) {
 							AddInstruction(Return, apCount.getSExtValue(), apCount1.getSExtValue());
 							return true;
 						} EvalFailed
 					} EvalFailed
 				}  BadIntrin
 			} break;
-			case JoaatCasedConst("__pGet"):			AddVoidIntrinsic("__pGet", GetInsPtr(PGet)); break;
-			case JoaatCasedConst("__pSet"):			AddVoidIntrinsic("__pSet", GetInsPtr(PSet)); break;
-			case JoaatCasedConst("__pPeekSet"):		AddVoidIntrinsic("__pPeekSet", GetInsPtr(PeekSet)); break;
-			case JoaatCasedConst("__toStack"):		AddVoidIntrinsic("__toStack", GetInsPtr(ToStack)); break;
-			case JoaatCasedConst("__fromStack"):	AddVoidIntrinsic("__fromStack", GetInsPtr(FromStack)); break;
-			case JoaatCasedConst("__getArrayP"):	AddVoidUInt16Intrinsic("__getArrayP", GetInsPtr(GetArrayP)); break;
-			case JoaatCasedConst("__getArray"):		AddVoidUInt16Intrinsic("__getArray", GetInsPtr(GetArray)); break;
-			case JoaatCasedConst("__setArray"):		AddVoidUInt16Intrinsic("__setArray", GetInsPtr(SetArray)); break;
-			case JoaatCasedConst("__getFrameP"):	AddVoidUInt16Intrinsic("__getFrameP", GetInsPtr(GetFrameP)); break;
-			case JoaatCasedConst("__getFrame"):		AddVoidUInt16Intrinsic("__getFrame", GetInsPtr(GetFrame)); break;
-			case JoaatCasedConst("__setFrame"):		AddVoidUInt16Intrinsic("__setFrame", GetInsPtr(SetFrame)); break;
-			case JoaatCasedConst("__getStaticP"):	AddVoidUInt16Intrinsic("__getStaticP", GetInsPtr(GetStaticP)); break;
-			case JoaatCasedConst("__getStatic"):	AddVoidUInt16Intrinsic("__getStatic", GetInsPtr(GetStatic)); break;
-			case JoaatCasedConst("__setStatic"):	AddVoidUInt16Intrinsic("__setStatic", GetInsPtr(SetStatic)); break;
-			case JoaatCasedConst("__addImm"):		AddVoidIntIntrinsic("__addImm", GetInsPtr(AddImm)); break;
-			case JoaatCasedConst("__multImm"):		AddVoidIntIntrinsic("__addMult", GetInsPtr(MultImm)); break;
-			case JoaatCasedConst("__getImmP"):		AddVoidUInt16Intrinsic("__getImmP", GetInsPtr(GetImmP)); break;
-			case JoaatCasedConst("__getImm"):		AddVoidUInt16Intrinsic("__getImm", GetInsPtr(GetImm)); break;
-			case JoaatCasedConst("__setImm"):		AddVoidUInt16Intrinsic("__setImm", GetInsPtr(SetImm)); break;
-			case JoaatCasedConst("__getGlobalP"):	AddVoidIntIntrinsic("__getGlobalP", GetInsPtr(GetGlobalP)); break;
-			case JoaatCasedConst("__getGlobal"):	AddVoidIntIntrinsic("__getGlobal", GetInsPtr(GetGlobal)); break;
-			case JoaatCasedConst("__setGlobal"):	AddVoidIntIntrinsic("__setGlobal", GetInsPtr(SetGlobal)); break;
-				//__jump
-				//__jumpFalse
-				//__jumpNE
-				//__jumpEQ
-				//__jumpLE
-				//__jumpLT
-				//__jumpGE
-				//__jumpGT
-				//__call
-			case JoaatCasedConst("__pushString"): {
-				ChkHashCol("__pushString");
+			case JoaatCasedConst("__pGet"):			AddAsmIntrinsic("__pGet", GetInsPtr(PGet)); break;
+			case JoaatCasedConst("__pSet"):			AddAsmIntrinsic("__pSet", GetInsPtr(PSet)); break;
+			case JoaatCasedConst("__pPeekSet"):		AddAsmIntrinsic("__pPeekSet", GetInsPtr(PeekSet)); break;
+			case JoaatCasedConst("__toStack"):		AddAsmIntrinsic("__toStack", GetInsPtr(ToStack)); break;
+			case JoaatCasedConst("__fromStack"):	AddAsmIntrinsic("__fromStack", GetInsPtr(FromStack)); break;
+			case JoaatCasedConst("__getArrayP"):	AddAsmIntrinsic16("__getArrayP", GetInsPtr(GetArrayP)); break;
+			case JoaatCasedConst("__getArray"):		AddAsmIntrinsic16("__getArray", GetInsPtr(GetArray)); break;
+			case JoaatCasedConst("__setArray"):		AddAsmIntrinsic16("__setArray", GetInsPtr(SetArray)); break;
+			case JoaatCasedConst("__getFrameP"):	AddAsmIntrinsic16("__getFrameP", GetInsPtr(GetFrameP)); break;
+			case JoaatCasedConst("__getFrame"):		AddAsmIntrinsic16("__getFrame", GetInsPtr(GetFrame)); break;
+			case JoaatCasedConst("__setFrame"):		AddAsmIntrinsic16("__setFrame", GetInsPtr(SetFrame)); break;
+			case JoaatCasedConst("__getStaticP"):	AddAsmIntrinsic16("__getStaticP", GetInsPtr(GetStaticP)); break;
+			case JoaatCasedConst("__getStatic"):	AddAsmIntrinsic16("__getStatic", GetInsPtr(GetStatic)); break;
+			case JoaatCasedConst("__setStatic"):	AddAsmIntrinsic16("__setStatic", GetInsPtr(SetStatic)); break;
+			case JoaatCasedConst("__addImm"):		AddAsmIntrinsic32("__addImm", GetInsPtr(AddImm)); break;
+			case JoaatCasedConst("__multImm"):		AddAsmIntrinsic32("__addMult", GetInsPtr(MultImm)); break;
+			case JoaatCasedConst("__getImmP"):		AddAsmIntrinsic16("__getImmP", GetInsPtr(GetImmP)); break;
+			case JoaatCasedConst("__getImm"):		AddAsmIntrinsic16("__getImm", GetInsPtr(GetImm)); break;
+			case JoaatCasedConst("__setImm"):		AddAsmIntrinsic16("__setImm", GetInsPtr(SetImm)); break;
+			case JoaatCasedConst("__getGlobalP"):	AddAsmIntrinsic32("__getGlobalP", GetInsPtr(GetGlobalP)); break;
+			case JoaatCasedConst("__getGlobal"):	AddAsmIntrinsic32("__getGlobal", GetInsPtr(GetGlobal)); break;
+			case JoaatCasedConst("__setGlobal"):	AddAsmIntrinsic32("__setGlobal", GetInsPtr(SetGlobal)); break;
+			case JoaatCasedConst("__switch"):{
+				ChkHashCol("__switch");
+				if (argCount >= 2 && callee->getReturnType()->isVoidType())
+				{
+					if (argCount >= 2 && argCount % 2 == 0)
+					{
+						APSInt apCount;
+						string str;
+						struct switchCase { int val; string loc; };
+						stack<switchCase> caseLabels;
+						bool isSwitchOver255 = argCount >= 255 * 2;
+						uint32_t SwitchCount = 1;
+						int tempSwitchIndex = 0;
+						if (isSwitchOver255)
+						{
+							LocalVariables.addLevel();
+							tempSwitchIndex = LocalVariables.addDecl("Switch Temp", 1);
+							AddInstruction(Dup);
+							AddInstructionComment(SetFrame, "Switch temporary variable", tempSwitchIndex);
+							AddInstruction(Switch);
+						}
+						else
+						{
+							AddInstruction(Switch);
+						}
+						
+						for (int i = 0; i < argCount; i+=2)
+						{
+							if (i >= (255 * 2) * SwitchCount)
+							{
+								AddInstructionComment(GetFrame, "Switch temporary variable", tempSwitchIndex);
+								AddInstruction(Switch);
+								SwitchCount++;
+							}
+							if (argArray[i]->EvaluateAsInt(apCount, *context)) {
+								if (EvaluateAsString(argArray[i + 1], str))
+								{
+									scriptData.getCurrentFunction()->addSwitchCase(apCount.getSExtValue(), str + scriptData.getInlineJumpLabelAppend());
+
+								} EvalFailedStr
+							} EvalFailed
+						}
+						if(isSwitchOver255)
+							LocalVariables.removeLevel();
+						scriptData.getCurrentFunction()->setSwitchDefaultCaseLoc(to_string(call->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
+						AddJumpInlineCheck(Label, call->getLocEnd().getRawEncoding());
+						return true;
+					} BadIntrinArgC
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__jump"):			AddAsmIntrinsicJump("__jump", GetInsPtr(Jump)); break;
+			case JoaatCasedConst("__jumpFalse"):	AddAsmIntrinsicJump("__jumpFalse", GetInsPtr(JumpFalse)); break;
+			case JoaatCasedConst("__jumpNE"):		AddAsmIntrinsicJump("__jumpNE", GetInsPtr(JumpNE)); break;
+			case JoaatCasedConst("__jumpEQ"):		AddAsmIntrinsicJump("__jumpEQ", GetInsPtr(JumpEQ)); break;
+			case JoaatCasedConst("__jumpLE"):		AddAsmIntrinsicJump("__jumpLE", GetInsPtr(JumpLE)); break;
+			case JoaatCasedConst("__jumpLT"):		AddAsmIntrinsicJump("__jumpLT", GetInsPtr(JumpLT)); break;
+			case JoaatCasedConst("__jumpGE"):		AddAsmIntrinsicJump("__jumpGE", GetInsPtr(JumpGE)); break;
+			case JoaatCasedConst("__jumpGT"):		AddAsmIntrinsicJump("__jumpGT", GetInsPtr(JumpGT)); break;
+			case JoaatCasedConst("__call"): {
+				ChkHashCol("__call");
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isCharType()) {
-					Expr* expr = (Expr*)argArray[0];
-					while (isa<ImplicitCastExpr>(expr)) {
-						const ImplicitCastExpr *icast = cast<const ImplicitCastExpr>(expr);
-						expr = (Expr*)icast->getSubExpr();
-					}
-					if (isa<StringLiteral>(expr)) {
-						AddInstruction(PushString, cast<const StringLiteral>(expr)->getString().str());
+					string str;
+					if (EvaluateAsString(argArray[0], str))
+					{
+						if (FunctionData* func = scriptData.getFunctionFromName(str))//TODO:  check if this works with static functions
+						{
+							AddInstruction(Call, func);
+							return true;
+						}
+						else
+							Throw("__call: Function \"" + str + "\" not found", rewriter, call->getExprLoc());
 						return true;
 					} EvalFailedStr
 				} BadIntrin
 			} break;
-			case JoaatCasedConst("__getHash"):		AddVoidIntrinsic("__getHash", GetInsPtr(GetHash)); break;
-			case JoaatCasedConst("__strCopy"):		AddVoidUInt8Intrinsic("__strCopy", GetInsPtr(StrCopy)); break;
-			case JoaatCasedConst("__iToS"):			AddVoidUInt8Intrinsic("__iToS", GetInsPtr(ItoS)); break;
-			case JoaatCasedConst("__strAdd"):		AddVoidUInt8Intrinsic("__strAdd", GetInsPtr(StrAdd)); break;
-			case JoaatCasedConst("__strAddi"):		AddVoidUInt8Intrinsic("__strAddi", GetInsPtr(StrAddI)); break;
-			case JoaatCasedConst("__memCopy"):		AddVoidIntrinsic("__memCopy", GetInsPtr(MemCopy)); break;
-			case JoaatCasedConst("__pCall"):		AddVoidIntrinsic("__pCall", GetInsPtr(PCall)); break;
+			case JoaatCasedConst("__pushString"): {
+				ChkHashCol("__pushString");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isCharType()) {
+					string str;
+					if (EvaluateAsString(argArray[0], str))
+					{
+						AddInstruction(PushString, str);
+						return true;
+					} EvalFailedStr
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__getHash"):		AddAsmIntrinsic("__getHash", GetInsPtr(GetHash)); break;
+			case JoaatCasedConst("__strCopy"):		AddAsmIntrinsic8("__strCopy", GetInsPtr(StrCopy)); break;
+			case JoaatCasedConst("__iToS"):			AddAsmIntrinsic8("__iToS", GetInsPtr(ItoS)); break;
+			case JoaatCasedConst("__strAdd"):		AddAsmIntrinsic8("__strAdd", GetInsPtr(StrAdd)); break;
+			case JoaatCasedConst("__strAddi"):		AddAsmIntrinsic8("__strAddi", GetInsPtr(StrAddI)); break;
+			case JoaatCasedConst("__memCopy"):		AddAsmIntrinsic("__memCopy", GetInsPtr(MemCopy)); break;
+			case JoaatCasedConst("__pCall"):		AddAsmIntrinsic("__pCall", GetInsPtr(PCall)); break;
 
 
 			#pragma endregion 
