@@ -22,25 +22,7 @@ extern __intrinsic int getHashKey(const char* str);
 #pragma endregion //}
 
 #pragma region Misc_Opcodes //{
-extern __unsafeIntrinsic void pcall(void* funcAddr, ...);//params with types like floats must be implicitly set (1.0f)
-extern __intrinsic void nopMult(const int count);
-#pragma endregion //}
-
-#pragma region Stack_Operations //{
-extern __unsafeIntrinsic any stackTop();
-extern __unsafeIntrinsic void pop();
-extern __unsafeIntrinsic void popMult(const uint count);
-extern __unsafeIntrinsic void pushFloat(float floatValue);
-extern __unsafeIntrinsic void pushInt(int intValue);
-extern __unsafeIntrinsic void pushVector3(vector3 vec3Value);
-extern __unsafeIntrinsic void dupStackTop();
-extern __unsafeIntrinsic void pushStruct(void* structure);
-extern __unsafeIntrinsic void popStruct(void* structure);
-extern __unsafeIntrinsic void rev(const int numItems);
-extern __unsafeIntrinsic void exchange(const int structStackSize);
-extern __unsafeIntrinsic int popInt();
-extern __unsafeIntrinsic float popFloat();
-extern __unsafeIntrinsic vector3 popVector3();
+extern __intrinsic const uint __varIndex(const char* varName);///Gets a var's index by name
 #pragma endregion //}
 
 #pragma region Math/Conversions //{
@@ -59,6 +41,7 @@ extern __intrinsic void bit_reset(int* address, const byte bitIndex);
 extern __intrinsic void bit_flip(int* address, const byte bitIndex);
 #pragma endregion //}
 
+//this will be deleted
 #pragma region Unsafe_Math //{
 // These perform the operation on the item(or vector) on top of the stack
 // This can lead to dangerous behaviour if you arent sure what is currently on the stack
@@ -80,14 +63,112 @@ extern __unsafeIntrinsic vector3 stackVNeg();
 #pragma endregion //}
 
 #pragma region Variables //{
-extern __unsafeIntrinsic void setframe(const uint index);
-extern __intrinsic int getframe(const uint index);
-extern __intrinsic void* getframep(const uint index);
-extern __intrinsic void setglobal(const uint index, int value);
-extern __intrinsic int getglobal(const uint index);
-extern __intrinsic void* getglobalp(const uint index);
-extern __intrinsic void* getArrayP(const void* array, int index, const int arrayItemSize);
-extern __intrinsic void* getImmP(const void* pointer, const int immIndex);
+extern __intrinsic void setGlobalAtIndex(const uint index, int value);
+extern __intrinsic int getGlobalAtIndex(const uint index);
+extern __intrinsic void* getGlobalPtrAtIndex(const uint index);
+extern __intrinsic void* getPtrAtArrayIndex(const void* array, int index, const int arrayItemSize);
+extern __intrinsic void* getPtrAtIndex(const void* pointer, const int immIndex);
+#pragma endregion //}
+
+#pragma region Custom_ASM //{
+extern __unsafeIntrinsic void __popMult(const uint count);///Pops multiple items off the stack
+extern __unsafeIntrinsic void __pushV(vector3 value);///Pushes a vector3 on the stack
+extern __unsafeIntrinsic void __pushStruct(void* structure);///Pushes a struct on the stack
+extern __unsafeIntrinsic void __popStruct(void* structure);///Pops a struct off the stack
+extern __unsafeIntrinsic void __rev(const int numItems);///Reverses items on stack
+extern __unsafeIntrinsic void __exch(const int structStackSize);///Exchanges a struct on the stack
+extern __unsafeIntrinsic int __popI();///Gets top int on stack 
+extern __unsafeIntrinsic float __popF();///Gets top float on stack 
+extern __unsafeIntrinsic vector3 __popV();///Gets top vector3 on stack 
+#pragma endregion //}
+
+#pragma region ASM //{
+extern __intrinsic       void __nop(const uint count);
+extern __unsafeIntrinsic void __add();
+extern __unsafeIntrinsic void __sub();
+extern __unsafeIntrinsic void __mult();
+extern __unsafeIntrinsic void __div();
+extern __unsafeIntrinsic void __mod();
+extern __unsafeIntrinsic void __not();
+extern __unsafeIntrinsic void __neg();
+extern __unsafeIntrinsic void __cmpEq();
+extern __unsafeIntrinsic void __cmpNe();
+extern __unsafeIntrinsic void __cmpGt();
+extern __unsafeIntrinsic void __cmpGe();
+extern __unsafeIntrinsic void __cmpLt();
+extern __unsafeIntrinsic void __cmpLe();
+extern __unsafeIntrinsic void __addF();
+extern __unsafeIntrinsic void __subF();
+extern __unsafeIntrinsic void __multF();
+extern __unsafeIntrinsic void __divF();
+extern __unsafeIntrinsic void __modF();
+extern __unsafeIntrinsic void __negF();
+extern __unsafeIntrinsic void __cmpEqF();
+extern __unsafeIntrinsic void __cmpNeF();
+extern __unsafeIntrinsic void __cmpGtF();
+extern __unsafeIntrinsic void __cmpGeF();
+extern __unsafeIntrinsic void __cmpLtF();
+extern __unsafeIntrinsic void __cmpLeF();
+extern __unsafeIntrinsic void __addV();
+extern __unsafeIntrinsic void __subV();
+extern __unsafeIntrinsic void __multV();
+extern __unsafeIntrinsic void __divV();
+extern __unsafeIntrinsic void __negV();
+extern __unsafeIntrinsic void __and();
+extern __unsafeIntrinsic void __or();
+extern __unsafeIntrinsic void __xor();
+extern __unsafeIntrinsic void __iToF();
+extern __unsafeIntrinsic void __fToI();
+extern __unsafeIntrinsic void __fToV();
+extern __unsafeIntrinsic void __pushB2(const uint value0, const uint value1);
+extern __unsafeIntrinsic void __pushB3(const uint value0, const uint value1, const uint value2);
+extern __unsafeIntrinsic void __push(const int value);
+extern __unsafeIntrinsic void __pushF(const float value);
+extern __unsafeIntrinsic void __dup();
+extern __unsafeIntrinsic void __drop();
+extern __unsafeIntrinsic void __callNative(const uint nativeHash, const uint paramCount, const uint returnCount);
+extern __unsafeIntrinsic void __callNativePc(const uint nativeHash64Part1, const uint nativeHash64Part2, const uint paramCount, const uint returnCount);
+extern __unsafeIntrinsic void __return(const uint paramCount, const uint returnCount);
+extern __unsafeIntrinsic void __pGet();
+extern __unsafeIntrinsic void __pSet();
+extern __unsafeIntrinsic void __pPeekSet();
+extern __unsafeIntrinsic void __toStack();
+extern __unsafeIntrinsic void __fromStack();
+extern __unsafeIntrinsic void __getArrayP(const uint arraySize);
+extern __unsafeIntrinsic void __getArray(const uint arraySize);
+extern __unsafeIntrinsic void __setArray(const uint arraySize);
+extern __unsafeIntrinsic void __getFrameP(const uint frameIndex);
+extern __unsafeIntrinsic void __getFrame(const uint frameIndex);
+extern __unsafeIntrinsic void __setFrame(const uint frameIndex);
+extern __unsafeIntrinsic void __getStaticP(const uint staticIndex);
+extern __unsafeIntrinsic void __getStatic(const uint staticIndex);
+extern __unsafeIntrinsic void __setStatic(const uint staticIndex);
+extern __unsafeIntrinsic void __addImm(const uint value);
+extern __unsafeIntrinsic void __multImm(const uint value);
+extern __unsafeIntrinsic void __getImmP(const uint immediate);
+extern __unsafeIntrinsic void __getImm(const uint immediate);
+extern __unsafeIntrinsic void __setImm(const uint immediate);
+extern __unsafeIntrinsic void __getGlobalP(const uint globalIndex);
+extern __unsafeIntrinsic void __getGlobal(const uint globalIndex);
+extern __unsafeIntrinsic void __setGlobal(const uint globalIndex);
+extern __unsafeIntrinsic void __switch(const int Case, const char* label, ...);
+extern __unsafeIntrinsic void __jump(const char* label);
+extern __unsafeIntrinsic void __jumpFalse(const char* label);
+extern __unsafeIntrinsic void __jumpNE(const char* label);
+extern __unsafeIntrinsic void __jumpEQ(const char* label);
+extern __unsafeIntrinsic void __jumpLE(const char* label);
+extern __unsafeIntrinsic void __jumpLT(const char* label);
+extern __unsafeIntrinsic void __jumpGE(const char* label);
+extern __unsafeIntrinsic void __jumpGT(const char* label);
+extern __unsafeIntrinsic void __call(const char* functionName);
+extern __unsafeIntrinsic void __pushString(const char* value);
+extern __unsafeIntrinsic void __getHash();
+extern __unsafeIntrinsic void __strCopy(const uint strLen);
+extern __unsafeIntrinsic void __iToS(const uint strLen);
+extern __unsafeIntrinsic void __strAdd(const uint strLen);
+extern __unsafeIntrinsic void __strAddi(const uint strLen);
+extern __unsafeIntrinsic void __memCopy();
+extern __unsafeIntrinsic void __pCall();
 #pragma endregion //}
 
 #undef __asm_unsafe
