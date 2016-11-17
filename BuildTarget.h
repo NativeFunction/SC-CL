@@ -1,12 +1,12 @@
 #pragma once
-typedef enum Platform
+typedef enum
 {
 	P_XBOX,
 	P_PS3,
 	P_PC
 } Platform;
 
-typedef enum BuildType
+typedef enum
 {
 	BT_GTAIV,
 	BT_RDR_XSC,
@@ -14,8 +14,16 @@ typedef enum BuildType
 	BT_GTAV
 } BuildType;
 
-typedef enum Endian
+typedef enum
 {
 	END_BIG,
 	END_LITTLE
 } Endian;
+
+typedef enum OptimisationLevel
+{
+	OL_None,
+	OL_Trivial,
+	OL_Normal,
+	OL_Full
+} OptimisationLevel;

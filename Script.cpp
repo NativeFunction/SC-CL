@@ -36,6 +36,7 @@ FunctionData * Script::createFunction(string name, int paramCount, int returnCou
 		}
 	}
 	functions.push_back(std::make_unique<FunctionData>(name, paramCount, returnCount));
+	functions.back()->setOptLevel(getOptLevel());
 	if (makeCurrent)
 	{
 		currentFunc = functions.back().get();

@@ -29,7 +29,8 @@ class Script
 	std::string _scriptName;
 	std::unique_ptr<StaticData> scriptParams;
 	bool _isSingleton = false,
-		EntryFunctionPadding = false;
+	EntryFunctionPadding = false;
+	OptimisationLevel _optLevel = OptimisationLevel::OL_None;
 public:
 	Script(std::string scriptName, BuildType buildType, Platform platform);
 
@@ -75,6 +76,9 @@ public:
 
 	void setEntryFunctionPadding(bool Entry_Function_Padding = true) { EntryFunctionPadding = Entry_Function_Padding; }
 	bool doesEntryFunctionHavePadding()const { return EntryFunctionPadding; }
+
+	OptimisationLevel getOptLevel()const{ return _optLevel; }
+	void setOptLevel(OptimisationLevel optLevel){ _optLevel = optLevel; }
 
 	void finaliseEntryFunction();
 
