@@ -12,6 +12,7 @@ static void test()
 }
 void main(int* data, int size)
 {
+	float klm = acos(6.0f);
 	short *t, *s;
 	while((*t++ = *s++)) ;
 	mani("");

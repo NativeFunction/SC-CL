@@ -198,7 +198,7 @@ struct local_scope
 			scopeLocals.pop_back();
 		}
 	}
-	bool find(const string& key, int* outIndex)
+	bool find(const string& key, uint32_t* outIndex)
 	{
 		for (int i = scopeLevel; i >= 0; i--)
 		{
@@ -546,7 +546,18 @@ const DeclRefExpr *getDeclRefExpr(const Expr *e) {
 	}
 	return NULL;
 }
-
+bool findStaticIndex(const string& key, uint32_t* outIndex)
+{
+	for (auto entry : statics)
+	{
+		if (entry.second.name == key)
+		{
+			*outIndex = entry.first;
+			return true;
+		}
+	}
+	return false;
+}
 #pragma endregion
 
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
@@ -668,7 +679,7 @@ public:
 	#pragma region Decl_Handling
 	//handleParamVarDecl
 	void printDeclWithKey(const string& key, bool isAddr, bool isLtoRValue, bool isAssign, const DeclRefExpr* declref) {
-		int index = -1;
+		uint32_t index = -1;
 		const Type* type = declref->getType().getTypePtr();
 		const VarDecl *varDecl = dyn_cast<VarDecl>(declref->getDecl());
 		size_t size = getSizeOfType(type);
@@ -944,7 +955,10 @@ public:
 		int argCount = call->getNumArgs();
 
 		#define ChkHashCol(str) if(strcmp(funcName.c_str(), str) != 0) goto _IntrinsicNotFound;
-
+		#define VoidType argCount == 0 && callee->getReturnType()->isVoidType()
+		#define BadIntrin else Throw("Intrinsic not correctly defined", rewriter, callee->getSourceRange());
+		#define EvalFailed else Throw("Value must be a integer literal", rewriter, callee->getSourceRange());
+		#define EvalFailedStr else Throw("Value must be a string literal", rewriter, callee->getSourceRange());
 		switch (JoaatCased(const_cast<char*>(funcName.c_str())))
 		{
 			#pragma region String
@@ -1248,67 +1262,42 @@ public:
 			} break;
 			#pragma endregion
 			#pragma region Misc_Opcodes
-			case JoaatCasedConst("nopMult"):{
-				ChkHashCol("nopMult");
-				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
-				{
-					llvm::APSInt result;
-					
-					if (argArray[0]->EvaluateAsInt(result, *context) && result.getSExtValue() > 0 && result.getSExtValue() <= 4096)
-					{
-						AddInstruction(Nop, result.getSExtValue());
-					}
-					else
-					{
-						Throw("nopCount argument must be a constant integer between 1 and 4096", rewriter, argArray[0]->getSourceRange());
-					}
-					
-					return true;
-				}
-				else
-				{
-					Throw("nop must have signature \"extern __intrinsic void nop(const int nopCount);\"", rewriter, callee->getSourceRange());
-				}
-			} break;
-			case JoaatCasedConst("pcall"):{
-				ChkHashCol("pcall");
-				if (argCount >= 1 && callee->getReturnType()->isVoidType())
-				{
-					if (argCount > 1)
-						for (int i = 1; i < argCount; i++)
-							parseExpression(argArray[i], false, true);
+			case JoaatCasedConst("__varIndex"): {
+				ChkHashCol("__varIndex");
 
-					parseExpression(argArray[0], false, true);
+				if (argCount == 1 && callee->getReturnType()->isIntegerType())
+				{
+					Expr* expr = (Expr*)argArray[0];
+					while (isa<ImplicitCastExpr>(expr))
+					{
 
-					Warn("PCall unused returns must be dropped handled by user!", rewriter, call->getSourceRange());
-					AddInstruction(PCall);
-					return true;
+						const ImplicitCastExpr *icast = cast<const ImplicitCastExpr>(expr);
+						expr = (Expr*)icast->getSubExpr();
+					}
+						
+						
+					if (isa<StringLiteral>(expr)) {
+						string str = cast<const StringLiteral>(expr)->getString().str();
+						uint32_t index = 0;
+						if (LocalVariables.find(str, &index) || findStaticIndex(str, &index))
+						{
+							AddInstruction(PushInt, index);
+						}
+						else
+							Throw("__varIndex varName not found", rewriter, callee->getSourceRange());
+						return true;
+					}
+					else Throw("__varIndex param not string literal" + string(expr->getStmtClassName()));
+
 				}
-				Throw("pCall must have signature \"extern __intrinsic void pcall(void* funcAddr, ... args);\"", rewriter, callee->getSourceRange());
+				Throw("__varIndex must have signature \"extern __unsafeIntrinsic const uint __varIndex(const char* varName);\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
 			#pragma endregion
 			#pragma region Stack_Operations
-			case JoaatCasedConst("stackTop"):{
-
-				ChkHashCol("stackTop");
-				if (argCount != 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) != 1)
-				{
-					Throw("stacktop must have signature \"extern __intrinsic int stacktop();\"", rewriter, callee->getSourceRange());
-				}
-				return true;
-			} break;
-			case JoaatCasedConst("pop"): {
-				ChkHashCol("pop");
-				if (argCount == 0 && callee->getReturnType()->isVoidType())
-				{
-					AddInstruction(Drop);
-					return true;
-				}
-				Throw("pop must have signature \"extern __intrinsic void pop();\"", rewriter, callee->getSourceRange());
-			} break;
-			case JoaatCasedConst("popMult"): {
-				ChkHashCol("popMult");
+			
+			case JoaatCasedConst("__popMult"): {
+				ChkHashCol("__popMult");
 				//	out << call->getExprLoc().
 				if (argCount == 1 && callee->getReturnType()->isVoidType())
 				{
@@ -1336,29 +1325,8 @@ public:
 				Throw("popMult must have signature \"extern __intrinsic void popMult(const int amount);\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
-			case JoaatCasedConst("pushFloat"): {
-				ChkHashCol("pushFloat");
-				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					return true;
-				}
-				Throw("pushFloat must have signature \"extern __intrinsic void pushFloat(float floatValue);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("pushInt"): {
-				ChkHashCol("pushInt");
-
-				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[0], false, true);
-					return true;
-				}
-				Throw("pushInt must have signature \"extern __intrinsic void pushInt(int intValue);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("pushVector3"): {
-				ChkHashCol("pushVector3");
+			case JoaatCasedConst("__pushV"): {
+				ChkHashCol("__pushV");
 
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
 				{
@@ -1368,18 +1336,8 @@ public:
 				Throw("pushVector3 must have signature \"extern __intrinsic void pushVector3(vector3 vec3Value);\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
-			case JoaatCasedConst("dupStackTop"): {
-				ChkHashCol("dupStackTop");
-
-				if (argCount == 0 && callee->getReturnType()->isVoidType())
-				{
-					AddInstruction(Dup);
-					return true;
-				}
-				Throw("dupStackTop must have signature \"extern __intrinsic void dupStackTop();\"", rewriter, callee->getSourceRange());
-			} break;
-			case JoaatCasedConst("pushStruct"): {
-				ChkHashCol("pushStruct");
+			case JoaatCasedConst("__pushStruct"): {
+				ChkHashCol("__pushStruct");
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
 				{
 					if (isa<CastExpr>(argArray[0]))
@@ -1400,8 +1358,8 @@ public:
 				Throw("pushStruct must have signature \"extern __intrinsic void pushStruct(void *Struct);\"", rewriter, callee->getSourceRange());
 				return false;;
 			} break;
-			case JoaatCasedConst("popStruct"): {
-				ChkHashCol("popStruct");
+			case JoaatCasedConst("__popStruct"): {
+				ChkHashCol("__popStruct");
 
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
 				{
@@ -1423,8 +1381,8 @@ public:
 				Throw("popStruct must have signature \"extern __intrinsic void popStruct(void *Struct);\"", rewriter, callee->getSourceRange());
 				return false;;
 			} break;
-			case JoaatCasedConst("rev"): {
-				ChkHashCol("rev");
+			case JoaatCasedConst("__rev"): {
+				ChkHashCol("__rev");
 
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
 				{
@@ -1463,8 +1421,8 @@ public:
 				Throw("rev must have signature \"extern __intrinsic void rev(const int numItems);\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
-			case JoaatCasedConst("exchange"): {
-				ChkHashCol("exchange");
+			case JoaatCasedConst("__exch"): {
+				ChkHashCol("__exch");
 
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
 				{
@@ -1524,8 +1482,8 @@ public:
 				Throw("exchange must have signature \"extern __intrinsic void exchange(const int structStackSize);\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
-			case JoaatCasedConst("popFloat"): {
-				ChkHashCol("popFloat");
+			case JoaatCasedConst("__popF"): {
+				ChkHashCol("__popF");
 				if (argCount == 0 && callee->getReturnType()->isRealFloatingType())
 				{
 					return true;
@@ -1533,8 +1491,8 @@ public:
 				Throw("popFloat must have signature \"extern __intrinsic float pushFloat();\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
-			case JoaatCasedConst("popInt"): {
-				ChkHashCol("popInt");
+			case JoaatCasedConst("__popI"): {
+				ChkHashCol("__popI");
 				if (argCount == 0 && callee->getReturnType()->isIntegerType())
 				{
 					return true;
@@ -1542,8 +1500,8 @@ public:
 				Throw("popInt must have signature \"extern __intrinsic int pushInt();\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
-			case JoaatCasedConst("popVector3"): {
-				ChkHashCol("popVector3");
+			case JoaatCasedConst("__popV"): {
+				ChkHashCol("__popV");
 
 				if (argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
 				{
@@ -1922,101 +1880,8 @@ public:
 
 			#pragma endregion
 			#pragma region Variables 
-			case JoaatCasedConst("getframe"):{
-				ChkHashCol("getframe");
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						AddInstruction(GetFrame, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got getframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else
-				{
-					Throw("getframe must have signature \"extern __intrinsic int getframe(const int index);\"", rewriter, callee->getSourceRange());
-				}
-			} break;
-			case JoaatCasedConst("getframep"):{
-				ChkHashCol("getframep");
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						AddInstruction(GetFrameP, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got getframep must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else {
-					Throw("getframep must have signature \"extern __intrinsic int getframep(int index);\"", rewriter, callee->getSourceRange());
-				}
-			} break;
-			case JoaatCasedConst("setframe"):{
-				ChkHashCol("setframe");
-
-				if (argCount == 1 && callee->getReturnType()->isVoidType())
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						AddInstruction(SetFrame, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						parseExpression(argArray[1], false, true);
-						AddInstruction(SetFrame, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else
-				{
-					Throw("setframe must have signature \"extern __intrinsic void setframe(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
-				}
-			} break;
-			case JoaatCasedConst("getglobal"):{
-				ChkHashCol("getglobal");
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						AddInstruction(GetGlobal, result.getSExtValue());
-						return true;
-					}
-					else
-					{
-						Throw("Argument got getglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else {
-					Throw("getglobal must have signature \"extern __intrinsic int getglobal(const int index);\"", rewriter, callee->getSourceRange());
-				}
-			} break;
-			case JoaatCasedConst("setglobal"):{
-				ChkHashCol("setglobal");
+			case JoaatCasedConst("setGlobalAtIndex"): {
+				ChkHashCol("setGlobalAtIndex");
 				if (argCount == 1 && callee->getReturnType()->isVoidType())
 				{
 					llvm::APSInt result;
@@ -2048,8 +1913,27 @@ public:
 					Throw("setglobal must have signature \"extern __intrinsic void setglobal(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
 				}
 			} break;
-			case JoaatCasedConst("getglobalp"):{
-				ChkHashCol("getglobalp");
+			case JoaatCasedConst("getGlobalAtIndex"):{
+				ChkHashCol("getGlobal");
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						AddInstruction(GetGlobal, result.getSExtValue());
+						return true;
+					}
+					else
+					{
+						Throw("Argument got getglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
+					}
+				}
+				else {
+					Throw("getglobal must have signature \"extern __intrinsic int getglobal(const int index);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("getGlobalPtrAtIndex"):{
+				ChkHashCol("getGlobalPtrAtIndex");
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
@@ -2067,8 +1951,8 @@ public:
 					Throw("getglobal must have signature \"extern __intrinsic int getglobal(const int index);\"", rewriter, callee->getSourceRange());
 				}
 			} break;
-			case JoaatCasedConst("getArrayP"):{
-				ChkHashCol("getArrayP");
+			case JoaatCasedConst("getPtrFromArrayIndex"):{
+				ChkHashCol("getPtrFromArrayIndex");
 				if (argCount == 3 && callee->getReturnType()->isPointerType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
 				{
 					llvm::APSInt itemSize;
@@ -2103,11 +1987,11 @@ public:
 					Throw("getArrayP must have signature \"extern __intrinsic void* getArrayP(const void* array, int index, const int arrayItemSize);\"", rewriter, callee->getSourceRange());
 				}
 			} break;
-			case JoaatCasedConst("getImmP"):{
-				ChkHashCol("getImmP");
+			case JoaatCasedConst("getPtrImmIndex"):{
+				ChkHashCol("getPtrImmIndex");
 				if (argCount == 2 && callee->getReturnType()->isPointerType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType())
 				{
-					llvm::APSInt index;
+					APSInt index;
 					if (argArray[1]->EvaluateAsInt(index, *context))
 					{
 						if (index.getSExtValue() < 0 || index.getSExtValue() > 0xFFFF)
@@ -2116,25 +2000,386 @@ public:
 						}
 						parseExpression(argArray[0], false, true);
 						AddInstruction(GetImmP, index.getSExtValue());
+						return true;
 					}
 					else
 					{
-						Throw("getImmP index must be a compile time constant", rewriter, argArray[1]->getSourceRange());
+						Throw("getPtrImmIndex index must be a compile time constant", rewriter, argArray[1]->getSourceRange());
 					}
 				}
 				else
 				{
-					Throw("getImmP must have signature \"extern __intrinsic void* getArrayP(const void* pointer, const int index);\"", rewriter, callee->getSourceRange());
+					Throw("getPtrImmIndex must have signature \"extern __intrinsic void* getArrayP(const void* pointer, const int index);\"", rewriter, callee->getSourceRange());
 				}
 			} break;
 			#pragma endregion
-			
+			#pragma region ASM 
+			case JoaatCasedConst("__nop"): {
+				ChkHashCol("__nop");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
+				{
+					APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context) && result.getSExtValue() > 0 && result.getSExtValue() <= 4096)
+					{
+						AddInstruction(Nop, result.getSExtValue());
+					}
+					else
+						Throw("nopCount argument must be a constant integer between 1 and 4096", rewriter, argArray[0]->getSourceRange());
+
+					return true;
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__add"): { ChkHashCol("__add"); if (VoidType) { AddInstruction(Add); return true; } BadIntrin } break;
+			case JoaatCasedConst("__sub"): { ChkHashCol("__sub"); if (VoidType) { AddInstruction(Sub); return true; } BadIntrin } break;
+			case JoaatCasedConst("__mult"): { ChkHashCol("__mult"); if (VoidType) { AddInstruction(Mult); return true; } BadIntrin } break;
+			case JoaatCasedConst("__div"): { ChkHashCol("__div"); if (VoidType) { AddInstruction(Div); return true; } BadIntrin } break;
+			case JoaatCasedConst("__mod"): { ChkHashCol("__mod"); if (VoidType) { AddInstruction(Mod); return true; } BadIntrin } break;
+			case JoaatCasedConst("__not"): { ChkHashCol("__not"); if (VoidType) { AddInstruction(Not); return true; } BadIntrin } break;
+			case JoaatCasedConst("__neg"): { ChkHashCol("__neg"); if (VoidType) { AddInstruction(Neg); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpEq"): { ChkHashCol("__cmpEq"); if (VoidType) { AddInstruction(CmpEq); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpNe"): { ChkHashCol("__cmpNe"); if (VoidType) { AddInstruction(CmpNe); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpGt"): { ChkHashCol("__cmpGt"); if (VoidType) { AddInstruction(CmpGt); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpGe"): { ChkHashCol("__cmpGe"); if (VoidType) { AddInstruction(CmpGe); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpLt"): { ChkHashCol("__cmpLt"); if (VoidType) { AddInstruction(CmpLt); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpLe"): { ChkHashCol("__cmpLe"); if (VoidType) { AddInstruction(CmpLe); return true; } BadIntrin } break;
+			case JoaatCasedConst("__addF"): { ChkHashCol("__addF"); if (VoidType) { AddInstruction(FAdd); return true; } BadIntrin } break;
+			case JoaatCasedConst("__subF"): { ChkHashCol("__subF"); if (VoidType) { AddInstruction(FSub); return true; } BadIntrin } break;
+			case JoaatCasedConst("__multF"): { ChkHashCol("__multF"); if (VoidType) { AddInstruction(FMult); return true; } BadIntrin } break;
+			case JoaatCasedConst("__divF"): { ChkHashCol("__divF"); if (VoidType) { AddInstruction(FDiv); return true; } BadIntrin } break;
+			case JoaatCasedConst("__modF"): { ChkHashCol("__modF"); if (VoidType) { AddInstruction(FMod); return true; } BadIntrin } break;
+			case JoaatCasedConst("__negF"): { ChkHashCol("__negF"); if (VoidType) { AddInstruction(FNeg); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpEqF"): { ChkHashCol("__cmpEqF"); if (VoidType) { AddInstruction(FCmpEq); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpNeF"): { ChkHashCol("__cmpNeF"); if (VoidType) { AddInstruction(FCmpNe); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpGtF"): { ChkHashCol("__cmpGtF"); if (VoidType) { AddInstruction(FCmpGt); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpGeF"): { ChkHashCol("__cmpGeF"); if (VoidType) { AddInstruction(FCmpGe); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpLtF"): { ChkHashCol("__cmpLtF"); if (VoidType) { AddInstruction(FCmpLt); return true; } BadIntrin } break;
+			case JoaatCasedConst("__cmpLeF"): { ChkHashCol("__cmpLeF"); if (VoidType) { AddInstruction(FCmpLe); return true; } BadIntrin } break;
+			case JoaatCasedConst("__addV"): { ChkHashCol("__addV"); if (VoidType) { AddInstruction(VAdd); return true; } BadIntrin } break;
+			case JoaatCasedConst("__subV"): { ChkHashCol("__subV"); if (VoidType) { AddInstruction(VSub); return true; } BadIntrin } break;
+			case JoaatCasedConst("__multV"): { ChkHashCol("__multV"); if (VoidType) { AddInstruction(VMult); return true; } BadIntrin } break;
+			case JoaatCasedConst("__divV"): { ChkHashCol("__divV"); if (VoidType) { AddInstruction(VDiv); return true; } BadIntrin } break;
+			case JoaatCasedConst("__negV"): { ChkHashCol("__negV"); if (VoidType) { AddInstruction(VNeg); return true; } BadIntrin } break;
+			case JoaatCasedConst("__and"): { ChkHashCol("__and"); if (VoidType) { AddInstruction(And); return true; } BadIntrin } break;
+			case JoaatCasedConst("__or"): { ChkHashCol("__or"); if (VoidType) { AddInstruction(Or); return true; } BadIntrin } break;
+			case JoaatCasedConst("__xor"): { ChkHashCol("__xor"); if (VoidType) { AddInstruction(Xor); return true; } BadIntrin } break;
+			case JoaatCasedConst("__iToF"): { ChkHashCol("__iToF"); if (VoidType) { AddInstruction(ItoF); return true; } BadIntrin } break;
+			case JoaatCasedConst("__fToI"): { ChkHashCol("__fToI"); if (VoidType) { AddInstruction(FtoI); return true; } BadIntrin } break;
+			case JoaatCasedConst("__fToV"): { ChkHashCol("__fToV"); if (VoidType) { AddInstruction(FtoV); return true; } BadIntrin } break;
+			case JoaatCasedConst("__pushB2"): {
+				ChkHashCol("__pushB2");
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+						AddInstruction(PushInt, apCount.getSExtValue());
+						if (argArray[1]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+							AddInstruction(PushInt, apCount.getSExtValue());
+							return true;
+						} EvalFailed
+					} EvalFailed
+				}  BadIntrin
+			} break;
+			case JoaatCasedConst("__pushB3"): { 
+				ChkHashCol("__pushB3");
+				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+						AddInstruction(PushInt, apCount.getSExtValue());
+						if (argArray[1]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+							AddInstruction(PushInt, apCount.getSExtValue());
+							if (argArray[2]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+								AddInstruction(PushInt, apCount.getSExtValue());
+								return true;
+							} EvalFailed
+						} EvalFailed
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__push"): {
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[1]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+						AddInstruction(PushInt, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__pushF"): {
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isRealFloatingType()) {
+					APSInt apCount;
+					if (argArray[1]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+						AddInstruction(PushInt, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__dup"): { ChkHashCol("__dup"); if (VoidType) { AddInstruction(Dup); return true; } BadIntrin } break;
+			case JoaatCasedConst("__drop"): { ChkHashCol("__drop"); if (VoidType) { AddInstruction(Drop); return true; } BadIntrin } break;
+			//__callNative
+			//__callNativePC
+			case JoaatCasedConst("__return"): {
+				ChkHashCol("__return");
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType()) {
+					APSInt apCount, apCount1;
+					if (argArray[0]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+						if (argArray[1]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+							AddInstruction(PushInt, apCount.getSExtValue());
+							AddInstruction(Return, apCount.getSExtValue(), apCount1.getSExtValue());
+							return true;
+						} EvalFailed
+					} EvalFailed
+				}  BadIntrin
+			} break;
+			case JoaatCasedConst("__pGet"): { ChkHashCol("__pGet"); if (VoidType) { AddInstruction(PGet); return true; } BadIntrin } break;
+			case JoaatCasedConst("__pSet"): { ChkHashCol("__pSet"); if (VoidType) { AddInstruction(PSet); return true; } BadIntrin } break;
+			case JoaatCasedConst("__pPeekSet"): { ChkHashCol("__pPeekSet"); if (VoidType) { AddInstruction(PeekSet); return true; } BadIntrin } break;
+			case JoaatCasedConst("__toStack"): { ChkHashCol("__toStack"); if (VoidType) { AddInstruction(ToStack); return true; } BadIntrin } break;
+			case JoaatCasedConst("__fromStack"): { ChkHashCol("__fromStack"); if (VoidType) { AddInstruction(FromStack); return true; } BadIntrin } break;
+			case JoaatCasedConst("__getArrayP"): {
+				ChkHashCol("__getArrayP");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()){
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)){
+						AddInstruction(GetArrayP, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__getArray"): {
+				ChkHashCol("__getArray");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(GetArray, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__setArray"): {
+				ChkHashCol("__setArray");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(SetArray, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__getFrameP"): {
+				ChkHashCol("__getFrameP");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(GetFrameP, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__getFrame"): {
+				ChkHashCol("__getFrame");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(GetFrame, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__setFrame"): {
+				ChkHashCol("__setFrame");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(SetFrame, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__getStaticP"): {
+				ChkHashCol("__getStaticP");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(GetStaticP, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__getStatic"): {
+				ChkHashCol("__getStatic");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(GetStatic, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__setStatic"): {
+				ChkHashCol("__setStatic");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(SetStatic, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__addImm"): {
+				ChkHashCol("__addImm");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(AddImm, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__multImm"): {
+				ChkHashCol("__multImm");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(MultImm, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__getImmP"): {
+				ChkHashCol("__getImmP");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(GetImmP, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__getImm"): {
+				ChkHashCol("__getImmP");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(GetImm, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__setImm"): {
+				ChkHashCol("__setImm");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(SetImm, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__getGlobalP"): {
+				ChkHashCol("__getGlobalP");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(GetGlobalP, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__getGlobal"): {
+				ChkHashCol("__getGlobal");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(GetGlobal, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__setGlobal"): {
+				ChkHashCol("__setGlobal");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(SetGlobal, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			//__jump
+			//__jumpFalse
+			//__jumpNE
+			//__jumpEQ
+			//__jumpLE
+			//__jumpLT
+			//__jumpGE
+			//__jumpGT
+			//__call
+			case JoaatCasedConst("__pushString"): {
+				ChkHashCol("__pushString");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isCharType()){
+					Expr* expr = (Expr*)argArray[0];
+					while (isa<ImplicitCastExpr>(expr)){ const ImplicitCastExpr *icast = cast<const ImplicitCastExpr>(expr);
+						expr = (Expr*)icast->getSubExpr();
+					}
+					if (isa<StringLiteral>(expr)) {
+						AddInstruction(PushString, cast<const StringLiteral>(expr)->getString().str());
+						return true;
+					} EvalFailedStr
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__getHash"): { ChkHashCol("__getHash"); if (VoidType) { AddInstruction(GetHash); return true; } BadIntrin } break;
+			case JoaatCasedConst("__strCopy"): {
+				ChkHashCol("__strCopy");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(StrCopy, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__iToS"): {
+				ChkHashCol("__iToS");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(ItoS, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__strAdd"): {
+				ChkHashCol("__strAdd");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(StrAdd, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__strAddi"): {
+				ChkHashCol("__strAddi");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+					APSInt apCount;
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+						AddInstruction(StrAddI, apCount.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("__memCopy"): { ChkHashCol("__memCopy"); if (VoidType) { AddInstruction(MemCopy); return true; } BadIntrin } break;
+			case JoaatCasedConst("__pCall"): { ChkHashCol("__pCall"); if (VoidType) { AddInstruction(PCall); return true; } BadIntrin } break;
+
+			#pragma endregion 
+
 			default:
 		_IntrinsicNotFound:
 			Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
 		}
 
 		#undef ChkHashCol
+		#undef VoidType
+		#undef BadIntrin
 
 		return false;
 	}

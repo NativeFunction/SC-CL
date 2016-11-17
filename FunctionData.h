@@ -227,11 +227,11 @@ public:
 	void addOpNative(const std::string& name, uint8_t pCount, uint8_t rCount);
 	void addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount);
 	void addOpNative(const std::string& name, uint64_t hash, uint8_t pCount, uint8_t rCount);
-	void addOpReturn()
+	void addOpReturn(uint8_t stackSize = 0, uint8_t returnCount = 1)
 	{
 		Opcode* op = new Opcode(OK_Return);
-		op->setByte(pcount, 0);
-		op->setByte(rcount, 1);
+		op->setByte(pcount, stackSize);
+		op->setByte(rcount, returnCount);
 		Instructions.push_back(op);
 	}
 	void addOpPGet();
@@ -276,16 +276,34 @@ public:
 		op->storage.staticData = staticData;
 		Instructions.push_back(op);
 	}
+	void addOpGetStaticP(uint16_t index)
+	{
+		Opcode* op = new Opcode(OK_GetStaticP);
+		op->setUShort(index, 0);
+		Instructions.push_back(op);
+	}
 	void addOpGetStatic(StaticData* staticData)
 	{
 		Opcode* op = new Opcode(OK_GetStatic);
 		op->storage.staticData = staticData;
 		Instructions.push_back(op);
 	}
+	void addOpGetStatic(uint16_t index)
+	{
+		Opcode* op = new Opcode(OK_GetStatic);
+		op->setUShort(index, 0);
+		Instructions.push_back(op);
+	}
 	void addOpSetStatic(StaticData* staticData)
 	{
 		Opcode* op = new Opcode(OK_SetStatic);
 		op->storage.staticData = staticData;
+		Instructions.push_back(op);
+	}
+	void addOpSetStatic(uint16_t index)
+	{
+		Opcode* op = new Opcode(OK_SetStatic);
+		op->setUShort(index, 0);
 		Instructions.push_back(op);
 	}
 	void addOpGetGlobalP(int index)

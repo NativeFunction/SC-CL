@@ -1,6 +1,7 @@
 #include "types.h"
 #include "natives.h"
 #include "constants.h"
+#include "intrinsics.h"
 
 #define SwapEndian(x) _Generic((x),\
 short int: SwapEndian16(x), unsigned short int: SwapEndian16(x),\
@@ -133,53 +134,69 @@ vector3 RotationLookAtPoint(vector3 pos, vector3 endpos)
 #ifndef __GTAV__
 unsafe float acos(float number)
 {
+	const uint numberIndex = __varIndex("number");
 	//this works fine for floats as negitive ints and floats both have msb set
 	if (reinterpretFloatToInt(number) < 0)
 	{
-		number = -number;
-		pushFloat(-0.0187293f * number);
-		pushFloat(stackFAdd(0.0742610f));
-		pushFloat(stackFMult(number));
-		pushFloat(stackFSub(0.2121144f));
-		pushFloat(stackFMult(number));
-		pushFloat(stackFAdd(1.5707288f));
-		pushFloat(stackFMult(sqrt(1.0 - number)));
-		pushFloat(stackFNeg());
-		return stackFAdd(3.14159265358979f);
+		//number = -number;
+		//__pushF(-0.0187293f);
+		//__getFrame(numberIndex);
+		//__multF();
+		//__pushF(0.0742610f);
+		//__addF();
+		//__getFrame(numberIndex);
+		//__multF();
+		//__pushF(0.2121144f);
+		//__subF();
+		//__getFrame(numberIndex);
+		//__multF();
+		//__pushF(1.5707288f);
+		//__addF();
+		//__pushF(1.0f);
+		//__getFrame(numberIndex);
+		//__subF();
+		//sqrt(__popF());
+		//__multF();
+		//__negF();
+		//__pushF(PI);
+		//__addf();
+		//return __popF();
 	}
-	pushFloat(-0.0187293f * number);
-	pushFloat(stackFAdd(0.0742610f));
-	pushFloat(stackFMult(number));
-	pushFloat(stackFSub(0.2121144f));
-	pushFloat(stackFMult(number));
-	pushFloat(stackFAdd(1.5707288f));
-	return stackFMult(sqrt(1.0 - number));
+	//pushFloat(-0.0187293f * number);
+	//pushFloat(stackFAdd(0.0742610f));
+	//pushFloat(stackFMult(number));
+	//pushFloat(stackFSub(0.2121144f));
+	//pushFloat(stackFMult(number));
+	//pushFloat(stackFAdd(1.5707288f));
+	//return stackFMult(sqrt(1.0 - number));
+	return 0;
 }
-unsafe float asin(float number)
-{
-	//this works fine for floats as negitive ints and floats both have msb set
-	if (reinterpretFloatToInt(number) < 0)
-	{
-		number = -number;
-		pushFloat(-0.0187293f * number);
-		pushFloat(stackFAdd(0.0742610f));
-		pushFloat(stackFMult(number));
-		pushFloat(stackFSub(0.2121144f));
-		pushFloat(stackFMult(number));
-		pushFloat(stackFAdd(1.5707288f));
-		pushFloat(stackFMult(sqrt(1.0 - number)));
-		return stackFSub(1.570796326794895f);
-	}
-	pushFloat(-0.0187293f * number);
-	pushFloat(stackFAdd(0.0742610f));
-	pushFloat(stackFMult(number));
-	pushFloat(stackFSub(0.2121144f));
-	pushFloat(stackFMult(number));
-	pushFloat(stackFAdd(1.5707288f));
-	pushFloat(stackFMult(sqrt(1.0 - number)));
-	pushFloat(stackFNeg());
-	return stackFAdd(1.570796326794895f);
-}
+//unsafe float asin(float number)
+//{
+//	//this works fine for floats as negitive ints and floats both have msb set
+//	if (reinterpretFloatToInt(number) < 0)
+//	{
+//		number = -number;
+//		pushFloat(-0.0187293f * number);
+//		pushFloat(stackFAdd(0.0742610f));
+//		pushFloat(stackFMult(number));
+//		pushFloat(stackFSub(0.2121144f));
+//		pushFloat(stackFMult(number));
+//		pushFloat(stackFAdd(1.5707288f));
+//		pushFloat(stackFMult(sqrt(1.0 - number)));
+//		return stackFSub(1.570796326794895f);
+//	}
+//	pushFloat(-0.0187293f * number);
+//	pushFloat(stackFAdd(0.0742610f));
+//	pushFloat(stackFMult(number));
+//	pushFloat(stackFSub(0.2121144f));
+//	pushFloat(stackFMult(number));
+//	pushFloat(stackFAdd(1.5707288f));
+//	pushFloat(stackFMult(sqrt(1.0 - number)));
+//	pushFloat(stackFNeg());
+//	return stackFAdd(1.570796326794895f);
+//}
+//
 #endif
 
 float StringToFloat(char* str)

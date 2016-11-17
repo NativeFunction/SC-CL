@@ -58,7 +58,6 @@ void vpop(int *ft, int *fc)
 void expr2_test()
 {
     int a, b;
-
     vstack_ptr = vstack;
     vpush(1432432, 2);
 	int k = (int)(&vstack_ptr)[-2];
