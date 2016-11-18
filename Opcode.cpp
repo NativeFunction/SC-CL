@@ -180,8 +180,11 @@ int Opcode::getSizeEstimate() const
 		case OK_GetArray:
 		case OK_SetArray:
 		case OK_GetStaticP:
+		case OK_GetStaticPRaw:
 		case OK_GetStatic:
+		case OK_GetStaticRaw:
 		case OK_SetStatic:
+		case OK_SetStaticRaw:
 		case OK_GetFrameP:
 		case OK_GetFrame:
 		case OK_SetFrame:

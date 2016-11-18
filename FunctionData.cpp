@@ -895,7 +895,7 @@ void FunctionData::addOpFDiv(bool * isZeroDivDetected)
 		if (back->getKind() == OK_PushFloat)
 		{
 			float imm = back->getFloat();
-			if (imm == 0)
+			if (imm == 0.0f)
 			{
 				Instructions.push_back(new Opcode(OK_FDiv));//still parse the instruction as FDiv, but warn user
 				if (isZeroDivDetected)

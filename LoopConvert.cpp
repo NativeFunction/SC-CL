@@ -1013,6 +1013,27 @@ public:
 				} EvalFailed
 			} BadIntrin
 		};
+		auto AddAsmIntrinsicVar = [&](const char* str, void(FunctionData::*func)(uint16_t)) -> void
+		{
+			if (strcmp(funcName.c_str(), str) != 0)
+				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType())
+			{
+				string str;
+				if (EvaluateAsString(argArray[0], str))
+				{
+					uint32_t index = 0;
+					if (LocalVariables.find(str, &index) || findStaticIndex(str, &index))
+					{
+						(scriptData.getCurrentFunction()->*func)(index);
+						ret = true;
+						return;
+					}
+					else
+						Throw("varName \"" + str + "\" not found", rewriter, call->getSourceRange());
+				} EvalFailedStr
+			} BadIntrin
+		};
 		auto AddAsmIntrinsic32 = [&](const char* str, void(FunctionData::*func)(int)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
@@ -1351,30 +1372,20 @@ public:
 
 				if (argCount == 1 && callee->getReturnType()->isIntegerType())
 				{
-					Expr* expr = (Expr*)argArray[0];
-					while (isa<ImplicitCastExpr>(expr))
+					string str;
+					if (EvaluateAsString(argArray[0], str))
 					{
-
-						const ImplicitCastExpr *icast = cast<const ImplicitCastExpr>(expr);
-						expr = (Expr*)icast->getSubExpr();
-					}
-						
-						
-					if (isa<StringLiteral>(expr)) {
-						string str = cast<const StringLiteral>(expr)->getString().str();
 						uint32_t index = 0;
 						if (LocalVariables.find(str, &index) || findStaticIndex(str, &index))
 						{
 							AddInstruction(PushInt, index);
+							return true;
 						}
 						else
 							Throw("__varIndex varName not found", rewriter, callee->getSourceRange());
-						return true;
-					}
-					else Throw("__varIndex param not string literal" + string(expr->getStmtClassName()));
-
+					} EvalFailedStr
 				}
-				Throw("__varIndex must have signature \"extern __unsafeIntrinsic const uint __varIndex(const char* varName);\"", rewriter, callee->getSourceRange());
+				else Throw("__varIndex must have signature \"extern __unsafeIntrinsic const uint __varIndex(const char* varName);\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
 			#pragma endregion
@@ -2240,11 +2251,17 @@ public:
 			case JoaatCasedConst("__getArray"):		AddAsmIntrinsic16("__getArray", GetInsPtr(GetArray)); break;
 			case JoaatCasedConst("__setArray"):		AddAsmIntrinsic16("__setArray", GetInsPtr(SetArray)); break;
 			case JoaatCasedConst("__getFrameP"):	AddAsmIntrinsic16("__getFrameP", GetInsPtr(GetFrameP)); break;
+			case JoaatCasedConst("__getNamedFrameP"):AddAsmIntrinsicVar("__getNamedFrameP", GetInsPtr(GetFrameP)); break;
 			case JoaatCasedConst("__getFrame"):		AddAsmIntrinsic16("__getFrame", GetInsPtr(GetFrame)); break;
+			case JoaatCasedConst("__getNamedFrame"):AddAsmIntrinsicVar("__getNamedFrame", GetInsPtr(GetFrame)); break;
 			case JoaatCasedConst("__setFrame"):		AddAsmIntrinsic16("__setFrame", GetInsPtr(SetFrame)); break;
+			case JoaatCasedConst("__setNamedFrame"):AddAsmIntrinsicVar("__setNamedFrame", GetInsPtr(SetFrame)); break;
 			case JoaatCasedConst("__getStaticP"):	AddAsmIntrinsic16("__getStaticP", GetInsPtr(GetStaticPRaw)); break;
+			case JoaatCasedConst("__getNamedStaticP"):AddAsmIntrinsicVar("__getNamedStaticP", GetInsPtr(GetStaticPRaw)); break;
 			case JoaatCasedConst("__getStatic"):	AddAsmIntrinsic16("__getStatic", GetInsPtr(GetStaticRaw)); break;
+			case JoaatCasedConst("__getNamedStatic"):AddAsmIntrinsicVar("__getNamedStatic", GetInsPtr(GetStaticRaw)); break;
 			case JoaatCasedConst("__setStatic"):	AddAsmIntrinsic16("__setStatic", GetInsPtr(SetStaticRaw)); break;
+			case JoaatCasedConst("__setNamedStatic"):AddAsmIntrinsicVar("__setNamedStatic", GetInsPtr(SetStaticRaw)); break;
 			case JoaatCasedConst("__addImm"):		AddAsmIntrinsic32("__addImm", GetInsPtr(AddImm)); break;
 			case JoaatCasedConst("__multImm"):		AddAsmIntrinsic32("__multImm", GetInsPtr(MultImm)); break;
 			case JoaatCasedConst("__getImmP"):		AddAsmIntrinsic16("__getImmP", GetInsPtr(GetImmP)); break;
