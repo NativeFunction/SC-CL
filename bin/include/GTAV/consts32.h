@@ -1,5 +1,8 @@
 #pragma once
 
+const int LobbySize = 16;
+const int LobbySizeWithSpectators = 18;
+
 typedef enum Input : unsigned int
 {
 	INPUT_NEXT_CAMERA = 0,
