@@ -7,10 +7,17 @@
 //calculation range is -2,147,483,648 to 2,147,483,647
 //any value above or below that will be automatically cast to a signed int
 typedef unsigned int uint;
+typedef unsigned int size_t;
 typedef unsigned char byte;
 typedef unsigned char uchar;
 typedef unsigned short ushort;
+
+//Fix for intellisense nonsense
+#ifndef _MSC_VER
 typedef _Bool bool;
+#else
+typedef int bool;
+#endif
 
 typedef int Player;
 typedef int Entity;

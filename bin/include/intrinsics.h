@@ -2,9 +2,14 @@
 #include "types.h"
 #include "constants.h"
 
+//Fix for intellisense nonsense
+#ifndef _MSC_VER
 #define __intrinsic __attribute((intrinsic(false)))
 #define __unsafeIntrinsic __attribute((intrinsic(true)))
-
+#else
+#define __intrinsic
+#define __unsafeIntrinsic
+#endif
 
 #define offsetof(st, m) ((uint)&(((st *)0)->m))
 #define countof(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))

@@ -3,8 +3,13 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshift-count-overflow"
-#define _native64(hash) __attribute((native(hash & 0xFFFFFFFF, hash >> 32)))
 
+//Fix for intellisense nonsense
+#ifndef _MSC_VER
+#define _native64(hash) __attribute((native(hash & 0xFFFFFFFF, hash >> 32)))
+#else
+#define _native64(hash)
+#endif
 
 #pragma region PLAYER //{
 extern _native64(0x43A66C31C68491C0) Ped get_player_ped(Player player);

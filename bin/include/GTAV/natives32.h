@@ -1,9 +1,14 @@
 #pragma once
 #include "types.h"
 
+//Fix for intellisense nonsense
+#ifndef _MSC_VER
 #define _native __attribute((native))
 #define _native32(hash) __attribute((native(hash)))
-
+#else
+#define _native
+#define _native32(hash)
+#endif
 
 #pragma region PLAYER //{
 extern _native Ped get_player_ped(Player player);
