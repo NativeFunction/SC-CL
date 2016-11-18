@@ -5317,9 +5317,11 @@ public:
 				{
 					return false;
 				}
-				AttrVec vec = f->getAttrs();
-				for(uint32_t i = 0; i < vec.size(); i++)
-					cout << vec[i]->getSpelling() << endl;
+
+				//tests attributes
+				//AttrVec vec = f->getAttrs();
+				//for(uint32_t i = 0; i < vec.size(); i++)
+				//	cout << vec[i]->getSpelling() << endl;
 			}
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i < f->getNumParams(); i++)
@@ -5328,7 +5330,7 @@ public:
 			scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), false, true);
 
 
-			cout << "added prototype: " << f->getNameAsString() << endl;
+			//cout << "added prototype: " << f->getNameAsString() << endl;
 		}
 
 		return true;
@@ -6350,19 +6352,12 @@ public:
 		CurrentFileId++;
 	}
 	~MyFrontendAction()
-	{ 
-		cout << "class ended\n";
-
+	{
 		//this should not be needed anymore
 		if (diagnostics->getClient()->getNumErrors())
 			exit(EXIT_FAILURE);
 	}
-	void EndSourceFileAction() override {
 
-		cout << "file ended\n";
-		
-	}
-	
 	void AddDefines(Preprocessor &PP)
 	{
 		string preDefines = PP.getPredefines();

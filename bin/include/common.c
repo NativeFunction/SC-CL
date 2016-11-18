@@ -132,7 +132,12 @@ vector3 RotationLookAtPoint(vector3 pos, vector3 endpos)
 }
 
 #ifndef __GTAV__
+#ifdef _MSC_VER
+#define acos(number) acosMSC(number)
+float acosMSC(float number)
+#else
 float acos(float number)
+#endif
 {
 	//this works fine for floats as negitive ints and floats both have msb set
 	if (reinterpretFloatToInt(number) < 0)
@@ -161,7 +166,12 @@ float acos(float number)
 	* sqrt(1.0 - number);
 
 }
+#ifdef _MSC_VER
+#define asin(number) asinMSC(number)
+float asinMSC(float number)
+#else
 float asin(float number)
+#endif
 {
 	//this works fine for floats as negitive ints and floats both have msb set
 	if (reinterpretFloatToInt(number) < 0)

@@ -9,7 +9,11 @@
 #else
 #define __intrinsic
 #define __unsafeIntrinsic
+#pragma warning( disable : 4391 )
+#pragma warning( disable : 4392 )
+#pragma warning( disable : 4244 )
 #endif
+
 
 #define offsetof(st, m) ((uint)&(((st *)0)->m))
 #define countof(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
