@@ -1013,24 +1013,6 @@ public:
 				} EvalFailed
 			} BadIntrin
 		};
-		auto AddAsmIntrinsicStatic = [&](const char* str, void(FunctionData::*func)(uint16_t)) -> void
-		{
-	
-			if (strcmp(funcName.c_str(), str) != 0)
-				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
-
-			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
-				APSInt apCount;
-				if (argArray[0]->EvaluateAsInt(apCount, *context)) {
-					(scriptData.getCurrentFunction()->*func)(apCount.getSExtValue());
-					ret = true;
-					return;
-				} EvalFailed
-			} BadIntrin
-		};
-
-		
-		
 		auto AddAsmIntrinsic32 = [&](const char* str, void(FunctionData::*func)(int)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)

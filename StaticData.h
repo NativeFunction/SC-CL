@@ -58,10 +58,6 @@ public:
 	}
 	const std::string& getName()const{ return _name; }
 
-	void setIndex(int index)
-	{
-		_index = index;
-	}
 	bool isUsed() const
 	{
 		return _index > -1;
