@@ -1,6 +1,6 @@
 #pragma once
 
-typedef enum eKey : unsigned int
+typedef enum eKey
 {
 	KEY_ESC = 1,
 	KEY_1 = 2,
@@ -142,7 +142,7 @@ typedef enum eKey : unsigned int
 } eKey;
 
 #ifdef __XSC__
-typedef enum eButton : unsigned int
+typedef enum eButton
 {
 	BUTTON_LT,
 	BUTTON_RT,
@@ -164,7 +164,7 @@ typedef enum eButton : unsigned int
 #else
 
 #ifdef __CSC__
-typedef enum eButton : unsigned int
+typedef enum eButton
 {
 	
 	BUTTON_L2,
@@ -188,7 +188,7 @@ typedef enum eButton : unsigned int
 #endif
 #endif
 
-typedef enum eActor : unsigned int
+typedef enum eActor
 {
 	ACTOR_PLAYER,
 	ACTOR_PLAYER_JACK,
@@ -1396,7 +1396,7 @@ typedef enum eActor : unsigned int
 	ACTOR_VEHICLE_TRAIN_MineCart01
 } eActor;
 
-typedef enum eUNActor : unsigned int//Undead Nightmare
+typedef enum eUNActor//Undead Nightmare
 {
 	UNACTOR_PLAYER = 0,
 	UNACTOR_PLAYER_cs = 2,

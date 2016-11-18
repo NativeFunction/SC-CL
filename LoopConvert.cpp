@@ -145,7 +145,7 @@ static cl::opt<bool> Option_DisableFunctionNames(
 	cl::Grouping,
 	cl::cat(CompilerOptions)
 );
-static cl::opt<bool> Option_EntryFunctionPadding(
+static cl::opt<bool> Option_EntryFunctionPadding(//TODO: if selected set static initializers in code
 	"b", cl::desc("Adds buffer to the entry function to allow script injection"),
 	cl::Hidden,
 	cl::Grouping,

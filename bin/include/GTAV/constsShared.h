@@ -1,6 +1,6 @@
 #pragma once
 
-typedef enum RotOrder : unsigned int
+typedef enum RotOrder
 {
 	RotOrder_xyz = 0,
 	RotOrder_yzx = 1,
@@ -11,7 +11,7 @@ typedef enum RotOrder : unsigned int
 	RotOrder_zyx = 5,
 } RotOrder;
 
-typedef enum Font : unsigned int
+typedef enum Font
 {
 	Font_Chalet_LondonNineteenSixty,
 	Font_SignPainter_HouseScript,
@@ -23,7 +23,7 @@ typedef enum Font : unsigned int
 	Font_PricedownGTAVInt
 } Font;
 
-typedef enum Hud : unsigned int
+typedef enum Hud
 {
 	HUD,
 	HUD_WANTED_STARS,
@@ -47,7 +47,7 @@ typedef enum Hud : unsigned int
 	HUD_WEAPON_WHEEL
 } Hud;
 
-typedef enum Explosion : unsigned int
+typedef enum Explosion
 {
 	EXPLOSION_GRENADE,
 	EXPLOSION_GRENADELAUNCHER,
@@ -90,13 +90,16 @@ typedef enum Explosion : unsigned int
 	EXPLOSION_VALKYRIE_CANNON
 } Explosion;
 
-typedef enum GadgetHash : unsigned int
+typedef enum GadgetHash
+#ifndef _MSC_VER
+: unsigned int
+#endif
 {
 	GADGET_NIGHTVISION = 0xA720365C,
 	GADGET_PARACHUTE = 0xFBAB5776
 } GadgetHash;
 
-typedef enum CarCol : unsigned int
+typedef enum CarCol
 {
 	CARCOL_METALLIC_BLACK,
 	CARCOL_METALLIC_GRAPHITE_BLACK,
@@ -262,7 +265,10 @@ typedef enum CarCol : unsigned int
 
 } CarCol;
 
-typedef enum CarColARGB : unsigned int
+typedef enum CarColARGB
+#ifndef _MSC_VER
+: unsigned int
+#endif
 {
 	CARCOL_ARGB_METALLIC_BLACK = 0xFF080808,
 	CARCOL_ARGB_METALLIC_GRAPHITE_BLACK = 0xFF0F0F0F,
@@ -429,7 +435,10 @@ typedef enum CarColARGB : unsigned int
 
 } CarColARGB;
 
-typedef enum PedHash : unsigned int
+typedef enum PedHash
+#ifndef _MSC_VER
+: unsigned int
+#endif
 {
 	/**
 	Letter 1 directory definition:

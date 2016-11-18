@@ -2,8 +2,9 @@
 
 const int LobbySize = 32;
 const int LobbySizeWithSpectators = 34;
+const int item_size = 8;
 
-typedef enum Input : unsigned int
+typedef enum Input
 {
 	INPUT_NEXT_CAMERA = 0,
 	INPUT_LOOK_LR = 1,
@@ -345,7 +346,11 @@ typedef enum Input : unsigned int
 	INPUT_MAP_POINT_OF_INTEREST = 337,
 } Input;
 
-typedef enum WeaponHash : unsigned int
+
+typedef enum WeaponHash
+#ifndef _MSC_VER
+: unsigned int
+#endif
 {
 	WEAPON_UNARMED = 0xA2719263,
 	WEAPON_ANIMAL = 0xF9FBAEBE,
@@ -480,7 +485,10 @@ typedef enum WeaponHash : unsigned int
 	WEAPON_WRENCH          = 0x19044EE0
 } WeaponHash;
 
-typedef enum VehicleWeaponHash : unsigned int
+typedef enum VehicleWeaponHash
+#ifndef _MSC_VER
+: unsigned int
+#endif
 {
 	VEHICLE_WEAPON_ROTORS = 0xB1205A4E,
 	VEHICLE_WEAPON_TANK = 0x73F7C04B,
@@ -504,7 +512,10 @@ typedef enum VehicleWeaponHash : unsigned int
 	VEHICLE_WEAPON_TURRET_LIMO    = 0x2B796481
 } VehicleWeaponHash;
 
-typedef enum VehicleHash : unsigned int
+typedef enum VehicleHash
+#ifndef _MSC_VER
+: unsigned int
+#endif
 {
 	VEHICLE_ADDER = 0xB779A091,
 	VEHICLE_AIRBUS = 0x4C80EB0E,//(Airport Bus)
@@ -1027,7 +1038,10 @@ typedef enum VehicleHash : unsigned int
 	VEHICLE_BLAZER4      = 0xE5BA6858
 } VehicleHash;
 
-typedef enum PickupHash : unsigned int
+typedef enum PickupHash
+#ifndef _MSC_VER
+: unsigned int
+#endif
 {
 	PICKUP_WEAPON_BULLPUPSHOTGUN = 0x6E4E65C2,
 	PICKUP_WEAPON_ASSAULTSMG = 0x741C684A,
