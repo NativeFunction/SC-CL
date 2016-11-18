@@ -367,8 +367,11 @@ protected:
 	virtual void GetFrame();//Override: GTAIV
 	virtual void SetFrame();//Override: GTAIV
 	virtual void GetStaticP();//Override: GTAIV
+	virtual void GetStaticPRaw();//Override: GTAIV
 	virtual void GetStatic();//Override: GTAIV
+	virtual void GetStaticRaw();//Override: GTAIV
 	virtual void SetStatic();//Override: GTAIV
+	virtual void SetStaticRaw();//Override: GTAIV
 	virtual void GetGlobalP();//Override: GTAIV
 	virtual void GetGlobal();//Override: GTAIV
 	virtual void SetGlobal();//Override: GTAIV

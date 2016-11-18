@@ -1013,6 +1013,24 @@ public:
 				} EvalFailed
 			} BadIntrin
 		};
+		auto AddAsmIntrinsicStatic = [&](const char* str, void(FunctionData::*func)(uint16_t)) -> void
+		{
+	
+			if (strcmp(funcName.c_str(), str) != 0)
+				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+
+			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
+				APSInt apCount;
+				if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+					(scriptData.getCurrentFunction()->*func)(apCount.getSExtValue());
+					ret = true;
+					return;
+				} EvalFailed
+			} BadIntrin
+		};
+
+		
+		
 		auto AddAsmIntrinsic32 = [&](const char* str, void(FunctionData::*func)(int)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
@@ -2189,13 +2207,14 @@ public:
 			case JoaatCasedConst("__dup"):			AddAsmIntrinsic("__dup", GetInsPtr(Dup)); break;
 			case JoaatCasedConst("__drop"):			AddAsmIntrinsic("__drop", GetInsPtr(Drop)); break;
 			case JoaatCasedConst("__callNative"): {
+				//TODO: add hash translation to pc
 				ChkHashCol("__callNative");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType()) {
 					APSInt apCount, apCount1, apCount2;
 					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
 						if (argArray[1]->EvaluateAsInt(apCount1, *context)) {
 							if (argArray[2]->EvaluateAsInt(apCount2, *context)) {
-								AddInstruction(Native, apCount.getSExtValue(), apCount1.getSExtValue(), apCount2.getSExtValue());
+								AddInstruction(Native, apCount.getSExtValue() & 0xFFFFFFFF, apCount1.getSExtValue(), apCount2.getSExtValue());
 								return true;
 							} EvalFailed
 						} EvalFailed
@@ -2241,9 +2260,9 @@ public:
 			case JoaatCasedConst("__getFrameP"):	AddAsmIntrinsic16("__getFrameP", GetInsPtr(GetFrameP)); break;
 			case JoaatCasedConst("__getFrame"):		AddAsmIntrinsic16("__getFrame", GetInsPtr(GetFrame)); break;
 			case JoaatCasedConst("__setFrame"):		AddAsmIntrinsic16("__setFrame", GetInsPtr(SetFrame)); break;
-			case JoaatCasedConst("__getStaticP"):	AddAsmIntrinsic16("__getStaticP", GetInsPtr(GetStaticP)); break;
-			case JoaatCasedConst("__getStatic"):	AddAsmIntrinsic16("__getStatic", GetInsPtr(GetStatic)); break;
-			case JoaatCasedConst("__setStatic"):	AddAsmIntrinsic16("__setStatic", GetInsPtr(SetStatic)); break;
+			case JoaatCasedConst("__getStaticP"):	AddAsmIntrinsic16("__getStaticP", GetInsPtr(GetStaticPRaw)); break;
+			case JoaatCasedConst("__getStatic"):	AddAsmIntrinsic16("__getStatic", GetInsPtr(GetStaticRaw)); break;
+			case JoaatCasedConst("__setStatic"):	AddAsmIntrinsic16("__setStatic", GetInsPtr(SetStaticRaw)); break;
 			case JoaatCasedConst("__addImm"):		AddAsmIntrinsic32("__addImm", GetInsPtr(AddImm)); break;
 			case JoaatCasedConst("__multImm"):		AddAsmIntrinsic32("__multImm", GetInsPtr(MultImm)); break;
 			case JoaatCasedConst("__getImmP"):		AddAsmIntrinsic16("__getImmP", GetInsPtr(GetImmP)); break;
@@ -2261,8 +2280,7 @@ public:
 						APSInt apCount;
 						string str;
 						bool isSwitchOver255 = argCount >= 255 * 2;
-						int SwitchCount = 1;
-						int tempSwitchIndex = 0;
+						int SwitchCount = 1, tempSwitchIndex = 0;
 						if (isSwitchOver255)
 						{
 							LocalVariables.addLevel();
