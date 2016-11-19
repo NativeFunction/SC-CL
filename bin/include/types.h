@@ -1,9 +1,14 @@
 #pragma once
 
+#ifndef _MSC_VER
 #define global(index) __attribute((scriptglobal(index)))
 #define noinline __attribute((noinline))
 #define unsafe __attribute((unsafe))
-
+#else
+#define global(index) 
+#define noinline 
+#define unsafe 
+#endif
 //calculation range is -2,147,483,648 to 2,147,483,647
 //any value above or below that will be automatically cast to a signed int
 typedef unsigned int uint;
@@ -111,6 +116,36 @@ typedef union FloatRGB
 	float col[3];
 } FloatRGB;
 
+typedef enum DataType
+{
+	DT_NONE,
+	DT_UInt,
+	DT_UIntP,
+	DT_Int,
+	DT_IntP,
+	DT_Float,
+	DT_FloatP,
+	DT_Bool,
+	DT_BoolP,
+	DT_Char,
+	DT_CharP,
+	DT_Short,
+	DT_ShortP,
+	DT_UShort,
+	DT_UShortP,
+	DT_Vector3,
+	DT_Vector3P,
+	DT_Vector2,
+	DT_Vector2P,
+	DT_Quaternion,
+	DT_QuaternionP
+} DataType;
+typedef union flint
+{
+	int Int;
+	float Float;
+} flint;
+
 typedef union any
 {
 	int Int;
@@ -134,8 +169,8 @@ typedef union any
 #define FloatRGBA(R,G,B,A) (FloatRGBA){R,G,B,A}
 #define Point(x, y) (Point){x, y}
 #define Size(w, h) (Size){w, h}
-#define vector2(x, y) (vector2){x, y}
-#define vector3(x,y,z) (vector3){x,y,z}
+#define Vector2(x, y) (vector2){x, y}
+#define Vector3(x,y,z) (vector3){x,y,z}
 
 
 typedef void* sizedarrayp;

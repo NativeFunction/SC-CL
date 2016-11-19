@@ -1,3 +1,4 @@
+#pragma once
 #include "types.h"
 #include "natives.h"
 #include "constants.h"
@@ -19,6 +20,48 @@ void print(char* str, int ms)
 			_print_subtitle(str, ms != 0 ? (float)ms / 1000.0f : 0, true, 2, 1, 0, 0, 0);
 		#endif
 	#endif
+}
+
+const char* GlobalCharBuffer = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+
+char* strcat(char* str1, char* str2)
+{
+	//this takes advantage of strings being global
+	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
+	strcpy(GlobalCharBuffer, str1, 256);
+	stradd(GlobalCharBuffer, str2, 256);
+	return GlobalCharBuffer;
+}
+char* straddiGlobal(char* str1, int i)
+{
+	//this takes advantage of strings being global
+	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
+	strcpy(GlobalCharBuffer, str1, 256);
+	straddi(GlobalCharBuffer, i, 256);
+	return GlobalCharBuffer;
+}
+char* itosGlobal(int i)
+{
+	//this takes advantage of strings being global
+	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
+	itos(GlobalCharBuffer, i, 256);
+	return GlobalCharBuffer;
+}
+
+void Throw(char* str)
+{
+	char out[256] = "~r~Exception~s~:";
+	stradd(out, str, 256);
+	print(out, 10000);
+	wait(10000);
+	terminate_this_thread();
+}
+
+void Warn(char* str)
+{
+	char out[256] = "~r~Warning~s~:";
+	stradd(out, str, 256);
+	print(out, 5000);
 }
 
 int SwapEndian32(int value)

@@ -346,7 +346,6 @@ typedef enum Input
 	INPUT_MAP_POINT_OF_INTEREST = 337,
 } Input;
 
-
 typedef enum WeaponHash
 #ifndef _MSC_VER
 : unsigned int
