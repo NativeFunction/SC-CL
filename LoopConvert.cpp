@@ -684,9 +684,9 @@ public:
 		const VarDecl *varDecl = dyn_cast<VarDecl>(declref->getDecl());
 		size_t size = getSizeOfType(type);
 		bool isStackCpy = size > stackWidth && isLtoRValue && !isAddr;//if greater then 4 bytes then a to stack is in order
-
+		
 		if (isStackCpy) {
-			AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
+			AddInstructionComment(PushInt, "Type Size (decl)", getSizeFromBytes(size));
 			isAddr = true;
 		}
 
@@ -710,7 +710,7 @@ public:
 				
 				if (size > stackWidth)//fromStack
 				{
-					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
+					AddInstructionComment(PushInt, "Type Size (local decl)", getSizeFromBytes(size));
 					AddInstructionComment(GetFrameP, "(pdecl)&" + key, index);
 					AddInstruction(FromStack);
 				}
@@ -745,7 +745,7 @@ public:
 				
 				if (size > stackWidth)//fromStack
 				{
-					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
+					AddInstructionComment(PushInt, "Type Size (global decl)", getSizeFromBytes(size));
 					AddInstructionComment(GetGlobalP, "&Global_" + key, index);
 					AddInstruction(FromStack);
 				}
@@ -781,7 +781,7 @@ public:
 
 				if (size > stackWidth)//fromStack
 				{
-					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
+					AddInstructionComment(PushInt, "Type Size (static decl)", getSizeFromBytes(size));
 					AddInstructionComment(GetStaticP, "&" + key, sData);
 					AddInstruction(FromStack);
 				}
@@ -803,7 +803,7 @@ public:
 				{
 					if (auto func = scriptData.getFunctionFromName(getNameForFunc(funcDecl)))
 					{
-						AddInstructionComment(FuncLoc, "DeclRefExpr, nothing else, so func it", func);
+						AddInstructionComment(FuncLoc, string("DeclRefExpr, nothing else, so func it ") + string(type->getTypeClassName()) + " " + to_string(size), func);
 					}
 					else
 						Throw("Function pointer \"" + key + "\" not found");
@@ -903,7 +903,7 @@ public:
 						parseExpression(initializer, false, true);
 						
 						if (size > stackWidth) {
-							AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
+							AddInstructionComment(PushInt, "Type Size (init decl)", getSizeFromBytes(size));
 							AddInstructionComment(GetFrameP, "&" + var->getNameAsString(), curIndex);
 							AddInstruction(FromStack);
 						}
@@ -2910,7 +2910,7 @@ public:
 				int index = LocalVariables.addDecl("", size);
 				if (size > 1)
 				{
-					AddInstructionComment(PushInt, "Type Size", size);
+					AddInstructionComment(PushInt, "Type Size (compound decl)", size);
 					AddInstruction(GetFrameP, index);
 					AddInstruction(FromStack);
 					AddInstructionComment(GetFrameP, "compound literal ptr decay", index);
@@ -3586,7 +3586,7 @@ public:
 				{
 					if (bSize > 1 && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 					{
-						AddInstructionComment(PushInt, "Type Size", bSize);
+						AddInstructionComment(PushInt, "Type Size (Deref)", bSize);
 					}
 					else if ((size == 1 || size == 2) && isAssign)
 					{
@@ -4662,11 +4662,17 @@ public:
 		else if (isa<MemberExpr>(e)) {
 			const MemberExpr *E = cast<const MemberExpr>(e);
 			Expr *BaseExpr = E->getBase();
+			const Type* type = E->getType().getTypePtr();
+			
+			int typeSize = getSizeFromBytes(getSizeOfType(type));
 
-			int typeSize = getSizeFromBytes(getSizeOfType(E->getType().getTypePtr()));
-			if ((isLtoRValue || !isAddr) && typeSize > 1)
+			if ((isLtoRValue || !isAddr) && typeSize > 1 && !isArrToPtrDecay)
 			{
-				AddInstructionComment(PushInt, "Type Size", typeSize);
+				AddInstructionComment(PushInt, "Type Size (member expr) " + 
+									  to_string(isLtoRValue) + " " + 
+									  to_string(isAddr) + " " + 
+									  to_string(isArrToPtrDecay) + " " + 
+									  to_string(isAssign), typeSize);
 			}
 
 
@@ -4710,7 +4716,11 @@ public:
 			}
 
 			AddInstructionComment(GetImmP, "." + ND->getName().str(), getSizeFromBytes(offset));
-			if (isLtoRValue)
+			if (isArrToPtrDecay)
+			{
+				return 1;
+			}
+			else if (isLtoRValue)
 			{
 				AddInstructionCondition(typeSize > 1, ToStack, PGet);
 			}
@@ -5129,7 +5139,7 @@ public:
 			int bSize = getSizeFromBytes(getSizeOfType(type));
 			if (bSize > 1 && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 			{
-				AddInstructionComment(PushInt, "Type Size", bSize);
+				AddInstructionComment(PushInt, "Type Size (array)", bSize);
 			}
 		}
 
@@ -5326,6 +5336,7 @@ public:
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i < f->getNumParams(); i++)
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
+
 
 			scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), false, true);
 

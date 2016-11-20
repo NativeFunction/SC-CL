@@ -1,8 +1,4 @@
 #pragma once
-#include "natives.h"
-#include "intrinsics.h"
-#include "types.h"
-#include "constants.h"
 
 void print(char* str, int ms);
 char* strcat(char* str1, char* str2);

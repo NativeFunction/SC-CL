@@ -1,4 +1,7 @@
-#include "common.h"
+#include "natives.h"
+#include "intrinsics.h"
+#include "types.h"
+#include "constants.h"
 
 #define SwapEndian(x) _Generic((x),\
 short int: SwapEndian16(x), unsigned short int: SwapEndian16(x),\
