@@ -818,7 +818,7 @@ public:
 			if (isa<VarDecl>(decl)) {
 
 				VarDecl *var = cast<VarDecl>(decl);
-				auto size = context->getTypeInfoDataSizeInChars(var->getType()).first.getQuantity();
+				auto size = getSizeOfType(decl->getType().getTypePtr());
 				uint32_t curIndex = LocalVariables.getCurrentSize();
 
 				int actsize = var->isCXXInstanceMember() ?
