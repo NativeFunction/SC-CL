@@ -2074,12 +2074,12 @@ public:
 					}
 					else
 					{
-						Throw("getArrayP itemSize must be a compile time constant", rewriter, argArray[2]->getSourceRange());
+						Throw("getPtrFromArrayIndex itemSize must be a compile time constant", rewriter, argArray[2]->getSourceRange());
 					}
 				}
 				else
 				{
-					Throw("getArrayP must have signature \"extern __intrinsic void* getArrayP(const void* array, int index, const int arrayItemSize);\"", rewriter, callee->getSourceRange());
+					Throw("getPtrFromArrayIndex must have signature \"extern __intrinsic void* getPtrFromArrayIndex(const void* array, int index, const int arrayItemSize);\"", rewriter, callee->getSourceRange());
 				}
 			} break;
 			case JoaatCasedConst("getPtrImmIndex"):{
@@ -2104,7 +2104,7 @@ public:
 				}
 				else
 				{
-					Throw("getPtrImmIndex must have signature \"extern __intrinsic void* getArrayP(const void* pointer, const int index);\"", rewriter, callee->getSourceRange());
+					Throw("getPtrImmIndex must have signature \"extern __intrinsic void* getPtrImmIndex(const void* pointer, const int immIndex);\"", rewriter, callee->getSourceRange());
 				}
 			} break;
 			#pragma endregion
@@ -5831,12 +5831,22 @@ public:
 				if (isa<DeclRefExpr>(subE)) {
 					const DeclRefExpr *DRE = cast<const DeclRefExpr>(subE);
 					doesCurrentValueNeedSet = true;
+					if (auto fDecl = dyn_cast_or_null<FunctionDecl>(DRE->getDecl()))
+					{
+						auto function = scriptData.getFunctionFromName(getNameForFunc(fDecl));
+						if (!function)
+							Throw("Static function pointer \"" + fDecl->getNameAsString() + "\" not found");
 
-					//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
-					StaticData* staticData = scriptData.findStatic(DRE->getDecl()->getLocEnd().getRawEncoding());
-					assert(staticData && "Static Not Found");
-					scriptData.getCurrentStatic()->addOpGetStaticP(staticData);
-					scriptData.getCurrentStatic()->setDynamic();
+						scriptData.getCurrentStatic()->addOpFuncLoc(function);
+						scriptData.getCurrentStatic()->setDynamic();
+					}
+					else{
+						//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
+						StaticData* staticData = scriptData.findStatic(DRE->getDecl()->getLocEnd().getRawEncoding());
+						assert(staticData && "Static Not Found");
+						scriptData.getCurrentStatic()->addOpGetStaticP(staticData);
+						scriptData.getCurrentStatic()->setDynamic();
+					}
 				}
 				else
 				{

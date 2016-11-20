@@ -75,8 +75,8 @@ extern __unsafeIntrinsic vector3 stackVNeg();
 extern __intrinsic void setGlobalAtIndex(const uint index, int value);
 extern __intrinsic int getGlobalAtIndex(const uint index);
 extern __intrinsic void* getGlobalPtrAtIndex(const uint index);
-extern __intrinsic void* getPtrAtArrayIndex(const void* array, int index, const int arrayItemSize);
-extern __intrinsic void* getPtrAtIndex(const void* pointer, const int immIndex);
+extern __intrinsic void* getPtrFromArrayIndex(const void* array, int index, const int arrayItemSize);
+extern __intrinsic void* getPtrImmIndex(const void* pointer, const int immIndex);
 #pragma endregion //}
 
 #pragma region Custom_ASM //{
