@@ -12,9 +12,16 @@ static void test()
 }
 void main(int* data, int size)
 {
-	__push(5);
-	__neg();
-	float klm = acos(6.0f);
+	float klh;
+	
+	__switch(0, "testLBL1", 1, "testLBL2", 2, "testLBL3");
+	
+	testLBL1:
+	klh = acos(1.0f);
+	testLBL2:
+	klh = acos(2.0f);
+	testLBL3:
+	klh = acos(3.0f);
 	short *t, *s;
 	while((*t++ = *s++)) ;
 	mani("");

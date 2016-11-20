@@ -1,6 +1,6 @@
 #pragma once
 
-typedef enum RotOrder : unsigned int
+typedef enum RotOrder
 {
 	RotOrder_xyz = 0,
 	RotOrder_yzx = 1,
@@ -11,7 +11,7 @@ typedef enum RotOrder : unsigned int
 	RotOrder_zyx = 5,
 } RotOrder;
 
-typedef enum Font : unsigned int
+typedef enum Font
 {
 	Font_Chalet_LondonNineteenSixty,
 	Font_SignPainter_HouseScript,
@@ -23,7 +23,31 @@ typedef enum Font : unsigned int
 	Font_PricedownGTAVInt
 } Font;
 
-typedef enum Explosion : unsigned int
+typedef enum Hud
+{
+	HUD,
+	HUD_WANTED_STARS,
+	HUD_WEAPON_ICON,
+	HUD_CASH,
+	HUD_MP_CASH,
+	HUD_MP_MESSAGE,
+	HUD_VEHICLE_NAME,
+	HUD_AREA_NAME,
+	HUD_VEHICLE_CLASS,
+	HUD_STREET_NAME,
+	HUD_HELP_TEXT,
+	HUD_FLOATING_HELP_TEXT_1,
+	HUD_FLOATING_HELP_TEXT_2,
+	HUD_CASH_CHANGE,
+	HUD_RETICLE,
+	HUD_SUBTITLE_TEXT,
+	HUD_RADIO_STATIONS,
+	HUD_SAVING_GAME,
+	HUD_GAME_STREAM,
+	HUD_WEAPON_WHEEL
+} Hud;
+
+typedef enum Explosion
 {
 	EXPLOSION_GRENADE,
 	EXPLOSION_GRENADELAUNCHER,
@@ -66,13 +90,16 @@ typedef enum Explosion : unsigned int
 	EXPLOSION_VALKYRIE_CANNON
 } Explosion;
 
-typedef enum GadgetHash : unsigned int
+typedef enum GadgetHash
+#ifndef _MSC_VER
+: unsigned int
+#endif
 {
 	GADGET_NIGHTVISION = 0xA720365C,
 	GADGET_PARACHUTE = 0xFBAB5776
 } GadgetHash;
 
-typedef enum CarCol : unsigned int
+typedef enum CarCol
 {
 	CARCOL_METALLIC_BLACK,
 	CARCOL_METALLIC_GRAPHITE_BLACK,
@@ -238,7 +265,10 @@ typedef enum CarCol : unsigned int
 
 } CarCol;
 
-typedef enum CarColARGB : unsigned int
+typedef enum CarColARGB
+#ifndef _MSC_VER
+: unsigned int
+#endif
 {
 	CARCOL_ARGB_METALLIC_BLACK = 0xFF080808,
 	CARCOL_ARGB_METALLIC_GRAPHITE_BLACK = 0xFF0F0F0F,
@@ -405,7 +435,10 @@ typedef enum CarColARGB : unsigned int
 
 } CarColARGB;
 
-typedef enum PedHash : unsigned int
+typedef enum PedHash
+#ifndef _MSC_VER
+: unsigned int
+#endif
 {
 	/**
 	Letter 1 directory definition:

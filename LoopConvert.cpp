@@ -145,7 +145,7 @@ static cl::opt<bool> Option_DisableFunctionNames(
 	cl::Grouping,
 	cl::cat(CompilerOptions)
 );
-static cl::opt<bool> Option_EntryFunctionPadding(
+static cl::opt<bool> Option_EntryFunctionPadding(//TODO: if selected set static initializers in code
 	"b", cl::desc("Adds buffer to the entry function to allow script injection"),
 	cl::Hidden,
 	cl::Grouping,
@@ -972,6 +972,7 @@ public:
 		#define ChkHashCol(str) if(strcmp(funcName.c_str(), str) != 0) goto _IntrinsicNotFound;
 		#define BadIntrin else Throw("Intrinsic not correctly defined", rewriter, callee->getSourceRange());
 		#define EvalFailed else Throw("Value must be a integer literal", rewriter, call->getSourceRange());
+		#define EvalFailedFlt else Throw("Value must be a floating literal", rewriter, call->getSourceRange());
 		#define EvalFailedStr else Throw("Value must be a string literal", rewriter, call->getSourceRange());
 		#define BadIntrinArgC else Throw("Bad arg count", rewriter, call->getSourceRange());
 
@@ -1012,6 +1013,27 @@ public:
 				} EvalFailed
 			} BadIntrin
 		};
+		auto AddAsmIntrinsicVar = [&](const char* str, void(FunctionData::*func)(uint16_t)) -> void
+		{
+			if (strcmp(funcName.c_str(), str) != 0)
+				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType())
+			{
+				string str;
+				if (EvaluateAsString(argArray[0], str))
+				{
+					uint32_t index = 0;
+					if (LocalVariables.find(str, &index) || findStaticIndex(str, &index))
+					{
+						(scriptData.getCurrentFunction()->*func)(index);
+						ret = true;
+						return;
+					}
+					else
+						Throw("varName \"" + str + "\" not found", rewriter, call->getSourceRange());
+				} EvalFailedStr
+			} BadIntrin
+		};
 		auto AddAsmIntrinsic32 = [&](const char* str, void(FunctionData::*func)(int)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
@@ -1030,7 +1052,7 @@ public:
 			if (strcmp(funcName.c_str(), str) != 0)
 				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
 
-			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isCharType()) {
+			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType()) {
 				string str;
 				if (EvaluateAsString(argArray[0], str))
 				{
@@ -1350,30 +1372,20 @@ public:
 
 				if (argCount == 1 && callee->getReturnType()->isIntegerType())
 				{
-					Expr* expr = (Expr*)argArray[0];
-					while (isa<ImplicitCastExpr>(expr))
+					string str;
+					if (EvaluateAsString(argArray[0], str))
 					{
-
-						const ImplicitCastExpr *icast = cast<const ImplicitCastExpr>(expr);
-						expr = (Expr*)icast->getSubExpr();
-					}
-						
-						
-					if (isa<StringLiteral>(expr)) {
-						string str = cast<const StringLiteral>(expr)->getString().str();
 						uint32_t index = 0;
 						if (LocalVariables.find(str, &index) || findStaticIndex(str, &index))
 						{
 							AddInstruction(PushInt, index);
+							return true;
 						}
 						else
 							Throw("__varIndex varName not found", rewriter, callee->getSourceRange());
-						return true;
-					}
-					else Throw("__varIndex param not string literal" + string(expr->getStmtClassName()));
-
+					} EvalFailedStr
 				}
-				Throw("__varIndex must have signature \"extern __unsafeIntrinsic const uint __varIndex(const char* varName);\"", rewriter, callee->getSourceRange());
+				else Throw("__varIndex must have signature \"extern __unsafeIntrinsic const uint __varIndex(const char* varName);\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
 			#pragma endregion
@@ -2146,28 +2158,28 @@ public:
 			case JoaatCasedConst("__iToF"):			AddAsmIntrinsic("__iToF", GetInsPtr(ItoF)); break;
 			case JoaatCasedConst("__fToI"):			AddAsmIntrinsic("__fToI", GetInsPtr(FtoI)); break;
 			case JoaatCasedConst("__fToV"):			AddAsmIntrinsic("__fToV", GetInsPtr(FtoV)); break;
-			case JoaatCasedConst("__pushB2"): {
-				ChkHashCol("__pushB2");
+			case JoaatCasedConst("__push2"): {
+				ChkHashCol("__push2");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType()) {
 					APSInt apCount;
-					if (argArray[0]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
 						AddInstruction(PushInt, apCount.getSExtValue());
-						if (argArray[1]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+						if (argArray[1]->EvaluateAsInt(apCount, *context)) {
 							AddInstruction(PushInt, apCount.getSExtValue());
 							return true;
 						} EvalFailed
 					} EvalFailed
 				}  BadIntrin
 			} break;
-			case JoaatCasedConst("__pushB3"): {
-				ChkHashCol("__pushB3");
+			case JoaatCasedConst("__push3"): {
+				ChkHashCol("__push3");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType()) {
 					APSInt apCount;
-					if (argArray[0]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
 						AddInstruction(PushInt, apCount.getSExtValue());
-						if (argArray[1]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+						if (argArray[1]->EvaluateAsInt(apCount, *context)) {
 							AddInstruction(PushInt, apCount.getSExtValue());
-							if (argArray[2]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
+							if (argArray[2]->EvaluateAsInt(apCount, *context)) {
 								AddInstruction(PushInt, apCount.getSExtValue());
 								return true;
 							} EvalFailed
@@ -2178,9 +2190,9 @@ public:
 			case JoaatCasedConst("__push"):			AddAsmIntrinsic32("__push", GetInsPtr(PushInt)); break;
 			case JoaatCasedConst("__pushF"): {
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isRealFloatingType()) {
-					APSInt apCount;
-					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
-						AddInstruction(PushFloat, apCount.getSExtValue());
+					Expr::EvalResult ER;
+					if (argArray[0]->EvaluateAsRValue(ER, *context)) {
+						AddInstruction(PushFloat, ER.Val.getFloat().convertToFloat());
 						return true;
 					} EvalFailed
 				} BadIntrin
@@ -2188,13 +2200,14 @@ public:
 			case JoaatCasedConst("__dup"):			AddAsmIntrinsic("__dup", GetInsPtr(Dup)); break;
 			case JoaatCasedConst("__drop"):			AddAsmIntrinsic("__drop", GetInsPtr(Drop)); break;
 			case JoaatCasedConst("__callNative"): {
+				//TODO: add hash translation to pc
 				ChkHashCol("__callNative");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType()) {
 					APSInt apCount, apCount1, apCount2;
 					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
 						if (argArray[1]->EvaluateAsInt(apCount1, *context)) {
 							if (argArray[2]->EvaluateAsInt(apCount2, *context)) {
-								AddInstruction(Native, apCount.getSExtValue(), apCount1.getSExtValue(), apCount2.getSExtValue());
+								AddInstruction(Native, apCount.getSExtValue() & 0xFFFFFFFF, apCount1.getSExtValue(), apCount2.getSExtValue());
 								return true;
 							} EvalFailed
 						} EvalFailed
@@ -2238,13 +2251,19 @@ public:
 			case JoaatCasedConst("__getArray"):		AddAsmIntrinsic16("__getArray", GetInsPtr(GetArray)); break;
 			case JoaatCasedConst("__setArray"):		AddAsmIntrinsic16("__setArray", GetInsPtr(SetArray)); break;
 			case JoaatCasedConst("__getFrameP"):	AddAsmIntrinsic16("__getFrameP", GetInsPtr(GetFrameP)); break;
+			case JoaatCasedConst("__getNamedFrameP"):AddAsmIntrinsicVar("__getNamedFrameP", GetInsPtr(GetFrameP)); break;
 			case JoaatCasedConst("__getFrame"):		AddAsmIntrinsic16("__getFrame", GetInsPtr(GetFrame)); break;
+			case JoaatCasedConst("__getNamedFrame"):AddAsmIntrinsicVar("__getNamedFrame", GetInsPtr(GetFrame)); break;
 			case JoaatCasedConst("__setFrame"):		AddAsmIntrinsic16("__setFrame", GetInsPtr(SetFrame)); break;
-			case JoaatCasedConst("__getStaticP"):	AddAsmIntrinsic16("__getStaticP", GetInsPtr(GetStaticP)); break;
-			case JoaatCasedConst("__getStatic"):	AddAsmIntrinsic16("__getStatic", GetInsPtr(GetStatic)); break;
-			case JoaatCasedConst("__setStatic"):	AddAsmIntrinsic16("__setStatic", GetInsPtr(SetStatic)); break;
+			case JoaatCasedConst("__setNamedFrame"):AddAsmIntrinsicVar("__setNamedFrame", GetInsPtr(SetFrame)); break;
+			case JoaatCasedConst("__getStaticP"):	AddAsmIntrinsic16("__getStaticP", GetInsPtr(GetStaticPRaw)); break;
+			case JoaatCasedConst("__getNamedStaticP"):AddAsmIntrinsicVar("__getNamedStaticP", GetInsPtr(GetStaticPRaw)); break;
+			case JoaatCasedConst("__getStatic"):	AddAsmIntrinsic16("__getStatic", GetInsPtr(GetStaticRaw)); break;
+			case JoaatCasedConst("__getNamedStatic"):AddAsmIntrinsicVar("__getNamedStatic", GetInsPtr(GetStaticRaw)); break;
+			case JoaatCasedConst("__setStatic"):	AddAsmIntrinsic16("__setStatic", GetInsPtr(SetStaticRaw)); break;
+			case JoaatCasedConst("__setNamedStatic"):AddAsmIntrinsicVar("__setNamedStatic", GetInsPtr(SetStaticRaw)); break;
 			case JoaatCasedConst("__addImm"):		AddAsmIntrinsic32("__addImm", GetInsPtr(AddImm)); break;
-			case JoaatCasedConst("__multImm"):		AddAsmIntrinsic32("__addMult", GetInsPtr(MultImm)); break;
+			case JoaatCasedConst("__multImm"):		AddAsmIntrinsic32("__multImm", GetInsPtr(MultImm)); break;
 			case JoaatCasedConst("__getImmP"):		AddAsmIntrinsic16("__getImmP", GetInsPtr(GetImmP)); break;
 			case JoaatCasedConst("__getImm"):		AddAsmIntrinsic16("__getImm", GetInsPtr(GetImm)); break;
 			case JoaatCasedConst("__setImm"):		AddAsmIntrinsic16("__setImm", GetInsPtr(SetImm)); break;
@@ -2259,11 +2278,8 @@ public:
 					{
 						APSInt apCount;
 						string str;
-						struct switchCase { int val; string loc; };
-						stack<switchCase> caseLabels;
 						bool isSwitchOver255 = argCount >= 255 * 2;
-						uint32_t SwitchCount = 1;
-						int tempSwitchIndex = 0;
+						int SwitchCount = 1, tempSwitchIndex = 0;
 						if (isSwitchOver255)
 						{
 							LocalVariables.addLevel();
@@ -2295,8 +2311,6 @@ public:
 						}
 						if(isSwitchOver255)
 							LocalVariables.removeLevel();
-						scriptData.getCurrentFunction()->setSwitchDefaultCaseLoc(to_string(call->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
-						AddJumpInlineCheck(Label, call->getLocEnd().getRawEncoding());
 						return true;
 					} BadIntrinArgC
 				} BadIntrin
@@ -2311,7 +2325,7 @@ public:
 			case JoaatCasedConst("__jumpGT"):		AddAsmIntrinsicJump("__jumpGT", GetInsPtr(JumpGT)); break;
 			case JoaatCasedConst("__call"): {
 				ChkHashCol("__call");
-				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isCharType()) {
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType()) {
 					string str;
 					if (EvaluateAsString(argArray[0], str))
 					{
@@ -2328,7 +2342,7 @@ public:
 			} break;
 			case JoaatCasedConst("__pushString"): {
 				ChkHashCol("__pushString");
-				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isCharType()) {
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType()) {
 					string str;
 					if (EvaluateAsString(argArray[0], str))
 					{
@@ -2341,7 +2355,7 @@ public:
 			case JoaatCasedConst("__strCopy"):		AddAsmIntrinsic8("__strCopy", GetInsPtr(StrCopy)); break;
 			case JoaatCasedConst("__iToS"):			AddAsmIntrinsic8("__iToS", GetInsPtr(ItoS)); break;
 			case JoaatCasedConst("__strAdd"):		AddAsmIntrinsic8("__strAdd", GetInsPtr(StrAdd)); break;
-			case JoaatCasedConst("__strAddi"):		AddAsmIntrinsic8("__strAddi", GetInsPtr(StrAddI)); break;
+			case JoaatCasedConst("__strAddI"):		AddAsmIntrinsic8("__strAddI", GetInsPtr(StrAddI)); break;
 			case JoaatCasedConst("__memCopy"):		AddAsmIntrinsic("__memCopy", GetInsPtr(MemCopy)); break;
 			case JoaatCasedConst("__pCall"):		AddAsmIntrinsic("__pCall", GetInsPtr(PCall)); break;
 
@@ -5303,9 +5317,11 @@ public:
 				{
 					return false;
 				}
-				AttrVec vec = f->getAttrs();
-				for(uint32_t i = 0; i < vec.size(); i++)
-					cout << vec[i]->getSpelling() << endl;
+
+				//tests attributes
+				//AttrVec vec = f->getAttrs();
+				//for(uint32_t i = 0; i < vec.size(); i++)
+				//	cout << vec[i]->getSpelling() << endl;
 			}
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i < f->getNumParams(); i++)
@@ -5314,7 +5330,7 @@ public:
 			scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), false, true);
 
 
-			cout << "added prototype: " << f->getNameAsString() << endl;
+			//cout << "added prototype: " << f->getNameAsString() << endl;
 		}
 
 		return true;
@@ -6346,19 +6362,12 @@ public:
 		CurrentFileId++;
 	}
 	~MyFrontendAction()
-	{ 
-		cout << "class ended\n";
-
+	{
 		//this should not be needed anymore
 		if (diagnostics->getClient()->getNumErrors())
 			exit(EXIT_FAILURE);
 	}
-	void EndSourceFileAction() override {
 
-		cout << "file ended\n";
-		
-	}
-	
 	void AddDefines(Preprocessor &PP)
 	{
 		string preDefines = PP.getPredefines();

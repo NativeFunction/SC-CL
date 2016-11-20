@@ -2,8 +2,17 @@
 #include "types.h"
 #include "constants.h"
 
+//Fix for intellisense nonsense
+#ifndef _MSC_VER
 #define __intrinsic __attribute((intrinsic(false)))
 #define __unsafeIntrinsic __attribute((intrinsic(true)))
+#else
+#define __intrinsic
+#define __unsafeIntrinsic
+#pragma warning( disable : 4391 )
+#pragma warning( disable : 4392 )
+#pragma warning( disable : 4244 )
+#endif
 
 
 #define offsetof(st, m) ((uint)&(((st *)0)->m))
@@ -120,8 +129,8 @@ extern __unsafeIntrinsic void __xor();
 extern __unsafeIntrinsic void __iToF();
 extern __unsafeIntrinsic void __fToI();
 extern __unsafeIntrinsic void __fToV();
-extern __unsafeIntrinsic void __pushB2(const uint value0, const uint value1);
-extern __unsafeIntrinsic void __pushB3(const uint value0, const uint value1, const uint value2);
+extern __unsafeIntrinsic void __push2(const uint value0, const uint value1);
+extern __unsafeIntrinsic void __push3(const uint value0, const uint value1, const uint value2);
 extern __unsafeIntrinsic void __push(const int value);
 extern __unsafeIntrinsic void __pushF(const float value);
 extern __unsafeIntrinsic void __dup();
@@ -138,11 +147,17 @@ extern __unsafeIntrinsic void __getArrayP(const uint arraySize);
 extern __unsafeIntrinsic void __getArray(const uint arraySize);
 extern __unsafeIntrinsic void __setArray(const uint arraySize);
 extern __unsafeIntrinsic void __getFrameP(const uint frameIndex);
+extern __unsafeIntrinsic void __getNamedFrameP(const char* frameName);
 extern __unsafeIntrinsic void __getFrame(const uint frameIndex);
+extern __unsafeIntrinsic void __getNamedFrame(const char* frameName);
 extern __unsafeIntrinsic void __setFrame(const uint frameIndex);
+extern __unsafeIntrinsic void __setNamedFrame(const char* frameName);
 extern __unsafeIntrinsic void __getStaticP(const uint staticIndex);
+extern __unsafeIntrinsic void __getNamedStaticP(const char* StaticName);
 extern __unsafeIntrinsic void __getStatic(const uint staticIndex);
+extern __unsafeIntrinsic void __getNamedStatic(const char* StaticName);
 extern __unsafeIntrinsic void __setStatic(const uint staticIndex);
+extern __unsafeIntrinsic void __setNamedStatic(const char* StaticName);
 extern __unsafeIntrinsic void __addImm(const uint value);
 extern __unsafeIntrinsic void __multImm(const uint value);
 extern __unsafeIntrinsic void __getImmP(const uint immediate);
@@ -166,7 +181,7 @@ extern __unsafeIntrinsic void __getHash();
 extern __unsafeIntrinsic void __strCopy(const uint strLen);
 extern __unsafeIntrinsic void __iToS(const uint strLen);
 extern __unsafeIntrinsic void __strAdd(const uint strLen);
-extern __unsafeIntrinsic void __strAddi(const uint strLen);
+extern __unsafeIntrinsic void __strAddI(const uint strLen);
 extern __unsafeIntrinsic void __memCopy();
 extern __unsafeIntrinsic void __pCall();
 #pragma endregion //}

@@ -180,8 +180,11 @@ int Opcode::getSizeEstimate() const
 		case OK_GetArray:
 		case OK_SetArray:
 		case OK_GetStaticP:
+		case OK_GetStaticPRaw:
 		case OK_GetStatic:
+		case OK_GetStaticRaw:
 		case OK_SetStatic:
+		case OK_SetStaticRaw:
 		case OK_GetFrameP:
 		case OK_GetFrame:
 		case OK_SetFrame:
@@ -305,6 +308,7 @@ string Opcode::toString() const
 #define Check12Op(opcode){uint16_t value = getUShort(0);current = (value > 0xFF ? #opcode "2 " :  #opcode "1 ") + to_string(value); }
 #define Check23Op(opcode){int value = getInt();assert(value >= 0 && "value cannot be negative"); current = (value > 0xFFFF ? #opcode "3 " :  #opcode "2 ") + to_string(value); }
 #define CheckStatic(opcode){auto data = getStaticData(); assert(data->isUsed() && "static is unused"); uint16_t value = data->getIndex(); current = (value > 0xFF ? #opcode "2 " :  #opcode "1 ") + to_string(value); }
+#define CheckStaticRaw(opcode){uint16_t value = getUShort(0); current = (value > 0xFF ? #opcode "2 " :  #opcode "1 ") + to_string(value); }
 #define PrintJump(cond){current = "Jump"#cond " @" + getString();}
 	string current;
 	switch (getKind())
@@ -448,8 +452,11 @@ string Opcode::toString() const
 		case OK_GetFrame:Check12Op(GetFrame); break;
 		case OK_SetFrame:Check12Op(SetFrame); break;
 		case OK_GetStaticP:CheckStatic(GetStaticP); break;
+		case OK_GetStaticPRaw:CheckStaticRaw(GetStaticP); break;
 		case OK_GetStatic:CheckStatic(GetStatic); break;
+		case OK_GetStaticRaw:CheckStaticRaw(GetStatic); break;
 		case OK_SetStatic:CheckStatic(SetStatic); break;
+		case OK_SetStaticRaw:CheckStaticRaw(SetStatic); break;
 		case OK_GetImmP:Check12Op(GetImmP); break;
 		case OK_GetImm:Check12Op(GetImm); break;
 		case OK_SetImm:Check12Op(SetImm); break;

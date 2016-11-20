@@ -126,8 +126,11 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_GetFrame:	GetFrame(); return;
 		case OK_SetFrame:	SetFrame(); return;
 		case OK_GetStaticP:	GetStaticP(); return;
+		case OK_GetStaticPRaw:	GetStaticPRaw(); return;
 		case OK_GetStatic:	GetStatic(); return;
+		case OK_GetStaticRaw:	GetStaticRaw(); return;
 		case OK_SetStatic:	SetStatic(); return;
+		case OK_SetStaticRaw:	SetStaticRaw(); return;
 		case OK_GetGlobalP:	GetGlobalP(); return;
 		case OK_GetGlobal:	GetGlobal(); return;
 		case OK_SetGlobal:	SetGlobal(); return;
@@ -562,13 +565,25 @@ void CompileBase::GetStaticP()
 {
 	AddOpcodeStatic(GetStaticP, "GetStaticP index too high");
 }
+void CompileBase::GetStaticPRaw()
+{
+	AddOpcodeB_1or2(GetStaticP, "GetStaticP index too high");
+}
 void CompileBase::GetStatic()
 {
 	AddOpcodeStatic(GetStatic, "GetStatic index too high");
 }
+void CompileBase::GetStaticRaw()
+{
+	AddOpcodeB_1or2(GetStatic, "GetStatic index too high");
+}
 void CompileBase::SetStatic()
 {
 	AddOpcodeStatic(SetStatic, "SetStatic index too high");
+}
+void CompileBase::SetStaticRaw()
+{
+	AddOpcodeB_1or2(SetStatic, "SetStatic index too high");
 }
 void CompileBase::GetGlobalP()
 {

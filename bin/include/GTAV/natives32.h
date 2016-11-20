@@ -1,9 +1,14 @@
 #pragma once
 #include "types.h"
 
+//Fix for intellisense nonsense
+#ifndef _MSC_VER
 #define _native __attribute((native))
 #define _native32(hash) __attribute((native(hash)))
-
+#else
+#define _native
+#define _native32(hash)
+#endif
 
 #pragma region PLAYER //{
 extern _native Ped get_player_ped(Player player);
@@ -2031,7 +2036,7 @@ extern _native void unk_0xA58BBF4F();
 extern _native int get_sound_id();
 extern _native void release_sound_id(int soundId);
 extern _native void play_sound(int soundId, const char* audioName, const char* audioRef, bool p3, any p4, bool p5);
-extern _native void play_sound_frontend(int soundId, const char* audioName, const char* audioRef, bool p3);
+extern _native void play_sound_frontend(int soundId, const char* audioName, const char* audioRef);
 extern _native void unk_0xC70E6CFA(const char* p0, const char* soundset);
 extern _native void play_sound_from_entity(int soundId, const char* audioName, Entity entity, const char* audioRef, bool p4, any p5);
 extern _native void play_sound_from_coord(int soundId, const char* audioName, vector3 vec, const char* audioRef, bool p6, any p7, bool p8);
@@ -3678,8 +3683,8 @@ extern _native bool is_look_inverted();
 extern _native int get_local_player_aim_state();
 extern _native void set_playerpad_shakes_when_controller_disabled(bool toggle);
 extern _native void set_input_exclusive(int inputGroup, int control);
-extern _native void disable_control_action(int inputGroup, int control, bool disable);
-extern _native void enable_control_action(int inputGroup, int control, bool enable);
+extern _native void disable_control_action(int inputGroup, int control);
+extern _native void enable_control_action(int inputGroup, int control);
 extern _native void disable_all_control_actions(int inputGroup);
 extern _native void enable_all_control_actions(int inputGroup);
 extern _native bool unk_0xD2C80B2E(const char* p0);
