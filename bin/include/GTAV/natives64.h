@@ -4416,7 +4416,7 @@ extern _native64(0x5728BB6D63E3FF1D) bool network_mark_transition_gamer_as_fully
 extern _native64(0x0B824797C9BF2159) any network_is_transition_host();
 extern _native64(0x6B5C83BA3EFE6A10) bool network_is_transition_host_from_handle(int* netHandle);
 extern _native64(0x65042B9774C4435E) bool network_get_transition_host(int* netHandle);
-extern _native64(0x68049AEFF83D8F0A) any network_is_in_transition();
+extern _native64(0x68049AEFF83D8F0A) bool network_is_in_transition();
 extern _native64(0x53FA83401D9C07FE) any network_is_transition_started();
 extern _native64(0x520F3282A53D26B7) any network_is_transition_busy();
 extern _native64(0x292564C735375EDF) any unk_0x292564C735375EDF();

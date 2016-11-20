@@ -6380,7 +6380,7 @@ public:
 				preDefines += "\n#define __" + scriptData->getPlatformAbvUpper() + string("SC__");
 				break;
 		}
-
+		preDefines += "\n#undef _MSC_VER";
 		PP.setPredefines(preDefines.data());
 	}
 	void ModifyClangWarnings(DiagnosticsEngine& DE)
@@ -6390,6 +6390,7 @@ public:
 		
 		DisableClangWarning("main-return-type");
 		DisableClangWarning("incompatible-library-redeclaration");
+		DisableClangWarning("microsoft-enum-value");//this allows enums to be in hex without : unsigned int tag
 		ElevateClangWarning("return-type");
 		ElevateClangWarning("dangling-else");
 		
@@ -6448,6 +6449,8 @@ void WriteAsmFile(const string& outDir)
 			auto func = scriptData->getFunctionFromIndex(i);
 			if (func->IsUsed())
 			{
+				if (!func->isProcessed())
+					Throw("Function Prototype Implementation missing on referenced function: " + func->getName());
 				assert(func->isProcessed() && "Function Prototype Implementation missing on referenced function");
 				string fStr = func->toString();
 				fwrite(fStr.c_str(), 1, fStr.size(), file);

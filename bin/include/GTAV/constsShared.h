@@ -91,7 +91,7 @@ typedef enum Explosion
 } Explosion;
 
 typedef enum GadgetHash
-#ifndef _MSC_VER
+#ifndef _MSC_VER 
 : unsigned int
 #endif
 {
@@ -267,7 +267,7 @@ typedef enum CarCol
 
 typedef enum CarColARGB
 #ifndef _MSC_VER
-: unsigned int
+ : unsigned int
 #endif
 {
 	CARCOL_ARGB_METALLIC_BLACK = 0xFF080808,
