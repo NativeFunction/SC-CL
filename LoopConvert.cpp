@@ -1244,7 +1244,7 @@ public:
 					llvm::APSInt result;
 					if (argArray[2]->EvaluateAsInt(result, *context))
 					{
-						int iValue = result.getSExtValue();
+						uint8_t iValue = result.getSExtValue();
 						if (iValue > 0 && iValue < 256)
 						{
 							AddInstruction(StrCopy, iValue);
@@ -1275,7 +1275,7 @@ public:
 					llvm::APSInt result;
 					if (argArray[2]->EvaluateAsInt(result, *context))
 					{
-						int iValue = result.getSExtValue();
+						uint8_t iValue = result.getSExtValue();
 						if (iValue > 0 && iValue < 256)
 						{
 							AddInstruction(StrAdd, iValue);
@@ -1306,7 +1306,7 @@ public:
 					llvm::APSInt result;
 					if (argArray[2]->EvaluateAsInt(result, *context))
 					{
-						int iValue = result.getSExtValue();
+						uint8_t iValue = result.getSExtValue();
 						if (iValue > 0 && iValue < 256)
 						{
 							AddInstruction(StrAddI, iValue);
@@ -1337,7 +1337,7 @@ public:
 					llvm::APSInt result;
 					if (argArray[2]->EvaluateAsInt(result, *context))
 					{
-						int iValue = result.getSExtValue();
+						uint8_t iValue = result.getSExtValue();
 						if (iValue > 0 && iValue < 256)
 						{
 							AddInstruction(ItoS, iValue);

@@ -1,8 +1,4 @@
-#pragma once
-#include "types.h"
-#include "natives.h"
-#include "constants.h"
-#include "intrinsics.h"
+#include "common.h"
 
 #define SwapEndian(x) _Generic((x),\
 short int: SwapEndian16(x), unsigned short int: SwapEndian16(x),\
@@ -279,4 +275,3 @@ float StringToFloat(char* str)
 	}
 	return rez * fact;
 }
-
