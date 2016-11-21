@@ -1869,7 +1869,7 @@ void CompileGTAVPC::CallNative(const uint64_t hash, const uint8_t paramCount, co
 			Throw("Native Calls Can Only Have Three Returns");
 
 		const uint32_t index = AddNative(DATA->getNative()->getHash());
-		cout << DATA->getNative()->getHash() << endl;
+		
 		if (index >= 0xFFFF)
 			Throw("Native Call Index out of bounds");
 
@@ -1983,8 +1983,7 @@ void CompileGTAVPC::WriteNatives()
 		BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
 		for (unordered_map<uint64_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
 		{
-			uint64_t out = _rotr64(nativeTranslation.Translate(it->first), it->second + CodePageData.size());
-			*(uint64_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 8) = out;
+			*(uint64_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 8) = _rotr64(nativeTranslation.Translate(it->first), it->second + CodePageData.size());
 		}
 
 		Pad();
