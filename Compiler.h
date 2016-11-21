@@ -437,12 +437,12 @@ protected:
 	void AddInt64toBuffL(int64_t value)
 	{
 		BuildBuffer.resize(BuildBuffer.size() + 8, 0);
-		*((int32_t*)(BuildBuffer.data() + BuildBuffer.size()) - 1) = value;
+		*((int64_t*)(BuildBuffer.data() + BuildBuffer.size()) - 1) = value;
 	}
 	void AddInt64toBuffB(int64_t value)
 	{
 		BuildBuffer.resize(BuildBuffer.size() + 8, 0);
-		*((int32_t*)(BuildBuffer.data() + BuildBuffer.size()) - 1) = Utils::Bitwise::SwapEndian(value);
+		*((int64_t*)(BuildBuffer.data() + BuildBuffer.size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
 	void (CompileBase::*ChangeInt64inBuff)(int64_t value, uint32_t index);
 	#define ChangeInt64inBuff (this->*ChangeInt64inBuff)
