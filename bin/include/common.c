@@ -7,6 +7,11 @@
 short int: SwapEndian16(x), unsigned short int: SwapEndian16(x),\
 default: SwapEndian32(x))
 
+
+#define GlobalCharBufferD "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+
+char* GlobalCharBuffer = GlobalCharBufferD;
+
 void print(char* str, int ms)
 {
 	#ifdef __GTAV__
@@ -21,12 +26,14 @@ void print(char* str, int ms)
 	#endif
 }
 
-const char* GlobalCharBuffer = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-
-char* strcat(char* str1, char* str2)
+char* strcatGlobal(char* str1, char* str2)
 {
 	//this takes advantage of strings being global
 	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
+
+	//reset pointer (only needed if statics was reset)
+	GlobalCharBuffer = GlobalCharBufferD;
+
 	strcpy((char*)GlobalCharBuffer, str1, 255);
 	stradd((char*)GlobalCharBuffer, str2, 255);
 	return (char*)GlobalCharBuffer;
@@ -35,6 +42,10 @@ char* straddiGlobal(char* str1, int i)
 {
 	//this takes advantage of strings being global
 	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
+	
+	//reset pointer (only needed if statics was reset)
+	GlobalCharBuffer = GlobalCharBufferD;
+
 	strcpy((char*)GlobalCharBuffer, str1, 255);
 	straddi((char*)GlobalCharBuffer, i, 255);
 	return (char*)GlobalCharBuffer;
@@ -43,24 +54,32 @@ char* itosGlobal(int i)
 {
 	//this takes advantage of strings being global
 	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
-	itos((char*)GlobalCharBuffer, i, 255);
+	
+	//reset pointer (only needed if statics was reset)
+	GlobalCharBuffer = GlobalCharBufferD;
+
+	itos((char*)GlobalCharBuffer, i, 64);
 	return (char*)GlobalCharBuffer;
 }
 
 void Throw(char* str)
 {
-	char out[256] = "~r~Exception~s~:";
-	stradd(out, str, 255);
-	print(out, 10000);
+	char Buffer[256];
+	strcpy(Buffer, "~r~Exception~s~: ", 255);
+
+	stradd(Buffer, str, 255);
+	print(Buffer, 10000);
 	wait(10000);
 	terminate_this_thread();
 }
 
 void Warn(char* str)
 {
-	char out[256] = "~r~Warning~s~:";
-	stradd(out, str, 255);
-	print(out, 5000);
+	char Buffer[256];
+	strcpy(Buffer, "~y~Warning~s~: ", 255);
+
+	stradd(Buffer, str, 255);
+	print(Buffer, 5000);
 }
 
 int SwapEndian32(int value)

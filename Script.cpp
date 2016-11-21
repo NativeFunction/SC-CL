@@ -25,8 +25,8 @@ FunctionData * Script::createFunction(string name, int paramCount, int returnCou
 			if (isPrototype)
 			{
 				//assert(!func->isProcessed() && "Function has already been processed");
-				if (func->isProcessed())
-					Utils::System::Warn("Function \"" + name + "\" has already been processed");
+				//if (func->isProcessed())
+					//Utils::System::Warn("Function \"" + name + "\" has already been processed");
 			}
 			if (makeCurrent)
 			{

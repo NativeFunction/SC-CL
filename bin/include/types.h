@@ -138,7 +138,8 @@ typedef enum DataType
 	DT_Vector2,
 	DT_Vector2P,
 	DT_Quaternion,
-	DT_QuaternionP
+	DT_QuaternionP,
+	DT_FunctionP
 } DataType;
 typedef union flint
 {

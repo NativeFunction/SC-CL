@@ -7,6 +7,7 @@
 #define NULL 0
 #define null 0
 #define nullptr 0
+#define nullstr ""
 
 #define PI 3.14159265
 
