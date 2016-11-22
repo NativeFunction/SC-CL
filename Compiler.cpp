@@ -499,8 +499,8 @@ else{\
 assert(false && errorstr);\
 }
 #define AddOpcodeStatic(op, errorstr)\
-assert(DATA->getStaticData()->isUsed() && "unused static referenced, this shouldn't happen");\
-const uint32_t value = DATA->getStaticData()->getIndex();\
+assert(DATA->getStaticData()->getStatic()->isUsed() && "unused static referenced, this shouldn't happen");\
+const uint32_t value = DATA->getStaticData()->getStatic()->getIndex() + DATA->getStaticData()->getImmIndex();\
 if (value <= 0xFF)\
 {\
 	DoesOpcodeHaveRoom(2);\

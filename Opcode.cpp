@@ -307,7 +307,7 @@ string Opcode::toString() const
 {
 #define Check12Op(opcode){uint16_t value = getUShort(0);current = (value > 0xFF ? #opcode "2 " :  #opcode "1 ") + to_string(value); }
 #define Check23Op(opcode){int value = getInt();assert(value >= 0 && "value cannot be negative"); current = (value > 0xFFFF ? #opcode "3 " :  #opcode "2 ") + to_string(value); }
-#define CheckStatic(opcode){auto data = getStaticData(); assert(data->isUsed() && "static is unused"); uint16_t value = data->getIndex(); current = (value > 0xFF ? #opcode "2 " :  #opcode "1 ") + to_string(value); }
+#define CheckStatic(opcode){auto data = getStaticData(); assert(data->getStatic()->isUsed() && "static is unused"); uint16_t value = data->getStatic()->getIndex() + data->getImmIndex(); current = (value > 0xFF ? #opcode "2 " :  #opcode "1 ") + to_string(value); }
 #define CheckStaticRaw(opcode){uint16_t value = getUShort(0); current = (value > 0xFF ? #opcode "2 " :  #opcode "1 ") + to_string(value); }
 #define PrintJump(cond){current = "Jump"#cond " @" + getString();}
 	string current;
@@ -677,6 +677,11 @@ void Opcode::makeNull()
 			break;
 		case OK_JumpTable:
 			delete storage.jTable;
+			break;
+		case OK_GetStaticP:
+		case OK_GetStatic:
+		case OK_SetStatic:
+			delete storage.staticData;
 			break;
 		default:
 			break;

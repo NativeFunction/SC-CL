@@ -105,6 +105,11 @@ enum OpcodeKind{
 	OK_JumpTable
 };
 
+#pragma region Forward Declarations
+class FunctionData;
+class StaticData;
+#pragma endregion
+
 #pragma region OpcodeCustomStorage
 struct StringStorage
 {
@@ -302,11 +307,20 @@ public:
 		}
 	}
 };
-#pragma endregion
 
-#pragma region Forward Declarations
-class FunctionData;
-class StaticData;
+struct OpStaticStorage
+{
+private:
+	const StaticData* _staticData;
+	uint16_t _immIndex;
+public:
+	OpStaticStorage(const StaticData* staticData, const uint16_t immIndex = 0):_staticData(staticData), _immIndex(immIndex)
+	{
+	}
+	const StaticData* getStatic()const{ return _staticData; }
+	uint16_t getImmIndex()const{ return _immIndex; }
+	void setImmIndex(uint16_t newValue){ _immIndex = newValue; }
+};
 #pragma endregion
 
 class Opcode
@@ -360,7 +374,7 @@ class Opcode
 		NativeStorage *native;
 		StringStorage *string;
 		JumpTableStorage *jTable;
-		StaticData* staticData;
+		OpStaticStorage* staticData;
 		FunctionData* functionData;
 	}storage = { 0,0,0,0 };
 public:
@@ -458,7 +472,7 @@ public:
 		assert(getKind() == OK_JumpTable && "getNative not called on JumpTable Opcode");
 		return storage.jTable;
 	}
-	const StaticData* getStaticData()const
+	const OpStaticStorage* getStaticData()const
 	{
 		assert((getKind() == OK_GetStaticP || getKind() == OK_GetStatic || getKind() == OK_SetStatic) && "getStaticData not called on static opcode");
 		return storage.staticData;
