@@ -1525,6 +1525,7 @@ void FunctionData::addOpSetImm(uint16_t index)
 					data->setImmIndex(data->getImmIndex() + index);
 					addOpPSet();
 				}
+				return;
 				default:
 					break;
 			}
