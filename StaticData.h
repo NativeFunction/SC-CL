@@ -146,14 +146,21 @@ public:
 	{
 		addReferencedStatic(staticData);
 		Opcode * op = new Opcode(OK_GetStaticP);
-		op->storage.staticData = staticData;
+		op->storage.staticData = new OpStaticStorage(staticData);
 		_dynamicInitialisation.push_back(op);
 	}
 	void addOpGetImmP(uint16_t imm)
 	{
-		Opcode * op = new Opcode(OK_GetImmP);
-		op->setUShort(imm, 0);
-		_dynamicInitialisation.push_back(op);
+		if (_dynamicInitialisation.size() && _dynamicInitialisation.back()->getKind() == OK_GetStaticP)
+		{
+			auto data = _dynamicInitialisation.back()->storage.staticData;
+			data->setImmIndex(data->getImmIndex() + imm);
+		}
+		else{
+			Opcode * op = new Opcode(OK_GetImmP);
+			op->setUShort(imm, 0);
+			_dynamicInitialisation.push_back(op);
+		}
 	}
 	void addOpAddImm(int imm)
 	{

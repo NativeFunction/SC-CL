@@ -34,22 +34,12 @@ void StaticData::setUsed(Script & scriptBase)
 
 void StaticData::addOpSetThisStatic(Script & scriptBase)
 {
-	if (_initialisation.size())
-	{
-		assert(!(_initialisation.size() % scriptBase.getStackWidth()) && "invalid initialisation size");
-		Opcode * op = new Opcode(OK_GetStaticP);
-		op->storage.staticData = this;
-		_dynamicInitialisation.push_back(op);
-		op = new Opcode(OK_SetImm);
-		op->setUShort(_initialisation.size() / scriptBase.getStackWidth(), 0);
-		_dynamicInitialisation.push_back(op);
-	}
-	else
-	{
-		Opcode * op = new Opcode(OK_SetStatic);
-		op->storage.staticData = this;
-		_dynamicInitialisation.push_back(op);
-	}
+
+	assert(!(_initialisation.size() % scriptBase.getStackWidth()) && "invalid initialisation size");
+
+	Opcode * op = new Opcode(OK_SetStatic);
+	op->storage.staticData = new OpStaticStorage(this, _initialisation.size() / scriptBase.getStackWidth());
+	_dynamicInitialisation.push_back(op);
 	_initialisation.resize(_initialisation.size() + scriptBase.getStackWidth());
 }
 

@@ -289,7 +289,7 @@ public:
 	void addOpGetStaticP(StaticData* staticData)
 	{
 		Opcode* op = new Opcode(OK_GetStaticP);
-		op->storage.staticData = staticData;
+		op->storage.staticData = new OpStaticStorage(staticData);
 		Instructions.push_back(op);
 	}
 	void addOpGetStaticPRaw(uint16_t index)
@@ -301,19 +301,14 @@ public:
 	void addOpGetStatic(StaticData* staticData)
 	{
 		Opcode* op = new Opcode(OK_GetStatic);
-		op->storage.staticData = staticData;
+		op->storage.staticData = new OpStaticStorage(staticData);
 		Instructions.push_back(op);
 	}
-	void addOpGetStaticRaw(uint16_t index)
-	{
-		Opcode* op = new Opcode(OK_GetStaticRaw);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
-	}
+	void addOpGetStaticRaw(uint16_t index);
 	void addOpSetStatic(StaticData* staticData)
 	{
 		Opcode* op = new Opcode(OK_SetStatic);
-		op->storage.staticData = staticData;
+		op->storage.staticData = new OpStaticStorage(staticData);
 		Instructions.push_back(op);
 	}
 	void addOpSetStaticRaw(uint16_t index)

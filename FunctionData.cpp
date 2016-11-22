@@ -10,6 +10,8 @@
 
 using namespace std;
 
+extern uint8_t stackWidth;
+
 bool FunctionData::tryPop2Ints(int & i1, int & i2)
 {
 	int size = Instructions.size();
@@ -1101,9 +1103,24 @@ void FunctionData::addOpPGet()
 			case OK_GetStaticP:
 				Instructions.back()->setKind(OK_GetStatic);
 				return;
+			case OK_GetStaticPRaw:
+				Instructions.back()->setKind(OK_GetStaticRaw);
+				return;
 			case OK_GetImmP:
 				Instructions.back()->setKind(OK_GetImm);
 				return;
+			case OK_AddImm:
+			{
+				int imm = Instructions.back()->getInt();
+				if (imm > 0 && imm % stackWidth == 0 && imm / stackWidth < 0xFFFF)
+				{
+					delete Instructions.back();
+					Instructions.pop_back();
+					addOpGetImm(imm / stackWidth);
+					return;
+				}
+				//fall through to default
+			}
 			default:
 				Instructions.push_back(new Opcode(OK_PGet));
 				return;
@@ -1132,9 +1149,24 @@ void FunctionData::addOpPSet()
 			case OK_GetStaticP:
 				Instructions.back()->setKind(OK_SetStatic);
 				return;
+			case OK_GetStaticPRaw:
+				Instructions.back()->setKind(OK_SetStaticRaw);
+				return;
 			case OK_GetImmP:
 				Instructions.back()->setKind(OK_SetImm);
 				return;
+			case OK_AddImm:
+			{
+				int imm = Instructions.back()->getInt();
+				if (imm > 0 && imm % stackWidth == 0 && imm / stackWidth < 0xFFFF)
+				{
+					delete Instructions.back();
+					Instructions.pop_back();
+					addOpSetImm(imm / stackWidth);
+					return;
+				}
+				//fall through to default
+			}
 			default:
 				Instructions.push_back(new Opcode(OK_PSet));
 				return;
@@ -1182,42 +1214,41 @@ void FunctionData::addOpGetFrame(uint16_t index)
 
 }
 
-/*void FunctionData::addOpGetStatic(uint16_t index)
+void FunctionData::addOpGetStaticRaw(uint16_t index)
 {
-#ifdef USE_OPTIMISATIONS
-	if (Instructions.size())
-	{
-		Opcode *back = Instructions.back();
-		if (back->getKind() == OK_GetStatic && back->getUShort(0) == index - 1)
+	if (getOptLevel() > OptimisationLevel::OL_Normal){
+		if (Instructions.size())
 		{
-			back->setKind(OK_PushInt);
-			back->setInt(2);
-			addOpGetStaticP(index - 1);
-			addOpToStack();
-			return;
-		}
-		else if (back->getKind() == OK_ToStack)
-		{
-			size_t size = Instructions.size();
-			assert(size > 2 && "To Stack called with invalid args");
-			Opcode* ptrOp = Instructions[size - 2], *sizeOp = Instructions[size - 3];
-			if (ptrOp->getKind() == OK_GetStaticP && sizeOp->getKind() == OK_PushInt)
+			Opcode *back = Instructions.back();
+			if (back->getKind() == OK_GetStaticRaw && back->getUShort(0) == index - 1)
 			{
-				if (index - ptrOp->getUShort(0) == sizeOp->getInt())
+				back->setKind(OK_PushInt);
+				back->setInt(2);
+				addOpGetFrameP(index - 1);
+				addOpToStack();
+				return;
+			}
+			else if (back->getKind() == OK_ToStack)
+			{
+				size_t size = Instructions.size();
+				assert(size > 2 && "To Stack called with invalid args");
+				Opcode* ptrOp = Instructions[size - 2], *sizeOp = Instructions[size - 3];
+				if (ptrOp->getKind() == OK_GetStaticPRaw && sizeOp->getKind() == OK_PushInt)
 				{
-					sizeOp->setInt(sizeOp->getInt() + 1);
-					return;
+					if (index - ptrOp->getUShort(0) == sizeOp->getInt())
+					{
+						sizeOp->setInt(sizeOp->getInt() + 1);
+						return;
+					}
 				}
 			}
 		}
 	}
-#endif
-	{
-		Opcode* op = new Opcode(OK_GetStatic);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
-	}
-}*/
+
+	Opcode* op = new Opcode(OK_GetStaticRaw);
+	op->setUShort(index, 0);
+	Instructions.push_back(op);
+}
 
 void FunctionData::addOpGetGlobal(int index)
 {
@@ -1410,8 +1441,15 @@ void FunctionData::addOpGetImmP(uint16_t index)
 			case OK_GetFrameP:
 			case OK_GetGlobalP:
 			case OK_GetImmP:
+			case OK_GetStaticPRaw:
 				Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
 				break;
+			case OK_GetStaticP:
+			{
+				auto data = Instructions.back()->storage.staticData;
+				data->setImmIndex(data->getImmIndex() + index);
+			}
+			break;
 			default:
 				Opcode* op = new Opcode(OK_GetImmP);
 				op->setUShort(index, 0);
@@ -1437,9 +1475,17 @@ void FunctionData::addOpGetImm(uint16_t index)
 				case OK_GetFrameP:
 				case OK_GetGlobalP:
 				case OK_GetImmP:
+				case OK_GetStaticPRaw:
 					Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
 					addOpPGet();//pget will turn these
 					return;
+				case OK_GetStaticP:
+				{
+					auto data = Instructions.back()->storage.staticData;
+					data->setImmIndex(data->getImmIndex() + index);
+					addOpPGet();
+				}
+				return;
 				default:
 					break;
 			}
@@ -1469,9 +1515,17 @@ void FunctionData::addOpSetImm(uint16_t index)
 				case OK_GetFrameP:
 				case OK_GetGlobalP:
 				case OK_GetImmP:
+				case OK_GetStaticPRaw:
 					Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
-					addOpPSet();//pget will turn these
+					addOpPSet();//pset will turn these
 					return;
+				case OK_GetStaticP:
+				{
+					auto data = Instructions.back()->storage.staticData;
+					data->setImmIndex(data->getImmIndex() + index);
+					addOpPSet();
+				}
+				return;
 				default:
 					break;
 			}
