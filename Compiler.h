@@ -330,7 +330,7 @@ protected:
 	#pragma region Opcode_Functions
 	void AddFunction(const FunctionData* function, bool disableFunctionName)
 	{
-		if (disableFunctionName)
+		if (disableFunctionName || function->isBuiltIn())
 		{
 			DoesOpcodeHaveRoom(5);
 			AddFuncLabel(function);
