@@ -1165,3 +1165,35 @@ typedef enum PedHash
 	PED_U_M_M_EdToh = 0x2A797197
 	
 } PedHash;
+
+typedef enum LicensePlateLayout{
+	LP_FrontAndRear,
+	LP_Front,
+	LP_Rear,
+	LP_None
+}LicensePlateLayout;
+
+typedef enum VehicleClass{
+	VC_Compacts,
+	VC_Sedans,
+	VC_Suv,
+	VC_Coupes,
+	VC_Muscle,
+	VC_SportClassics,
+	VC_Sports,
+	VC_Super,
+	VC_Motorcycles,
+	VC_OffRoad,
+	VC_Industrial,
+	VC_Utility,
+	VC_Van,
+	VC_Cycle,
+	VC_Boats,
+	VC_Helicopters,
+	VC_Planes,
+	VC_Service,
+	VC_Emergency,
+	VC_Military,
+	VC_Commercial,
+	VC_Trains
+}VehicleClass;

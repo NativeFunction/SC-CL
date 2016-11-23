@@ -9,6 +9,7 @@ Script::Script(string scriptName, BuildType buildType, Platform platform) :
 {
 	auto entry = std::make_unique<FunctionData>("__builtin__entryPoint", 0, 0);
 	entryFunction = entry.get();
+	entryFunction->setBuiltIn();
 	functions.push_back(std::move(entry));
 	_endian = (buildType == BT_GTAV && platform == P_PC) ? END_LITTLE : END_BIG;
 	_stackWidth = (buildType == BT_GTAV && platform == P_PC) ? 8 : 4;
@@ -221,35 +222,6 @@ bool Script::isUnsafeContext() const
 	}
 	return currentFunc->isUnsafe();
 }
-
-string Script::getStaticsAsString()
-{
-	string data;
-	data.reserve(40 * staticTable.size() + 28 + 37);
-	data += "//> Default Static Information\r\nSetStaticsCount " + to_string(staticTable.size()) + "\r\n";
-	for (uint32_t i = 0, it = 0; i < staticTable.size(); i++)
-	{
-		if (staticTable[i] != 0)
-		{
-			if (it < staticTableShortIndexes.size() && staticTableShortIndexes[it] == i)
-			{
-				it++;
-				int32_t shortData = Utils::Bitwise::Flip2BytesIn4(staticTable[i]);
-				int16_t* shortDataP = (int16_t*)&shortData;
-				*shortDataP = Utils::Bitwise::SwapEndian(*shortDataP);
-				shortDataP++;
-				*shortDataP = Utils::Bitwise::SwapEndian(*shortDataP);
-				data += "SetDefaultStatic " + to_string(i) + " " + to_string(shortData) + "\r\n";
-			}
-			else
-				data += "SetDefaultStatic " + to_string(i) + " " + to_string(Utils::Bitwise::SwapEndian(staticTable[i])) + "\r\n";
-		}
-	}
-	data += "//<\r\n";
-	data.shrink_to_fit();
-	return data;
-}
-
 string Script::getPlatformAbv() const
 {
 	switch (getBuildPlatform())

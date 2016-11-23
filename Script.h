@@ -149,14 +149,14 @@ public:
 	{
 		return newStaticTable.data();
 	}
-	std::string getStaticsAsString();
-	std::string getNewStaticsAsString()
+	std::string getStaticsAsString()
 	{
-		std::string out = "SetStaticsCount " + std::to_string(newStaticCount);
+		std::string out = "//> Default Static Information\r\nSetStaticsCount " + std::to_string(newStaticCount);
 		for (auto sdata:finalStatics)
 		{
 			out += sdata->getStringOutput(getEndian(), getStackWidth());
 		}
+		out += "\r\n//<\r\n";
 		return std::move(out);
 	}
 
