@@ -6453,17 +6453,9 @@ void WriteAsmFile(const string& outDir)
 	FILE* file = fopen(Out.data(), "wb");
 	if (file != NULL)
 	{
-		string StaticData = scriptData->getStaticsAsString();
-
-		StaticData.reserve(StaticData.size() + 45 * statics.size());
-		for (auto item : statics)
-			StaticData += "SetStaticName " + to_string(item.second.index) + " " + to_string(item.first) + "//" + item.second.name + "\r\n";
-
-		fwrite(StaticData.data(), 1, StaticData.size(), file);
-		StaticData.clear();
 		//this needs tidying up and when ready removing the first statics method
-		string staticData2 = "/*\r\n" + scriptData->getNewStaticsAsString() + "\r\n*/\r\n";
-		fwrite(staticData2.data(), 1, staticData2.size(), file);
+		string staticData = scriptData->getStaticsAsString();
+		fwrite(staticData.data(), 1, staticData.size(), file);
 
 		for (uint32_t i = 0, max = scriptData->getFunctionCount(); i <max; i++)
 		{

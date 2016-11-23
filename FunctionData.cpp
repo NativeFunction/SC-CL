@@ -1109,18 +1109,6 @@ void FunctionData::addOpPGet()
 			case OK_GetImmP:
 				Instructions.back()->setKind(OK_GetImm);
 				return;
-			case OK_AddImm:
-			{
-				int imm = Instructions.back()->getInt();
-				if (imm > 0 && imm % stackWidth == 0 && imm / stackWidth < 0xFFFF)
-				{
-					delete Instructions.back();
-					Instructions.pop_back();
-					addOpGetImm(imm / stackWidth);
-					return;
-				}
-				//fall through to default
-			}
 			default:
 				Instructions.push_back(new Opcode(OK_PGet));
 				return;
@@ -1155,18 +1143,6 @@ void FunctionData::addOpPSet()
 			case OK_GetImmP:
 				Instructions.back()->setKind(OK_SetImm);
 				return;
-			case OK_AddImm:
-			{
-				int imm = Instructions.back()->getInt();
-				if (imm > 0 && imm % stackWidth == 0 && imm / stackWidth < 0xFFFF)
-				{
-					delete Instructions.back();
-					Instructions.pop_back();
-					addOpSetImm(imm / stackWidth);
-					return;
-				}
-				//fall through to default
-			}
 			default:
 				Instructions.push_back(new Opcode(OK_PSet));
 				return;
@@ -1287,26 +1263,76 @@ void FunctionData::addOpGetGlobal(int index)
 
 void FunctionData::addOpAddImm(int immediate)
 {
+start:
 	if (getOptLevel() > OptimisationLevel::OL_Trivial){
 		assert(Instructions.size() && "Cannot add AddImm to empty instruction stack");
 		Opcode *last = Instructions.back();
-		if (last->getKind() == OK_PushInt)
+		if (immediate == 0)
 		{
-			last->setInt(last->getInt() + immediate);
+			return;
 		}
-		else if (last->getKind() == OK_AddImm)
+		switch (last->getKind())
 		{
-			int val = last->getInt() + immediate;
-			delete last;
-			Instructions.pop_back();
-			addOpAddImm(val);
+			case OK_PushInt:
+				last->setInt(last->getInt() + immediate);
+				return;
+			case OK_AddImm:
+			{
+				int val = last->getInt() + immediate;
+				delete last;
+				Instructions.pop_back();
+				immediate = val;
+				goto start;
+			}
+			case OK_GetFrameP:
+			case OK_GetStaticPRaw:
+			case OK_GetImmP:
+			{
+				if (immediate % stackWidth == 0)
+				{
+					int newImmIndex = (int)last->getUShort(0) + immediate / stackWidth;
+					if (newImmIndex < 0xFFFF)
+					{
+						last->setUShort(newImmIndex, 0);
+						return;
+					}
+				}
+			}
+			goto setAsAddImm;
+			case OK_GetGlobalP:
+			{
+				if (immediate % stackWidth == 0)
+				{
+					int newImmIndex = last->getInt() + immediate / stackWidth;
+					if (newImmIndex < 0xFFFFFF)
+					{
+						last->setInt(newImmIndex);
+						return;
+					}
+				}
+			}
+			goto setAsAddImm;
+			case OK_GetStaticP:
+			{
+				if (immediate % stackWidth == 0)
+				{
+					int newImmIndex = (int)last->getStaticData()->getImmIndex() + immediate / stackWidth;
+					if (newImmIndex < 0xFFFF)
+					{
+						last->storage.staticData->setImmIndex(newImmIndex);
+						return;
+					}
+				}
+			}
+			goto setAsAddImm;
+			default:
+				setAsAddImm:
+				Opcode* op = new Opcode(OK_AddImm);
+				op->setInt(immediate);
+				Instructions.push_back(op);
+
 		}
-		else if (immediate != 0)
-		{
-			Opcode* op = new Opcode(OK_AddImm);
-			op->setInt(immediate);
-			Instructions.push_back(op);
-		}
+
 	}
 	else{
 		Opcode* op = new Opcode(OK_AddImm);
