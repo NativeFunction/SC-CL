@@ -9,6 +9,7 @@ Script::Script(string scriptName, BuildType buildType, Platform platform) :
 {
 	auto entry = std::make_unique<FunctionData>("__builtin__entryPoint", 0, 0);
 	entryFunction = entry.get();
+	entryFunction->setBuiltIn();
 	functions.push_back(std::move(entry));
 	_endian = (buildType == BT_GTAV && platform == P_PC) ? END_LITTLE : END_BIG;
 	_stackWidth = (buildType == BT_GTAV && platform == P_PC) ? 8 : 4;
