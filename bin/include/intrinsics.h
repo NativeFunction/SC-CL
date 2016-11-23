@@ -37,7 +37,6 @@ extern __intrinsic const uint __varIndex(const char* varName);///Gets a var's in
 #pragma region Math/Conversions //{
 extern __intrinsic float reinterpretIntToFloat(int intValue);
 extern __intrinsic int reinterpretFloatToInt(float floatValue);
-//TODO: vector2 math
 extern __intrinsic vector3 toVector3(float value);
 extern __intrinsic vector3 vector3Add(vector3 left, vector3 right);
 extern __intrinsic vector3 vector3Sub(vector3 left, vector3 right);

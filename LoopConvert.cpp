@@ -250,26 +250,6 @@ struct local_scope
 
 #pragma region Global_Size_Functions
 uint32_t getSizeOfType(const Type* type);
-uint64_t getSizeOfQualType(const QualType *type) {
-	int mult = 1;
-	if ((*type)->isArrayType()) {
-		const ArrayType *arr = (*type)->getAsArrayTypeUnsafe();
-		if (isa<ConstantArrayType>(arr)) {
-			const ConstantArrayType *cArrType = cast<const ConstantArrayType>(arr);
-			mult = cArrType->getSize().getSExtValue();
-		}
-
-	}
-
-	const Type *canonical = type->getCanonicalType().getTypePtr();
-	if (canonical->getBaseElementTypeUnsafe()->isCharType() && mult >= stackWidth) {
-		return 1 * mult + ((mult % stackWidth != 0) ? 1 : 0);
-	}
-	else if (canonical->isArrayType())
-		return getSizeOfType(canonical->getArrayElementTypeNoTypeQual())*mult + (mult > 1 ? stackWidth : 0);
-	else
-		return getSizeOfType(canonical)*mult + (mult > 1 ? stackWidth : 0);
-}
 uint32_t getSizeFromBytes(uint64_t bytes) {
 	uint32_t size = (bytes / stackWidth) + ((bytes % stackWidth) ? 1 : 0);
 	return size;
@@ -475,11 +455,8 @@ uint32_t getSizeOfCXXDecl(const CXXRecordDecl *classDecl, bool incVTableDef = fa
 			if (CS->Decl::isFirstDecl() == false)
 				continue;
 
-
-
-
-			const  QualType type = CS->getType();
-			int temp = getSizeOfQualType(&type);
+			const Type* type = CS->getType().getTypePtr();
+			int temp = getSizeOfType(type);
 			temp = max(temp, stackWidth);
 
 			if (temp > (int)offset)
@@ -491,12 +468,8 @@ uint32_t getSizeOfCXXDecl(const CXXRecordDecl *classDecl, bool incVTableDef = fa
 		for (const FieldDecl *CS : classDecl->fields()) {
 			if (CS->Decl::isFirstDecl() == false)
 				continue;
-
-
-
-
-			const  QualType type = CS->getType();
-			int temp = getSizeOfQualType(&type);
+			const Type* type = CS->getType().getTypePtr();
+			int temp = getSizeOfType(type);
 			offset += max(temp, stackWidth);
 		}
 	}
@@ -1160,6 +1133,7 @@ public:
 						{
 							Throw("memset size must be positive", rewriter, callee->getSourceRange());
 						}
+
 						LocalVariables.addLevel();
 						int destIndex = LocalVariables.addDecl("__memset-loop-dest", 1);
 						uint8_t byteVal = vResult.getSExtValue();
@@ -1715,8 +1689,7 @@ public:
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 2 && argArray[0]->getType()->isRealFloatingType())
 				{
 					parseExpression(argArray[0], false, true);
-					AddInstruction(FtoV);
-					AddInstruction(Drop);
+					AddInstruction(Dup);
 					return true;
 				}
 				Throw("tovector2 must have signature \"extern __intrinsic vector2 tovector2(float value);\"", rewriter, callee->getSourceRange());
@@ -4798,12 +4771,12 @@ public:
 					if (record->isUnion())
 						offset = 0;
 					else {
-						for (const auto *CS : record->fields()) {
+						for (const FieldDecl *CS : record->fields()) {
 							if (CS == Field)
 								break;
 
-							const  QualType type = CS->getType();
-							int temp = getSizeOfQualType(&type);
+							const Type* type = CS->getType().getTypePtr();
+							int temp = getSizeOfType(type);
 							offset += max(temp, stackWidth);
 						}
 					}
@@ -5469,9 +5442,8 @@ public:
 			//                if(CS == ND) {
 			//                    found = true;
 			//                }
-			//                
-			//                const  QualType type = CS->getType();
-			//                int temp = getSizeOfQualType(&type);
+			//                const Type* type = CS->getType().getTypePtr();
+			//				  int temp = getSizeOfType(type);
 			//                offset += max(temp, stackWidth);
 			//            }
 		}
@@ -5495,11 +5467,8 @@ public:
 
 					break;
 				}
-
-
-
-				const  QualType type = CS->getType();
-				int temp = getSizeOfQualType(&type);
+				const Type* type = CS->getType().getTypePtr();
+				int temp = getSizeOfType(type);
 				offset += max(temp, stackWidth);
 			}
 		}
@@ -6253,12 +6222,12 @@ public:
 				if (record->isUnion())
 					offset = 0;
 				else {
-					for (const auto *CS : record->fields()) {
+					for (const FieldDecl *CS : record->fields()) {
 						if (CS == Field)
 							break;
 
-						const  QualType type = CS->getType();
-						int temp = getSizeOfQualType(&type);
+						const Type* type = CS->getType().getTypePtr();
+						int temp = getSizeOfType(type);
 						offset += max(temp, stackWidth);
 					}
 				}
