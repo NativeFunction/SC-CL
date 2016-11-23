@@ -1709,6 +1709,101 @@ public:
 				Throw("vector3Neg must have signature \"extern __intrinsic vector3 vector3Neg(vector3 vector)\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
+			case JoaatCasedConst("toVector2"): {
+				ChkHashCol("toVector2");
+
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 2 && argArray[0]->getType()->isRealFloatingType())
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(FtoV);
+					AddInstruction(Drop);
+					return true;
+				}
+				Throw("tovector2 must have signature \"extern __intrinsic vector2 tovector2(float value);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("vector2Add"): {
+				ChkHashCol("vector2Add");
+
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 2)
+				{
+
+					parseExpression(argArray[0], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					AddInstruction(VAdd);
+					AddInstruction(Drop);
+					return true;
+				}
+				Throw("vector2Add must have signature \"extern __intrinsic vector2 vector2Add(vector2 left, vector2 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("vector2Sub"): {
+				ChkHashCol("vector2Sub");
+
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 2)
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					AddInstruction(VSub);
+					AddInstruction(Drop);
+					return true;
+				}
+				Throw("vector2Sub must have signature \"extern __intrinsic vector2 vector2Sub(vector2 left, vector2 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("vector2Mult"): {
+				ChkHashCol("vector2Mult");
+
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 2)
+				{
+
+					parseExpression(argArray[0], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					AddInstruction(VMult);
+					AddInstruction(Drop);
+					return true;
+				}
+				Throw("vector2Mult must have signature \"extern __intrinsic vector2 vector3Mult(vector2 left, vector2 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("vector2Div"): {
+				ChkHashCol("vector2Div");
+
+				if (argCount == 2 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 2)
+				{
+
+					parseExpression(argArray[0], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					AddInstruction(VDiv);
+					AddInstruction(Drop);
+					return true;
+				}
+				Throw("vector2Div must have signature \"extern __intrinsic vector2 vector2Div(vector2 left, vector2 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("vector2Neg"): {
+				ChkHashCol("vector2Neg");
+
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 2)
+				{
+
+					parseExpression(argArray[0], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					AddInstruction(VNeg);
+					AddInstruction(Drop);
+					return true;
+				}
+				Throw("vector2Neg must have signature \"extern __intrinsic vector2 vector2Neg(vector2 vector)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
 			case JoaatCasedConst("fMod"): {
 				ChkHashCol("fMod");
 				if (argCount == 2 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType() && argArray[1]->getType()->isRealFloatingType())
