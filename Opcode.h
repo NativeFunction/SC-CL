@@ -63,10 +63,10 @@ enum OpcodeKind{
 	OK_GetFrame,
 	OK_SetFrame,
 	OK_GetStaticP,
-	OK_GetStaticPRaw,
 	OK_GetStatic,
-	OK_GetStaticRaw,
 	OK_SetStatic,
+	OK_GetStaticPRaw,
+	OK_GetStaticRaw,
 	OK_SetStaticRaw,
 	OK_GetGlobalP,
 	OK_GetGlobal,
@@ -331,7 +331,16 @@ class Opcode
 #ifdef _DEBUG
 	StringStorage *_comment = NULL;
 #endif
-	Opcode(OpcodeKind kind) : opcodeKind(kind){ }
+	Opcode(OpcodeKind kind) : opcodeKind(kind){ storage.ptr = nullptr; }
+	Opcode(OpcodeKind kind, void* pointer) :opcodeKind(kind){ storage.ptr = pointer; }
+	Opcode(OpcodeKind kind, int storageVal) : opcodeKind(kind){ storage.i32 = storageVal; }
+	Opcode(OpcodeKind kind, float storageVal) : opcodeKind(kind){ storage.f32 = storageVal; }
+	Opcode(OpcodeKind kind, uint16_t storageVal) : opcodeKind(kind){ storage.u16[0] = storageVal; storage.u16[1] = 0; }
+	Opcode(OpcodeKind kind, int16_t storageVal) : opcodeKind(kind){ storage.i16[0] = storageVal; storage.i16[1] = 0;}
+	Opcode(OpcodeKind kind, uint8_t storageVal) : opcodeKind(kind){ storage.u8[0] = storageVal; storage.u8[1] = storage.u8[2] = storage.u8[3] = 0; }
+	Opcode(OpcodeKind kind, uint8_t storageVal1, uint8_t storageVal2) : opcodeKind(kind){
+		storage.u8[0] = storageVal1; storage.u8[1] = storageVal2; storage.u8[2] = storage.u8[3] = 0;
+	}
 	void setString(const std::string& str)
 	{
 		if (storage.string)
@@ -364,6 +373,7 @@ class Opcode
 	void setKind(OpcodeKind newKind){ opcodeKind = newKind; }
 	union
 	{
+		void* ptr;
 		char u8[sizeof(void*)];
 		uint16_t u16[sizeof(void*) / 2];
 		int16_t i16[sizeof(void*) / 2];
@@ -376,9 +386,56 @@ class Opcode
 		JumpTableStorage *jTable;
 		OpStaticStorage* staticData;
 		FunctionData* functionData;
-	}storage = { 0,0,0,0 };
+	}storage;
 public:
-
+	static Opcode* makeIntOpcode(OpcodeKind ok, int value)
+	{
+		return new Opcode(ok, value);
+	}
+	static Opcode* makeFloatOpcode(OpcodeKind ok, float value)
+	{
+		return new Opcode(ok, value);
+	}
+	static Opcode* makeUShortOpcode(OpcodeKind ok, uint16_t value)
+	{
+		return new Opcode(ok, value);
+	}
+	static Opcode* makeShortOpcode(OpcodeKind ok, int16_t value)
+	{
+		return new Opcode(ok, value);
+	}
+	static Opcode* makeStaticOpcode(OpcodeKind ok, OpStaticStorage* staticData)
+	{
+		return new Opcode(ok, staticData);
+	}
+	static Opcode* makeStringOpcode(OpcodeKind ok, const std::string& str)
+	{
+		return new Opcode(ok, new StringStorage(str));
+	}
+	static Opcode* makeByteOpcode(OpcodeKind ok, uint8_t value)
+	{
+		return new Opcode(ok, value);
+	}
+	static Opcode* make2ByteOpcode(OpcodeKind ok, uint8_t value1, uint8_t value2)
+	{
+		return new Opcode(ok, value1, value2);
+	}
+	static Opcode* makeFunctionOpcode(OpcodeKind ok, FunctionData* function)
+	{
+		return new Opcode(ok, function);
+	}
+	static Opcode* makeJumpTableOpcode(JumpTableStorage* jTable)
+	{
+		return new Opcode(OK_JumpTable, jTable);
+	}
+	static Opcode* makeSwitchOpcode(SwitchStorage* switchStorage)
+	{
+		return new Opcode(OK_Switch, switchStorage);
+	}
+	static Opcode* makeNativeOpcode(NativeStorage* nativeStorage)
+	{
+		return new Opcode(OK_Native, nativeStorage);
+	}
 	~Opcode();
 	OpcodeKind getKind() const{ return opcodeKind; }
 	void setComment(const std::string& comment)

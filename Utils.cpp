@@ -114,7 +114,7 @@ namespace Utils {
 			hash += (hash << 15);
 			return hash;
 		}
-		uint32_t Joaat(string key)
+		uint32_t Joaat(const string& key)
 		{
 			uint32_t hash, i;
 			for (hash = i = 0; i < key.size(); ++i)
@@ -142,7 +142,7 @@ namespace Utils {
 			hash += (hash << 15);
 			return hash;
 		}
-		uint32_t JoaatCased(string key)
+		uint32_t JoaatCased(const string& key)
 		{
 			uint32_t hash, i;
 			for (hash = i = 0; i < key.size(); ++i)
