@@ -163,6 +163,7 @@ public:
 	std::string getScriptName()const{ return _scriptName; }
 	BuildType getBuildType()const{ return _bType; }
 	Platform getBuildPlatform()const{ return _platform; }
+	int getBuildPlatformSize() const { return _platform == Platform::P_PC ? 8 : 4; }
 
 	std::string getPlatformAbv()const;
 

@@ -118,7 +118,7 @@ typedef union FloatRGB
 
 typedef enum DataType
 {
-	DT_NONE,
+	DT_None,
 	DT_UInt,
 	DT_UIntP,
 	DT_Int,

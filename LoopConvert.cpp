@@ -1067,6 +1067,7 @@ public:
 					}
 					else
 					{
+						//TODO: fix for pc
 						static uint32_t loopLblCount = -1;
 						loopLblCount++;
 
@@ -1126,38 +1127,49 @@ public:
 				ChkHashCol("memset");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isCharType() && argArray[2]->getType()->isIntegerType())
 				{
-					llvm::APSInt sResult, vResult;
-					if (argArray[2]->EvaluateAsInt(sResult, *context) && sResult.getSExtValue() % 4 == 0 && argArray[1]->EvaluateAsInt(vResult, *context))
-					{
-						if (sResult.getSExtValue() < 0)
-						{
-							Throw("memset size must be positive", rewriter, callee->getSourceRange());
-						}
+					static uint32_t loopLblCount = -1;
+					loopLblCount++;
 
+					llvm::APSInt sResult, vResult;
+					if (argArray[2]->EvaluateAsInt(sResult, *context) && sResult.getSExtValue() % scriptData.getBuildPlatformSize() == 0 && argArray[1]->EvaluateAsInt(vResult, *context))
+					{
+						if (sResult.getSExtValue() <= 0)
+							Throw("memset size must greater then 0", rewriter, callee->getSourceRange());
+						if ((uint32_t)vResult.getExtValue() > 255)
+							Throw("memset value must be a byte", rewriter, callee->getSourceRange());
+						
 						LocalVariables.addLevel();
 						int destIndex = LocalVariables.addDecl("__memset-loop-dest", 1);
-						uint8_t byteVal = vResult.getSExtValue();
-						int pushVal = byteVal | byteVal << 8 | byteVal << 16 | byteVal << 24;
-						int count = sResult.getSExtValue() / 4;
+						int incIndex = LocalVariables.addDecl("__memset-loop-inc", 1);
+
 						parseExpression(argArray[0], true, true);//dest
 						AddInstruction(SetFrame, destIndex);
+						AddInstruction(PushInt, 0);
+						AddInstruction(SetFrame, incIndex);
 
-						for (int i = 0; i < count; i++)
-						{
-							AddInstruction(PushInt, pushVal);
-							AddInstruction(GetFrame, destIndex);
-							AddInstruction(AddImm, i << 2);
-							AddInstruction(PSet);
-						}
+						AddInstruction(Label, "__memset-loop-" + to_string(loopLblCount));
+						AddInstruction(GetFrame, incIndex);
+						AddInstruction(PushInt, sResult.getExtValue());
+						AddInstruction(JumpGE, "__memset-loopend-" + to_string(loopLblCount));
 
+						AddInstruction(PushInt, (uint8_t)vResult.getSExtValue());//value to set
+						AddInstruction(GetFrame, destIndex);
+						AddInstruction(GetFrame, incIndex);
+						AddInstruction(Add);
+						AddInstruction(PSet);
+
+						AddInstruction(GetFrame, incIndex);
+						AddInstruction(AddImm, scriptData.getBuildPlatformSize());
+						AddInstruction(SetFrame, incIndex);
+						AddInstruction(Jump, "__memset-loop-" + to_string(loopLblCount));
+						AddInstruction(Label, "__memset-loopend-" + to_string(loopLblCount));
 						LocalVariables.removeLevel();
 					}
 					else
 					{
 
-
-						static uint32_t loopLblCount = -1;
-						loopLblCount++;
+						//TODO: fix for pc
+						
 						LocalVariables.addLevel();
 
 						int destIndex = LocalVariables.addDecl("__memset-loop-dest", 1);
