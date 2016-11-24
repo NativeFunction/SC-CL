@@ -104,9 +104,7 @@ public:
 	void addOpNop(uint16_t nopCount)
 	{
 		assert(nopCount > 0 && nopCount <= 4096 && "Nop Count out of range");
-		Opcode* op = new Opcode(OK_Nop);
-		op->setUShort(nopCount, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeUShortOpcode(OK_Nop, nopCount));
 	}
 #pragma region MathOpcodes
 	void addOpAdd();
@@ -149,15 +147,11 @@ public:
 	void addOpFtoV(){ Instructions.push_back(new Opcode(OK_FtoV)); }
 	void addOpPushInt(int immediate)
 	{
-		Opcode* op = new Opcode(OK_PushInt);
-		op->setInt(immediate);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, immediate));
 	}
 	void addOpPushFloat(float immediate)
 	{
-		Opcode* op = new Opcode(OK_PushFloat);
-		op->setFloat(immediate);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeFloatOpcode(OK_PushFloat, immediate));
 	}
 	void addOpShiftLeft(){ SimpleOpCheck(<< , ShiftLeft); }
 	void addOpShiftLeft(uint8_t shiftCount)
@@ -183,9 +177,7 @@ public:
 		}
 		else
 		{
-			Opcode* op = new Opcode(OK_PushInt);
-			op->setInt((int)(1 << bitIndex));
-			Instructions.push_back(op);
+			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
 			Instructions.push_back(new Opcode(OK_And));
 			addOpIsNotZero();
 		}
@@ -193,38 +185,125 @@ public:
 	void addOpBitSet(uint8_t bitIndex)
 	{
 		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
-		Instructions.push_back(new Opcode(OK_Dup));
-		Instructions.push_back(new Opcode(OK_PGet));
-		Opcode* op = new Opcode(OK_PushInt);
-		op->setInt((int)(1 << bitIndex));
-		Instructions.push_back(op);
-		Instructions.push_back(new Opcode(OK_Or));
-		Instructions.push_back(new Opcode(OK_PeekSet));
-		Instructions.push_back(new Opcode(OK_Drop));
+		assert(Instructions.size() && "cannot add bitset to empty instruction stack");
+		Opcode* back = Instructions.back();
+		switch(back->getKind())
+		{
+			case OK_GetFrameP:
+				back->setKind(OK_GetFrame);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
+				Instructions.push_back(new Opcode(OK_Or));
+				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetFrame, back->getUShort(0)));
+				break;
+			case OK_GetStaticPRaw:
+				back->setKind(OK_GetStaticRaw);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
+				Instructions.push_back(new Opcode(OK_Or));
+				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetStaticRaw, back->getUShort(0)));
+				break;
+			case OK_GetStaticP:
+				back->setKind(OK_GetStatic);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
+				Instructions.push_back(new Opcode(OK_Or));
+				Instructions.push_back(Opcode::makeStaticOpcode(OK_SetStatic, new OpStaticStorage(*back->getStaticData())));
+				break;
+			case OK_GetGlobalP:
+				back->setKind(OK_GetGlobal);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
+				Instructions.push_back(new Opcode(OK_Or));
+				Instructions.push_back(Opcode::makeIntOpcode(OK_SetGlobal, back->getInt()));
+				break;
+			default:
+				Instructions.push_back(new Opcode(OK_Dup));
+				Instructions.push_back(new Opcode(OK_PGet));
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
+				Instructions.push_back(new Opcode(OK_Or));
+				Instructions.push_back(new Opcode(OK_PeekSet));
+				Instructions.push_back(new Opcode(OK_Drop));
+				break;
+		}
 	}
 	void addOpBitReset(uint8_t bitIndex)
 	{
 		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
-		Instructions.push_back(new Opcode(OK_Dup));
-		Instructions.push_back(new Opcode(OK_PGet));
-		Opcode* op = new Opcode(OK_PushInt);
-		op->setInt(~((int)(1 << bitIndex)));
-		Instructions.push_back(op);
-		Instructions.push_back(new Opcode(OK_And));
-		Instructions.push_back(new Opcode(OK_PeekSet));
-		Instructions.push_back(new Opcode(OK_Drop));
+		assert(Instructions.size() && "cannot add bitreset to empty instruction stack");
+		Opcode* back = Instructions.back();
+		switch (back->getKind())
+		{
+			case OK_GetFrameP:
+				back->setKind(OK_GetFrame);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, ~(int)(1 << bitIndex)));
+				Instructions.push_back(new Opcode(OK_And));
+				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetFrame, back->getUShort(0)));
+				break;
+			case OK_GetStaticPRaw:
+				back->setKind(OK_GetStaticRaw);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, ~(int)(1 << bitIndex)));
+				Instructions.push_back(new Opcode(OK_And));
+				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetStaticRaw, back->getUShort(0)));
+				break;
+			case OK_GetStaticP:
+				back->setKind(OK_GetStatic);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, ~(int)(1 << bitIndex)));
+				Instructions.push_back(new Opcode(OK_And));
+				Instructions.push_back(Opcode::makeStaticOpcode(OK_SetStatic, new OpStaticStorage(*back->getStaticData())));
+				break;
+			case OK_GetGlobalP:
+				back->setKind(OK_GetGlobal);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, ~(int)(1 << bitIndex)));
+				Instructions.push_back(new Opcode(OK_And));
+				Instructions.push_back(Opcode::makeIntOpcode(OK_SetGlobal, back->getInt()));
+				break;
+			default:
+				Instructions.push_back(new Opcode(OK_Dup));
+				Instructions.push_back(new Opcode(OK_PGet));
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, ~(int)(1 << bitIndex)));
+				Instructions.push_back(new Opcode(OK_And));
+				Instructions.push_back(new Opcode(OK_PeekSet));
+				Instructions.push_back(new Opcode(OK_Drop));
+				break;
+		}
 	}
 	void addOpBitFlip(uint8_t bitIndex)
 	{
 		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
-		Instructions.push_back(new Opcode(OK_Dup));
-		Instructions.push_back(new Opcode(OK_PGet));
-		Opcode* op = new Opcode(OK_PushInt);
-		op->setInt((int)(1 << bitIndex));
-		Instructions.push_back(op);
-		Instructions.push_back(new Opcode(OK_Xor));
-		Instructions.push_back(new Opcode(OK_PeekSet));
-		Instructions.push_back(new Opcode(OK_Drop));
+		assert(Instructions.size() && "cannot add bitflip to empty instruction stack");
+		Opcode* back = Instructions.back();
+		switch (back->getKind())
+		{
+			case OK_GetFrameP:
+				back->setKind(OK_GetFrame);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
+				Instructions.push_back(new Opcode(OK_Xor));
+				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetFrame, back->getUShort(0)));
+				break;
+			case OK_GetStaticPRaw:
+				back->setKind(OK_GetStaticRaw);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
+				Instructions.push_back(new Opcode(OK_Xor));
+				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetStaticRaw, back->getUShort(0)));
+				break;
+			case OK_GetStaticP:
+				back->setKind(OK_GetStatic);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
+				Instructions.push_back(new Opcode(OK_Xor));
+				Instructions.push_back(Opcode::makeStaticOpcode(OK_SetStatic, new OpStaticStorage(*back->getStaticData())));
+				break;
+			case OK_GetGlobalP:
+				back->setKind(OK_GetGlobal);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
+				Instructions.push_back(new Opcode(OK_Xor));
+				Instructions.push_back(Opcode::makeIntOpcode(OK_SetGlobal, back->getInt()));
+				break;
+			default:
+				Instructions.push_back(new Opcode(OK_Dup));
+				Instructions.push_back(new Opcode(OK_PGet));
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
+				Instructions.push_back(new Opcode(OK_Xor));
+				Instructions.push_back(new Opcode(OK_PeekSet));
+				Instructions.push_back(new Opcode(OK_Drop));
+				break;
+		}
 	}
 	void addOpIsNotZero();
 	void addOpGetConv(int size, bool isSigned);
@@ -233,22 +312,25 @@ public:
 
 	void addOpDup(){ Instructions.push_back(new Opcode(OK_Dup)); }
 	void addOpDrop();
-	void addOpNative(const std::string& name, uint8_t pCount, uint8_t rCount);
-	void addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount);
-	void addOpNative(const std::string& name, uint64_t hash, uint8_t pCount, uint8_t rCount);
+	void addOpNative(const std::string& name, uint8_t pCount, uint8_t rCount)
+	{
+		Instructions.push_back(Opcode::makeNativeOpcode(new NativeStorage(name, pCount, rCount)));
+	}
+	void addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount)
+	{
+		Instructions.push_back(Opcode::makeNativeOpcode(new NativeStorage(hash, pCount, rCount)));
+	}
+	void addOpNative(const std::string& name, uint64_t hash, uint8_t pCount, uint8_t rCount)
+	{
+		Instructions.push_back(Opcode::makeNativeOpcode(new NativeStorage(name, hash, pCount, rCount)));
+	}
 	void addOpReturn()
 	{
-		Opcode* op = new Opcode(OK_Return);
-		op->setByte(pcount, 0);
-		op->setByte(rcount, 1);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::make2ByteOpcode(OK_Return, pcount, rcount));
 	}
 	void addOpReturn(uint8_t stackSize, uint8_t returnCount)
 	{
-		Opcode* op = new Opcode(OK_Return);
-		op->setByte(stackSize, 0);
-		op->setByte(returnCount, 1);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::make2ByteOpcode(OK_Return, stackSize, returnCount));
 	}
 	void addOpPGet();
 	void addOpPSet();
@@ -257,78 +339,54 @@ public:
 	void addOpFromStack(){ Instructions.push_back(new Opcode(OK_FromStack)); }
 	void addOpGetArrayP(uint16_t itemSize)
 	{
-		Opcode* op = new Opcode(OK_GetArrayP);
-		op->setUShort(itemSize, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeUShortOpcode(OK_GetArrayP, itemSize));
 	}
 	void addOpGetArray(uint16_t itemSize)
 	{
-		Opcode* op = new Opcode(OK_GetArray);
-		op->setUShort(itemSize, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeUShortOpcode(OK_GetArray, itemSize));
 	}
 	void addOpSetArray(uint16_t itemSize)
 	{
-		Opcode* op = new Opcode(OK_SetArray);
-		op->setUShort(itemSize, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeUShortOpcode(OK_SetArray, itemSize));
 	}
 	void addOpGetFrameP(uint16_t index)
 	{
-		Opcode* op = new Opcode(OK_GetFrameP);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeUShortOpcode(OK_GetFrameP, index));
 	}
 	void addOpGetFrame(uint16_t index);
 	void addOpSetFrame(uint16_t index)
 	{
-		Opcode* op = new Opcode(OK_SetFrame);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeUShortOpcode(OK_SetFrame, index));
 	}
 	void addOpGetStaticP(StaticData* staticData)
 	{
-		Opcode* op = new Opcode(OK_GetStaticP);
-		op->storage.staticData = new OpStaticStorage(staticData);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStaticOpcode(OK_GetStaticP, new OpStaticStorage(staticData)));
 	}
 	void addOpGetStaticPRaw(uint16_t index)
 	{
-		Opcode* op = new Opcode(OK_GetStaticPRaw);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeUShortOpcode(OK_GetStaticPRaw, index));
 	}
 	void addOpGetStatic(StaticData* staticData)
 	{
-		Opcode* op = new Opcode(OK_GetStatic);
-		op->storage.staticData = new OpStaticStorage(staticData);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStaticOpcode(OK_GetStatic, new OpStaticStorage(staticData)));
 	}
 	void addOpGetStaticRaw(uint16_t index);
 	void addOpSetStatic(StaticData* staticData)
 	{
-		Opcode* op = new Opcode(OK_SetStatic);
-		op->storage.staticData = new OpStaticStorage(staticData);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStaticOpcode(OK_SetStatic, new OpStaticStorage(staticData)));
 	}
 	void addOpSetStaticRaw(uint16_t index)
 	{
-		Opcode* op = new Opcode(OK_SetStaticRaw);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeUShortOpcode(OK_SetStaticRaw, index));
 	}
 	void addOpGetGlobalP(int index)
 	{
-		Opcode* op = new Opcode(OK_GetGlobalP);
-		op->setInt(index);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeIntOpcode(OK_GetGlobalP, index));
 	}
 	void addOpGetGlobal(int index);
 	void addOpSetGlobal(int index)
 	{
-		Opcode* op = new Opcode(OK_SetGlobal);
-		op->setInt(index);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeIntOpcode(OK_SetGlobal, index));
 	}
 	void addOpAddImm(int immediate);
 	void addOpMultImm(int immediate);
@@ -341,16 +399,12 @@ public:
 	void addOpCall(FunctionData* callee)
 	{
 		addUsedFunc(callee);
-		Opcode* op = new Opcode(OK_Call);
-		op->storage.functionData = callee;
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeFunctionOpcode(OK_Call, callee));
 	}
 #pragma region Jumps
 	void addOpJump(const std::string& loc)
 	{
-		Opcode* op = new Opcode(OK_Jump);
-		op->setString(loc);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStringOpcode(OK_Jump, loc));
 	}
 	void addOpJumpTrue(const std::string& loc)
 	{
@@ -360,39 +414,38 @@ public:
 	void addOpJumpFalse(const std::string& loc);
 	void addOpJumpEQ(const std::string& loc)
 	{
-		Opcode* op = new Opcode(OK_JumpEQ);
-		op->setString(loc);
-		Instructions.push_back(op);
+		assert(Instructions.size() && "cannot add jumpEQ to empty instruction stack");
+		auto back = Instructions.back();
+		if (getOptLevel() > OptimisationLevel::OL_None && back->getKind() == OK_PushInt && back->getInt() == 0)
+		{
+			back->setKind(OK_JumpFalse);
+			back->setString(loc);
+		}
+		else
+		{
+			Instructions.push_back(Opcode::makeStringOpcode(OK_JumpEQ, loc));
+		}
+		
 	}
 	void addOpJumpNE(const std::string& loc)
 	{
-		Opcode* op = new Opcode(OK_JumpNE);
-		op->setString(loc);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStringOpcode(OK_JumpNE, loc));
 	}
 	void addOpJumpGT(const std::string& loc)
 	{
-		Opcode* op = new Opcode(OK_JumpGT);
-		op->setString(loc);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStringOpcode(OK_JumpGT, loc));
 	}
 	void addOpJumpGE(const std::string& loc)
 	{
-		Opcode* op = new Opcode(OK_JumpGE);
-		op->setString(loc);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStringOpcode(OK_JumpGE, loc));
 	}
 	void addOpJumpLT(const std::string& loc)
 	{
-		Opcode* op = new Opcode(OK_JumpLT);
-		op->setString(loc);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStringOpcode(OK_JumpLT, loc));
 	}
 	void addOpJumpLE(const std::string& loc)
 	{
-		Opcode* op = new Opcode(OK_JumpLE);
-		op->setString(loc);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStringOpcode(OK_JumpLE, loc));
 	}
 	void addOpJump(unsigned int rawEncoding){ addOpJump(std::to_string(rawEncoding)); }
 	void addOpJumpTrue(unsigned int rawEncoding){ addOpJumpTrue(std::to_string(rawEncoding)); }
@@ -407,69 +460,57 @@ public:
 	
 	void addOpSwitch()
 	{
-		Opcode* op = new Opcode(OK_Switch);
-		op->storage.switchCase = new SwitchStorage();
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeSwitchOpcode(new SwitchStorage()));
 	}
 	void addOpPushString(const std::string& str)
 	{
-		Opcode* op = new Opcode(OK_PushString);
-		op->setString(str);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStringOpcode(OK_PushString, str));
 	}
 	void addOpStrCopy(uint8_t size)
 	{
-		Opcode* op = new Opcode(OK_StrCopy);
-		op->setByte(size, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeByteOpcode(OK_StrCopy, size));
 	}
 	void addOpItoS(uint8_t size)
 	{
-		Opcode* op = new Opcode(OK_ItoS);
-		op->setByte(size, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeByteOpcode(OK_ItoS, size));
 	}
 	void addOpStrAdd(uint8_t size)
 	{
-		Opcode* op = new Opcode(OK_StrAdd);
-		op->setByte(size, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeByteOpcode(OK_StrAdd, size));
 	}
 	void addOpStrAddI(uint8_t size)
 	{
-		Opcode* op = new Opcode(OK_StrAddI);
-		op->setByte(size, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeByteOpcode(OK_StrAddI, size));
 	}
 	void addOpMemCopy(){ Instructions.push_back(new Opcode(OK_MemCpy)); }
-	void addOpPCall(){ Instructions.push_back(new Opcode(OK_PCall)); }
+	void addOpPCall()
+	{
+		if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_FuncLoc){
+			Instructions.back()->setKind(OK_Call);
+		}
+		else{
+			Instructions.push_back(new Opcode(OK_PCall));
+		}
+	}
 	void addOpLabel(const std::string& loc)
 	{
-		Opcode* op = new Opcode(OK_Label);
-		op->setString(loc);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStringOpcode(OK_Label, loc));
 	}
 	void addOpLabel(unsigned int rawEncoding){ addOpLabel(std::to_string(rawEncoding)); }
 	void addOpLabelLoc(const std::string& loc)
 	{
-		Opcode* op = new Opcode(OK_LabelLoc);
-		op->setString(loc);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStringOpcode(OK_LabelLoc, loc));
 	}
 	void addOpFuncLoc(FunctionData* function)
 	{
 		addUsedFunc(function);
-		Opcode* op = new Opcode(OK_FuncLoc);
-		op->storage.functionData = function;
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeFunctionOpcode(OK_FuncLoc, function));
 	}
 	void addOpLabelLoc(unsigned int rawEncoding){ addOpLabelLoc(std::to_string(rawEncoding)); }
 	void addOpGetHash();
 	void addOpJumpTable()
 	{
-		Opcode* op = new Opcode(OK_JumpTable);
-		op->storage.jTable = new JumpTableStorage();
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeJumpTableOpcode(new JumpTableStorage()));
 	}
 	void addJumpTableLoc(const std::string& jumpLoc)
 	{

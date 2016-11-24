@@ -383,25 +383,16 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 		vector<string> jumpTableLocations;
 		vector<size_t> jumpTableRandomisation;
 		auto JumpTable = new JumpTableStorage();
-		Opcode *jtableOp = new Opcode(OK_JumpTable);
-		jtableOp->storage.jTable = JumpTable;
-
 		vector<Opcode*> jTableBlock;
-		Opcode *label = new Opcode(OK_Label);
-		label->setString("__builtin__jumpTable");
-		jTableBlock.push_back(label);
+		jTableBlock.push_back(Opcode::makeStringOpcode(OK_Label, "__builtin__jumpTable"));
 		if (pcFrameIndex)
 		{
-			auto setFrame = new Opcode(OK_SetFrame);
-			setFrame->setUShort(pcFrameIndex, 0);
-			jTableBlock.push_back(setFrame);
+			jTableBlock.push_back(Opcode::makeUShortOpcode(OK_SetFrame, pcFrameIndex));
 		}
-		jTableBlock.push_back(jtableOp);
+		jTableBlock.push_back(Opcode::makeJumpTableOpcode(JumpTable));
 		if (pcFrameIndex)
 		{
-			auto getFrame = new Opcode(OK_GetFrame);
-			getFrame->setUShort(pcFrameIndex, 0);
-			jTableBlock.push_back(getFrame);
+			jTableBlock.push_back(Opcode::makeUShortOpcode(OK_GetFrame, pcFrameIndex));
 		}
 		jTableBlock.push_back(new Opcode(OK_Add));
 		jTableBlock.push_back(new Opcode(OK_PGet));
@@ -411,9 +402,7 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 		for (int i = (isFirstNop ? 1 : 0); i < maxSize;)
 		{
 			vector<Opcode*> block;
-			Opcode* label = new Opcode(OK_Label);
-			label->setString("__builtin__controlFlowObsJumpTable_" + to_string(labelCounter++));
-			block.push_back(label);
+			block.push_back(Opcode::makeStringOpcode(OK_Label, "__builtin__controlFlowObsJumpTable_" + to_string(labelCounter++)));
 			int bSize = (rand() % randMod) + minBlockSize;
 			for (int j = 0; j < bSize;j++)
 			{
@@ -464,12 +453,8 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 				{
 					found = true;
 					JumpTable->addJumpLoc(jumpTableLocations[j]);
-					Opcode* index = new Opcode(OK_PushInt);
-					index->setInt(i*4);
-					Opcode* jump = new Opcode(OK_Jump);
-					jump->setString("__builtin__jumpTable");
-					InstructionBuilder[j+1].push_back(index);
-					InstructionBuilder[j+1].push_back(jump);
+					InstructionBuilder[j+1].push_back(Opcode::makeIntOpcode(OK_PushInt, i * 4));
+					InstructionBuilder[j+1].push_back(Opcode::makeStringOpcode(OK_Jump, "__builtin__jumpTable"));
 					break;
 				}
 			}
@@ -509,9 +494,7 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 		for (int i = (isFirstNop ? 1 : 0); i < maxSize;)
 		{
 			vector<Opcode*> block;
-			Opcode* label = new Opcode(OK_Label);
-			label->setString("__builtin__controlFlowObs_" + to_string(labelCounter++));
-			block.push_back(label);
+			block.push_back(Opcode::makeStringOpcode(OK_Label, "__builtin__controlFlowObs_" + to_string(labelCounter++)));
 			int bSize = (rand() % randMod) + minBlockSize;
 			if (i + bSize >= maxSize)
 			{
@@ -530,9 +513,7 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 					memcpy(&block[1], &Instructions[i], bSize * sizeof(Opcode*));
 				if (block[bSize]->getKind() != OK_Jump)
 				{
-					Opcode* jumpNext = new Opcode(OK_Jump);
-					jumpNext->setString("__builtin__controlFlowObs_" + to_string(labelCounter));
-					block.push_back(jumpNext);
+					block.push_back(Opcode::makeStringOpcode(OK_Jump, "__builtin__controlFlowObs_" + to_string(labelCounter)));
 				}
 			}
 			InstructionBuilder.push_back(block);
@@ -548,9 +529,7 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 		shuffle(randomiseIndexes.begin(), (keepEndReturn ? randomiseIndexes.end() - 1 : randomiseIndexes.end()), randomEngine);
 		if (randomiseIndexes[0] > 0)
 		{
-			Opcode* jumpInit = new Opcode(OK_Jump);
-			jumpInit->setString("__builtin__controlFlowObs_0");
-			Instructions.push_back(jumpInit);
+			Instructions.push_back(Opcode::makeStringOpcode(OK_Jump, "__builtin__controlFlowObs_0"));
 		}
 		else
 		{
@@ -726,7 +705,7 @@ void FunctionData::addOpDiv(bool *isZeroDivDetected)
 			}
 			//game treats division by zero as just putting 0 on top of stack
 			Instructions.back()->setKind(OK_Drop);
-			Instructions.push_back(new Opcode(OK_PushInt));
+			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 0));
 		}
 		else if (i == 1)
 		{
@@ -1063,27 +1042,6 @@ void FunctionData::addOpDrop()
 	}
 }
 
-void FunctionData::addOpNative(const string& name, uint8_t pCount, uint8_t rCount)
-{
-	Opcode* op = new Opcode(OK_Native);
-	op->storage.native = new NativeStorage(name, pCount, rCount);
-	Instructions.push_back(op);
-}
-
-void FunctionData::addOpNative(uint64_t hash, uint8_t pCount, uint8_t rCount)
-{
-	Opcode* op = new Opcode(OK_Native);
-	op->storage.native = new NativeStorage(hash, pCount, rCount);
-	Instructions.push_back(op);
-}
-
-void FunctionData::addOpNative(const string& name, uint64_t hash, uint8_t pCount, uint8_t rCount)
-{
-	Opcode* op = new Opcode(OK_Native);
-	op->storage.native = new NativeStorage(name, hash, pCount, rCount);
-	Instructions.push_back(op);
-}
-
 void FunctionData::addOpPGet()
 {
 	if (getOptLevel() > OptimisationLevel::OL_Trivial){
@@ -1183,10 +1141,7 @@ void FunctionData::addOpGetFrame(uint16_t index)
 			}
 		}
 	}
-
-	Opcode* op = new Opcode(OK_GetFrame);
-	op->setUShort(index, 0);
-	Instructions.push_back(op);
+	Instructions.push_back(Opcode::makeUShortOpcode(OK_GetFrame, index));
 
 }
 
@@ -1221,9 +1176,7 @@ void FunctionData::addOpGetStaticRaw(uint16_t index)
 		}
 	}
 
-	Opcode* op = new Opcode(OK_GetStaticRaw);
-	op->setUShort(index, 0);
-	Instructions.push_back(op);
+	Instructions.push_back(Opcode::makeUShortOpcode(OK_GetStaticRaw, index));
 }
 
 void FunctionData::addOpGetGlobal(int index)
@@ -1256,9 +1209,7 @@ void FunctionData::addOpGetGlobal(int index)
 			}
 		}
 	}
-	Opcode* op = new Opcode(OK_GetGlobal);
-	op->setInt(index);
-	Instructions.push_back(op);
+	Instructions.push_back(Opcode::makeIntOpcode(OK_GetGlobal, index));
 }
 
 void FunctionData::addOpAddImm(int immediate)
@@ -1327,17 +1278,13 @@ start:
 			goto setAsAddImm;
 			default:
 				setAsAddImm:
-				Opcode* op = new Opcode(OK_AddImm);
-				op->setInt(immediate);
-				Instructions.push_back(op);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_AddImm, immediate));
 
 		}
 
 	}
 	else{
-		Opcode* op = new Opcode(OK_AddImm);
-		op->setInt(immediate);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeIntOpcode(OK_AddImm, immediate));
 	}
 }
 
@@ -1368,15 +1315,11 @@ void FunctionData::addOpMultImm(int immediate)
 		}
 		else if (immediate != 1)
 		{
-			Opcode* op = new Opcode(OK_MultImm);
-			op->setInt(immediate);
-			Instructions.push_back(op);
+			Instructions.push_back(Opcode::makeIntOpcode(OK_MultImm, immediate));
 		}
 	}
 	else{
-		Opcode* op = new Opcode(OK_MultImm);
-		op->setInt(immediate);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeIntOpcode(OK_MultImm, immediate));
 	}
 }
 
@@ -1402,15 +1345,11 @@ void FunctionData::addOpFAddImm(float immediate)
 		}
 		else
 		{
-			Opcode* op = new Opcode(OK_FAddImm);
-			op->setFloat(immediate);
-			Instructions.push_back(op);
+			Instructions.push_back(Opcode::makeFloatOpcode(OK_FAddImm, immediate));
 		}
 	}
 	else{
-		Opcode* op = new Opcode(OK_FAddImm);
-		op->setFloat(immediate);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeFloatOpcode(OK_FAddImm, immediate));
 	}
 
 }
@@ -1446,15 +1385,11 @@ void FunctionData::addOpFMultImm(float immediate)
 		}
 		else
 		{
-			Opcode* op = new Opcode(OK_FMultImm);
-			op->setFloat(immediate);
-			Instructions.push_back(op);
+			Instructions.push_back(Opcode::makeFloatOpcode(OK_FMultImm, immediate));
 		}
 	}
 	else{
-		Opcode* op = new Opcode(OK_FMultImm);
-		op->setFloat(immediate);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeFloatOpcode(OK_FMultImm, immediate));
 	}
 }
 
@@ -1477,17 +1412,13 @@ void FunctionData::addOpGetImmP(uint16_t index)
 			}
 			break;
 			default:
-				Opcode* op = new Opcode(OK_GetImmP);
-				op->setUShort(index, 0);
-				Instructions.push_back(op);
+				Instructions.push_back(Opcode::makeUShortOpcode(OK_GetImmP, index));
 				break;
 		}
 
 	}
 	else{
-		Opcode* op = new Opcode(OK_GetImmP);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeUShortOpcode(OK_GetImmP, index));
 	}
 }
 
@@ -1515,9 +1446,7 @@ void FunctionData::addOpGetImm(uint16_t index)
 				default:
 					break;
 			}
-			Opcode* op = new Opcode(OK_GetImm);
-			op->setUShort(index, 0);
-			Instructions.push_back(op);
+			Instructions.push_back(Opcode::makeUShortOpcode(OK_GetImm, index));
 		}
 		else{
 			addOpPGet();
@@ -1525,9 +1454,7 @@ void FunctionData::addOpGetImm(uint16_t index)
 	}
 	else
 	{
-		Opcode* op = new Opcode(OK_GetImm);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeUShortOpcode(OK_GetImm, index));
 	}
 }
 
@@ -1555,9 +1482,7 @@ void FunctionData::addOpSetImm(uint16_t index)
 				default:
 					break;
 			}
-			Opcode* op = new Opcode(OK_SetImm);
-			op->setUShort(index, 0);
-			Instructions.push_back(op);
+			Instructions.push_back(Opcode::makeUShortOpcode(OK_SetImm, index));
 		}
 		else{
 			addOpPSet();
@@ -1565,9 +1490,7 @@ void FunctionData::addOpSetImm(uint16_t index)
 	}
 	else
 	{
-		Opcode* op = new Opcode(OK_SetImm);
-		op->setUShort(index, 0);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeUShortOpcode(OK_SetImm, index));
 	}
 }
 
@@ -1583,8 +1506,23 @@ void FunctionData::addOpJumpFalse(const string& loc)
 				op->setString(loc);
 				break;
 			case OK_CmpNe:
-				op->setKind(OK_JumpEQ);
-				op->setString(loc);
+				assert(Instructions.size() - 1);
+			{
+					Opcode* back2 = Instructions[Instructions.size() - 2];
+					if (back2->getKind() == OK_PushInt && back2->getInt() == 0)
+					{
+						back2->setKind(OK_JumpFalse);
+						back2->setString(loc);
+						delete op;
+						Instructions.pop_back();
+					}
+					else
+					{
+						op->setKind(OK_JumpEQ);
+						op->setString(loc);
+					}
+			}
+				
 				break;
 			case OK_CmpGt:
 				op->setKind(OK_JumpLE);
@@ -1610,35 +1548,31 @@ void FunctionData::addOpJumpFalse(const string& loc)
 				}
 				else
 				{
-					delete op;//JumpFalse on zero always branches
-					op = new Opcode(OK_Jump);
+					//JumpFalse on zero always branches
+					op->setKind(OK_Jump);
 					op->setString(loc);
-					Instructions.back() = op;
 				}
 				break;
 			default:
-				op = new Opcode(OK_JumpFalse);
-				op->setString(loc);
-				Instructions.push_back(op);
+				Instructions.push_back(Opcode::makeStringOpcode(OK_JumpFalse, loc));
 				break;
 		}
 	}
 	else{
-		Opcode *op = new Opcode(OK_JumpFalse);
-		op->setString(loc);
-		Instructions.push_back(op);
+		Instructions.push_back(Opcode::makeStringOpcode(OK_JumpFalse, loc));
 	}
 }
 
 void FunctionData::addOpGetHash()
 {
 	assert(Instructions.size() && "Cannot add OpGetHash to empty instruction stack");
-	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushString)
+	auto back = Instructions.back();
+	if (getOptLevel() > OptimisationLevel::OL_None && back->getKind() == OK_PushString)
 	{
-		string str = Instructions.back()->getString();
-		delete Instructions.back();
-		Instructions.pop_back();
-		addOpPushInt(Utils::Hashing::Joaat(str));
+		const string& str = back->getString();
+		delete back->storage.string;
+		back->setInt(Utils::Hashing::Joaat(str));
+		back->setKind(OK_PushInt);
 		pushComment("GetHash(\"" + str + "\")");
 	}
 	else
