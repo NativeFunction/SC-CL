@@ -74,10 +74,10 @@ typedef union RGBA
 {//Colour struct where values range from 0 - 255
 	struct
 	{
-		union{int Red; int red;};
-		union{int Green; int green;};
-		union{int Blue; int blue;};
-		union{int Opacity; int opacity; int Alpha; int alpha;};
+		union{int Red; int red; int r;};
+		union{int Green; int green; int g;};
+		union{int Blue; int blue; int b;};
+		union{int Opacity; int opacity; int Alpha; int alpha; int a;};
 	};
 	int col[4];
 } RGBA;
@@ -86,9 +86,9 @@ typedef union RGB
 {//Colour struct where values range from 0 - 255
 	struct
 	{
-		union{int Red; int red;};
-		union{int Green; int green;};
-		union{int Blue; int blue;};
+		union{int Red; int red; int r;};
+		union{int Green; int green; int g;};
+		union{int Blue; int blue; int b;};
 	};
 	int col[3];
 } RGB;
@@ -97,10 +97,10 @@ typedef union FloatRGBA
 {//Colour struct where values range from 0.0 - 1.0
 	struct
 	{
-		union{float Red; float red;};
-		union{float Green; float green;};
-		union{float Blue; float blue;};
-		union{float Opacity; float opacity; float Alpha; float alpha;};
+		union{float Red; float red; float r;};
+		union{float Green; float green; float g;};
+		union{float Blue; float blue; float b;};
+		union{float Opacity; float opacity; float Alpha; float alpha; float a;};
 	};
 	float col[4];
 } FloatRGBA;
@@ -109,9 +109,9 @@ typedef union FloatRGB
 {//Colour struct where values range from 0.0 - 1.0
 	struct
 	{
-		union{float Red; float red;};
-		union{float Green; float green;};
-		union{float Blue; float blue;};
+		union{float Red; float red; float r;};
+		union{float Green; float green; float g;};
+		union{float Blue; float blue; float b;};
 	};
 	float col[3];
 } FloatRGB;
