@@ -3345,7 +3345,7 @@ extern _native bool has_scaleform_container_movie_loaded_into_parent(int scalefo
 extern _native void set_scaleform_movie_as_no_longer_needed(int* scaleformHandle);
 extern _native void set_scaleform_movie_to_use_system_time(int scaleform, bool toggle);
 extern _native void draw_scaleform_movie(int scaleformHandle, vector2 vector, Size size, RGBA colour, int p9);
-extern _native void draw_scaleform_movie_fullscreen(int scaleform, RGBA colour, bool unk);
+extern _native void draw_scaleform_movie_fullscreen(int scaleform, RGBA colour);
 extern _native void draw_scaleform_movie_fullscreen_masked(int scaleform1, int scaleform2, RGBA colour);
 extern _native void draw_scaleform_movie_3d(int scaleform, vector3 pos, vector3 rot, float p7, float p8, float p9, vector3 scale, any p13);
 extern _native32(0x899933C8) void _draw_scaleform_movie_3d_non_additive(int scaleform, vector3 pos, vector3 rot, float p7, float p8, float p9, vector3 scale, any p13);
