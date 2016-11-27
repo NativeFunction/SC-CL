@@ -98,6 +98,10 @@ int DivInt(int a, int b)
 { 
 	return a == 0 || b == 0 ? 0 : a / b;
 }
+float DivFloat(float a, float b)
+{
+	return a == 0.0f || b == 0.0f ? 0.0f : a / b;
+}
 char* IntToHex(int val)
 {
 	char* hex_str = "0123456789ABCDEF";

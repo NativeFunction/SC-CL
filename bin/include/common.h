@@ -10,6 +10,7 @@ int SwapEndian32(int value);
 short SwapEndian16(short value);
 int CeilDivInt(uint a, uint b);
 int DivInt(int a, int b);
+float DivFloat(float a, float b);
 char* IntToHex(int val);
 int HexToInt(char *hex);
 int SetBit(int value, uint index);

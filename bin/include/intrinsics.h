@@ -56,28 +56,10 @@ extern __intrinsic void bit_reset(int* address, const byte bitIndex);
 extern __intrinsic void bit_flip(int* address, const byte bitIndex);
 #pragma endregion //}
 
-//this will be deleted
-#pragma region Unsafe_Math //{
-// These perform the operation on the item(or vector) on top of the stack
-// This can lead to dangerous behaviour if you arent sure what is currently on the stack
-extern __unsafeIntrinsic int stackAdd(int value);
-extern __unsafeIntrinsic int stackSub(int value);
-extern __unsafeIntrinsic int stackMult(int value);
-extern __unsafeIntrinsic int stackDiv(int value);
-extern __unsafeIntrinsic int stackNeg();
-extern __unsafeIntrinsic float stackFAdd(float value);
-extern __unsafeIntrinsic float stackFSub(float value);
-extern __unsafeIntrinsic float stackFMult(float value);
-extern __unsafeIntrinsic float stackFDiv(float value);
-extern __unsafeIntrinsic float stackFNeg();
-extern __unsafeIntrinsic vector3 stackVAdd(vector3 value);
-extern __unsafeIntrinsic vector3 stackVSub(vector3 value);
-extern __unsafeIntrinsic vector3 stackVMult(vector3 value);
-extern __unsafeIntrinsic vector3 stackVDiv(vector3 value);
-extern __unsafeIntrinsic vector3 stackVNeg();
-#pragma endregion //}
-
 #pragma region Variables //{
+extern __intrinsic void setStaticAtIndex(const uint index, int value);
+extern __intrinsic int getStaticAtIndex(const uint index);
+extern __intrinsic void* getStaticPtrAtIndex(const uint index);
 extern __intrinsic void setGlobalAtIndex(const uint index, int value);
 extern __intrinsic int getGlobalAtIndex(const uint index);
 extern __intrinsic void* getGlobalPtrAtIndex(const uint index);
@@ -86,6 +68,8 @@ extern __intrinsic void* getPtrImmIndex(const void* pointer, const int immIndex)
 #pragma endregion //}
 
 #pragma region Custom_ASM //{
+// These perform the operation on the item(or vector) on top of the stack
+// This can lead to dangerous behaviour if you arent sure what is currently on the stack
 extern __unsafeIntrinsic void __popMult(const uint count);///Pops multiple items off the stack
 extern __unsafeIntrinsic void __pushV(vector3 value);///Pushes a vector3 on the stack
 extern __unsafeIntrinsic void __pushStruct(void* structure);///Pushes a struct on the stack
@@ -98,6 +82,8 @@ extern __unsafeIntrinsic vector3 __popV();///Gets top vector3 on stack
 #pragma endregion //}
 
 #pragma region ASM //{
+// These perform the operation on the item(or vector) on top of the stack
+// This can lead to dangerous behaviour if you arent sure what is currently on the stack
 extern __intrinsic       void __nop(const uint count);
 extern __unsafeIntrinsic void __add();
 extern __unsafeIntrinsic void __sub();

@@ -1375,224 +1375,6 @@ public:
 				return false;
 			} break;
 			#pragma endregion
-			#pragma region Stack_Operations
-			
-			case JoaatCasedConst("__popMult"): {
-				ChkHashCol("__popMult");
-				//	out << call->getExprLoc().
-				if (argCount == 1 && callee->getReturnType()->isVoidType())
-				{
-					llvm::APSInt result;
-					if (argArray[0]->getType()->isIntegerType())
-					{
-						if (argArray[0]->EvaluateAsInt(result, *context))
-						{
-							int intValue = result.getSExtValue();
-							if (intValue <= 0)
-							{
-								Throw("Expected positive integer constant for pop amount argument in popMult, got " + to_string(intValue), rewriter, argArray[0]->getSourceRange());
-								return false;
-							}
-							for (int i = 0; i < intValue; i++)
-							{
-								AddInstruction(Drop);
-							}
-							return true;;
-						}
-						Throw("Expected positive integer constant for pop amount argument in popMult", rewriter, argArray[0]->getSourceRange());
-						return false;
-					}
-				}
-				Throw("popMult must have signature \"extern __intrinsic void popMult(const int amount);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("__pushV"): {
-				ChkHashCol("__pushV");
-
-				if (argCount == 1 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-				{
-					parseExpression(argArray[0], false, true);
-					return true;
-				}
-				Throw("pushVector3 must have signature \"extern __intrinsic void pushVector3(vector3 vec3Value);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("__pushStruct"): {
-				ChkHashCol("__pushStruct");
-				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
-				{
-					if (isa<CastExpr>(argArray[0]))
-					{
-						const CastExpr *castee = cast<CastExpr>(argArray[0]);
-						if (castee->getCastKind() == CK_BitCast)
-						{
-							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
-							AddInstructionConditionallyComment(size > 1, PushInt, "Struct Size", size);
-							parseExpression(argArray[0], true, true);
-							AddInstructionCondition(size > 1, ToStack, PGet);
-							return true;
-						}
-					}
-					Throw("Couldnt extract type information from the argument in pushStruct", rewriter, argArray[0]->getSourceRange());
-					return false;
-				}
-				Throw("pushStruct must have signature \"extern __intrinsic void pushStruct(void *Struct);\"", rewriter, callee->getSourceRange());
-				return false;;
-			} break;
-			case JoaatCasedConst("__popStruct"): {
-				ChkHashCol("__popStruct");
-
-				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
-				{
-					if (isa<CastExpr>(argArray[0]))
-					{
-						const CastExpr *castee = cast<CastExpr>(argArray[0]);
-						if (castee->getCastKind() == CK_BitCast)
-						{
-							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
-							AddInstructionConditionallyComment(size > 1, PushInt, "Struct Size", size);
-							parseExpression(argArray[0], true, true);
-							AddInstructionCondition(size > 1, FromStack, PSet);
-							return true;
-						}
-					}
-					Throw("Couldnt extract type information from the argument in popStruct", rewriter, argArray[0]->getSourceRange());
-					return false;
-				}
-				Throw("popStruct must have signature \"extern __intrinsic void popStruct(void *Struct);\"", rewriter, callee->getSourceRange());
-				return false;;
-			} break;
-			case JoaatCasedConst("__rev"): {
-				ChkHashCol("__rev");
-
-				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						int64_t value = result.getSExtValue();
-						if (value >= 2)
-						{
-							LocalVariables.addLevel();
-							int startDeclIndex = LocalVariables.addDecl("__rev-container-var-decl", value);
-
-							//FromStack into it
-							AddInstruction(PushInt, value);
-							AddInstruction(GetFrameP, startDeclIndex);
-							AddInstruction(FromStack);
-
-							//Put them back on stack in reverse
-							for (int i = startDeclIndex + value - 1; i >= startDeclIndex; i--)
-							{
-								AddInstruction(GetFrame, i);
-							}
-
-							LocalVariables.removeLevel();
-						}
-						else
-							Warn("Reverse called with " + to_string(value) + " exchange num.  Expected >= 2", rewriter, argArray[0]->getSourceRange());
-					}
-					else
-					{
-						Throw("Reverse count must be called with a compile time constant", rewriter, argArray[0]->getSourceRange());
-						return false;
-					}
-					return true;
-				}
-				Throw("rev must have signature \"extern __intrinsic void rev(const int numItems);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("__exch"): {
-				ChkHashCol("__exch");
-
-				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
-				{
-					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
-					{
-						const Expr* expr = argArray[0]->IgnoreParens()->IgnoreCasts();
-						if (isa<UnaryExprOrTypeTraitExpr>(expr) && cast<UnaryExprOrTypeTraitExpr>(expr)->getKind() == UETT_SizeOf)
-						{
-							Warn("Exchange called with a sizeof operation, did you mean to use stacksizeof", rewriter, argArray[0]->getSourceRange());
-						}
-						int64_t value = result.getSExtValue();
-						if (value > 0)
-						{
-							LocalVariables.addLevel();
-							int firstItemIndex = LocalVariables.addDecl("__exchangeItem1", value);
-							int secondItemIndex = LocalVariables.addDecl("__exchangeItem2", value);
-
-							if (value > 1)
-							{
-								//FromStack into it
-								AddInstruction(PushInt, value);
-								AddInstruction(GetFrameP, firstItemIndex);
-								AddInstruction(FromStack);
-								AddInstruction(PushInt, value);
-								AddInstruction(GetFrameP, secondItemIndex);
-								AddInstruction(FromStack);
-
-								//Put them back on stack in reverse
-								AddInstruction(PushInt, value);
-								AddInstruction(GetFrameP, firstItemIndex);
-								AddInstruction(ToStack);
-								AddInstruction(PushInt, value);
-								AddInstruction(GetFrameP, secondItemIndex);
-								AddInstruction(ToStack);
-
-							}
-							else
-							{
-								AddInstruction(SetFrame, firstItemIndex);
-								AddInstruction(SetFrame, secondItemIndex);
-								AddInstruction(GetFrame, firstItemIndex);
-								AddInstruction(GetFrame, secondItemIndex);
-							}
-							LocalVariables.removeLevel();
-						}
-						else
-							Warn("Exchange called with " + to_string(value) + " item size num.  Expected a positive value", rewriter, argArray[0]->getSourceRange());
-					}
-					else
-					{
-						Throw("Exchange structSize must be called with a compile time constant", rewriter, argArray[0]->getSourceRange());
-						return false;
-					}
-					return true;
-				}
-				Throw("exchange must have signature \"extern __intrinsic void exchange(const int structStackSize);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("__popF"): {
-				ChkHashCol("__popF");
-				if (argCount == 0 && callee->getReturnType()->isRealFloatingType())
-				{
-					return true;
-				}
-				Throw("popFloat must have signature \"extern __intrinsic float pushFloat();\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("__popI"): {
-				ChkHashCol("__popI");
-				if (argCount == 0 && callee->getReturnType()->isIntegerType())
-				{
-					return true;
-				}
-				Throw("popInt must have signature \"extern __intrinsic int pushInt();\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("__popV"): {
-				ChkHashCol("__popV");
-
-				if (argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
-				{
-					return true;
-				}
-				Throw("popVector3 must have signature \"extern __intrinsic vector3 popVector3();\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-
-			#pragma endregion
 			#pragma region Math/Conversions
 			case JoaatCasedConst("reinterpretIntToFloat"): {
 				ChkHashCol("reinterpretIntToFloat");
@@ -1875,202 +1657,47 @@ public:
 				Throw("bit_flip must have signature \"extern __intrinsic bool bit_flip(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
 			} break;
 			#pragma endregion
-			#pragma region Unsafe_Math
-			case JoaatCasedConst("stackAdd"): {
-				ChkHashCol("stackAdd");
-				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(Add);//let FunctionOpcode optimise this
-					return true;
-				}
-				Throw("stackAdd must have signature \"extern __intrinsic int stackAdd(int value);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackSub"): {
-				ChkHashCol("stackSub");
-				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(Sub);//let FunctionOpcode optimise this
-					return true;
-				}
-				Throw("stackSub must have signature \"extern __intrinsic int stackSub(int value);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackMult"): {
-				ChkHashCol("stackMult");
-				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(Mult);//let FunctionOpcode optimise this
-				}
-				Throw("stackMult must have signature \"extern __intrinsic int stackMult(int value);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackDiv"): {
-				ChkHashCol("stackDiv");
-				if (argCount == 1 && callee->getReturnType()->isIntegerType() && argArray[0]->getType()->isIntegerType())
-				{
-					parseExpression(argArray[0], false, true);
-					bool zeroDiv;
-					AddInstruction(Div, &zeroDiv);
-					if (zeroDiv) {
-						Warn("Zero division error detected", rewriter, argArray[0]->getSourceRange());//just warn the user of the undefined behaviour)
-					}
-					return true;
-				}
-				Throw("stackDiv must have signature \"extern __intrinsic int stackDiv(int value);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackNeg"): {
-				ChkHashCol("stackNeg");
-				if (argCount == 0 && callee->getReturnType()->isIntegerType())
-				{
-					AddInstruction(Neg);
-					return true;
-				}
-				Throw("stackNeg must have signature \"extern __intrinsic int stackNeg();\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-
-			case JoaatCasedConst("stackFAdd"): {
-				ChkHashCol("stackFAdd");
-				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(FAdd);//FunctionOpcode will optimise
-					return true;
-				}
-				Throw("stackFAdd must have signature \"extern __intrinsic float stackFAdd(float value);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackFSub"): {
-				ChkHashCol("stackFSub");
-				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(FSub);//FunctionOpcode will optimise
-					return true;
-				}
-				Throw("stackFSub must have signature \"extern __intrinsic float stackFSub(float value);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackFMult"): {
-				ChkHashCol("stackFMult");
-				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(FMult);//FunctionOpcode will optimise
-					return true;
-				}
-				Throw("stackFMult must have signature \"extern __intrinsic float stackFMult(float value);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackFDiv"): {
-				ChkHashCol("stackFDiv");
-				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType())
-				{
-					parseExpression(argArray[0], false, true);
-					bool zeroDiv;
-					AddInstruction(FDiv, &zeroDiv);//FunctionOpcode will optimise
-					if (zeroDiv)
-					{
-						Warn("Zero division error detected", rewriter, argArray[0]->getSourceRange());//just warn the user of the undefined behaviour
-					}
-					return true;
-				}
-				Throw("stackFDiv must have signature \"extern __intrinsic float stackFDiv(float value);\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackFNeg"): {
-				ChkHashCol("stackFNeg");
-				if (argCount == 0 && callee->getReturnType()->isRealFloatingType())
-				{
-					AddInstruction(FNeg);
-					return true;
-				}
-				Throw("stackFNeg must have signature \"extern __intrinsic float stackFNeg();\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackVAdd"): {
-				ChkHashCol("stackVAdd");
-
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(VAdd);
-					return true;
-				}
-				Throw("stackVAdd must have signature \"extern __intrinsic vector3 stackVAdd(vector3 value)\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackVSub"): {
-				ChkHashCol("stackVSub");
-
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(VSub);
-					return true;
-				}
-				Throw("stackVSub must have signature \"extern __intrinsic vector3 stackVSub(vector3 value)\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackVMult"): {
-				ChkHashCol("stackVMult");
-
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(VMult);
-					return true;
-				}
-				Throw("stackVMult must have signature \"extern __intrinsic vector3 stackVMult(vector3 value)\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackVDiv"): {
-				ChkHashCol("stackVDiv");
-
-				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-				{
-					parseExpression(argArray[0], false, true);
-					AddInstruction(VDiv);
-					return true;
-				}
-				Throw("stackVDiv must have signature \"extern __intrinsic vector3 stackVDiv(vector3 value)\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-			case JoaatCasedConst("stackVNeg"): {
-				ChkHashCol("stackVNeg");
-
-				if (argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
-				{
-					AddInstruction(VNeg);
-					return true;
-				}
-				Throw("stackVNeg must have signature \"extern __intrinsic vector3 stackVNeg()\"", rewriter, callee->getSourceRange());
-				return false;
-			} break;
-
-			#pragma endregion
 			#pragma region Variables 
-			case JoaatCasedConst("setGlobalAtIndex"): {
-				ChkHashCol("setGlobalAtIndex");
-				if (argCount == 1 && callee->getReturnType()->isVoidType())
+			case JoaatCasedConst("setStaticAtIndex"): {
+				ChkHashCol("setStaticAtIndex");
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
 					if (argArray[0]->EvaluateAsInt(result, *context))
 					{
-						AddInstruction(SetGlobal, result.getSExtValue());
+						parseExpression(argArray[1], false, true);
+						AddInstruction(SetStaticRaw, result.getSExtValue());
 						return true;
-					}
-					else
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("getStaticAtIndex"): {
+				ChkHashCol("getStaticAtIndex");
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
 					{
-						Throw("Argument got setframe must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
+						AddInstruction(GetStaticRaw, result.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("getStaticPtrAtIndex"): {
+				ChkHashCol("getStaticPtrAtIndex");
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						AddInstruction(GetStaticPRaw, result.getSExtValue());
+						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			case JoaatCasedConst("setGlobalAtIndex"): {
+				ChkHashCol("setGlobalAtIndex");
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
 					if (argArray[0]->EvaluateAsInt(result, *context))
@@ -2078,18 +1705,11 @@ public:
 						parseExpression(argArray[1], false, true);
 						AddInstruction(SetGlobal, result.getSExtValue());
 						return true;
-					}
-					else
-					{
-						Throw("Argument got setglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else {
-					Throw("setglobal must have signature \"extern __intrinsic void setglobal(int index, ... optinalArgToSetTo);\"", rewriter, callee->getSourceRange());
-				}
+					} EvalFailed
+				} BadIntrin
 			} break;
 			case JoaatCasedConst("getGlobalAtIndex"):{
-				ChkHashCol("getGlobal");
+				ChkHashCol("getGlobalAtIndex");
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
@@ -2097,15 +1717,8 @@ public:
 					{
 						AddInstruction(GetGlobal, result.getSExtValue());
 						return true;
-					}
-					else
-					{
-						Throw("Argument got getglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else {
-					Throw("getglobal must have signature \"extern __intrinsic int getglobal(const int index);\"", rewriter, callee->getSourceRange());
-				}
+					} EvalFailed
+				} BadIntrin
 			} break;
 			case JoaatCasedConst("getGlobalPtrAtIndex"):{
 				ChkHashCol("getGlobalPtrAtIndex");
@@ -2116,15 +1729,8 @@ public:
 					{
 						AddInstruction(GetGlobalP, result.getSExtValue());
 						return true;
-					}
-					else
-					{
-						Throw("Argument got getglobal must be a constant integer", rewriter, argArray[0]->getSourceRange());
-					}
-				}
-				else {
-					Throw("getglobal must have signature \"extern __intrinsic int getglobal(const int index);\"", rewriter, callee->getSourceRange());
-				}
+					} EvalFailed
+				} BadIntrin
 			} break;
 			case JoaatCasedConst("getPtrFromArrayIndex"):{
 				ChkHashCol("getPtrFromArrayIndex");
@@ -2134,9 +1740,8 @@ public:
 					if (argArray[2]->EvaluateAsInt(itemSize, *context))
 					{
 						if (itemSize.getSExtValue() < 1 || itemSize.getSExtValue() > 0xFFFF)
-						{
-							Throw("getArrayP item size expected a value between 1 and 65535, got'" + to_string(itemSize.getSExtValue()) + "'", rewriter, argArray[2]->getSourceRange());
-						}
+							Throw("getPtrFromArrayIndex item size expected a value between 1 and 65535, got'" + to_string(itemSize.getSExtValue()) + "'", rewriter, argArray[2]->getSourceRange());
+						
 						llvm::APSInt index;
 						if (Option_OptimizationLevel > OptimisationLevel::OL_Trivial && argArray[1]->EvaluateAsInt(index ,*context))
 						{
@@ -2151,16 +1756,8 @@ public:
 							AddInstruction(GetArrayP, itemSize.getSExtValue());
 							return true;
 						}
-					}
-					else
-					{
-						Throw("getPtrFromArrayIndex itemSize must be a compile time constant", rewriter, argArray[2]->getSourceRange());
-					}
-				}
-				else
-				{
-					Throw("getPtrFromArrayIndex must have signature \"extern __intrinsic void* getPtrFromArrayIndex(const void* array, int index, const int arrayItemSize);\"", rewriter, callee->getSourceRange());
-				}
+					} EvalFailed
+				} BadIntrin
 			} break;
 			case JoaatCasedConst("getPtrImmIndex"):{
 				ChkHashCol("getPtrImmIndex");
@@ -2176,16 +1773,224 @@ public:
 						parseExpression(argArray[0], false, true);
 						AddInstruction(GetImmP, index.getSExtValue());
 						return true;
+					} EvalFailed
+				} BadIntrin
+			} break;
+			#pragma endregion
+			#pragma region Custom_ASM
+			case JoaatCasedConst("__popMult"): {
+				ChkHashCol("__popMult");
+				//	out << call->getExprLoc().
+				if (argCount == 1 && callee->getReturnType()->isVoidType())
+				{
+					llvm::APSInt result;
+					if (argArray[0]->getType()->isIntegerType())
+					{
+						if (argArray[0]->EvaluateAsInt(result, *context))
+						{
+							int intValue = result.getSExtValue();
+							if (intValue <= 0)
+							{
+								Throw("Expected positive integer constant for pop amount argument in popMult, got " + to_string(intValue), rewriter, argArray[0]->getSourceRange());
+								return false;
+							}
+							for (int i = 0; i < intValue; i++)
+							{
+								AddInstruction(Drop);
+							}
+							return true;;
+						}
+						Throw("Expected positive integer constant for pop amount argument in popMult", rewriter, argArray[0]->getSourceRange());
+						return false;
+					}
+				}
+				Throw("popMult must have signature \"extern __intrinsic void popMult(const int amount);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("__pushV"): {
+				ChkHashCol("__pushV");
+
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+				{
+					parseExpression(argArray[0], false, true);
+					return true;
+				}
+				Throw("pushVector3 must have signature \"extern __intrinsic void pushVector3(vector3 vec3Value);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("__pushStruct"): {
+				ChkHashCol("__pushStruct");
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
+				{
+					if (isa<CastExpr>(argArray[0]))
+					{
+						const CastExpr *castee = cast<CastExpr>(argArray[0]);
+						if (castee->getCastKind() == CK_BitCast)
+						{
+							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
+							AddInstructionConditionallyComment(size > 1, PushInt, "Struct Size", size);
+							parseExpression(argArray[0], true, true);
+							AddInstructionCondition(size > 1, ToStack, PGet);
+							return true;
+						}
+					}
+					Throw("Couldnt extract type information from the argument in pushStruct", rewriter, argArray[0]->getSourceRange());
+					return false;
+				}
+				Throw("pushStruct must have signature \"extern __intrinsic void pushStruct(void *Struct);\"", rewriter, callee->getSourceRange());
+				return false;;
+			} break;
+			case JoaatCasedConst("__popStruct"): {
+				ChkHashCol("__popStruct");
+
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isVoidPointerType())
+				{
+					if (isa<CastExpr>(argArray[0]))
+					{
+						const CastExpr *castee = cast<CastExpr>(argArray[0]);
+						if (castee->getCastKind() == CK_BitCast)
+						{
+							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
+							AddInstructionConditionallyComment(size > 1, PushInt, "Struct Size", size);
+							parseExpression(argArray[0], true, true);
+							AddInstructionCondition(size > 1, FromStack, PSet);
+							return true;
+						}
+					}
+					Throw("Couldnt extract type information from the argument in popStruct", rewriter, argArray[0]->getSourceRange());
+					return false;
+				}
+				Throw("popStruct must have signature \"extern __intrinsic void popStruct(void *Struct);\"", rewriter, callee->getSourceRange());
+				return false;;
+			} break;
+			case JoaatCasedConst("__rev"): {
+				ChkHashCol("__rev");
+
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
+				{
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						int64_t value = result.getSExtValue();
+						if (value >= 2)
+						{
+							LocalVariables.addLevel();
+							int startDeclIndex = LocalVariables.addDecl("__rev-container-var-decl", value);
+
+							//FromStack into it
+							AddInstruction(PushInt, value);
+							AddInstruction(GetFrameP, startDeclIndex);
+							AddInstruction(FromStack);
+
+							//Put them back on stack in reverse
+							for (int i = startDeclIndex + value - 1; i >= startDeclIndex; i--)
+							{
+								AddInstruction(GetFrame, i);
+							}
+
+							LocalVariables.removeLevel();
+						}
+						else
+							Warn("Reverse called with " + to_string(value) + " exchange num.  Expected >= 2", rewriter, argArray[0]->getSourceRange());
 					}
 					else
 					{
-						Throw("getPtrImmIndex index must be a compile time constant", rewriter, argArray[1]->getSourceRange());
+						Throw("Reverse count must be called with a compile time constant", rewriter, argArray[0]->getSourceRange());
+						return false;
 					}
+					return true;
 				}
-				else
+				Throw("rev must have signature \"extern __intrinsic void rev(const int numItems);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("__exch"): {
+				ChkHashCol("__exch");
+
+				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
 				{
-					Throw("getPtrImmIndex must have signature \"extern __intrinsic void* getPtrImmIndex(const void* pointer, const int immIndex);\"", rewriter, callee->getSourceRange());
+					llvm::APSInt result;
+					if (argArray[0]->EvaluateAsInt(result, *context))
+					{
+						const Expr* expr = argArray[0]->IgnoreParens()->IgnoreCasts();
+						if (isa<UnaryExprOrTypeTraitExpr>(expr) && cast<UnaryExprOrTypeTraitExpr>(expr)->getKind() == UETT_SizeOf)
+						{
+							Warn("Exchange called with a sizeof operation, did you mean to use stacksizeof", rewriter, argArray[0]->getSourceRange());
+						}
+						int64_t value = result.getSExtValue();
+						if (value > 0)
+						{
+							LocalVariables.addLevel();
+							int firstItemIndex = LocalVariables.addDecl("__exchangeItem1", value);
+							int secondItemIndex = LocalVariables.addDecl("__exchangeItem2", value);
+
+							if (value > 1)
+							{
+								//FromStack into it
+								AddInstruction(PushInt, value);
+								AddInstruction(GetFrameP, firstItemIndex);
+								AddInstruction(FromStack);
+								AddInstruction(PushInt, value);
+								AddInstruction(GetFrameP, secondItemIndex);
+								AddInstruction(FromStack);
+
+								//Put them back on stack in reverse
+								AddInstruction(PushInt, value);
+								AddInstruction(GetFrameP, firstItemIndex);
+								AddInstruction(ToStack);
+								AddInstruction(PushInt, value);
+								AddInstruction(GetFrameP, secondItemIndex);
+								AddInstruction(ToStack);
+
+							}
+							else
+							{
+								AddInstruction(SetFrame, firstItemIndex);
+								AddInstruction(SetFrame, secondItemIndex);
+								AddInstruction(GetFrame, firstItemIndex);
+								AddInstruction(GetFrame, secondItemIndex);
+							}
+							LocalVariables.removeLevel();
+						}
+						else
+							Warn("Exchange called with " + to_string(value) + " item size num.  Expected a positive value", rewriter, argArray[0]->getSourceRange());
+					}
+					else
+					{
+						Throw("Exchange structSize must be called with a compile time constant", rewriter, argArray[0]->getSourceRange());
+						return false;
+					}
+					return true;
 				}
+				Throw("exchange must have signature \"extern __intrinsic void exchange(const int structStackSize);\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("__popI"): {
+				ChkHashCol("__popI");
+				if (argCount == 0 && callee->getReturnType()->isIntegerType())
+				{
+					return true;
+				}
+				Throw("popInt must have signature \"extern __intrinsic int pushInt();\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("__popF"): {
+				ChkHashCol("__popF");
+				if (argCount == 0 && callee->getReturnType()->isRealFloatingType())
+				{
+					return true;
+				}
+				Throw("popFloat must have signature \"extern __intrinsic float pushFloat();\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
+			case JoaatCasedConst("__popV"): {
+				ChkHashCol("__popV");
+
+				if (argCount == 0 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3)
+				{
+					return true;
+				}
+				Throw("popVector3 must have signature \"extern __intrinsic vector3 popVector3();\"", rewriter, callee->getSourceRange());
+				return false;
 			} break;
 			#pragma endregion
 			#pragma region ASM 
@@ -2451,6 +2256,7 @@ public:
 		#undef BadIntrin
 		#undef EvalFailed
 		#undef EvalFailedStr
+		#undef BadIntrinArgC
 		return ret;
 	}
 
