@@ -1391,27 +1391,28 @@ void FunctionData::addOpFMultImm(float immediate)
 
 void FunctionData::addOpGetImmP(uint16_t index)
 {
-	if (index != 0 && getOptLevel() > OptimisationLevel::OL_Trivial){
+	if (getOptLevel() > OptimisationLevel::OL_Trivial){
 		assert(Instructions.size() && "Cannot add GetImmP to empty instruction stack");
-		switch (Instructions.back()->getKind())
-		{
-			case OK_GetFrameP:
-			case OK_GetGlobalP:
-			case OK_GetImmP:
-			case OK_GetStaticPRaw:
-				Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
-				break;
-			case OK_GetStaticP:
+		if (index != 0){
+			switch (Instructions.back()->getKind())
 			{
-				auto data = Instructions.back()->storage.staticData;
-				data->setImmIndex(data->getImmIndex() + index);
-			}
-			break;
-			default:
-				Instructions.push_back(Opcode::makeUShortOpcode(OK_GetImmP, index));
+				case OK_GetFrameP:
+				case OK_GetGlobalP:
+				case OK_GetImmP:
+				case OK_GetStaticPRaw:
+					Instructions.back()->setUShort(Instructions.back()->getUShort(0) + index, 0);
+					break;
+				case OK_GetStaticP:
+				{
+					auto data = Instructions.back()->storage.staticData;
+					data->setImmIndex(data->getImmIndex() + index);
+				}
 				break;
+				default:
+					Instructions.push_back(Opcode::makeUShortOpcode(OK_GetImmP, index));
+					break;
+			}
 		}
-
 	}
 	else{
 		Instructions.push_back(Opcode::makeUShortOpcode(OK_GetImmP, index));
