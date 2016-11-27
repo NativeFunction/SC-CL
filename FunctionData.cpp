@@ -871,6 +871,10 @@ void FunctionData::addOpFMult()
 void FunctionData::addOpFDiv(bool * isZeroDivDetected)
 {
 	assert(Instructions.size() && "Instruction stack empty, cant add FDiv Instruction");
+	if (isZeroDivDetected)
+	{
+		*isZeroDivDetected = false;
+	}
 	if (getOptLevel() > OptimisationLevel::OL_None){
 		Opcode *back = Instructions.back();
 		if (back->getKind() == OK_PushFloat)
@@ -889,19 +893,11 @@ void FunctionData::addOpFDiv(bool * isZeroDivDetected)
 				delete back;
 				Instructions.pop_back();
 				addOpFMultImm(1.0f / imm);
-				if (isZeroDivDetected)
-				{
-					*isZeroDivDetected = false;
-				}
 			}
 		}
 		else
 		{
 			Instructions.push_back(new Opcode(OK_FDiv));
-			if (isZeroDivDetected)
-			{
-				*isZeroDivDetected = false;
-			}
 		}
 	}
 	else{
