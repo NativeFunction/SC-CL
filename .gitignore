@@ -27,6 +27,7 @@
 !Release/
 !projects/
 !testing/
+!MenuBase/
 !RDR/
 !GTAV/
 !compiler/
@@ -41,6 +42,14 @@ bin/Debug/*.ilk
 bin/projects/*/*.xsc
 bin/projects/*/*.xsa*
 bin/projects/*/*.csc
+bin/projects/*/*.ysc
 bin/projects/*/*.csa*
 bin/projects/*/*.sca*
 bin/projects/*/*.ysa*
+bin/projects/MenuBase/Debug
+bin/projects/MenuBase/GTAV
+bin/projects/MenuBase/Release
+bin/projects/MenuBase/*.bat
+bin/projects/MenuBase/*.db
+bin/projects/MenuBase/*.opendb
+bin/projects/MenuBase/*.TMP
