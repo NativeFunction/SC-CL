@@ -2302,7 +2302,7 @@ public:
 				bValue = eResult.Val.getInt().getBoolValue();
 				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
 					Warn("if condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				ignoreCondition = !eResult.HasSideEffects;
+				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !conditional->HasSideEffects(*context, true);
 			}
 			if (ignoreCondition)
 			{
@@ -2406,7 +2406,7 @@ public:
 				bValue = eResult.Val.getInt().getBoolValue();
 				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
 					Warn("While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				ignoreCondition = !eResult.HasSideEffects;
+				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !conditional->HasSideEffects(*context, true);
 			}
 			if (ignoreCondition)
 			{
@@ -2515,7 +2515,7 @@ public:
 				bValue = eResult.Val.getInt().getBoolValue();
 				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
 					Warn("do While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				ignoreCondition = !eResult.HasSideEffects;
+				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !conditional->HasSideEffects(*context, true);
 			}
 			if (ignoreCondition)
 			{
@@ -4875,15 +4875,30 @@ public:
 		else if (isa<ConditionalOperator>(e))
 		{
 			const ConditionalOperator *cond = cast<const ConditionalOperator>(e);
+			auto condition = cond->getCond();
+			Expr::EvalResult eResult;
+			bool bValue = false, ignoreCondition = false;
+			if (condition->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
+			{
+				bValue = eResult.Val.getInt().getBoolValue();
+				if (!isa<IntegerLiteral>(condition->IgnoreParenCasts()))
+					Warn("Conditional operator always evaluates to " + (bValue ? string("true") : string("false")), rewriter, condition->getSourceRange());
+				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !condition->HasSideEffects(*context, true);
+			}
+			if (ignoreCondition)
+			{
+				parseExpression(bValue ? cond->getLHS() : cond->getRHS(), isAddr, isLtoRValue);//using a conditionalOperator to parse a conditionalOperator... conditionalCeption
+			}
+			else{
+				parseExpression(cond->getCond(), false, true);
+				AddJumpInlineCheck(JumpFalse, cond->getRHS()->getLocStart().getRawEncoding());
+				parseExpression(cond->getLHS(), isAddr, isLtoRValue);
+				AddJumpInlineCheck(Jump, cond->getLHS()->getLocEnd().getRawEncoding());
 
-			parseExpression(cond->getCond(), false, true);
-			AddJumpInlineCheck(JumpFalse, cond->getRHS()->getLocStart().getRawEncoding());
-			parseExpression(cond->getLHS(), isAddr, isLtoRValue);
-			AddJumpInlineCheck(Jump, cond->getLHS()->getLocEnd().getRawEncoding());
-
-			AddJumpInlineCheck(Label, cond->getRHS()->getLocStart().getRawEncoding());
-			parseExpression(cond->getRHS(), isAddr, isLtoRValue);
-			AddJumpInlineCheck(Label, cond->getLHS()->getLocEnd().getRawEncoding());
+				AddJumpInlineCheck(Label, cond->getRHS()->getLocStart().getRawEncoding());
+				parseExpression(cond->getRHS(), isAddr, isLtoRValue);
+				AddJumpInlineCheck(Label, cond->getLHS()->getLocEnd().getRawEncoding());
+			}
 		}
 		else if (isa<ImaginaryLiteral>(e))
 		{
