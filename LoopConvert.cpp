@@ -999,6 +999,7 @@ public:
 					if (LocalVariables.find(str, &index))
 					{
 						(scriptData.getCurrentFunction()->*func)(index);
+						scriptData.getCurrentFunction()->pushComment("(ASM Named Local) " + str);
 						ret = true;
 						return;
 					}
@@ -1024,6 +1025,7 @@ public:
 						if (data)
 						{
 							(scriptData.getCurrentFunction()->*func)(data);
+							scriptData.getCurrentFunction()->pushComment("(ASM Named Static) " + str);
 							ret = true;
 							return;
 						}
