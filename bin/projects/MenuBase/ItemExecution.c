@@ -121,10 +121,11 @@ bool SpawnVehicle(uint CurrentFrame, Hash Model)
 				if (does_entity_exist(MyVehicle))
 				{
 					Vehicle CurrentVehicle = GetCurrentVehicle();
-					float CurrentSpeed = 0.0f;
+					vector3 CurrentSpeed = toVector3(0.0f);
 					if (CurrentVehicle)
 					{
-						CurrentSpeed = get_entity_speed(CurrentVehicle);
+						CurrentSpeed = get_entity_speed_vector(CurrentVehicle, true);
+
 						set_entity_as_mission_entity(CurrentVehicle, false, true);
 						delete_vehicle(&CurrentVehicle);
 					}
@@ -135,7 +136,8 @@ bool SpawnVehicle(uint CurrentFrame, Hash Model)
 						set_vehicle_engine_on(MyVehicle, true, true, false);//last param not on console remove if issues arise
 						if (is_this_model_a_plane(Model) || is_this_model_a_heli(Model))
 							set_heli_blades_full_speed(MyVehicle);
-						set_vehicle_forward_speed(MyVehicle, CurrentSpeed);
+
+						apply_force_to_entity(MyVehicle, FT_MAX_FORCE_ROT, CurrentSpeed, toVector3(0.0f), 0, true, true, true, false, true);
 					}
 					else
 						Warn("Could not find available seat");

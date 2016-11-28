@@ -83,7 +83,7 @@ void DisableUnusedInputs()
 	hide_hud_component_this_frame(HUD_STREET_NAME);
 	hide_hud_component_this_frame(HUD_VEHICLE_CLASS);
 
-	//this disables hidden controls difficult to disable
+	//this disables hidden controls that are difficult to disable
 	disable_all_control_actions(0);
 	for (int i = 0; i < 338; i++)
 		EnableControl(0, i);
@@ -129,6 +129,7 @@ void DisableUnusedInputs()
 	DisableControl(0, INPUT_SELECT_CHARACTER_TREVOR);
 	DisableControl(0, INPUT_SELECT_CHARACTER_MULTIPLAYER);
 	DisableControl(0, INPUT_CHARACTER_WHEEL);
+	DisableControl(0, INPUT_COVER);
 
 }
 Page* GetMenuContainer()
@@ -199,25 +200,30 @@ void UpdateMenuControls()
 	if (Container.Loading.FramesToLoad >= 5)
 		SetDataSlot(SlotIdCounter++, 255, "                  ", false);
 
-	if ((Container.Item[GetRelativeCursorIndex].Selection.Type == DT_Int || Container.Item[GetRelativeCursorIndex].Selection.Type == DT_Float) && !bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
-		SetDataSlot(SlotIdCounter++, SFB_BUTTON_DPAD_LEFT_RIGHT, "Next", false);
-
-	if (Container.CurrentMenuLevel == 0)
-		SetDataSlot(SlotIdCounter++, SFB_BUTTON_B, "Close", false);
-	else
-		SetDataSlot(SlotIdCounter++, SFB_BUTTON_B, "Back", false);
-
-	if (!bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
+	if (Container.IsMenuOpen)
 	{
-		if (Container.Item[GetRelativeCursorIndex].HasAlternateExecution)
+
+		if ((Container.Item[GetRelativeCursorIndex].Selection.Type == DT_Int || Container.Item[GetRelativeCursorIndex].Selection.Type == DT_Float) && !bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
+			SetDataSlot(SlotIdCounter++, SFB_BUTTON_DPAD_LEFT_RIGHT, "Next", false);
+
+		if (Container.CurrentMenuLevel == 0)
+			SetDataSlot(SlotIdCounter++, SFB_BUTTON_B, "Close", false);
+		else
+			SetDataSlot(SlotIdCounter++, SFB_BUTTON_B, "Back", false);
+
+		if (!bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
 		{
-			if (Container.Item[GetRelativeCursorIndex].Ui.AltExeControlText)
-				SetDataSlot(SlotIdCounter++, SFB_BUTTON_X, Container.Item[GetRelativeCursorIndex].Ui.AltExeControlText, false);
-			else
-				SetDataSlot(SlotIdCounter++, SFB_BUTTON_X, "Select", false);
+			if (Container.Item[GetRelativeCursorIndex].HasAlternateExecution)
+			{
+				if (Container.Item[GetRelativeCursorIndex].Ui.AltExeControlText)
+					SetDataSlot(SlotIdCounter++, SFB_BUTTON_X, Container.Item[GetRelativeCursorIndex].Ui.AltExeControlText, false);
+				else
+					SetDataSlot(SlotIdCounter++, SFB_BUTTON_X, "Select", false);
+			}
+
+			SetDataSlot(SlotIdCounter++, SFB_BUTTON_A, "Select", false);
 		}
 
-		SetDataSlot(SlotIdCounter++, SFB_BUTTON_A, "Select", false);
 	}
 
 	_push_scaleform_movie_function(Container.Ui.MenuControlSFID, "SET_BACKGROUND_COLOUR");
@@ -539,8 +545,7 @@ void DrawBackgroundAndHeader()
 		(((float)GetItemCountWithMaxItemLimit()
 		* 0.05f)
 		/ 2.0f)//median
-		+ Container.Ui.BackgroundDrawSize.y
-	),
+		+ Container.Ui.BackgroundDrawSize.y),
 		Container.Ui.BackgroundColor);
 	#pragma endregion
 
@@ -1000,11 +1005,12 @@ void HandleMenuUi()
 		DisableUnusedInputs();
 		ParseMenuControls();
 
+		DrawMenu();
+	}
+	if (Container.IsMenuOpen || Container.Loading.FramesToLoad >= 5)
+	{
 		UpdateMenuControls();
 		DrawScaleformMovie(Container.Ui.MenuControlSFID2, Container.Ui.UnselectedTextColor);
-
-
-		DrawMenu();
 	}
 }
 

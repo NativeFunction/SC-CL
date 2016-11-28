@@ -302,7 +302,6 @@ void AddItemMenu(char* ItemText, void(*Callback)())
 
 
 //TODO: add item bool enum, int, float
-//TODO: add alternate execution for x button
 //TODO: add bool group that sets all other bools on menu to 0 (enum expansion)
 //TODO: add left right scroll bar with dds in timerbars.xtd
 //TODO: add AddItemWithInt using selection value for function that needs params
