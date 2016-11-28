@@ -1068,6 +1068,8 @@ public:
 		switch (JoaatCased(const_cast<char*>(funcName.c_str())))
 		{
 			#pragma region String
+
+			//isAddr is false on memory functions because we dont want to force addressof
 			case JoaatCasedConst("memcpy"):{
 				ChkHashCol("memcpy");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
@@ -1079,17 +1081,18 @@ public:
 						int itemCount = iCount / stackWidth;
 						if (itemCount == 1)
 						{
-							parseExpression(argArray[1], true, true);
+							
+							parseExpression(argArray[1], false, true);
 							AddInstruction(PGet);
-							parseExpression(argArray[0], true, true);
+							parseExpression(argArray[0], false, true);
 							AddInstruction(PSet);
 						}
 						else {
 							AddInstruction(PushInt, itemCount);
-							parseExpression(argArray[1], true, true);
+							parseExpression(argArray[1], false, true);
 							AddInstruction(ToStack);
 							AddInstruction(PushInt, itemCount);
-							parseExpression(argArray[0], true, true);
+							parseExpression(argArray[0], false, true);
 							AddInstruction(FromStack);
 						}
 					}
@@ -1105,10 +1108,10 @@ public:
 						int srcIndex = LocalVariables.addDecl("__memcpy-loop-src", 1);
 						int sizeIndex = LocalVariables.addDecl("__memcpy-loop-size", 1);
 
-						parseExpression(argArray[0], true, true);//dest
+						parseExpression(argArray[0], false, true);//dest
 						AddInstruction(SetFrame, destIndex);
 
-						parseExpression(argArray[1], true, true);//src
+						parseExpression(argArray[1], false, true);//src
 						AddInstruction(SetFrame, srcIndex);
 						parseExpression(argArray[2], false, true);//size
 
@@ -1170,7 +1173,7 @@ public:
 						int destIndex = LocalVariables.addDecl("__memset-loop-dest", 1);
 						int incIndex = LocalVariables.addDecl("__memset-loop-inc", 1);
 
-						parseExpression(argArray[0], true, true);//dest
+						parseExpression(argArray[0], false, true);//dest
 						AddInstruction(SetFrame, destIndex);
 						AddInstruction(PushInt, 0);
 						AddInstruction(SetFrame, incIndex);
@@ -1857,7 +1860,7 @@ public:
 						{
 							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
 							AddInstructionConditionallyComment(size > 1, PushInt, "Struct Size", size);
-							parseExpression(argArray[0], true, true);
+							parseExpression(argArray[0], false, true);
 							AddInstructionCondition(size > 1, ToStack, PGet);
 							return true;
 						}
@@ -1880,7 +1883,7 @@ public:
 						{
 							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
 							AddInstructionConditionallyComment(size > 1, PushInt, "Struct Size", size);
-							parseExpression(argArray[0], true, true);
+							parseExpression(argArray[0], false, true);
 							AddInstructionCondition(size > 1, FromStack, PSet);
 							return true;
 						}
