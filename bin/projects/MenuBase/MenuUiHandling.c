@@ -19,7 +19,7 @@ static Page Container =
 	.Ui.HeaderTextColor = { 255, 255, 255, 255 },
 	.Ui.ScrollBarColor = { 230, 230, 230, 255 },
 	.Ui.SelectedTextColor = { 0, 0, 0, 255 },
-	.Ui.UnselectedTextColor = { 255, 255, 255, 255 },
+	.Ui.UnselectedTextColor = { 230, 230, 230, 255 },
 	.Ui.DisabledUnselectedTextColor = { 155, 155, 155, 255 },
 	.Ui.DisabledSelectedTextColor = { 50, 50, 50, 255 },
 	.Ui.DisabledScrollBarColor = { 190, 190, 190, 255 }
@@ -135,11 +135,11 @@ Page* GetMenuContainer()
 {
 	return &Container;
 }
-void SetMenuLoadingTime(uint LoadingTimeMs)
+void SetMenuLoading(bool IsLoading)
 {
-	if (LoadingTimeMs)
+	//TODO: display loading with menu closed
+	if (IsLoading)
 	{
-		Container.Loading.LoadEndTime = LoadingTimeMs;
 		_push_scaleform_movie_function(Container.Ui.MenuControlSFID2, "SET_BACKGROUND_COLOUR");
 		_push_scaleform_movie_function_parameter_int(0);
 		_push_scaleform_movie_function_parameter_int(0);
@@ -196,7 +196,7 @@ void UpdateMenuControls()
 	_pop_scaleform_movie_function_void();
 	
 	//Loading display padding
-	if (Container.Loading.IsMenuLoading)
+	if (Container.Loading.FramesToLoad >= 5)
 		SetDataSlot(SlotIdCounter++, 255, "                  ", false);
 
 	if ((Container.Item[GetRelativeCursorIndex].Selection.Type == DT_Int || Container.Item[GetRelativeCursorIndex].Selection.Type == DT_Float) && !bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
@@ -208,7 +208,17 @@ void UpdateMenuControls()
 		SetDataSlot(SlotIdCounter++, SFB_BUTTON_B, "Back", false);
 
 	if (!bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
+	{
+		if (Container.Item[GetRelativeCursorIndex].HasAlternateExecution)
+		{
+			if (Container.Item[GetRelativeCursorIndex].Ui.AltExeControlText)
+				SetDataSlot(SlotIdCounter++, SFB_BUTTON_X, Container.Item[GetRelativeCursorIndex].Ui.AltExeControlText, false);
+			else
+				SetDataSlot(SlotIdCounter++, SFB_BUTTON_X, "Select", false);
+		}
+
 		SetDataSlot(SlotIdCounter++, SFB_BUTTON_A, "Select", false);
+	}
 
 	_push_scaleform_movie_function(Container.Ui.MenuControlSFID, "SET_BACKGROUND_COLOUR");
 	_push_scaleform_movie_function_parameter_int(Container.Ui.BackgroundColor.red);
@@ -415,15 +425,26 @@ void ParseMenuControls()
 			else
 				Throw(straddiGlobal("Execute was null at: ", Container.CursorIndex));
 		}
+		
+		if (Container.Item[GetRelativeCursorIndex].HasAlternateExecution && is_disabled_control_just_pressed(2, INPUT_FRONTEND_X))
+		{
+			PlayMenuSound("SELECT");
+			Container.Item[GetRelativeCursorIndex].AlternateExecute();
+		}
+
 	}
 
 	if (is_disabled_control_just_pressed(2, INPUT_FRONTEND_CANCEL))
 	{
-		PlayMenuSound("BACK");
+		
 		if (Container.CurrentMenuLevel == 0)
+		{
+			PlayMenuSound("QUIT");
 			ShutDownMenu();
+		}
 		else
 		{
+			PlayMenuSound("BACK");
 			Container.CurrentMenuLevel--;
 			if (Container.UpdateToMenuLevel[Container.CurrentMenuLevel] != nullptr)
 			{
@@ -934,7 +955,7 @@ void InitMenuDraw()
 	Container.Ui.HeaderTextColor = (RGBA) { 255, 255, 255, 255 };
 	Container.Ui.ScrollBarColor = (RGBA) { 230, 230, 230, 255 };
 	Container.Ui.SelectedTextColor = (RGBA) { 0, 0, 0, 255 };
-	Container.Ui.UnselectedTextColor = (RGBA) { 255, 255, 255, 255 };
+	Container.Ui.UnselectedTextColor = (RGBA) { 230, 230, 230, 255 };
 	Container.Ui.DisabledUnselectedTextColor = (RGBA) { 155,155,155,255 };
 	Container.Ui.DisabledSelectedTextColor = (RGBA) { 50, 50, 50, 255 };
 	Container.Ui.DisabledScrollBarColor = (RGBA) { 190, 190, 190, 255 };
@@ -958,7 +979,10 @@ void HandleMenuUi()
 	if (HasPlayerOpenedMenu())
 	{
 		if (Container.IsMenuOpen)
+		{
+			PlayMenuSound("QUIT");
 			ShutDownMenu();
+		}
 		else 
 			Container.IsMenuOpen = true;
 	}

@@ -4,21 +4,25 @@
 #define MaxDisplayableItems 25
 #define MaxMenuLevels 10
 
-typedef enum ItemContainerBits
+enum ItemContainerBits
 {
 	ICB_IsItemGxt,
 	ICB_ExecuteOnChange,
-	ICB_IsItemDisabled
-} ItemContainerBits;
+	ICB_IsItemDisabled,
+};
 typedef struct ItemContainer
 {
-	//0 = IsItemGxt, 1 = ExecuteOnChange, 2 = IsItemDisabled
+	//using ItemContainerBits
 	int BitSet;//BitSet is used to cut down static size
+
+	void(*Execute)();
+	union { void(*AlternateExecute)(); bool HasAlternateExecution; };
 
 	struct
 	{
 		char* ItemText;
 		char* Description;
+		char* AltExeControlText;
 	} Ui;
 	struct
 	{
@@ -30,8 +34,6 @@ typedef struct ItemContainer
 		char* (*ParseEnum)(int ItemIndex);//nullptr == no enum
 
 	} Selection;
-
-	void(*Execute)();
 
 } ItemContainer;
 
@@ -55,7 +57,7 @@ typedef struct Page//Menu Page
 	union
 	{
 		bool IsMenuLoading;
-		uint LoadEndTime;
+		uint FramesToLoad;
 	} Loading;
 
 	//size: 112
@@ -91,4 +93,4 @@ void InitMenuDraw();
 
 Page* GetMenuContainer();
 bool HasPlayerOpenedMenu();
-void SetMenuLoadingTime(uint LoadingTimeMs);
+void SetMenuLoading(bool IsLoading);

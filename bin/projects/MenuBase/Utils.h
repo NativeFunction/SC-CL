@@ -11,4 +11,4 @@ float GetIntWidth(int Value, Font FontType, float Scale);
 float GetStringWidth(char* Value, Font FontType, float Scale);
 float GetStringHeight(char* Value, Font FontType, float Scale, float Wrap, vector2 Pos);
 void Break(char* str);
-
+void Notify(char* str);

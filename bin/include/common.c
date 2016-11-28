@@ -61,7 +61,6 @@ char* itosGlobal(int i)
 	itos((char*)GlobalCharBuffer, i, 64);
 	return (char*)GlobalCharBuffer;
 }
-
 void Throw(char* str)
 {
 	char Buffer[256];
@@ -72,7 +71,6 @@ void Throw(char* str)
 	wait(10000);
 	terminate_this_thread();
 }
-
 void Warn(char* str)
 {
 	char Buffer[256];

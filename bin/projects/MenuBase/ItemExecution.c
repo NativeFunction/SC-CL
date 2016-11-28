@@ -8,6 +8,7 @@
 #include "MenuExecutionHandling.h"
 
 static float SavedTestCoordPrecision = 0;
+static bool SavedBoolTest = false;
 
 char* Parser_EnumTest(int ItemIndex)
 {
@@ -44,13 +45,13 @@ void Menu_LargeSubmenuTest()
 	AddItem("Item7", Option_Blank);
 	AddItem("Item8", Option_Blank);
 	AddItem("Item9", Option_Blank);
-	AddItemIntAdvanced("Item10", false, nullptr, true, false, 0, 50, 0, 1, Option_Blank);
-	AddItemFloatAdvanced("Item11", false, nullptr, true, false, 0, 10, 0, 1, Option_Blank);
-	AddItemBoolAdvanced("Item12", false, nullptr, true, false, Option_Blank);
-	AddItemEnumAdvanced("Item13", false, nullptr, true, false, 0, 50, 0, 1, Option_Blank, Parser_EnumTest);
-	AddItemAdvanced("BJ_JUMP_06", true, "Must Come Down.~n~(Gxt Test)", true, Option_Blank);
-	AddItemAdvanced("Item15", false, "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW", false, Option_Blank);
-	AddItemAdvanced("Item16", false, nullptr, false, Option_Blank);
+	AddItemIntAdvanced("Item10", false, nullptr, nullptr, true, false, 0, 50, 0, 1, Option_Blank, nullptr);
+	AddItemFloatAdvanced("Item11", false, nullptr, nullptr, true, false, 0, 10, 0, 1, Option_Blank, nullptr);
+	AddItemBoolAdvanced("Item12", false, nullptr, nullptr, true, false, Option_Blank, nullptr);
+	AddItemEnumAdvanced("Item13", false, nullptr, nullptr, true, false, 0, 50, 0, 1, Option_Blank, Parser_EnumTest, nullptr);
+	AddItemAdvanced("BJ_JUMP_06", true, "Must Come Down.~n~(Gxt Test)", nullptr, true, Option_Blank, nullptr);
+	AddItemAdvanced("Item15", false, "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW", nullptr, false, Option_Blank, nullptr);
+	AddItemAdvanced("Item16", false, nullptr, nullptr, false, Option_Blank, nullptr);
 	AddItem("Item17", Option_Blank);
 	AddItem("Item18", Option_Blank);
 	AddItem("Item19", Option_Blank);
@@ -87,13 +88,76 @@ void Menu_LargeSubmenuTest()
 	AddItem("Item50", Option_Blank);
 }
 
-void Option_LoadingOnTest()
+
+int FindFreeCarSeat(Vehicle VehicleToFindSeat)
 {
-	SetMenuLoadingTime(30);
+	int MaxPassengers = get_vehicle_max_number_of_passengers(VehicleToFindSeat);
+
+	for (int i = -1; i < MaxPassengers; i++)
+	{
+		if (is_vehicle_seat_free(VehicleToFindSeat, i))
+			return i;
+	}
+	return -2;
+}
+Vehicle GetCurrentVehicle()
+{
+	Ped MyPed = player_ped_id();
+	return is_ped_in_any_vehicle(MyPed, false) ? get_vehicle_ped_is_in(MyPed, false) : 0;
+}
+bool SpawnVehicle(uint CurrentFrame, Hash Model)
+{
+	if (is_model_in_cdimage(Model))
+	{
+		if (has_model_loaded(Model))
+		{
+			Ped MyPed = player_ped_id();
+			Vehicle MyVehicle = create_vehicle(Model, get_entity_coords(MyPed, true), get_entity_heading(MyPed), true, true);
+			int NetworkId = veh_to_net(MyVehicle);
+			if (network_does_network_id_exist(NetworkId))
+			{
+				set_network_id_exists_on_all_machines(NetworkId, true);
+
+				if (does_entity_exist(MyVehicle))
+				{
+					Vehicle CurrentVehicle = GetCurrentVehicle();
+					float CurrentSpeed = 0.0f;
+					if (CurrentVehicle)
+					{
+						CurrentSpeed = get_entity_speed(CurrentVehicle);
+						set_entity_as_mission_entity(CurrentVehicle, false, true);
+						delete_vehicle(&CurrentVehicle);
+					}
+					int SeatIndex = FindFreeCarSeat(MyVehicle);
+					if (SeatIndex != -2)
+					{
+						set_ped_into_vehicle(MyPed, MyVehicle, SeatIndex);
+						set_vehicle_engine_on(MyVehicle, true, true, false);//last param not on console remove if issues arise
+						if (is_this_model_a_plane(Model) || is_this_model_a_heli(Model))
+							set_heli_blades_full_speed(MyVehicle);
+						set_vehicle_forward_speed(MyVehicle, CurrentSpeed);
+					}
+					else
+						Warn("Could not find available seat");
+					set_model_as_no_longer_needed(Model);
+					return true;
+				}
+			}
+		}
+		else if (CurrentFrame == 0)
+			request_model(Model);
+	}
+	return false;
+}
+
+
+void Option_DebugTest0()
+{
+	StartAsynchronousFunction(Async(SpawnVehicle), 1, 150, AsyncParam(hashof("adder")) );
 }
 void Option_LoadingOffTest()
 {
-	SetMenuLoadingTime(0);
+	SetMenuLoading(false);
 }
 void Option_UiTestPrecision()
 {
@@ -118,9 +182,11 @@ void Option_TestInt()
 {
 	DEBUG__GetContainer()->TestInt = GetCurrentItem()->Selection.Value.Int;
 }
+
 void Option_BoolTest()
 {
-
+	if (!UpdateBoolConditional(DEBUG__GetContainer()->TestInt != 5, &SavedBoolTest))
+		Warn("Unable to toggle bool at this test int index");
 }
 void Option_EnumTest()
 {
@@ -130,13 +196,13 @@ void Option_EnumTest()
 void Menu_DebugOptions()
 {
 	SetHeader("Debug Options");
-	AddItemAdvanced("Loading Test", false, "Turns loading icon on.", true, Option_LoadingOnTest);
-	AddItemAdvanced("Loading Off Test", false, "Turns loading icon on.", false, Option_LoadingOffTest);
+	AddItemAdvanced("Vehicle Spawn Test", false, "Spawns the adder.", nullptr, false, Option_DebugTest0, nullptr);
+	AddItemAdvanced("Loading Off Test", false, "Turns loading icon off.", "test", false, Option_LoadingOffTest, Option_Blank);
 	AddItemInt("Ui Test Precision", true, 0, 4, FloatToPrecision(SavedTestCoordPrecision), Option_UiTestPrecision);
 	AddItemFloat("Ui Test Coord X", true, 0, 10, DEBUG__GetContainer()->UiTestCoords.x, SavedTestCoordPrecision, Option_TestUiCoordX);
 	AddItemFloat("Ui Test Coord Y", true, 0, 10, DEBUG__GetContainer()->UiTestCoords.y, SavedTestCoordPrecision, Option_TestUiCoordY);
 	AddItemInt("Ui Test Int", true, -100, 1000, DEBUG__GetContainer()->TestInt, Option_TestInt);
-	AddItemBool("Bool Test", false, Option_BoolTest);
+	AddItemBool("Bool Test", SavedBoolTest, Option_BoolTest);
 	AddItemEnum("Enum Test", false, 0, 10, 0, Option_EnumTest, Parser_EnumTest);
 	AddItemMenu("Large Submenu Test", Menu_LargeSubmenuTest);
 

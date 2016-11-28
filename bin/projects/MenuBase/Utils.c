@@ -115,3 +115,9 @@ void Break(char* str)
 	}
 	wait(0);//a button press after break
 }
+void Notify(char* str)
+{
+	_set_notification_text_entry("STRING");
+	add_text_component_substring_player_name(str);
+	_draw_notification(false, true);
+}
