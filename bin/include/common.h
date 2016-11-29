@@ -1,18 +1,18 @@
 #pragma once
 
-void print(char* str, int ms);
-char* strcat(char* str1, char* str2);
-char* straddiGlobal(char* str1, int i);
-char* itosGlobal(int i);
-void Throw(char* str);
-void Warn(char* str);
+void print(const char* str, int ms);
+const char* strcat(const char* str1, const char* str2);
+const char* straddiGlobal(const char* str1, int i);
+const char* itosGlobal(int i);
+void Throw(const char* str);
+void Warn(const char* str);
 int SwapEndian32(int value);
 short SwapEndian16(short value);
 int CeilDivInt(uint a, uint b);
 int DivInt(int a, int b);
 float DivFloat(float a, float b);
-char* IntToHex(int val);
-int HexToInt(char *hex);
+const char* IntToHex(int val);
+int HexToInt(const char* hex);
 int SetBit(int value, uint index);
 int ClearBit(int value, uint index);
 int ToggleBit(int value, uint index);
@@ -36,5 +36,5 @@ float asinMSC(float number);
 float asin(float number);
 #endif
 #endif
-float StringToFloat(char* str);
+float StringToFloat(const char* str);
 

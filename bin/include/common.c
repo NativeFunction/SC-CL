@@ -12,7 +12,7 @@ default: SwapEndian32(x))
 
 char* GlobalCharBuffer = GlobalCharBufferD;
 
-void print(char* str, int ms)
+void print(const char* str, int ms)
 {
 	#ifdef __GTAV__
 		_set_text_entry_2("STRING");
@@ -26,7 +26,7 @@ void print(char* str, int ms)
 	#endif
 }
 
-char* strcatGlobal(char* str1, char* str2)
+const char* strcatGlobal(const char* str1, const char* str2)
 {
 	//this takes advantage of strings being global
 	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
@@ -38,7 +38,7 @@ char* strcatGlobal(char* str1, char* str2)
 	stradd((char*)GlobalCharBuffer, str2, 255);
 	return (char*)GlobalCharBuffer;
 }
-char* straddiGlobal(char* str1, int i)
+const char* straddiGlobal(const char* str1, int i)
 {
 	//this takes advantage of strings being global
 	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
@@ -50,7 +50,7 @@ char* straddiGlobal(char* str1, int i)
 	straddi((char*)GlobalCharBuffer, i, 255);
 	return (char*)GlobalCharBuffer;
 }
-char* itosGlobal(int i)
+const char* itosGlobal(int i)
 {
 	//this takes advantage of strings being global
 	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
@@ -61,7 +61,7 @@ char* itosGlobal(int i)
 	itos((char*)GlobalCharBuffer, i, 64);
 	return (char*)GlobalCharBuffer;
 }
-void Throw(char* str)
+void Throw(const char* str)
 {
 	char Buffer[256];
 	strcpy(Buffer, "~r~Exception~s~: ", 255);
@@ -71,7 +71,7 @@ void Throw(char* str)
 	wait(10000);
 	terminate_this_thread();
 }
-void Warn(char* str)
+void Warn(const char* str)
 {
 	char Buffer[256];
 	strcpy(Buffer, "~y~Warning~s~: ", 255);
@@ -100,7 +100,7 @@ float DivFloat(float a, float b)
 {
 	return a == 0.0f || b == 0.0f ? 0.0f : a / b;
 }
-char* IntToHex(int val)
+const char* IntToHex(int val)
 {
 	char* hex_str = "0123456789ABCDEF";
 	byte* bin = (byte*)&val;
@@ -115,7 +115,7 @@ char* IntToHex(int val)
 	str[8] = 0;
 	return str;
 }
-int HexToInt(char *hex)
+int HexToInt(const char *hex)
 {
 	uint result = 0;
 
@@ -265,7 +265,7 @@ float asin(float number)
 
 #endif
 
-float StringToFloat(char* str)
+float StringToFloat(const char* str)
 {
 	float rez = 0, fact = 1;
 	bool point_seen = false;

@@ -31,7 +31,7 @@ typedef struct ItemContainer
 		float Precision;
 		flint StartIndex;
 		flint EndIndex;//ItemCount = EndIndex - StartIndex + 1
-		char* (*ParseEnum)(int ItemIndex);//nullptr == no enum
+		const char* (*ParseEnum)(int ItemIndex);//nullptr == no enum
 
 	} Selection;
 

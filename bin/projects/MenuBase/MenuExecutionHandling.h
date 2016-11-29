@@ -12,21 +12,21 @@ void InitMenuExecution();
 void AsynchronousLoop();
 
 //For Description and AlternateExecution use nullptr for disabled
-void SetHeaderAdvanced(char* HeaderText, bool IsItemGxt);
-void AddItemAdvanced(char* ItemText, bool IsItemGxt, char* Description, char* AltExeControlText, bool IsDisabled, void(*Callback)(), void(*AlternateCallback)());
-void AddItemIntAdvanced(char* ItemText, bool IsItemGxt, char* Description, char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), void(*AlternateCallback)());
-void AddItemFloatAdvanced(char* ItemText, bool IsItemGxt, char* Description, char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)(), void(*AlternateCallback)());
-void AddItemBoolAdvanced(char* ItemText, bool IsItemGxt, char* Description, char* AltExeControlText, bool IsDisabled, bool StartIndex, void(*Callback)(), void(*AlternateCallback)());
-void AddItemEnumAdvanced(char* ItemText, bool IsItemGxt, char* Description, char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)());
-void AddItemMenuAdvanced(char* ItemText, bool IsItemGxt, char* Description, bool IsDisabled, void(*Callback)());
+void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt);
+void AddItemAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, void(*Callback)(), void(*AlternateCallback)());
+void AddItemIntAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), void(*AlternateCallback)());
+void AddItemFloatAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)(), void(*AlternateCallback)());
+void AddItemBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool StartIndex, void(*Callback)(), void(*AlternateCallback)());
+void AddItemEnumAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), const char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)());
+void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, void(*Callback)());
 
-void SetHeader(char* HeaderText);
-void AddItem(char* ItemText, void(*Callback)());
-void AddItemInt(char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, void(*Callback)());
-void AddItemFloat(char* ItemText, bool ExecuteOnChange, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)());
-void AddItemBool(char* ItemText, bool StartIndex, void(*Callback)());
-void AddItemEnum(char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, void(*Callback)(), char*(*EnumParser)(int ItemIndex));
-void AddItemMenu(char* ItemText, void(*Callback)());
+void SetHeader(const char* HeaderText);
+void AddItem(const char* ItemText, void(*Callback)());
+void AddItemInt(const char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, void(*Callback)());
+void AddItemFloat(const char* ItemText, bool ExecuteOnChange, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)());
+void AddItemBool(const char* ItemText, bool StartIndex, void(*Callback)());
+void AddItemEnum(const char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex));
+void AddItemMenu(const char* ItemText, void(*Callback)());
 
 
 ItemContainer* GetCurrentItem();
@@ -34,7 +34,7 @@ int FloatToPrecision(float Precision);
 float PrecisionToFloat(int Precision);
 int GetEnumParserValue(int ItemIndex);
 bool GetItemRelativeToCursor(int Index, ItemContainer** Out);
-bool GetItemByName(char* Name, ItemContainer** Out);
+bool GetItemByName(const char* Name, ItemContainer** Out);
 bool UpdateBoolConditional(bool Condition, bool* BoolToSet);
 bool UpdateBoolConditionalCeil(bool Condition, bool* BoolToSet);
 bool UpdateBoolConditionalFloor(bool Condition, bool* BoolToSet);

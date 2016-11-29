@@ -162,7 +162,7 @@ void SetMenuLoading(bool IsLoading)
 	}
 	
 }
-void SetDataSlot(int SlotIndex, ScaleformButton ButtonId, char* ItemText, bool IsGxtText)
+void SetDataSlot(int SlotIndex, ScaleformButton ButtonId, const char* ItemText, bool IsGxtText)
 {
 	_push_scaleform_movie_function(Container.Ui.MenuControlSFID, "SET_DATA_SLOT");
 	_push_scaleform_movie_function_parameter_int(SlotIndex);//slot index
@@ -216,7 +216,7 @@ void UpdateMenuControls()
 			if (Container.Item[GetRelativeCursorIndex].HasAlternateExecution)
 			{
 				if (Container.Item[GetRelativeCursorIndex].Ui.AltExeControlText)
-					SetDataSlot(SlotIdCounter++, SFB_BUTTON_X, Container.Item[GetRelativeCursorIndex].Ui.AltExeControlText, false);
+					SetDataSlot(SlotIdCounter++, SFB_BUTTON_X, (const char*)Container.Item[GetRelativeCursorIndex].Ui.AltExeControlText, false);
 				else
 					SetDataSlot(SlotIdCounter++, SFB_BUTTON_X, "Select", false);
 			}
@@ -466,11 +466,6 @@ void ParseMenuControls()
 	}
 
 }
-char* ParseBoolEnum(int Enum)
-{
-	//this is temporary
-	return Enum ? "On" : "Off";
-}
 #pragma endregion
 
 #pragma region Drawing
@@ -500,7 +495,7 @@ void SetDrawPosLeft()
 	_set_screen_draw_position(76, 84);
 	_screen_draw_position_ratio(Vector2(-0.05f, get_safe_zone_size() - 1.0f), 0.0f, 0.0f);
 }
-void DrawText(char* str, vector2 pos, bool IsGtxText) {
+void DrawText(const char* str, vector2 pos, bool IsGtxText) {
 	if (IsGtxText)
 	{
 		if (does_text_label_exist(str))
@@ -512,7 +507,7 @@ void DrawText(char* str, vector2 pos, bool IsGtxText) {
 		else
 			str = "INVALID_GXT";
 	}
-	_set_text_entry("string");
+	_set_text_entry("STRING");
 	add_text_component_substring_player_name(str);
 	_draw_text(pos);
 }
@@ -763,7 +758,7 @@ void DrawItems()
 
 						if (Container.Item[i].Selection.ParseEnum != nullptr)
 						{
-							char* Enum = Container.Item[i].Selection.ParseEnum(i);
+							const char* Enum = Container.Item[i].Selection.ParseEnum(i);
 
 							draw_sprite("CommonMenu", "arrowleft",
 										Vector2(((

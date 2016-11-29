@@ -10,7 +10,7 @@
 static float SavedTestCoordPrecision = 0;
 static bool SavedBoolTest = false;
 
-char* Parser_EnumTest(int ItemIndex)
+const char* Parser_EnumTest(int ItemIndex)
 {
 	switch (GetEnumParserValue(ItemIndex))
 	{

@@ -4,7 +4,7 @@
 #include "constants.h"
 #include "common.h"
 
-bool LoadTextureDictionary(char* DictionaryName)
+bool LoadTextureDictionary(const char* DictionaryName)
 {
 	if (has_streamed_texture_dict_loaded(DictionaryName))
 		return true;
@@ -21,13 +21,13 @@ bool LoadTextureDictionary(char* DictionaryName)
 	Warn("Unable to load texture dictionary.");
 	return false;
 }
-void CheckTextureDictionary(char* DictionaryName)
+void CheckTextureDictionary(const char* DictionaryName)
 {
 	//TODO: add bool to not request multiple times
 	if (!has_streamed_texture_dict_loaded(DictionaryName))
 		request_streamed_texture_dict(DictionaryName, 0);
 }
-bool InitScaleformMovie(char* MovieName, int* SavedScaleformId)
+bool InitScaleformMovie(const char* MovieName, int* SavedScaleformId)
 {
 	if (has_scaleform_movie_loaded(*SavedScaleformId))
 		return true;
@@ -44,7 +44,7 @@ bool InitScaleformMovie(char* MovieName, int* SavedScaleformId)
 	Warn("Unable to initialize scaleform.");
 	return false;
 }
-void CheckScaleformMovie(char* MovieName, int* SavedScaleformId)
+void CheckScaleformMovie(const char* MovieName, int* SavedScaleformId)
 {
 	//TODO: add bool to not request multiple times
 	if (has_scaleform_movie_loaded(*SavedScaleformId))
@@ -52,7 +52,7 @@ void CheckScaleformMovie(char* MovieName, int* SavedScaleformId)
 }
 
 
-Size GetSizeFromTexture(char* DictionaryName, char* TextureName)
+Size GetSizeFromTexture(const char* DictionaryName, const char* TextureName)
 {
 	int ScreenRes[2];
 	
@@ -82,7 +82,7 @@ float GetIntWidth(int Value, Font FontType, float Scale)
 	set_text_scale(1.0f, Scale);
 	return _get_text_screen_width(true);
 }
-float GetStringWidth(char* Value, Font FontType, float Scale)
+float GetStringWidth(const char* Value, Font FontType, float Scale)
 {
 	_set_text_entry_for_width("STRING");
 	add_text_component_substring_player_name(Value);
@@ -90,7 +90,7 @@ float GetStringWidth(char* Value, Font FontType, float Scale)
 	set_text_scale(1.0f, Scale);
 	return _get_text_screen_width(true);
 }
-float GetStringHeight(char* Value, Font FontType, float Scale, float Wrap, vector2 Pos)
+float GetStringHeight(const char* Value, Font FontType, float Scale, float Wrap, vector2 Pos)
 {
 	set_text_font(FontType);
 	set_text_wrap(0.0f, Wrap);
@@ -100,7 +100,7 @@ float GetStringHeight(char* Value, Font FontType, float Scale, float Wrap, vecto
 
 	return _get_text_scale_height(Scale, FontType) * (float)_get_text_screen_line_count(Pos);
 }
-void Break(char* str)
+void Break(const char* str)
 {
 	//TODO: This breaks > char Buffer[256] = "~r~Breakpoint~s~: ";
 	char Buffer[256];
@@ -115,7 +115,7 @@ void Break(char* str)
 	}
 	wait(0);//a button press after break
 }
-void Notify(char* str)
+void Notify(const char* str)
 {
 	_set_notification_text_entry("STRING");
 	add_text_component_substring_player_name(str);
