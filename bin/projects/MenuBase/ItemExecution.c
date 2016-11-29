@@ -189,6 +189,8 @@ void Option_BoolTest()
 {
 	if (!UpdateBoolConditional(DEBUG__GetContainer()->TestInt != 5, &SavedBoolTest))
 		Warn("Unable to toggle bool at this test int index");
+	print(__FILE__, 5000);
+
 }
 void Option_EnumTest()
 {
@@ -206,6 +208,9 @@ void Menu_DebugOptions()
 	AddItemInt("Ui Test Int", true, -100, 1000, DEBUG__GetContainer()->TestInt, Option_TestInt);
 	AddItemBool("Bool Test", SavedBoolTest, Option_BoolTest);
 	AddItemEnum("Enum Test", false, 0, 10, 0, Option_EnumTest, Parser_EnumTest);
+	AddItemIntBool("Int Bool Test", 0, 10, 0, 0, Option_Blank);
+	AddItemEnumBool("Enum Bool Test", 0, 10, 0, 0, Option_Blank, Parser_EnumTest);
+	AddItemFloatBool("Float Bool Test", 0, 10, 0, 1.0f, 0, Option_Blank);
 	AddItemMenu("Large Submenu Test", Menu_LargeSubmenuTest);
 
 }
