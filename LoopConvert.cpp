@@ -3191,6 +3191,12 @@ public:
 					parseExpression(icast->getSubExpr(), false, isLtoRValue);
 					break;
 				}
+				case clang::CK_PointerToBoolean:
+				{
+					parseExpression(icast->getSubExpr(), false, isLtoRValue);
+					AddInstructionConditionally(isLtoRValue, IsNotZero);
+					break;
+				}
 				case clang::CK_IntegralToPointer:
 				{
 					//Fixed support for:
