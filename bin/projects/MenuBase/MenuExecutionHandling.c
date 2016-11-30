@@ -7,147 +7,165 @@
 #include "Utils.h"
 #include "MenuUiHandling.h"
 #include "ItemExecution.h"
-
-static int AddItemCounter = 0;
-static Page* Container;
+#include "MenuExecutionHandling.h"
 
 #define GetRelativeCursorIndex Container->CursorIndex - Container->ItemStartIndex
 #define this Container->Item[GetRelativeCursorIndex].Selection
 
+static int AddItemCounter = 0;
+static Page* Container;
+static bool(*AsyncFunction)(uint CurrentFrame, ...);
+static int AsyncFunctionParams[MaxAsyncParams];
+static uint AsyncFunctionParamCount;
+static uint AsyncFrameCount;//this is needed to provide nice 0 - FrameCountMax for CurrentFrame on AsynchronousFunction and for loading ui display slow start
+
 #pragma region Reset
 static void ResetCurrentItem()
 {
+
 	Container->Item[AddItemCounter].BitSet = null;
 	Container->Item[AddItemCounter].Execute = nullptr;
+	Container->Item[AddItemCounter].AlternateExecute = nullptr;
 	Container->Item[AddItemCounter].Ui.ItemText = nullstr;
 	Container->Item[AddItemCounter].Ui.Description = nullptr;
+	Container->Item[AddItemCounter].Ui.AltExeControlText = nullptr;
 	Container->Item[AddItemCounter].Selection.CursorIndex.Int = null;
 	Container->Item[AddItemCounter].Selection.EndIndex.Int = null;
 	Container->Item[AddItemCounter].Selection.ParseEnum = nullptr;
 	Container->Item[AddItemCounter].Selection.Precision = 1.0f;
 	Container->Item[AddItemCounter].Selection.StartIndex.Int = null;
-	Container->Item[AddItemCounter].Selection.Type = DT_None;
+	Container->Item[AddItemCounter].Selection.Type = MST_None;
 }
 #pragma endregion
 
 #pragma region ItemTypes
-void SetHeaderAdvanced(char* HeaderText, bool IsItemGxt)
+void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt)
 {
 	AddItemCounter = 0;
 	Container->TotalItemCount = 0;
 	
-	Container->Ui.HeaderText = HeaderText;
+	Container->Ui.HeaderText = (char*)HeaderText;
 	Container->Ui.IsHeaderGxt = IsItemGxt;
 }
-void AddItemAdvanced(char* ItemText, bool IsItemGxt, char* Description, bool IsDisabled, void(*Callback)())
+void AddItemAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		Container->Item[AddItemCounter].Ui.Description = Description;
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
 		if (IsItemGxt)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
 		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
-void AddItemIntAdvanced(char* ItemText, bool IsItemGxt, char* Description, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)())
+void AddItemIntAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), void(*AlternateCallback)())
 {
-	//Break(straddiGlobal("Before Cmpq: ", AddItemCounter));
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		//Break(straddiGlobal("Item Index: ", AddItemCounter));
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
+
 		if (IsItemGxt)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
-		Container->Item[AddItemCounter].Ui.Description = Description;
+
 		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 
 		Container->Item[AddItemCounter].Selection.StartIndex.Int = MinValue;
 		Container->Item[AddItemCounter].Selection.EndIndex.Int = MaxValue;
 		Container->Item[AddItemCounter].Selection.CursorIndex.Int = StartIndex;
 		if (ExecuteOnChange)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
-		Container->Item[AddItemCounter].Selection.Type = DT_Int;
+		Container->Item[AddItemCounter].Selection.Type = MST_Int;
 		Container->Item[AddItemCounter].Selection.Precision = Precision;
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
-void AddItemFloatAdvanced(char* ItemText, bool IsItemGxt, char* Description, bool IsDisabled, bool ExecuteOnChange, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)())
+void AddItemFloatAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
-		Container->Item[AddItemCounter].Ui.Description = Description;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
 		if (IsItemGxt)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
 		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 
 		Container->Item[AddItemCounter].Selection.StartIndex.Float = MinValue;
 		Container->Item[AddItemCounter].Selection.EndIndex.Float = MaxValue;
 		Container->Item[AddItemCounter].Selection.CursorIndex.Float = StartIndex;
 		if (ExecuteOnChange)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
-		Container->Item[AddItemCounter].Selection.Type = DT_Float;
+		Container->Item[AddItemCounter].Selection.Type = MST_Float;
 		Container->Item[AddItemCounter].Selection.Precision = Precision;
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
-void AddItemBoolAdvanced(char* ItemText, bool IsItemGxt, char* Description, bool IsDisabled, bool StartIndex, void(*Callback)())
+void AddItemBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool StartIndex, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
-		Container->Item[AddItemCounter].Ui.Description = Description;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
 		if (IsItemGxt)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
 		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 
 		Container->Item[AddItemCounter].Selection.CursorIndex.Int = StartIndex;
 		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
-		Container->Item[AddItemCounter].Selection.Type = DT_Bool;
+		Container->Item[AddItemCounter].Selection.Type = MST_Bool;
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
-void AddItemEnumAdvanced(char* ItemText, bool IsItemGxt, char* Description, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), char*(*EnumParser)(int ItemIndex))
+void AddItemEnumAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), const char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
-		Container->Item[AddItemCounter].Ui.Description = Description;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
 		if (IsItemGxt)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
 		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 
 		Container->Item[AddItemCounter].Selection.StartIndex.Int = MinValue;
 		Container->Item[AddItemCounter].Selection.EndIndex.Int = MaxValue;
 		Container->Item[AddItemCounter].Selection.CursorIndex.Int = StartIndex;
 		if(ExecuteOnChange)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
-		Container->Item[AddItemCounter].Selection.Type = DT_Int;
+		Container->Item[AddItemCounter].Selection.Type = MST_Enum;
 		Container->Item[AddItemCounter].Selection.Precision = Precision;
 		Container->Item[AddItemCounter].Selection.ParseEnum = EnumParser;
 		AddItemCounter++;
@@ -155,52 +173,160 @@ void AddItemEnumAdvanced(char* ItemText, bool IsItemGxt, char* Description, bool
 
 	Container->TotalItemCount++;
 }
-void AddItemMenuAdvanced(char* ItemText, bool IsItemGxt, char* Description, bool IsDisabled, void(*Callback)())
+void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, void(*Callback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
-		Container->Item[AddItemCounter].Ui.Description = Description;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
 		if(IsItemGxt)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
 		Container->Item[AddItemCounter].Execute = Callback;
-		Container->Item[AddItemCounter].Selection.Type = DT_FunctionP;
+		Container->Item[AddItemCounter].Selection.Type = MST_Menu;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
+void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, flint Param, void(*Callback)(), void(*AlternateCallback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
+		if (IsItemGxt)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
+		if (IsDisabled)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+
+		Container->Item[AddItemCounter].Selection.Type = MST_Param;
+		Container->Item[AddItemCounter].Selection.Value = Param;
+		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
+void AddItemIntBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, int MinValue, int MaxValue, int StartIndex, int Precision, bool BoolStartIndex, void(*Callback)(), void(*AlternateCallback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
+
+		if (IsItemGxt)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
+		if (IsDisabled)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (BoolStartIndex)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_BoolNumValue);
+
+		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
+
+		Container->Item[AddItemCounter].Selection.StartIndex.Int = MinValue;
+		Container->Item[AddItemCounter].Selection.EndIndex.Int = MaxValue;
+		Container->Item[AddItemCounter].Selection.CursorIndex.Int = StartIndex;
+		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
+		Container->Item[AddItemCounter].Selection.Type = MST_IntBool;
+		Container->Item[AddItemCounter].Selection.Precision = Precision;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
+void AddItemEnumBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, int MinValue, int MaxValue, int StartIndex, int Precision, bool BoolStartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
+		if (IsItemGxt)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
+		if (IsDisabled)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (BoolStartIndex)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_BoolNumValue);
+		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
+
+		Container->Item[AddItemCounter].Selection.StartIndex.Int = MinValue;
+		Container->Item[AddItemCounter].Selection.EndIndex.Int = MaxValue;
+		Container->Item[AddItemCounter].Selection.CursorIndex.Int = StartIndex;
+		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
+		Container->Item[AddItemCounter].Selection.Type = MST_EnumBool;
+		Container->Item[AddItemCounter].Selection.Precision = Precision;
+		Container->Item[AddItemCounter].Selection.ParseEnum = EnumParser;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
+void AddItemFloatBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, float MinValue, float MaxValue, float StartIndex, float Precision, bool BoolStartIndex, void(*Callback)(), void(*AlternateCallback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
+		if (IsItemGxt)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
+		if (IsDisabled)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (BoolStartIndex)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_BoolNumValue);
+		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
+
+		Container->Item[AddItemCounter].Selection.StartIndex.Float = MinValue;
+		Container->Item[AddItemCounter].Selection.EndIndex.Float = MaxValue;
+		Container->Item[AddItemCounter].Selection.CursorIndex.Float = StartIndex;
+		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
+		Container->Item[AddItemCounter].Selection.Type = MST_FloatBool;
+		Container->Item[AddItemCounter].Selection.Precision = Precision;
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
 
-void SetHeader(char* HeaderText)
+
+void SetHeader(const char* HeaderText)
 {
 	AddItemCounter = 0;
 	Container->TotalItemCount = 0;
 
-	Container->Ui.HeaderText = HeaderText;
+	Container->Ui.HeaderText = (char*)HeaderText;
 }
-void AddItem(char* ItemText, void(*Callback)())
+void AddItem(const char* ItemText, void(*Callback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
 		Container->Item[AddItemCounter].Execute = Callback;
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
-void AddItemInt(char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, void(*Callback)())
+void AddItemInt(const char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, void(*Callback)())
 {
-	//Break(straddiGlobal("Before Cmpq: ", AddItemCounter));
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		//Break(straddiGlobal("Item Index: ", AddItemCounter));
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
 		Container->Item[AddItemCounter].Execute = Callback;
 
 		Container->Item[AddItemCounter].Selection.StartIndex.Int = MinValue;
@@ -208,18 +334,18 @@ void AddItemInt(char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue
 		Container->Item[AddItemCounter].Selection.CursorIndex.Int = StartIndex;
 		if (ExecuteOnChange)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
-		Container->Item[AddItemCounter].Selection.Type = DT_Int;
+		Container->Item[AddItemCounter].Selection.Type = MST_Int;
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
-void AddItemFloat(char* ItemText, bool ExecuteOnChange, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)())
+void AddItemFloat(const char* ItemText, bool ExecuteOnChange, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
 		Container->Item[AddItemCounter].Execute = Callback;
 
 		Container->Item[AddItemCounter].Selection.StartIndex.Float = MinValue;
@@ -227,35 +353,35 @@ void AddItemFloat(char* ItemText, bool ExecuteOnChange, float MinValue, float Ma
 		Container->Item[AddItemCounter].Selection.CursorIndex.Float = StartIndex;
 		if (ExecuteOnChange)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
-		Container->Item[AddItemCounter].Selection.Type = DT_Float;
+		Container->Item[AddItemCounter].Selection.Type = MST_Float;
 		Container->Item[AddItemCounter].Selection.Precision = Precision;
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
-void AddItemBool(char* ItemText, bool StartIndex, void(*Callback)())
+void AddItemBool(const char* ItemText, bool StartIndex, void(*Callback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
 		Container->Item[AddItemCounter].Execute = Callback;
 
 		Container->Item[AddItemCounter].Selection.CursorIndex.Int = StartIndex;
 		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
-		Container->Item[AddItemCounter].Selection.Type = DT_Bool;
+		Container->Item[AddItemCounter].Selection.Type = MST_Bool;
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
-void AddItemEnum(char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, void(*Callback)(), char*(*EnumParser)(int ItemIndex))
+void AddItemEnum(const char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex))
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
 		Container->Item[AddItemCounter].Execute = Callback;
 
 		Container->Item[AddItemCounter].Selection.StartIndex.Int = MinValue;
@@ -263,43 +389,111 @@ void AddItemEnum(char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValu
 		Container->Item[AddItemCounter].Selection.CursorIndex.Int = StartIndex;
 		if (ExecuteOnChange)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
-		Container->Item[AddItemCounter].Selection.Type = DT_Int;
+		Container->Item[AddItemCounter].Selection.Type = MST_Enum;
 		Container->Item[AddItemCounter].Selection.ParseEnum = EnumParser;
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
-void AddItemMenu(char* ItemText, void(*Callback)())
+void AddItemMenu(const char* ItemText, void(*Callback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
-		Container->Item[AddItemCounter].Ui.ItemText = ItemText;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
 		Container->Item[AddItemCounter].Execute = Callback;
-		Container->Item[AddItemCounter].Selection.Type = DT_FunctionP;
+		Container->Item[AddItemCounter].Selection.Type = MST_Menu;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
+void AddItemWithParam(const char* ItemText, flint Param, void(*Callback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Selection.Type = MST_Param;
+		Container->Item[AddItemCounter].Selection.Value = Param;
+		Container->Item[AddItemCounter].Execute = Callback;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
+void AddItemIntBool(const char* ItemText, int MinValue, int MaxValue, int StartIndex, bool BoolStartIndex, void(*Callback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Execute = Callback;
+
+		Container->Item[AddItemCounter].Selection.StartIndex.Int = MinValue;
+		Container->Item[AddItemCounter].Selection.EndIndex.Int = MaxValue;
+		Container->Item[AddItemCounter].Selection.CursorIndex.Int = StartIndex;
+		if (BoolStartIndex)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_BoolNumValue);
+		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
+		Container->Item[AddItemCounter].Selection.Type = MST_IntBool;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
+void AddItemEnumBool(const char* ItemText, int MinValue, int MaxValue, int StartIndex, bool BoolStartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex))
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Execute = Callback;
+
+		Container->Item[AddItemCounter].Selection.StartIndex.Int = MinValue;
+		Container->Item[AddItemCounter].Selection.EndIndex.Int = MaxValue;
+		Container->Item[AddItemCounter].Selection.CursorIndex.Int = StartIndex;
+		if (BoolStartIndex)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_BoolNumValue);
+		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
+		Container->Item[AddItemCounter].Selection.Type = MST_EnumBool;
+		Container->Item[AddItemCounter].Selection.ParseEnum = EnumParser;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
+void AddItemFloatBool(const char* ItemText, float MinValue, float MaxValue, float StartIndex, float Precision, bool BoolStartIndex, void(*Callback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Execute = Callback;
+
+		Container->Item[AddItemCounter].Selection.StartIndex.Float = MinValue;
+		Container->Item[AddItemCounter].Selection.EndIndex.Float = MaxValue;
+		Container->Item[AddItemCounter].Selection.CursorIndex.Float = StartIndex;
+		if (BoolStartIndex)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_BoolNumValue);
+		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_ExecuteOnChange);
+		Container->Item[AddItemCounter].Selection.Type = MST_FloatBool;
+		Container->Item[AddItemCounter].Selection.Precision = Precision;
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
 
+//TODO: add item bool enum, int, float
+//TODO: add bool group that sets all other bools on menu to 0 (enum expansion)
+//TODO: add left right scroll bar with dds in timerbars.xtd
+//TODO: add item spacer item
 
-//add item bool enum, int, float
-//add alternate execution for x button
-//add item small spacers between items to make items appear as buttons
-//add bool group that sets all other bools on menu to 0 (enum expansion)
-//test having a bool error and not change
-//add left right scroll bar with dds in timerbars.xtd
-//test disable all controls on xbox
-//add ability to set description on all options
-//add ability to disable option
-//add AddItemWithInt using selection value for function that need params
-
-//add item spacer item
-//add small scroll bar on right
-//have cursor blink slow on selected item
-//have cursor y size shrink on selection
+//TODO: add item small spacers between items to make items appear as buttons
+//TODO: have cursor blink slow on selected item
+//TODO: have cursor y size shrink on selection
 
 
 
@@ -314,7 +508,7 @@ void InitMenuExecution()
 }
 inline ItemContainer* GetCurrentItem()
 {
-	return &(Container->Item[GetRelativeCursorIndex]);
+	return &Container->Item[GetRelativeCursorIndex];
 }
 float PrecisionToFloat(int Precision)
 {
@@ -354,7 +548,7 @@ bool GetItemRelativeToCursor(int Index, ItemContainer** Out)
 	}
 	return false;
 }
-bool GetItemByName(char* Name, ItemContainer** Out)
+bool GetItemByName(const char* Name, ItemContainer** Out)
 {
 	for (int i = 0; i < MaxDisplayableItems; i++)
 	{
@@ -366,6 +560,60 @@ bool GetItemByName(char* Name, ItemContainer** Out)
 	}
 	return false;
 }
+bool UpdateBoolConditional(bool Condition, bool* BoolToSet)
+{
+	if (Condition)
+	{
+		*BoolToSet = Container->Item[GetRelativeCursorIndex].Selection.Value.Int;
+		return true;
+	}
+
+	//reset menu bool
+	Container->Item[GetRelativeCursorIndex].Selection.Value.Int = !Container->Item[GetRelativeCursorIndex].Selection.Value.Int;
+	return false;
+}
+bool UpdateBoolConditionalCeil(bool Condition, bool* BoolToSet)
+{
+	if (Condition)
+	{
+		*BoolToSet = Container->Item[GetRelativeCursorIndex].Selection.Value.Int;
+		return true;
+	}
+
+	//reset menu bool
+	*BoolToSet = true;
+	Container->Item[GetRelativeCursorIndex].Selection.Value.Int = true;
+	return false;
+}
+bool UpdateBoolConditionalFloor(bool Condition, bool* BoolToSet)
+{
+	if (Condition)
+	{
+		*BoolToSet = Container->Item[GetRelativeCursorIndex].Selection.Value.Int;
+		return true;
+	}
+
+	//reset menu bool
+	*BoolToSet = false;
+	Container->Item[GetRelativeCursorIndex].Selection.Value.Int = false;
+	return false;
+}
+void StartAsynchronousFunction(bool(*AsynchronousFunction)(uint CurrentFrame, ...), const uint ParamCount, uint FramesToLoop, int Params[MaxAsyncParams])
+{
+	if (ParamCount <= MaxAsyncParams)
+	{
+		AsyncFrameCount = FramesToLoop;
+		Container->Loading.FramesToLoad = 0;
+		AsyncFunction = AsynchronousFunction;
+		memset(AsyncFunctionParams, 0, sizeof(AsyncFunctionParams));
+		//*AsyncFunctionParams = (int[10]){0};
+		memcpy(AsyncFunctionParams, Params, sizeof(AsyncFunctionParams));
+		AsyncFunctionParamCount = ParamCount;
+	}
+	else
+		Warn("Asynchronous function call has too many parameters");
+}
+
 
 //[Do not use] This is for menu ui testing
 inline Page* DEBUG__GetContainer()
@@ -374,11 +622,43 @@ inline Page* DEBUG__GetContainer()
 }
 #pragma endregion
 
+unsafe void AsynchronousLoop()
+{
+	int CurrentFrames = Container->Loading.FramesToLoad;
+
+	//CError: if ((int)AsyncFunction && CurrentFrames)
+	if ((int)AsyncFunction != 0 && AsyncFrameCount != 0)
+	{
+		__getNamedFrame("CurrentFrames");
+		__getNamedStatic("AsyncFunctionParamCount");
+		__getNamedStaticP("AsyncFunctionParams");
+		__toStack();
+		__getNamedStatic("AsyncFunction");
+		__pCall();
+		bool ret = __popI();
+
+		CurrentFrames = Container->Loading.FramesToLoad++;
+		bool IsTimeOut = CurrentFrames > AsyncFrameCount;
+		if (ret || IsTimeOut)
+		{
+			memset(AsyncFunctionParams, 0, sizeof(AsyncFunctionParams));
+			AsyncFunction = nullptr;
+			AsyncFunctionParamCount = null;
+			AsyncFrameCount = null;
+			SetMenuLoading(false);
+			if(IsTimeOut)
+				Notify("Loading operation timed out.");
+		}
+		else if (CurrentFrames == 5)
+			SetMenuLoading(true);
+	}
+}
+void LoopedExecutionEntry()
+{
+
+}
 void ExecutionEntry() 
 {
 	MainMenu();
 }
-
-
-
 

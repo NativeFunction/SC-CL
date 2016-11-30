@@ -5,6 +5,7 @@ int Static0;
 #include "constants.h"
 #include "Utils.h"
 #include "MenuUiHandling.h"
+#include "MenuExecutionHandling.h"
 #include "common.h"
 
 
@@ -17,11 +18,6 @@ inline void NullStatics()
 		)
 		memset(getStaticPtrAtIndex(0), 0, 748 * item_size);
 }
-void LoopedOptions()
-{
-	
-}
-
 
 void main()
 {
@@ -35,11 +31,12 @@ void main()
 	{
 		wait(0);
 
-		if (!network_is_in_transition())
-			LoopedOptions();
-
 		HandleMenuUi();
 
+		AsynchronousLoop();
+
+		if (!network_is_in_transition())
+			LoopedExecutionEntry();
 	}
 }
 

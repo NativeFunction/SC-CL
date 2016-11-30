@@ -141,6 +141,7 @@ typedef enum DataType
 	DT_QuaternionP,
 	DT_FunctionP
 } DataType;
+
 typedef union flint
 {
 	int Int;

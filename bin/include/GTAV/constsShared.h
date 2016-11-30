@@ -1389,3 +1389,15 @@ typedef enum ScaleformSave
 	SFS_SAVE_CIRCLE_LEFT = 4,
 	SFS_LOADING_CIRCLE_LEFT = 5
 } ScaleformSave;
+
+typedef enum ForceTypes
+{
+	FT_MIN_FORCE = 0,
+	FT_MAX_FORCE_ROT = 1,
+	FT_MIN_FORCE_2 = 2,
+	FT_MAX_FORCE_ROT_2 = 3, //stable, good for custom handling
+	FT_FORCE_NO_ROT = 4,
+	FT_FORCE_ROT_PLUS_FORCE = 5
+} ForceTypes;
+
+

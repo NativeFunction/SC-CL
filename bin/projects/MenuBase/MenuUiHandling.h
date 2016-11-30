@@ -4,34 +4,51 @@
 #define MaxDisplayableItems 25
 #define MaxMenuLevels 10
 
-typedef enum ItemContainerBits
+typedef enum MenuSelectionType
 {
-	ICB_IsItemGxt,
-	ICB_ExecuteOnChange,
-	ICB_IsItemDisabled
-} ItemContainerBits;
+	MST_None,
+	MST_Param,
+	MST_Int,
+	MST_Enum,
+	MST_Float,
+	MST_Bool,
+	MST_Menu,
+	MST_IntBool,
+	MST_EnumBool,
+	MST_FloatBool
+} MenuSelectionType;
+
+enum ItemContainerBits
+{
+	ICB_IsItemGxt,//Gets whether the item is using gxt text
+	ICB_ExecuteOnChange,//Gets whether the item executes on left, right scroll
+	ICB_IsItemDisabled,//Gets whether the item is disabled
+	ICB_BoolNumValue,//Current bool value for BoolNum operations
+};
 typedef struct ItemContainer
 {
-	//0 = IsItemGxt, 1 = ExecuteOnChange, 2 = IsItemDisabled
+	//using ItemContainerBits
 	int BitSet;//BitSet is used to cut down static size
+
+	void(*Execute)();
+	union { void(*AlternateExecute)(); bool HasAlternateExecution; };
 
 	struct
 	{
 		char* ItemText;
 		char* Description;
+		char* AltExeControlText;
 	} Ui;
 	struct
 	{
-		DataType Type;
+		MenuSelectionType Type;
 		union { flint CursorIndex; flint Value; };
 		float Precision;
 		flint StartIndex;
 		flint EndIndex;//ItemCount = EndIndex - StartIndex + 1
-		char* (*ParseEnum)(int ItemIndex);//nullptr == no enum
+		const char* (*ParseEnum)(int ItemIndex);//nullptr == no enum
 
 	} Selection;
-
-	void(*Execute)();
 
 } ItemContainer;
 
@@ -55,7 +72,7 @@ typedef struct Page//Menu Page
 	union
 	{
 		bool IsMenuLoading;
-		uint LoadEndTime;
+		uint FramesToLoad;
 	} Loading;
 
 	//size: 112
@@ -91,4 +108,4 @@ void InitMenuDraw();
 
 Page* GetMenuContainer();
 bool HasPlayerOpenedMenu();
-void SetMenuLoadingTime(uint LoadingTimeMs);
+void SetMenuLoading(bool IsLoading);

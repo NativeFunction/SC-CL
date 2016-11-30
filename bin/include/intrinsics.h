@@ -7,6 +7,8 @@
 #define __intrinsic __attribute((intrinsic(false)))
 #define __unsafeIntrinsic __attribute((intrinsic(true)))
 #else
+#define hashof(x) 0
+#define joaat(x) 0
 #define __intrinsic
 #define __unsafeIntrinsic
 #pragma warning( disable : 4391 )

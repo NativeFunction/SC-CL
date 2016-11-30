@@ -2,7 +2,7 @@
 
 const int LobbySize = 16;
 const int LobbySizeWithSpectators = 18;
-const int item_size = 4;
+#define item_size 4
 
 typedef enum Input
 {

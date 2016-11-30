@@ -19,7 +19,7 @@ static Page Container =
 	.Ui.HeaderTextColor = { 255, 255, 255, 255 },
 	.Ui.ScrollBarColor = { 230, 230, 230, 255 },
 	.Ui.SelectedTextColor = { 0, 0, 0, 255 },
-	.Ui.UnselectedTextColor = { 255, 255, 255, 255 },
+	.Ui.UnselectedTextColor = { 230, 230, 230, 255 },
 	.Ui.DisabledUnselectedTextColor = { 155, 155, 155, 255 },
 	.Ui.DisabledSelectedTextColor = { 50, 50, 50, 255 },
 	.Ui.DisabledScrollBarColor = { 190, 190, 190, 255 }
@@ -83,7 +83,7 @@ void DisableUnusedInputs()
 	hide_hud_component_this_frame(HUD_STREET_NAME);
 	hide_hud_component_this_frame(HUD_VEHICLE_CLASS);
 
-	//this disables hidden controls difficult to disable
+	//this disables hidden controls that are difficult to disable
 	disable_all_control_actions(0);
 	for (int i = 0; i < 338; i++)
 		EnableControl(0, i);
@@ -129,17 +129,17 @@ void DisableUnusedInputs()
 	DisableControl(0, INPUT_SELECT_CHARACTER_TREVOR);
 	DisableControl(0, INPUT_SELECT_CHARACTER_MULTIPLAYER);
 	DisableControl(0, INPUT_CHARACTER_WHEEL);
+	DisableControl(0, INPUT_COVER);
 
 }
 Page* GetMenuContainer()
 {
 	return &Container;
 }
-void SetMenuLoadingTime(uint LoadingTimeMs)
+void SetMenuLoading(bool IsLoading)
 {
-	if (LoadingTimeMs)
+	if (IsLoading)
 	{
-		Container.Loading.LoadEndTime = LoadingTimeMs;
 		_push_scaleform_movie_function(Container.Ui.MenuControlSFID2, "SET_BACKGROUND_COLOUR");
 		_push_scaleform_movie_function_parameter_int(0);
 		_push_scaleform_movie_function_parameter_int(0);
@@ -161,7 +161,7 @@ void SetMenuLoadingTime(uint LoadingTimeMs)
 	}
 	
 }
-void SetDataSlot(int SlotIndex, ScaleformButton ButtonId, char* ItemText, bool IsGxtText)
+void SetDataSlot(int SlotIndex, ScaleformButton ButtonId, const char* ItemText, bool IsGxtText)
 {
 	_push_scaleform_movie_function(Container.Ui.MenuControlSFID, "SET_DATA_SLOT");
 	_push_scaleform_movie_function_parameter_int(SlotIndex);//slot index
@@ -191,24 +191,54 @@ void SetDataSlot(int SlotIndex, ScaleformButton ButtonId, char* ItemText, bool I
 void UpdateMenuControls()
 {
 	int SlotIdCounter = 0;
-
+	
 	_push_scaleform_movie_function(Container.Ui.MenuControlSFID, "CLEAR_ALL");
 	_pop_scaleform_movie_function_void();
 	
 	//Loading display padding
-	if (Container.Loading.IsMenuLoading)
+	if (Container.Loading.FramesToLoad >= 5)
 		SetDataSlot(SlotIdCounter++, 255, "                  ", false);
 
-	if ((Container.Item[GetRelativeCursorIndex].Selection.Type == DT_Int || Container.Item[GetRelativeCursorIndex].Selection.Type == DT_Float) && !bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
-		SetDataSlot(SlotIdCounter++, SFB_BUTTON_DPAD_LEFT_RIGHT, "Next", false);
+	if (Container.IsMenuOpen)
+	{
+		bool IsItemEnabled = !bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled);
 
-	if (Container.CurrentMenuLevel == 0)
-		SetDataSlot(SlotIdCounter++, SFB_BUTTON_B, "Close", false);
-	else
-		SetDataSlot(SlotIdCounter++, SFB_BUTTON_B, "Back", false);
+		if (IsItemEnabled)
+		{
+			switch (Container.Item[GetRelativeCursorIndex].Selection.Type)
+			{
+				case MST_Int:
+				case MST_Float:
+				case MST_Enum:
+				case MST_IntBool:
+				case MST_FloatBool:
+				case MST_EnumBool:
+				SetDataSlot(SlotIdCounter++, SFB_BUTTON_DPAD_LEFT_RIGHT, "Next", false);
+				break;
+				default:
+				break;
+			}
+		}
 
-	if (!bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
-		SetDataSlot(SlotIdCounter++, SFB_BUTTON_A, "Select", false);
+		if (Container.CurrentMenuLevel == 0)
+			SetDataSlot(SlotIdCounter++, SFB_BUTTON_B, "Close", false);
+		else
+			SetDataSlot(SlotIdCounter++, SFB_BUTTON_B, "Back", false);
+
+		if (IsItemEnabled)
+		{
+			if (Container.Item[GetRelativeCursorIndex].HasAlternateExecution)
+			{
+				if (Container.Item[GetRelativeCursorIndex].Ui.AltExeControlText)
+					SetDataSlot(SlotIdCounter++, SFB_BUTTON_X, (const char*)Container.Item[GetRelativeCursorIndex].Ui.AltExeControlText, false);
+				else
+					SetDataSlot(SlotIdCounter++, SFB_BUTTON_X, "Select", false);
+			}
+
+			SetDataSlot(SlotIdCounter++, SFB_BUTTON_A, "Select", false);
+		}
+
+	}
 
 	_push_scaleform_movie_function(Container.Ui.MenuControlSFID, "SET_BACKGROUND_COLOUR");
 	_push_scaleform_movie_function_parameter_int(Container.Ui.BackgroundColor.red);
@@ -260,7 +290,7 @@ bool IsAutoScrollActive(uint* HoldCounter, int ScrollInput)
 void ParseMenuControls()
 {
 	static uint HoldUpCounter = 0, HoldDownCounter = 0, HoldLeftCounter = 0, HoldRightCounter = 0;
-
+	
 	if (Container.TotalItemCount > 1)
 	{
 		if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_UP) || (IsAutoScrollActive(&HoldUpCounter, INPUT_SCRIPT_PAD_UP)))
@@ -312,118 +342,138 @@ void ParseMenuControls()
 
 	}
 
+
+
 	if (!bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
 	{
-		if (!(Container.Item[GetRelativeCursorIndex].Selection.Type == DT_None || Container.Item[GetRelativeCursorIndex].Selection.Type == DT_FunctionP))
+		MenuSelectionType CurrentType = Container.Item[GetRelativeCursorIndex].Selection.Type;
+		
+		//Number selector
+		switch (CurrentType)
 		{
-			if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_LEFT) || (IsAutoScrollActive(&HoldLeftCounter, INPUT_SCRIPT_PAD_LEFT)))
+			case MST_Int:
+			case MST_Enum:
+			case MST_IntBool:
+			case MST_EnumBool:
 			{
-				PlayMenuSound("NAV_LEFT_RIGHT");
-				switch (Container.Item[GetRelativeCursorIndex].Selection.Type)
+				if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_LEFT) || (IsAutoScrollActive(&HoldLeftCounter, INPUT_SCRIPT_PAD_LEFT)))
 				{
-					case DT_Int:
+					PlayMenuSound("NAV_LEFT_RIGHT");
 					if (Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int <= Container.Item[GetRelativeCursorIndex].Selection.StartIndex.Int)
 						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int = Container.Item[GetRelativeCursorIndex].Selection.EndIndex.Int;
 					else
 						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int -= (int)Container.Item[GetRelativeCursorIndex].Selection.Precision;
-					break;
-					case DT_Float:
-					if (Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float <= Container.Item[GetRelativeCursorIndex].Selection.StartIndex.Float + 0.000000015)//0.000000015 fixes rounding errors
-						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float = Container.Item[GetRelativeCursorIndex].Selection.EndIndex.Float;
-					else
-						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float -= Container.Item[GetRelativeCursorIndex].Selection.Precision;
 
-					break;
-					case DT_Bool:
-					Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int = !Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int;
-					break;
-					default:
-					Warn(straddiGlobal("Left selection type wasn't Int/Float/Bool instead was : ", Container.Item[GetRelativeCursorIndex].Selection.Type));
 				}
-				if (bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_ExecuteOnChange))
-					Container.Item[GetRelativeCursorIndex].Execute();
-			}
-			if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_RIGHT) || (IsAutoScrollActive(&HoldRightCounter, INPUT_SCRIPT_PAD_RIGHT)))
-			{
-				PlayMenuSound("NAV_LEFT_RIGHT");
-				switch (Container.Item[GetRelativeCursorIndex].Selection.Type)
+				else if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_RIGHT) || (IsAutoScrollActive(&HoldRightCounter, INPUT_SCRIPT_PAD_RIGHT)))
 				{
-					case DT_Int:
+					PlayMenuSound("NAV_LEFT_RIGHT");
 					if (Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int >= Container.Item[GetRelativeCursorIndex].Selection.EndIndex.Int)
 						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int = Container.Item[GetRelativeCursorIndex].Selection.StartIndex.Int;
 					else
 						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int += (int)Container.Item[GetRelativeCursorIndex].Selection.Precision;
 
-					break;
-					case DT_Float:
+				}
+
+				if (bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_ExecuteOnChange))
+					Container.Item[GetRelativeCursorIndex].Execute();
+			}
+			break;
+			case MST_Float:
+			case MST_FloatBool:
+			{
+				if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_LEFT) || (IsAutoScrollActive(&HoldLeftCounter, INPUT_SCRIPT_PAD_LEFT)))
+				{
+					PlayMenuSound("NAV_LEFT_RIGHT");
+					if (Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float <= Container.Item[GetRelativeCursorIndex].Selection.StartIndex.Float + 0.000015)//0.000000015 fixes rounding errors
+						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float = Container.Item[GetRelativeCursorIndex].Selection.EndIndex.Float;
+					else
+						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float -= Container.Item[GetRelativeCursorIndex].Selection.Precision;
+
+				}
+				else if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_RIGHT) || (IsAutoScrollActive(&HoldRightCounter, INPUT_SCRIPT_PAD_RIGHT)))
+				{
+					PlayMenuSound("NAV_LEFT_RIGHT");
 					if (Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float >= Container.Item[GetRelativeCursorIndex].Selection.EndIndex.Float)
 						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float = Container.Item[GetRelativeCursorIndex].Selection.StartIndex.Float;
 					else
 						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float += Container.Item[GetRelativeCursorIndex].Selection.Precision;
 
-					break;
-					case DT_Bool:
-					Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int = !Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int;
-					break;
-					default:
-					Warn(straddiGlobal("Right selection type wasn't Int/Float/Bool instead was : ", Container.Item[GetRelativeCursorIndex].Selection.Type));
-
 				}
 
 				if (bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_ExecuteOnChange))
 					Container.Item[GetRelativeCursorIndex].Execute();
-
 			}
+			break;
+			default:
+			break;
 		}
 
 		if (is_disabled_control_just_pressed(2, INPUT_FRONTEND_ACCEPT))
 		{
 			PlayMenuSound("SELECT");
-
+			
 			if (Container.Item[GetRelativeCursorIndex].Execute != nullptr)
 			{
-				switch (Container.Item[GetRelativeCursorIndex].Selection.Type)
+				switch (CurrentType)
 				{
-					case DT_Bool:
+					case MST_Bool:
 					Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int = !Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int;
 					break;
-					case DT_FunctionP:
-					Container.CurrentMenuLevel++;
-					if (Container.CurrentMenuLevel < MaxMenuLevels)
+					case MST_Menu:
 					{
-						Container.UpdateToMenuLevel[Container.CurrentMenuLevel] = Container.Item[GetRelativeCursorIndex].Execute;
+						Container.CurrentMenuLevel++;
+						if (Container.CurrentMenuLevel < MaxMenuLevels)
+						{
+							Container.UpdateToMenuLevel[Container.CurrentMenuLevel] = Container.Item[GetRelativeCursorIndex].Execute;
 
-						//Update to menu level
-						Container.ItemStartIndex = 0;
-						Container.CursorIndex = 0;
-						Container.UpdateToMenuLevel[Container.CurrentMenuLevel]();
-						return;
+							//Update to menu level
+							Container.ItemStartIndex = 0;
+							Container.CursorIndex = 0;
+							Container.UpdateToMenuLevel[Container.CurrentMenuLevel]();
+							return;
+						}
+						else
+						{
+							Warn(straddiGlobal("Menu level out of bounds couldn't advance level. Value: ", Container.CurrentMenuLevel));
+							Container.CurrentMenuLevel--;
+							return;
+						}
 					}
-					else
-					{
-						Warn(straddiGlobal("Menu level out of bounds couldn't advance level. Value: ", Container.CurrentMenuLevel));
-						Container.CurrentMenuLevel--;
-						return;
-					}
+					break;
+					case MST_IntBool:
+					case MST_FloatBool:
+					case MST_EnumBool:
+					bit_flip(&Container.Item[GetRelativeCursorIndex].BitSet, ICB_BoolNumValue);
 					break;
 					default:
 					break;
-
 				}
 				Container.Item[GetRelativeCursorIndex].Execute();
 			}
 			else
 				Throw(straddiGlobal("Execute was null at: ", Container.CursorIndex));
 		}
+		
+		if (Container.Item[GetRelativeCursorIndex].HasAlternateExecution && is_disabled_control_just_pressed(2, INPUT_FRONTEND_X))
+		{
+			PlayMenuSound("SELECT");
+			Container.Item[GetRelativeCursorIndex].AlternateExecute();
+		}
+
 	}
 
 	if (is_disabled_control_just_pressed(2, INPUT_FRONTEND_CANCEL))
 	{
-		PlayMenuSound("BACK");
+		
 		if (Container.CurrentMenuLevel == 0)
+		{
+			PlayMenuSound("QUIT");
 			ShutDownMenu();
+		}
 		else
 		{
+			PlayMenuSound("BACK");
 			Container.CurrentMenuLevel--;
 			if (Container.UpdateToMenuLevel[Container.CurrentMenuLevel] != nullptr)
 			{
@@ -438,11 +488,6 @@ void ParseMenuControls()
 		
 	}
 
-}
-char* ParseBoolEnum(int Enum)
-{
-	//this is temporary
-	return Enum ? "On" : "Off";
 }
 #pragma endregion
 
@@ -473,7 +518,7 @@ void SetDrawPosLeft()
 	_set_screen_draw_position(76, 84);
 	_screen_draw_position_ratio(Vector2(-0.05f, get_safe_zone_size() - 1.0f), 0.0f, 0.0f);
 }
-void DrawText(char* str, vector2 pos, bool IsGtxText) {
+void DrawText(const char* str, vector2 pos, bool IsGtxText) {
 	if (IsGtxText)
 	{
 		if (does_text_label_exist(str))
@@ -485,7 +530,7 @@ void DrawText(char* str, vector2 pos, bool IsGtxText) {
 		else
 			str = "INVALID_GXT";
 	}
-	_set_text_entry("string");
+	_set_text_entry("STRING");
 	add_text_component_substring_player_name(str);
 	_draw_text(pos);
 }
@@ -518,8 +563,7 @@ void DrawBackgroundAndHeader()
 		(((float)GetItemCountWithMaxItemLimit()
 		* 0.05f)
 		/ 2.0f)//median
-		+ Container.Ui.BackgroundDrawSize.y
-	),
+		+ Container.Ui.BackgroundDrawSize.y),
 		Container.Ui.BackgroundColor);
 	#pragma endregion
 
@@ -669,28 +713,146 @@ void DrawScrollBar()
 	}
 
 }
-inline void SetUpDrawNum(RGBA Color, bool IsArrow)
+inline void SetUpDrawNum(RGBA Color, bool IsArrow, float PaddingAmount)
 {
 	float TextStartPosFromRight = IsArrow ? 0.018f : 0.01f;
 
 	SetUpDraw(Container.Ui.TextFont,
 	Container.Ui.DrawPos.x
 	+ 0.239f//gets right of menu
-	- TextStartPosFromRight,//sub to get number pos from right of menu
+	- TextStartPosFromRight//sub to get number pos from right of menu
+	- PaddingAmount,
 	ItemFontSize, false, true, false, false, Color);
+}
+
+void DrawMenuInt(int i, float CurrentYIndex, float PaddingAmount, bool IsSelected, RGBA CurrentColor)
+{
+	if (IsSelected)
+	{
+		draw_sprite("CommonMenu", "arrowright",
+					Vector2(Container.Ui.DrawPos.x + 0.229f - 0.005f - PaddingAmount, CurrentYIndex + 0.018f),
+					GetSizeFromResolution(Vector2(16.0f, 16.0f)),
+					0.0f,
+					CurrentColor);
+
+		if (Container.Item[i].Selection.ParseEnum != nullptr)
+		{
+			const char* Enum = Container.Item[i].Selection.ParseEnum(i);
+
+			draw_sprite("CommonMenu", "arrowleft",
+						Vector2(((
+						Container.Ui.DrawPos.x + 0.229f - 0.008f - PaddingAmount
+						- GetStringWidth(Enum, Container.Ui.TextFont, ItemFontSize))
+						- 0.003f)//arrow spacing
+						, CurrentYIndex + 0.018f),
+						GetSizeFromResolution(Vector2(16.0f, 16.0f)),
+						0.0f,
+						CurrentColor);
+
+			SetUpDrawNum(CurrentColor, true, PaddingAmount);
+			DrawText(Enum, Vector2(0.0f, CurrentYIndex + 0.005f), false);
+		}
+		else
+		{
+			draw_sprite("CommonMenu", "arrowleft",
+						Vector2(((
+						Container.Ui.DrawPos.x + 0.229f - 0.008f - PaddingAmount
+						- GetIntWidth(Container.Item[i].Selection.Value.Int, Container.Ui.TextFont, ItemFontSize))
+						- 0.003f)//arrow spacing
+						, CurrentYIndex + 0.018f)
+						, GetSizeFromResolution(Vector2(16.0f, 16.0f)),
+						0.0f,
+						CurrentColor);
+
+			SetUpDrawNum(CurrentColor, true, PaddingAmount);
+			DrawInt(Container.Item[i].Selection.Value.Int, Vector2(0.0f, CurrentYIndex + 0.005f));
+
+		}
+
+	}
+	else
+	{
+		//disabled text cant be selected
+		if (Container.Item[i].Selection.ParseEnum != nullptr)
+		{
+			SetUpDrawNum(CurrentColor, false, PaddingAmount);
+			DrawText(Container.Item[i].Selection.ParseEnum(i), Vector2(0.0f, CurrentYIndex + 0.005f), false);
+		}
+		else
+		{
+			SetUpDrawNum(CurrentColor, false, PaddingAmount);
+			DrawInt(Container.Item[i].Selection.Value.Int, Vector2(0.0f, CurrentYIndex + 0.005f));
+		}
+	}
+
+
+}
+void DrawMenuFloat(int i, float CurrentYIndex, float PaddingAmount, bool IsSelected, RGBA CurrentColor)
+{
+	if (IsSelected)
+	{
+		draw_sprite("CommonMenu", "arrowright",
+					Vector2(Container.Ui.DrawPos.x + 0.229f - 0.005f - PaddingAmount, CurrentYIndex + 0.018f)
+					, GetSizeFromResolution(Vector2(16.0f, 16.0f)),
+					0.0f,
+					CurrentColor);
+		draw_sprite("CommonMenu", "arrowleft",
+					Vector2(((
+					Container.Ui.DrawPos.x + 0.229f - 0.008f - PaddingAmount
+					- GetFloatWidth(Container.Item[i].Selection.Value.Float, Container.Ui.TextFont, ItemFontSize))
+					- 0.003f)//arrow spacing
+					, CurrentYIndex + 0.018f)
+					, GetSizeFromResolution(Vector2(16.0f, 16.0f)),
+					0.0f,
+					CurrentColor);
+
+		SetUpDrawNum(CurrentColor, true, PaddingAmount);
+		DrawFloat(Container.Item[i].Selection.Value.Float, Vector2(0.0f, CurrentYIndex + 0.005f));
+
+	}
+	else
+	{
+		//disabled text cant be selected
+		SetUpDrawNum(CurrentColor, false, PaddingAmount);
+		DrawFloat(Container.Item[i].Selection.Value.Float, Vector2(Container.Ui.DrawPos.x + 0.180f, CurrentYIndex + 0.005f));
+
+	}
+
+
+}
+void DrawMenuBool(int i, float CurrentYIndex, bool IsActive, bool IsSelected, RGBA CurrentColor)
+{
+	if (IsSelected)
+	{
+		draw_sprite("CommonMenu", "shop_box_blank",
+					Vector2(Container.Ui.DrawPos.x + 0.229f - 0.007f, CurrentYIndex + 0.02),
+					vector2Sub(GetSizeFromResolution(Vector2(32.0f, 32.0f)), Vector2(0.004f, 0.004f)),
+					0.0f,
+					CurrentColor);
+	}
+
+	if (IsActive)
+	{
+		draw_sprite("CommonMenu", "shop_tick_icon",
+					Vector2(Container.Ui.DrawPos.x + 0.229f - 0.007, CurrentYIndex + 0.02),
+					vector2Sub(GetSizeFromResolution(Vector2(32.0f, 32.0f)), Vector2(0.004f, 0.004f)),
+					0.0f,
+					CurrentColor);
+	}
 }
 void DrawItems()
 {
-	//TODO: add small item spacers for better item recognition
-
 	float CurrentYIndex = Container.Ui.DrawPos.y;
 	for (int i = 0; i < GetItemCountWithMaxItemLimit(); i++, CurrentYIndex += 0.025f)
 	{
 
 		if (Container.CursorIndex == i + Container.ItemStartIndex)//draw selected
 		{
-			RGBA CurrentScrollBarColor = bit_test(Container.Item[i].BitSet, ICB_IsItemDisabled) ? Container.Ui.DisabledScrollBarColor : Container.Ui.ScrollBarColor;
-			RGBA CurrentColor = bit_test(Container.Item[i].BitSet, ICB_IsItemDisabled) ? Container.Ui.DisabledSelectedTextColor : Container.Ui.SelectedTextColor;
+			bool IsItemDisabled = bit_test(Container.Item[i].BitSet, ICB_IsItemDisabled);
+
+			RGBA CurrentScrollBarColor = IsItemDisabled ? Container.Ui.DisabledScrollBarColor : Container.Ui.ScrollBarColor;
+			RGBA CurrentColor = IsItemDisabled ? Container.Ui.DisabledSelectedTextColor : Container.Ui.SelectedTextColor;
+			
 			//draw scroll bar
 			if (Container.TotalItemCount > MaxDisplayableItems)
 			{
@@ -715,133 +877,39 @@ void DrawItems()
 
 			switch (Container.Item[i].Selection.Type)
 			{
-				case DT_None:
+				case MST_None:
+				case MST_Param:
 				break;
-				case DT_FunctionP:
+				case MST_Menu:
 				{
 					//Hamburger Button
 					SetUpDraw(Font_RockstarTAG, 1.0f, 0.5f, false, false, false, false, CurrentColor);
 					DrawText("(", Vector2(Container.Ui.DrawPos.x + 0.229f - 0.046f, CurrentYIndex + 0.006f), false);
 				}
 				break;
-				case DT_Int:
+				case MST_Enum:
+				case MST_Int:
+					DrawMenuInt(i, CurrentYIndex, 0.0f, !IsItemDisabled, CurrentColor);
+				break;
+				case MST_Float:
+					DrawMenuFloat(i, CurrentYIndex, 0.0f, !IsItemDisabled, CurrentColor);
+				break;
+				case MST_Bool:
+					DrawMenuBool(i, CurrentYIndex, Container.Item[i].Selection.Value.Int, !IsItemDisabled, CurrentColor);
+				break;
+				case MST_EnumBool:
+				case MST_IntBool:
 				{
-					if (!bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
-					{
-
-						draw_sprite("CommonMenu", "arrowright",
-									Vector2(Container.Ui.DrawPos.x + 0.229f - 0.005f, CurrentYIndex + 0.018f),
-									GetSizeFromResolution(Vector2(16.0f, 16.0f)),
-									0.0f,
-									CurrentColor);
-
-						if (Container.Item[i].Selection.ParseEnum != nullptr)
-						{
-							char* Enum = Container.Item[i].Selection.ParseEnum(i);
-
-							draw_sprite("CommonMenu", "arrowleft",
-										Vector2(((
-										Container.Ui.DrawPos.x + 0.229f - 0.008f
-										- GetStringWidth(Enum, Container.Ui.TextFont, ItemFontSize))
-										- 0.003f)//arrow spacing
-										, CurrentYIndex + 0.018f),
-										GetSizeFromResolution(Vector2(16.0f, 16.0f)),
-										0.0f,
-										CurrentColor);
-
-							SetUpDrawNum(CurrentColor, true);
-							DrawText(Enum, Vector2(0.0f, CurrentYIndex + 0.005f), false);
-						}
-						else
-						{
-							draw_sprite("CommonMenu", "arrowleft",
-										Vector2(((
-										Container.Ui.DrawPos.x + 0.229f - 0.008f
-										- GetIntWidth(Container.Item[i].Selection.Value.Int, Container.Ui.TextFont, ItemFontSize))
-										- 0.003f)//arrow spacing
-										, CurrentYIndex + 0.018f)
-										, GetSizeFromResolution(Vector2(16.0f, 16.0f)),
-										0.0f,
-										CurrentColor);
-
-							SetUpDrawNum(CurrentColor, true);
-							DrawInt(Container.Item[i].Selection.Value.Int, Vector2(0.0f, CurrentYIndex + 0.005f));
-
-						}
-
-					}
-					else
-					{
-						//disabled text cant be selected
-						if (Container.Item[i].Selection.ParseEnum != nullptr)
-						{
-							SetUpDrawNum(CurrentColor, false);
-							DrawText(Container.Item[i].Selection.ParseEnum(i), Vector2(0.0f, CurrentYIndex + 0.005f), false);
-						}
-						else
-						{
-							SetUpDrawNum(CurrentColor, false);
-							DrawInt(Container.Item[i].Selection.Value.Int, Vector2(0.0f, CurrentYIndex + 0.005f));
-						}
-					}
-					
-				
+					vector2 BoolTextureSize = GetSizeFromResolution(Vector2(32.0f, 32.0f));
+					DrawMenuInt(i, CurrentYIndex, BoolTextureSize.x / 2, !IsItemDisabled, CurrentColor);
+					DrawMenuBool(i, CurrentYIndex, bit_test(Container.Item[i].BitSet, ICB_BoolNumValue), !IsItemDisabled, CurrentColor);
 				}
 				break;
-				case DT_Float:
+				case MST_FloatBool:
 				{
-					if (!bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
-					{
-						draw_sprite("CommonMenu", "arrowright",
-									Vector2(Container.Ui.DrawPos.x + 0.229f - 0.005f, CurrentYIndex + 0.018f)
-									, GetSizeFromResolution(Vector2(16.0f, 16.0f)),
-									0.0f,
-									CurrentColor);
-						draw_sprite("CommonMenu", "arrowleft",
-									Vector2(((
-									Container.Ui.DrawPos.x + 0.229f - 0.008f
-									- GetFloatWidth(Container.Item[i].Selection.Value.Float, Container.Ui.TextFont, ItemFontSize))
-									- 0.003f)//arrow spacing
-									, CurrentYIndex + 0.018f)
-									, GetSizeFromResolution(Vector2(16.0f, 16.0f)),
-									0.0f,
-									CurrentColor);
-
-						SetUpDrawNum(CurrentColor, true);
-						DrawFloat(Container.Item[i].Selection.Value.Float, Vector2(0.0f, CurrentYIndex + 0.005f));
-
-					}
-					else
-					{
-						//disabled text cant be selected
-						SetUpDrawNum(CurrentColor, false);
-						DrawFloat(Container.Item[i].Selection.Value.Float, Vector2(Container.Ui.DrawPos.x + 0.180f, CurrentYIndex + 0.005f));
-
-					}
-
-					
-				}
-				break;
-				case DT_Bool:
-				{
-					if (!bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
-					{
-						draw_sprite("CommonMenu", "shop_box_blank",
-									Vector2(Container.Ui.DrawPos.x + 0.229f - 0.007f, CurrentYIndex + 0.02),
-									vector2Sub(GetSizeFromResolution(Vector2(32.0f, 32.0f)), Vector2(0.004f, 0.004f)),
-									0.0f,
-									CurrentColor);
-					}
-
-					if (Container.Item[i].Selection.Value.Int)
-					{
-						draw_sprite("CommonMenu", "shop_tick_icon",
-									Vector2(Container.Ui.DrawPos.x + 0.229f - 0.007, CurrentYIndex + 0.02),
-									vector2Sub(GetSizeFromResolution(Vector2(32.0f, 32.0f)), Vector2(0.004f, 0.004f)),
-									0.0f,
-									CurrentColor);
-					}
-
+					vector2 BoolTextureSize = GetSizeFromResolution(Vector2(32.0f, 32.0f));
+					DrawMenuFloat(i, CurrentYIndex, BoolTextureSize.x / 2, !IsItemDisabled, CurrentColor);
+					DrawMenuBool(i, CurrentYIndex, bit_test(Container.Item[i].BitSet, ICB_BoolNumValue), !IsItemDisabled, CurrentColor);
 				}
 				break;
 				default:
@@ -853,7 +921,8 @@ void DrawItems()
 		}
 		else //draw unselected
 		{
-			RGBA CurrentColor = bit_test(Container.Item[i].BitSet, ICB_IsItemDisabled) ? Container.Ui.DisabledUnselectedTextColor : Container.Ui.UnselectedTextColor;
+			bool IsItemDisabled = bit_test(Container.Item[i].BitSet, ICB_IsItemDisabled);
+			RGBA CurrentColor = IsItemDisabled ? Container.Ui.DisabledUnselectedTextColor : Container.Ui.UnselectedTextColor;
 
 			SetUpDraw(Container.Ui.TextFont, 1.0f, 0.45f, false, false, false, false, CurrentColor);
 			DrawText(Container.Item[i].Ui.ItemText,
@@ -865,40 +934,33 @@ void DrawItems()
 
 			switch (Container.Item[i].Selection.Type)
 			{
-				case DT_None:
-				case DT_FunctionP:
+				case MST_None:
+				case MST_Param:
+				case MST_Menu:
 				break;
-				case DT_Int:
+				case MST_Int:
+				case MST_Enum:
+				DrawMenuInt(i, CurrentYIndex, 0.0f, false, CurrentColor);
+				break;
+				case MST_Float:
+				DrawMenuFloat(i, CurrentYIndex, 0.0f, false, CurrentColor);
+				break;
+				case MST_Bool:
+				DrawMenuBool(i, CurrentYIndex, Container.Item[i].Selection.Value.Int, false, CurrentColor);
+				break;
+				case MST_EnumBool:
+				case MST_IntBool:
 				{
-					if (Container.Item[i].Selection.ParseEnum != nullptr)
-					{
-						SetUpDrawNum(CurrentColor, false);
-						DrawText(Container.Item[i].Selection.ParseEnum(i), Vector2(0.0f, CurrentYIndex + 0.005f), false);
-					}
-					else
-					{
-						SetUpDrawNum(CurrentColor, false);
-						DrawInt(Container.Item[i].Selection.Value.Int, Vector2(0.0f, CurrentYIndex + 0.005f));
-					}
+					vector2 BoolTextureSize = GetSizeFromResolution(Vector2(32.0f, 32.0f));
+					DrawMenuInt(i, CurrentYIndex, BoolTextureSize.x / 2, false, CurrentColor);
+					DrawMenuBool(i, CurrentYIndex, bit_test(Container.Item[i].BitSet, ICB_BoolNumValue), false, CurrentColor);
 				}
 				break;
-				case DT_Float:
+				case MST_FloatBool:
 				{
-
-					SetUpDrawNum(CurrentColor, false);
-					DrawFloat(Container.Item[i].Selection.Value.Float, Vector2(Container.Ui.DrawPos.x + 0.180f, CurrentYIndex + 0.005f));
-				}
-				break;
-				case DT_Bool:
-				{
-					if (Container.Item[i].Selection.Value.Int)
-					{
-						draw_sprite("CommonMenu", "shop_tick_icon",
-									Vector2(Container.Ui.DrawPos.x + 0.229f - 0.007, CurrentYIndex + 0.02),
-									vector2Sub(GetSizeFromResolution(Vector2(32.0f, 32.0f)), Vector2(0.004f, 0.004f)),
-									0.0f,
-									CurrentColor);
-					}
+					vector2 BoolTextureSize = GetSizeFromResolution(Vector2(32.0f, 32.0f));
+					DrawMenuFloat(i, CurrentYIndex, BoolTextureSize.x / 2, false, CurrentColor);
+					DrawMenuBool(i, CurrentYIndex, bit_test(Container.Item[i].BitSet, ICB_BoolNumValue), false, CurrentColor);
 				}
 				break;
 				default:
@@ -934,7 +996,7 @@ void InitMenuDraw()
 	Container.Ui.HeaderTextColor = (RGBA) { 255, 255, 255, 255 };
 	Container.Ui.ScrollBarColor = (RGBA) { 230, 230, 230, 255 };
 	Container.Ui.SelectedTextColor = (RGBA) { 0, 0, 0, 255 };
-	Container.Ui.UnselectedTextColor = (RGBA) { 255, 255, 255, 255 };
+	Container.Ui.UnselectedTextColor = (RGBA) { 230, 230, 230, 255 };
 	Container.Ui.DisabledUnselectedTextColor = (RGBA) { 155,155,155,255 };
 	Container.Ui.DisabledSelectedTextColor = (RGBA) { 50, 50, 50, 255 };
 	Container.Ui.DisabledScrollBarColor = (RGBA) { 190, 190, 190, 255 };
@@ -958,7 +1020,10 @@ void HandleMenuUi()
 	if (HasPlayerOpenedMenu())
 	{
 		if (Container.IsMenuOpen)
+		{
+			PlayMenuSound("QUIT");
 			ShutDownMenu();
+		}
 		else 
 			Container.IsMenuOpen = true;
 	}
@@ -976,11 +1041,12 @@ void HandleMenuUi()
 		DisableUnusedInputs();
 		ParseMenuControls();
 
+		DrawMenu();
+	}
+	if (Container.IsMenuOpen || Container.Loading.FramesToLoad >= 5)
+	{
 		UpdateMenuControls();
 		DrawScaleformMovie(Container.Ui.MenuControlSFID2, Container.Ui.UnselectedTextColor);
-
-
-		DrawMenu();
 	}
 }
 

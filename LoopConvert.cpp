@@ -519,13 +519,13 @@ const DeclRefExpr *getDeclRefExpr(const Expr *e) {
 	}
 	return NULL;
 }
-bool findStaticIndex(const string& key, uint32_t* outIndex)
+bool findStaticIndex(const string& key, uint32_t* sourceLloc)
 {
 	for (auto entry : statics)
 	{
 		if (entry.second.name == key)
 		{
-			*outIndex = entry.first;
+			*sourceLloc = entry.first;
 			return true;
 		}
 	}
@@ -986,7 +986,7 @@ public:
 				} EvalFailed
 			} BadIntrin
 		};
-		auto AddAsmIntrinsicVar = [&](const char* str, void(FunctionData::*func)(uint16_t)) -> void
+		auto AddAsmIntrinsicLocal = [&](const char* str, void(FunctionData::*func)(uint16_t)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
 				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
@@ -996,11 +996,41 @@ public:
 				if (EvaluateAsString(argArray[0], str))
 				{
 					uint32_t index = 0;
-					if (LocalVariables.find(str, &index) || findStaticIndex(str, &index))
+					if (LocalVariables.find(str, &index))
 					{
 						(scriptData.getCurrentFunction()->*func)(index);
+						scriptData.getCurrentFunction()->pushComment("(ASM Named Local) " + str);
 						ret = true;
 						return;
+					}
+					else
+						Throw("varName \"" + str + "\" not found", rewriter, call->getSourceRange());
+				} EvalFailedStr
+			} BadIntrin
+		};
+		auto AddAsmIntrinsicStatic = [&](const char* str, void(FunctionData::*func)(StaticData*)) -> void
+		{
+			if (strcmp(funcName.c_str(), str) != 0)
+				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType())
+			{
+				string str;
+				if (EvaluateAsString(argArray[0], str))
+				{
+					uint32_t loc = 0;
+					
+					if (findStaticIndex(str, &loc))
+					{
+						StaticData* data = scriptData.findStatic(loc);
+						if (data)
+						{
+							(scriptData.getCurrentFunction()->*func)(data);
+							scriptData.getCurrentFunction()->pushComment("(ASM Named Static) " + str);
+							ret = true;
+							return;
+						}
+						else
+							Throw("varName \"" + str + "\" not found", rewriter, call->getSourceRange());
 					}
 					else
 						Throw("varName \"" + str + "\" not found", rewriter, call->getSourceRange());
@@ -1040,6 +1070,8 @@ public:
 		switch (JoaatCased(const_cast<char*>(funcName.c_str())))
 		{
 			#pragma region String
+
+			//isAddr is false on memory functions because we dont want to force addressof
 			case JoaatCasedConst("memcpy"):{
 				ChkHashCol("memcpy");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
@@ -1051,17 +1083,18 @@ public:
 						int itemCount = iCount / stackWidth;
 						if (itemCount == 1)
 						{
-							parseExpression(argArray[1], true, true);
+							
+							parseExpression(argArray[1], false, true);
 							AddInstruction(PGet);
-							parseExpression(argArray[0], true, true);
+							parseExpression(argArray[0], false, true);
 							AddInstruction(PSet);
 						}
 						else {
 							AddInstruction(PushInt, itemCount);
-							parseExpression(argArray[1], true, true);
+							parseExpression(argArray[1], false, true);
 							AddInstruction(ToStack);
 							AddInstruction(PushInt, itemCount);
-							parseExpression(argArray[0], true, true);
+							parseExpression(argArray[0], false, true);
 							AddInstruction(FromStack);
 						}
 					}
@@ -1077,10 +1110,10 @@ public:
 						int srcIndex = LocalVariables.addDecl("__memcpy-loop-src", 1);
 						int sizeIndex = LocalVariables.addDecl("__memcpy-loop-size", 1);
 
-						parseExpression(argArray[0], true, true);//dest
+						parseExpression(argArray[0], false, true);//dest
 						AddInstruction(SetFrame, destIndex);
 
-						parseExpression(argArray[1], true, true);//src
+						parseExpression(argArray[1], false, true);//src
 						AddInstruction(SetFrame, srcIndex);
 						parseExpression(argArray[2], false, true);//size
 
@@ -1142,7 +1175,7 @@ public:
 						int destIndex = LocalVariables.addDecl("__memset-loop-dest", 1);
 						int incIndex = LocalVariables.addDecl("__memset-loop-inc", 1);
 
-						parseExpression(argArray[0], true, true);//dest
+						parseExpression(argArray[0], false, true);//dest
 						AddInstruction(SetFrame, destIndex);
 						AddInstruction(PushInt, 0);
 						AddInstruction(SetFrame, incIndex);
@@ -1829,7 +1862,7 @@ public:
 						{
 							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
 							AddInstructionConditionallyComment(size > 1, PushInt, "Struct Size", size);
-							parseExpression(argArray[0], true, true);
+							parseExpression(argArray[0], false, true);
 							AddInstructionCondition(size > 1, ToStack, PGet);
 							return true;
 						}
@@ -1852,7 +1885,7 @@ public:
 						{
 							int size = getSizeFromBytes(getSizeOfType(castee->getSubExpr()->getType()->getPointeeType().getTypePtr()));
 							AddInstructionConditionallyComment(size > 1, PushInt, "Struct Size", size);
-							parseExpression(argArray[0], true, true);
+							parseExpression(argArray[0], false, true);
 							AddInstructionCondition(size > 1, FromStack, PSet);
 							return true;
 						}
@@ -2136,17 +2169,17 @@ public:
 			case JoaatCasedConst("__getArray"):		AddAsmIntrinsic16("__getArray", GetInsPtr(GetArray)); break;
 			case JoaatCasedConst("__setArray"):		AddAsmIntrinsic16("__setArray", GetInsPtr(SetArray)); break;
 			case JoaatCasedConst("__getFrameP"):	AddAsmIntrinsic16("__getFrameP", GetInsPtr(GetFrameP)); break;
-			case JoaatCasedConst("__getNamedFrameP"):AddAsmIntrinsicVar("__getNamedFrameP", GetInsPtr(GetFrameP)); break;
+			case JoaatCasedConst("__getNamedFrameP"):AddAsmIntrinsicLocal("__getNamedFrameP", GetInsPtr(GetFrameP)); break;
 			case JoaatCasedConst("__getFrame"):		AddAsmIntrinsic16("__getFrame", GetInsPtr(GetFrame)); break;
-			case JoaatCasedConst("__getNamedFrame"):AddAsmIntrinsicVar("__getNamedFrame", GetInsPtr(GetFrame)); break;
+			case JoaatCasedConst("__getNamedFrame"):AddAsmIntrinsicLocal("__getNamedFrame", GetInsPtr(GetFrame)); break;
 			case JoaatCasedConst("__setFrame"):		AddAsmIntrinsic16("__setFrame", GetInsPtr(SetFrame)); break;
-			case JoaatCasedConst("__setNamedFrame"):AddAsmIntrinsicVar("__setNamedFrame", GetInsPtr(SetFrame)); break;
+			case JoaatCasedConst("__setNamedFrame"):AddAsmIntrinsicLocal("__setNamedFrame", GetInsPtr(SetFrame)); break;
 			case JoaatCasedConst("__getStaticP"):	AddAsmIntrinsic16("__getStaticP", GetInsPtr(GetStaticPRaw)); break;
-			case JoaatCasedConst("__getNamedStaticP"):AddAsmIntrinsicVar("__getNamedStaticP", GetInsPtr(GetStaticPRaw)); break;
+			case JoaatCasedConst("__getNamedStaticP"):AddAsmIntrinsicStatic("__getNamedStaticP", GetInsPtr(GetStaticP)); break;
 			case JoaatCasedConst("__getStatic"):	AddAsmIntrinsic16("__getStatic", GetInsPtr(GetStaticRaw)); break;
-			case JoaatCasedConst("__getNamedStatic"):AddAsmIntrinsicVar("__getNamedStatic", GetInsPtr(GetStaticRaw)); break;
+			case JoaatCasedConst("__getNamedStatic"):AddAsmIntrinsicStatic("__getNamedStatic", GetInsPtr(GetStatic)); break;
 			case JoaatCasedConst("__setStatic"):	AddAsmIntrinsic16("__setStatic", GetInsPtr(SetStaticRaw)); break;
-			case JoaatCasedConst("__setNamedStatic"):AddAsmIntrinsicVar("__setNamedStatic", GetInsPtr(SetStaticRaw)); break;
+			case JoaatCasedConst("__setNamedStatic"):AddAsmIntrinsicStatic("__setNamedStatic", GetInsPtr(SetStatic)); break;
 			case JoaatCasedConst("__addImm"):		AddAsmIntrinsic32("__addImm", GetInsPtr(AddImm)); break;
 			case JoaatCasedConst("__multImm"):		AddAsmIntrinsic32("__multImm", GetInsPtr(MultImm)); break;
 			case JoaatCasedConst("__getImmP"):		AddAsmIntrinsic16("__getImmP", GetInsPtr(GetImmP)); break;
