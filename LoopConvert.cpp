@@ -2303,6 +2303,28 @@ public:
 		}
 		return false;
 	}
+	void parseJumpFalse(const Expr* conditional, const string& jumpFalseLoc){
+		const BinaryOperator* binaryOp;
+		if ((binaryOp = dyn_cast<BinaryOperator>(conditional->IgnoreParens())) && binaryOp->getOpcode() == BO_LAnd){
+				parseJumpFalse(binaryOp->getLHS(), jumpFalseLoc);
+				parseJumpFalse(binaryOp->getRHS(), jumpFalseLoc);
+		}
+		else{
+			parseExpression(conditional, false, true);
+			AddJumpInlineCheckStr(JumpFalse, jumpFalseLoc);
+		}
+	}
+	void parseJumpTrue(const Expr* conditional, const string& jumpTrueLoc){
+		const BinaryOperator* binaryOp;
+		if ((binaryOp = dyn_cast<BinaryOperator>(conditional->IgnoreParens())) && binaryOp->getOpcode() == BO_LOr){
+			parseJumpTrue(binaryOp->getLHS(), jumpTrueLoc);
+			parseJumpTrue(binaryOp->getRHS(), jumpTrueLoc);
+		}
+		else{
+			parseExpression(conditional, false, true);
+			AddJumpInlineCheckStr(JumpTrue, jumpTrueLoc);
+		}
+	}
 	bool parseStatement(Stmt *s, uint64_t breakLoc = -1, uint64_t continueLoc = -1) {
 		if (isa<CompoundStmt>(s)) {
 			CompoundStmt *cSt = cast<CompoundStmt>(s);
@@ -2406,8 +2428,8 @@ public:
 			}
 			else
 			{
-				parseExpression(conditional, false, true);
-				AddJumpInlineCheckStr(JumpFalse, Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd);
+				
+				parseJumpFalse(conditional, Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd);
 				LocalVariables.addLevel();
 				parseStatement(Then, breakLoc, continueLoc);
 				LocalVariables.removeLevel();
@@ -2466,9 +2488,7 @@ public:
 			}
 			else {
 				AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
-				parseExpression(conditional, false, true);
-
-				AddJumpInlineCheck(JumpFalse, whileStmt->getLocEnd().getRawEncoding());
+				parseJumpFalse(conditional, to_string(whileStmt->getLocEnd().getRawEncoding()));
 
 				parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding());
 
@@ -2491,8 +2511,7 @@ public:
 			if (conditional) {
 				AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
 
-				parseExpression(conditional, false, true);
-				AddJumpInlineCheck(JumpFalse, body->getLocEnd().getRawEncoding());
+				parseJumpFalse(conditional, to_string(body->getLocEnd().getRawEncoding()));
 			}
 			else
 			{
@@ -2537,7 +2556,7 @@ public:
 			LocalVariables.addLevel();
 
 			AddJumpInlineCheck(Label, body->getLocStart().getRawEncoding());
-			parseStatement(body, conditional->getLocEnd().getRawEncoding(), body->getLocEnd().getRawEncoding());
+			parseStatement(body, doStmt->getLocEnd().getRawEncoding(), body->getLocEnd().getRawEncoding());
 
 			AddJumpInlineCheck(Label, body->getLocEnd().getRawEncoding());
 
@@ -2557,11 +2576,10 @@ public:
 			}
 			else
 			{
-				parseExpression(conditional, false, true);
-				AddJumpInlineCheck(JumpTrue, body->getLocStart().getRawEncoding());
+				parseJumpTrue(conditional, to_string(body->getLocStart().getRawEncoding()));
 			}
 
-			AddJumpInlineCheck(Label, conditional->getLocEnd().getRawEncoding());
+			AddJumpInlineCheck(Label, doStmt->getLocEnd().getRawEncoding());
 			LocalVariables.removeLevel();
 
 		}
@@ -3975,7 +3993,6 @@ public:
 					AddInstruction(Dup);
 					AddJumpInlineCheck(JumpFalse, bOp->getRHS()->getLocEnd().getRawEncoding());
 					AddInstruction(Drop);
-					AddInstruction(PushInt, 1);
 					parseExpression(bOp->getRHS(), false, true);
 					if (bOp->getRHS()->getType()->isAnyComplexType())
 					{
@@ -3986,7 +4003,6 @@ public:
 						AddInstruction(PushFloat, 0.0);
 						AddInstruction(FCmpNe);
 					}
-					AddInstruction(And);
 					AddJumpInlineCheck(Label, bOp->getRHS()->getLocEnd().getRawEncoding());
 				}
 				else
@@ -4015,6 +4031,7 @@ public:
 					}
 					AddInstruction(Dup);
 					AddJumpInlineCheck(JumpTrue, bOp->getRHS()->getLocEnd().getRawEncoding());
+					AddInstruction(Drop);
 					parseExpression(bOp->getRHS(), false, true);
 					if (bOp->getRHS()->getType()->isAnyComplexType())
 					{
@@ -4025,7 +4042,6 @@ public:
 						AddInstruction(PushFloat, 0.0);
 						AddInstruction(FCmpNe);
 					}
-					AddInstruction(Or);
 					AddJumpInlineCheck(Label, bOp->getRHS()->getLocEnd().getRawEncoding());
 				}
 				else

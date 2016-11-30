@@ -178,6 +178,7 @@ typedef enum BlipIcons
 	BLIP_BOAT = 427,
 	BLIP_HEISTSROOM = 428,
 	BLIP_DOLLARSIGN = 431,
+	BLIP_CEOCRATE = 478
 }BlipIcons;
 
 typedef enum Explosion
