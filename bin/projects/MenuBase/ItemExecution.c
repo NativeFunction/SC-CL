@@ -7,9 +7,9 @@
 
 #include "MenuExecutionHandling.h"
 
+#pragma region SavedMenuVars
 static float SavedTestCoordPrecision = 0;
 static bool SavedBoolTest = false;
-
 
 enum MenuBits
 {
@@ -17,7 +17,9 @@ enum MenuBits
 	MB_FlyModToggle,
 };
 static int MenuLoopedBitset;
+#pragma endregion
 
+#pragma region Parsers
 const char* Parser_EnumTest(int ItemIndex)
 {
 	switch (GetEnumParserValue(ItemIndex))
@@ -36,13 +38,116 @@ const char* Parser_EnumTest(int ItemIndex)
 	}
 	return "NULL";
 }
+#pragma endregion
 
+#pragma region Async
+//NOTE: Async Functions must return a bool (has completed successfully), first param must be uint CurrentFrame and can have up to 10 params past CurrentFrame
+bool Async_SpawnVehicle(uint CurrentFrame, Hash Model)
+{
+	if (is_model_in_cdimage(Model))
+	{
+		if (has_model_loaded(Model))
+		{
+			Ped MyPed = player_ped_id();
+			Vehicle MyVehicle = create_vehicle(Model, get_entity_coords(MyPed, true), get_entity_heading(MyPed), true, true);
+			int NetworkId = veh_to_net(MyVehicle);
+			if (network_does_network_id_exist(NetworkId))
+			{
+				set_network_id_exists_on_all_machines(NetworkId, true);
+
+				if (does_entity_exist(MyVehicle))
+				{
+					Vehicle CurrentVehicle = GetCurrentVehicle();
+					vector3 CurrentSpeed = toVector3(0.0f);
+					if (CurrentVehicle)
+					{
+						CurrentSpeed = get_entity_speed_vector(CurrentVehicle, true);
+
+						set_entity_as_mission_entity(CurrentVehicle, false, true);
+						delete_vehicle(&CurrentVehicle);
+					}
+					int SeatIndex = FindFreeCarSeat(MyVehicle);
+					if (SeatIndex != -2)
+					{
+						set_ped_into_vehicle(MyPed, MyVehicle, SeatIndex);
+						set_vehicle_engine_on(MyVehicle, true, true, false);//last param not on console remove if issues arise
+						if (is_this_model_a_plane(Model) || is_this_model_a_heli(Model))
+							set_heli_blades_full_speed(MyVehicle);
+
+						apply_force_to_entity(MyVehicle, FT_MAX_FORCE_ROT, CurrentSpeed, toVector3(0.0f), 0, true, true, true, false, true);
+					}
+					else
+						Warn("Could not find available seat");
+					set_model_as_no_longer_needed(Model);
+					return true;
+				}
+			}
+		}
+		else if (CurrentFrame == 0)
+			request_model(Model);
+	}
+	return false;
+}
+#pragma endregion
+
+#pragma region Options
 void Option_Blank()
 {
 
 }
+void Option_DebugTest0()
+{
+	StartAsynchronousFunction(Async(Async_SpawnVehicle), 1, 150, AsyncParam(hashof("adder")));
+}
+void Option_LoadingOffTest()
+{
+	SetMenuLoading(false);
+}
+void Option_UiTestPrecision()
+{
+	SavedTestCoordPrecision = PrecisionToFloat(GetCurrentItem()->Selection.Value.Int);
 
+	ItemContainer* Buffer;
 
+	if (GetItemRelativeToCursor(1, &Buffer))
+		Buffer->Selection.Precision = SavedTestCoordPrecision;
+	if (GetItemRelativeToCursor(2, &Buffer))
+		Buffer->Selection.Precision = SavedTestCoordPrecision;
+}
+void Option_TestUiCoordX()
+{
+	DEBUG__GetContainer()->UiTestCoords.x = GetCurrentItem()->Selection.Value.Float;
+}
+void Option_TestUiCoordY()
+{
+	DEBUG__GetContainer()->UiTestCoords.y = GetCurrentItem()->Selection.Value.Float;
+}
+void Option_TestInt()
+{
+	DEBUG__GetContainer()->TestInt = GetCurrentItem()->Selection.Value.Int;
+}
+void Option_BoolTest()
+{
+	if (!UpdateBoolConditional(DEBUG__GetContainer()->TestInt != 5, &SavedBoolTest))
+		Warn("Unable to toggle bool at this test int index");
+	print(__FILE__, 5000);
+
+}
+void Option_EnumTest()
+{
+
+}
+void Option_FlyMod()
+{
+	if (GetCurrentItem()->Selection.Value.Int)
+		bit_set(&MenuLoopedBitset, MB_FlyMod);
+	else
+		bit_reset(&MenuLoopedBitset, MB_FlyMod);
+
+}
+#pragma endregion
+
+#pragma region Menus
 void Menu_PlayerList()
 {
 	SetHeader("Player list");
@@ -56,8 +161,6 @@ void Async_PlayerList()
 {
 
 }
-
-
 void Menu_LargeSubmenuTest()
 {
 	SetHeader("Large Submenu Test");
@@ -112,110 +215,6 @@ void Menu_LargeSubmenuTest()
 	AddItem("Item49", Option_Blank);
 	AddItem("Item50", Option_Blank);
 }
-
-
-
-bool SpawnVehicle(uint CurrentFrame, Hash Model)
-{
-	if (is_model_in_cdimage(Model))
-	{
-		if (has_model_loaded(Model))
-		{
-			Ped MyPed = player_ped_id();
-			Vehicle MyVehicle = create_vehicle(Model, get_entity_coords(MyPed, true), get_entity_heading(MyPed), true, true);
-			int NetworkId = veh_to_net(MyVehicle);
-			if (network_does_network_id_exist(NetworkId))
-			{
-				set_network_id_exists_on_all_machines(NetworkId, true);
-
-				if (does_entity_exist(MyVehicle))
-				{
-					Vehicle CurrentVehicle = GetCurrentVehicle();
-					vector3 CurrentSpeed = toVector3(0.0f);
-					if (CurrentVehicle)
-					{
-						CurrentSpeed = get_entity_speed_vector(CurrentVehicle, true);
-
-						set_entity_as_mission_entity(CurrentVehicle, false, true);
-						delete_vehicle(&CurrentVehicle);
-					}
-					int SeatIndex = FindFreeCarSeat(MyVehicle);
-					if (SeatIndex != -2)
-					{
-						set_ped_into_vehicle(MyPed, MyVehicle, SeatIndex);
-						set_vehicle_engine_on(MyVehicle, true, true, false);//last param not on console remove if issues arise
-						if (is_this_model_a_plane(Model) || is_this_model_a_heli(Model))
-							set_heli_blades_full_speed(MyVehicle);
-
-						apply_force_to_entity(MyVehicle, FT_MAX_FORCE_ROT, CurrentSpeed, toVector3(0.0f), 0, true, true, true, false, true);
-					}
-					else
-						Warn("Could not find available seat");
-					set_model_as_no_longer_needed(Model);
-					return true;
-				}
-			}
-		}
-		else if (CurrentFrame == 0)
-			request_model(Model);
-	}
-	return false;
-}
-
-
-void Option_DebugTest0()
-{
-	StartAsynchronousFunction(Async(SpawnVehicle), 1, 150, AsyncParam(hashof("adder")) );
-}
-void Option_LoadingOffTest()
-{
-	SetMenuLoading(false);
-}
-void Option_UiTestPrecision()
-{
-	SavedTestCoordPrecision = PrecisionToFloat(GetCurrentItem()->Selection.Value.Int);
-
-	ItemContainer* Buffer;
-
-	if (GetItemRelativeToCursor(1, &Buffer))
-		Buffer->Selection.Precision = SavedTestCoordPrecision;
-	if (GetItemRelativeToCursor(2, &Buffer))
-		Buffer->Selection.Precision = SavedTestCoordPrecision;
-}
-void Option_TestUiCoordX()
-{
-	DEBUG__GetContainer()->UiTestCoords.x = GetCurrentItem()->Selection.Value.Float;
-}
-void Option_TestUiCoordY()
-{
-	DEBUG__GetContainer()->UiTestCoords.y = GetCurrentItem()->Selection.Value.Float;
-}
-void Option_TestInt()
-{
-	DEBUG__GetContainer()->TestInt = GetCurrentItem()->Selection.Value.Int;
-}
-
-void Option_BoolTest()
-{
-	if (!UpdateBoolConditional(DEBUG__GetContainer()->TestInt != 5, &SavedBoolTest))
-		Warn("Unable to toggle bool at this test int index");
-	print(__FILE__, 5000);
-
-}
-void Option_EnumTest()
-{
-
-}
-
-
-void Option_FlyMod()
-{
-	if (GetCurrentItem()->Selection.Value.Int)
-		bit_set(&MenuLoopedBitset, MB_FlyMod);
-	else
-		bit_reset(&MenuLoopedBitset, MB_FlyMod);
-
-}
 void Menu_MiscOptions()
 {
 	SetHeader("Misc Options");
@@ -238,7 +237,6 @@ void Menu_DebugOptions()
 	AddItemMenu("Large Submenu Test", Menu_LargeSubmenuTest);
 
 }
-
 inline void MainMenu()
 {
 	SetHeader("Main Menu");
@@ -248,9 +246,9 @@ inline void MainMenu()
 	AddItemMenu("Debug Options", Menu_DebugOptions);
 
 }
+#pragma endregion
 
-
-
+#pragma region LoopedOptions
 void FlyMod(Player CurrentPlayerPed)
 {
 	DisableControl(2, INPUT_VEHICLE_LOOK_BEHIND);
@@ -322,5 +320,8 @@ inline void LoopedOptions()
 	if (bit_test(MenuLoopedBitset, MB_FlyMod) && !is_pause_menu_active())
 		FlyModController(CurrentPlayerPed);
 }
+#pragma endregion
+
+
 
 
