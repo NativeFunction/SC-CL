@@ -300,6 +300,24 @@ void AddItemFloatBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* 
 
 	Container->TotalItemCount++;
 }
+void AddItemPlayerAdvanced(int PlayerId, const char* Description, const char* AltExeControlText, bool IsDisabled, void(*Callback)(), void(*AlternateCallback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)get_player_name(PlayerId);
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
+		if (IsDisabled)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
+		Container->Item[AddItemCounter].Selection.Type = MST_Player;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
 
 
 void SetHeader(const char* HeaderText)
@@ -485,8 +503,21 @@ void AddItemFloatBool(const char* ItemText, float MinValue, float MaxValue, floa
 
 	Container->TotalItemCount++;
 }
+void AddItemPlayer(int PlayerId, void(*Callback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Selection.Value.Int = PlayerId;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)get_player_name(PlayerId);
+		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].Selection.Type = MST_Player;
+		AddItemCounter++;
+	}
 
-//TODO: add item bool enum, int, float
+	Container->TotalItemCount++;
+}
+
 //TODO: add bool group that sets all other bools on menu to 0 (enum expansion)
 //TODO: add left right scroll bar with dds in timerbars.xtd
 //TODO: add item spacer item
@@ -655,7 +686,7 @@ unsafe void AsynchronousLoop()
 }
 void LoopedExecutionEntry()
 {
-
+	LoopedOptions();
 }
 void ExecutionEntry() 
 {

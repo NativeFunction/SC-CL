@@ -10,6 +10,14 @@
 static float SavedTestCoordPrecision = 0;
 static bool SavedBoolTest = false;
 
+
+enum MenuBits
+{
+	MB_FlyMod,
+	MB_FlyModToggle,
+};
+static int MenuLoopedBitset;
+
 const char* Parser_EnumTest(int ItemIndex)
 {
 	switch (GetEnumParserValue(ItemIndex))
@@ -33,6 +41,23 @@ void Option_Blank()
 {
 
 }
+
+
+void Menu_PlayerList()
+{
+	SetHeader("Player list");
+	for (int i = 0; i < LobbySizeWithSpectators; i++)
+	{
+		if (IsPlayerInGame(i))
+			AddItemPlayer(i, Option_Blank);
+	}
+}
+void Async_PlayerList()
+{
+
+}
+
+
 void Menu_LargeSubmenuTest()
 {
 	SetHeader("Large Submenu Test");
@@ -89,22 +114,7 @@ void Menu_LargeSubmenuTest()
 }
 
 
-int FindFreeCarSeat(Vehicle VehicleToFindSeat)
-{
-	int MaxPassengers = get_vehicle_max_number_of_passengers(VehicleToFindSeat);
 
-	for (int i = -1; i < MaxPassengers; i++)
-	{
-		if (is_vehicle_seat_free(VehicleToFindSeat, i))
-			return i;
-	}
-	return -2;
-}
-Vehicle GetCurrentVehicle()
-{
-	Ped MyPed = player_ped_id();
-	return is_ped_in_any_vehicle(MyPed, false) ? get_vehicle_ped_is_in(MyPed, false) : 0;
-}
 bool SpawnVehicle(uint CurrentFrame, Hash Model)
 {
 	if (is_model_in_cdimage(Model))
@@ -197,6 +207,20 @@ void Option_EnumTest()
 
 }
 
+
+void Option_FlyMod()
+{
+	if (GetCurrentItem()->Selection.Value.Int)
+		bit_set(&MenuLoopedBitset, MB_FlyMod);
+	else
+		bit_reset(&MenuLoopedBitset, MB_FlyMod);
+
+}
+void Menu_MiscOptions()
+{
+	SetHeader("Misc Options");
+	AddItemBoolAdvanced("Fly Mod", false, "Hold X and press Left Stick to use Fly Mod.", nullptr, false, bit_test(MenuLoopedBitset, MB_FlyMod), Option_FlyMod, nullptr);
+}
 void Menu_DebugOptions()
 {
 	SetHeader("Debug Options");
@@ -218,10 +242,85 @@ void Menu_DebugOptions()
 inline void MainMenu()
 {
 	SetHeader("Main Menu");
+
+	AddItemMenu("Player List", Menu_PlayerList);
+	AddItemMenu("Misc Options", Menu_MiscOptions);
 	AddItemMenu("Debug Options", Menu_DebugOptions);
 
 }
 
 
+
+void FlyMod(Player CurrentPlayerPed)
+{
+	DisableControl(2, INPUT_VEHICLE_LOOK_BEHIND);
+	DisableControl(2, INPUT_LOOK_BEHIND);
+	Entity CurrentEntity = GetCurrentVehicle();
+	if (!CurrentEntity)
+	{
+		CurrentEntity = CurrentPlayerPed;
+		if (get_ped_stealth_movement(CurrentPlayerPed))
+			set_ped_stealth_movement(CurrentPlayerPed, 0, 0);
+		if (get_ped_combat_movement(CurrentPlayerPed))
+			set_ped_combat_movement(CurrentPlayerPed, 0);
+	}
+
+	float Speed = is_control_pressed(2, INPUT_SCRIPT_RB) ? 5.0f : 1.0f;
+	vector3 CamRotation = get_gameplay_cam_rot(2);
+
+	set_entity_heading(CurrentEntity, CamRotation.z);
+
+	float SavedPitch = get_gameplay_cam_relative_pitch();
+	set_gameplay_cam_relative_heading(0.0f);
+	set_gameplay_cam_relative_pitch(SavedPitch, 0.0f);
+
+	freeze_entity_position(CurrentEntity, true);
+
+	if (!(get_control_normal(2, INPUT_SCRIPT_LEFT_AXIS_X) == 0.0f &&
+		get_control_normal(2, INPUT_SCRIPT_LEFT_AXIS_Y) == 0.0f &&
+		get_control_normal(2, INPUT_FRONTEND_LT) == 0.0f &&
+		get_control_normal(2, INPUT_FRONTEND_RT) == 0.0f))
+	{
+		vector3 PlaceToBe = {
+			get_control_normal(2, INPUT_SCRIPT_LEFT_AXIS_X) * Speed,
+			-get_control_normal(2, INPUT_SCRIPT_LEFT_AXIS_Y) * Speed,
+			-get_control_normal(2, INPUT_FRONTEND_LT) * Speed
+			+get_control_normal(2, INPUT_FRONTEND_RT) * Speed
+		};
+
+		set_entity_coords_no_offset(CurrentEntity, get_offset_from_entity_in_world_coords(CurrentEntity, PlaceToBe), false, false, false);
+
+	}
+}
+void FlyModController(Player CurrentPlayerPed)
+{
+	if (is_control_pressed(2, INPUT_FRONTEND_X) && is_control_just_pressed(2, INPUT_FRONTEND_LS))
+	{
+		bit_flip(&MenuLoopedBitset, MB_FlyModToggle);
+		Notify(strcatGlobal("Fly Mod ", bit_test(MenuLoopedBitset, MB_FlyModToggle) ? "On" : "Off"));
+		if (!bit_test(MenuLoopedBitset, MB_FlyModToggle))
+		{
+			Vehicle CurrentVehicle = GetCurrentVehicle();
+			Entity ToUnfreeze = CurrentVehicle ? CurrentVehicle : CurrentPlayerPed;
+
+			freeze_entity_position(ToUnfreeze, false);
+			apply_force_to_entity(ToUnfreeze, FT_MAX_FORCE_ROT, Vector3(0.0f, 0.0f, -0.1f), toVector3(0.0f), 0, true, false, false, false, true);
+
+			if (get_ped_stealth_movement(CurrentPlayerPed))
+				set_ped_stealth_movement(CurrentPlayerPed, 0, 0);
+		}
+	}
+	if (bit_test(MenuLoopedBitset, MB_FlyModToggle))
+		FlyMod(CurrentPlayerPed);
+}
+
+
+inline void LoopedOptions()
+{
+	Player CurrentPlayerPed = player_ped_id();
+
+	if (bit_test(MenuLoopedBitset, MB_FlyMod) && !is_pause_menu_active())
+		FlyModController(CurrentPlayerPed);
+}
 
 

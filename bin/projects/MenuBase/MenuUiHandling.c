@@ -28,23 +28,6 @@ static Page Container =
 #define GetRelativeCursorIndex Container.CursorIndex - Container.ItemStartIndex
 #define ItemFontSize 0.35f
 
-#pragma region PlatformHelpers
-
-#ifdef __YSC__
-#define DisableControl(InputGroup, InputType) disable_control_action(InputGroup, InputType, true)
-#define EnableControl(InputGroup, InputType) enable_control_action(InputGroup, InputType, true)
-#define PlayMenuSound(SoundName) play_sound_frontend(-1, SoundName, "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
-#define DrawScaleformMovie(Scaleform, Color) draw_scaleform_movie_fullscreen(Scaleform, Color, false)
-#else
-#define DisableControl(InputGroup, InputType) disable_control_action(InputGroup, InputType)
-#define EnableControl(InputGroup, InputType) enable_control_action(InputGroup, InputType)
-#define PlayMenuSound(SoundName) play_sound_frontend(-1, SoundName, "HUD_FRONTEND_DEFAULT_SOUNDSET")
-#define DrawScaleformMovie(Scaleform, Color) draw_scaleform_movie_fullscreen(Scaleform, Color)
-#endif
-
-
-#pragma endregion
-
 #pragma region MenuCommands
 bool HasPlayerOpenedMenu()
 {
@@ -840,6 +823,40 @@ void DrawMenuBool(int i, float CurrentYIndex, bool IsActive, bool IsSelected, RG
 					CurrentColor);
 	}
 }
+void DrawMenuPlayer(int i, float CurrentYIndex, RGBA CurrentColor)
+{
+	//TODO: find a better way to detect host
+	bool IsPlayerLocal = Container.Item[i].Selection.Value.Int == player_id();
+	bool IsPlayerHost = IsPlayerLocal && !network_is_game_in_progress() ? true : network_get_host_of_script("freemode", -1, Any(0)) == Container.Item[i].Selection.Value.Int;
+	bool DoesPlayerHaveHeadset = IsPlayerLocal ? network_has_headset() : network_player_has_headset(Container.Item[i].Selection.Value.Int);
+
+	if (DoesPlayerHaveHeadset)
+	{
+		//TODO: find network_is_local_talking equivalent on pc
+		#ifdef __YSC__
+		bool IsPlayerTalking = network_is_player_talking(Container.Item[i].Selection.Value.Int);
+		#else
+		bool IsPlayerTalking = IsPlayerLocal ? network_is_local_talking() : network_is_player_talking(Container.Item[i].Selection.Value.Int);
+		#endif
+		const char* AudioIcon = IsPlayerTalking ? "leaderboard_audio_3" : "leaderboard_audio_inactive";
+		
+		//TODO: pulsate audio icon when talking
+		draw_sprite("mpleaderboard", AudioIcon,
+					Vector2(Container.Ui.DrawPos.x + 0.229f - 0.005f, CurrentYIndex + 0.018f),
+					vector2Sub(GetSizeFromResolution(Vector2(32.0f, 32.0f)), Vector2(0.005f, 0.005f)),
+					0.0f, CurrentColor);
+	}
+
+	if (IsPlayerHost)
+	{
+		
+		draw_sprite("CommonMenu", "mp_hostcrown",
+					Vector2(Container.Ui.DrawPos.x + 0.229f - (DoesPlayerHaveHeadset ? 0.025f : 0.005f), CurrentYIndex + 0.018f),
+					vector2Sub(GetSizeFromResolution(Vector2(32.0f, 32.0f)), Vector2(0.005f, 0.005f)), 0.0f, CurrentColor);
+	}
+}
+
+
 void DrawItems()
 {
 	float CurrentYIndex = Container.Ui.DrawPos.y;
@@ -912,6 +929,9 @@ void DrawItems()
 					DrawMenuBool(i, CurrentYIndex, bit_test(Container.Item[i].BitSet, ICB_BoolNumValue), !IsItemDisabled, CurrentColor);
 				}
 				break;
+				case MST_Player:
+					DrawMenuPlayer(i, CurrentYIndex, CurrentColor);
+				break;
 				default:
 					Warn(straddiGlobal("Draw selection type isn't valid. Value: ", Container.Item[i].Selection.Type));
 			
@@ -962,6 +982,9 @@ void DrawItems()
 					DrawMenuFloat(i, CurrentYIndex, BoolTextureSize.x / 2, false, CurrentColor);
 					DrawMenuBool(i, CurrentYIndex, bit_test(Container.Item[i].BitSet, ICB_BoolNumValue), false, CurrentColor);
 				}
+				break;
+				case MST_Player:
+				DrawMenuPlayer(i, CurrentYIndex, CurrentColor);
 				break;
 				default:
 				Warn(straddiGlobal("Draw type isn't valid. Value: ", Container.Item[i].Selection.Type));

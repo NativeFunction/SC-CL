@@ -1,7 +1,7 @@
 #pragma once
 
-const int LobbySize = 16;
-const int LobbySizeWithSpectators = 18;
+#define LobbySize 16
+#define LobbySizeWithSpectators 18
 #define item_size 4
 
 typedef enum Input

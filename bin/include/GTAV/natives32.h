@@ -4144,6 +4144,7 @@ extern _native any unk_0x9A176B6E();
 extern _native bool network_has_headset();
 extern _native void unk_0x5C05B7E1(bool p0);
 extern _native bool network_gamer_has_headset(any* p0);
+extern _native bool network_is_local_talking();
 extern _native bool network_is_gamer_talking(int* p0);
 extern _native bool network_can_communicate_with_gamer(int* player);
 extern _native bool network_is_gamer_muted_by_me(int* p0);
@@ -4674,6 +4675,59 @@ extern _native32(0x734CFEDA) bool _is_ui_loading_multiplayer();
 extern _native void unk_0x8C227332(bool p0);
 extern _native void unk_0x5C350D78(bool p0);
 #pragma endregion //}
+
+
+
+/************ Undocumented Console Only Natives ************
+sc_inbox_message_get_data_float
+network_is_local_talking
+get_number_of_vehicle_model_colours
+play_stream_from_position
+network_get_killer_of_player
+waitunpaused
+waitunwarped
+get_vehicle_model_value
+network_give_player_cash
+network_invite_gamer
+network_invite_gamer_to_transition
+network_receive_player_cash
+task_vehicle_follow
+clear_text_label
+get_current_language
+network_set_player_muted
+network_remove_all_invites
+is_flash_light_on
+set_entity_icon_id_color
+set_entity_icon_id_visibility
+add_entity_icon_by_vector
+set_vehicle_brake
+network_is_rockstar_dev
+get_ped_head_overlay
+network_check_give_player_cash
+network_check_receive_player_cash
+network_earn_from_bank_interest
+network_spent_bank_interest
+set_poi
+set_control_shake
+set_poi_special
+network_get_game_region
+get_shop_ped_prop
+get_forced_prop
+get_shop_ped_outfit_prop
+get_shop_ped_outfit_component
+is_cam_transitioning
+does_entity_have_icon_id
+network_is_unlocked
+remove_vehicle_mod_kit
+network_buy_smokes
+network_remove_followers
+network_has_follower
+network_retain_followers
+restore_script_values_for_network_game
+store_script_values_for_network_game
+get_anim_duration
+get_cutscene_name
+***********************************************************/
 
 
 #undef _native

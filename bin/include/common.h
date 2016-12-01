@@ -1,7 +1,7 @@
 #pragma once
 
 void print(const char* str, int ms);
-const char* strcat(const char* str1, const char* str2);
+const char* strcatGlobal(const char* str1, const char* str2);
 const char* straddiGlobal(const char* str1, int i);
 const char* itosGlobal(int i);
 void Throw(const char* str);

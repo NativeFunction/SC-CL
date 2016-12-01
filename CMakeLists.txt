@@ -9,6 +9,7 @@ add_clang_executable(loop-convert
   FunctionData.cpp
   Script.cpp
   Opcode.cpp
+  StaticData.cpp
   )
 target_link_libraries(loop-convert
   clangTooling

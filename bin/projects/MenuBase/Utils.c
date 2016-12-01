@@ -121,3 +121,24 @@ void Notify(const char* str)
 	add_text_component_substring_player_name(str);
 	_draw_notification(false, true);
 }
+bool IsPlayerInGame(int PlayerIndex)
+{
+	return network_is_player_active(PlayerIndex) && does_entity_exist(get_player_ped(PlayerIndex));
+}
+int FindFreeCarSeat(Vehicle VehicleToFindSeat)
+{
+	int MaxPassengers = get_vehicle_max_number_of_passengers(VehicleToFindSeat);
+
+	for (int i = -1; i < MaxPassengers; i++)
+	{
+		if (is_vehicle_seat_free(VehicleToFindSeat, i))
+			return i;
+	}
+	return -2;
+}
+Vehicle GetCurrentVehicle()
+{
+	Ped MyPed = player_ped_id();
+	return is_ped_in_any_vehicle(MyPed, false) ? get_vehicle_ped_is_in(MyPed, false) : 0;
+}
+

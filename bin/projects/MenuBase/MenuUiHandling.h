@@ -15,7 +15,8 @@ typedef enum MenuSelectionType
 	MST_Menu,
 	MST_IntBool,
 	MST_EnumBool,
-	MST_FloatBool
+	MST_FloatBool,
+	MST_Player
 } MenuSelectionType;
 
 enum ItemContainerBits
@@ -23,7 +24,7 @@ enum ItemContainerBits
 	ICB_IsItemGxt,//Gets whether the item is using gxt text
 	ICB_ExecuteOnChange,//Gets whether the item executes on left, right scroll
 	ICB_IsItemDisabled,//Gets whether the item is disabled
-	ICB_BoolNumValue,//Current bool value for BoolNum operations
+	ICB_BoolNumValue//Current bool value for BoolNum operations
 };
 typedef struct ItemContainer
 {

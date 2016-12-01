@@ -167,6 +167,7 @@ typedef union any
 
 
 //poor mans constructors
+#define Any(x) (any) {x}
 #define RGBA(R,G,B,A) (RGBA){R,G,B,A}
 #define FloatRGBA(R,G,B,A) (FloatRGBA){R,G,B,A}
 #define Point(x, y) (Point){x, y}
