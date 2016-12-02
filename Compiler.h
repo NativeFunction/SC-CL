@@ -11,6 +11,146 @@
 #include "fstream"
 extern std::string globalDirectory;
 
+class CodePageCollection{
+protected:
+	std::vector<std::vector<uint8_t>> codePages;
+	std::vector<uint8_t>* lastPage;
+	void AddInt16L(const int16_t value){
+		lastPage->resize(lastPage->size() + 2);
+		*((int16_t*)(lastPage->data() + lastPage->size()) - 1) = value;
+	}
+public:
+	CodePageCollection(){
+		std::vector<uint8_t> newPage;
+		newPage.reserve(0x4000);
+		codePages.push_back(std::move(newPage));
+		lastPage = &codePages.back();
+	}
+	void AddNewPage(){
+		lastPage->resize(0x4000, 0);//fill last page with zeros
+		std::vector<uint8_t> newPage;
+		newPage.reserve(0x4000);
+		codePages.push_back(std::move(newPage));
+		lastPage = &codePages.back();
+	}
+	size_t getPageCount()const{ return codePages.size(); }
+
+	size_t getTotalSize()const {
+		return ((getPageCount() - 1) << 14) + getLastPageSize();
+	}
+	size_t getLastPageSize()const{
+		return lastPage->size();
+	}
+	uint8_t* getCodePositionAddress(size_t position){
+		assert(position < getTotalSize() && "Code position out of range");
+		return  codePages[position >> 14].data() + (position & 0x3FFF);
+	}
+	uint8_t* getPageAddress(size_t pageIndex){
+		assert(pageIndex < codePages.size() && "Page index out of range");
+		return codePages[pageIndex].data();
+	}
+	//Ensures there is enough space in the current code page for a specific opcode
+	//Returns true if a new page needed to be created to fit the desired amount of bytes
+	bool ReserveBytes(size_t newSize){
+		if (lastPage->size() + newSize > 0x4000){
+			AddNewPage();
+			return true;
+		}
+		return false;
+	}
+	void AddPadding(const uint32_t paddingCount){
+		lastPage->resize(lastPage->size() + paddingCount);
+	}
+	void AddInt8(const uint8_t value){
+		lastPage->push_back(value);
+	}
+	void changeInt8(const uint8_t newValue, const size_t position){
+		*getCodePositionAddress(position) = newValue;
+	}
+	virtual void AddInt16(const int16_t value) = 0;
+	virtual void ChangeInt16(const int16_t newValue, const size_t position) = 0;
+
+	virtual void AddInt24(const uint32_t value) = 0;
+	virtual void ChangeInt24(const uint32_t newValue, const size_t position) = 0;
+
+	virtual void AddInt32(const uint32_t value) = 0;
+	virtual void ChangeInt32(const uint32_t newValue, const size_t position) = 0;
+
+	virtual void AddFloat(const float value) = 0;
+
+	void AddString(const std::string str, bool incNullTerminator = true){
+		auto curSize = lastPage->size();
+		auto strSize = str.size() + (incNullTerminator ? 1 : 0);
+		lastPage->resize(curSize + strSize);
+		memcpy(lastPage->data() + curSize, str.data(), strSize);
+	}
+	//virtual void ChangeFloat(const float newValue, const size_t position) = 0;//never going to be used
+
+};
+
+class CodePageCollectionBig : public CodePageCollection{
+public:
+	void AddInt16(const int16_t value)override{
+		lastPage->resize(lastPage->size() + 2, 0);
+		*((int16_t*)(lastPage->data() + lastPage->size()) - 1) = Utils::Bitwise::SwapEndian(value);
+	}
+	void ChangeInt16(const int16_t newValue, const size_t position)override{
+		*(int16_t*)getCodePositionAddress(position) = Utils::Bitwise::SwapEndian(newValue);
+	}
+
+	void AddInt24(const uint32_t value)override{
+		lastPage->resize(lastPage->size() + 3, 0);
+		*((uint32_t*)(lastPage->data() + lastPage->size()) - 1) |= Utils::Bitwise::SwapEndian(value & 0xFFFFFF);
+	}
+	void ChangeInt24(const uint32_t newValue, const size_t position)override{
+		*(uint32_t*)(getCodePositionAddress(position) - 1) |= Utils::Bitwise::SwapEndian(newValue & 0xFFFFFF);
+	}
+
+	void AddInt32(const uint32_t value)override{
+		lastPage->resize(lastPage->size() + 4, 0);
+		*((uint32_t*)(lastPage->data() + lastPage->size()) - 1) = Utils::Bitwise::SwapEndian(value);
+	}
+	void ChangeInt32(const uint32_t newValue, const size_t position)override{
+		*(uint32_t*)getCodePositionAddress(position) = Utils::Bitwise::SwapEndian(newValue);
+	}
+
+	void AddFloat(const float value)override{
+		lastPage->resize(lastPage->size() + 4, 0);
+		*((float*)(lastPage->data() + lastPage->size()) - 1) = Utils::Bitwise::SwapEndian(value);
+	}
+};
+
+class CodePageCollectionLit : public CodePageCollection{
+public:
+	void AddInt16(const int16_t value)override{
+		lastPage->resize(lastPage->size() + 2, 0);
+		*((int16_t*)(lastPage->data() + lastPage->size()) - 1) = value;
+	}
+	void ChangeInt16(const int16_t newValue, const size_t position)override{
+		*(int16_t*)getCodePositionAddress(position) = newValue;
+	}
+
+	void AddInt24(const uint32_t value)override{
+		lastPage->resize(lastPage->size() + 3, 0);
+		*((uint32_t*)(lastPage->data() + lastPage->size()) - 1) |= (value & 0xFFFFFF) << 8;
+	}
+	void ChangeInt24(const uint32_t newValue, const size_t position)override{
+		*(uint32_t*)(getCodePositionAddress(position) - 1) |= (newValue & 0xFFFFFF) << 8;
+	}
+
+	void AddInt32(const uint32_t value)override{
+		lastPage->resize(lastPage->size() + 4, 0);
+		*((uint32_t*)(lastPage->data() + lastPage->size()) - 1) = value;
+	}
+	void ChangeInt32(const uint32_t newValue, const size_t position)override{
+		*(uint32_t*)getCodePositionAddress(position) = newValue;
+	}
+	void AddFloat(const float value)override{
+		lastPage->resize(lastPage->size() + 4, 0);
+		*((float*)(lastPage->data() + lastPage->size()) - 1) = value;
+	}
+};
+
 class CompileBase
 {
 protected:
@@ -72,7 +212,7 @@ protected:
 	#pragma endregion
 
 	#pragma region Parsed_Data_Vars
-	std::vector<uint8_t> CodePageData;//opcode data
+	std::unique_ptr<CodePageCollection> CodePageData;//opcode data
 	std::unordered_map<std::string, LabelData> LabelLocations;//label ,data index
 	std::vector<JumpData> JumpLocations;//JumpLocations to fill after building the CodePageData for a function
 	uint32_t SignedJumpLocationInc = 0, UnsignedJumpLocationInc = 0;
@@ -102,7 +242,6 @@ protected:
 	PHO SavedOffsets = {};
 	int32_t headerLocation = 0;
 	uint32_t headerFlag = 0;
-	uint32_t CodePageCount = 0;
 	std::vector<uint8_t> BuildBuffer;
 	uint8_t FilePadding = 0;
 	#pragma endregion
@@ -120,34 +259,22 @@ protected:
 		DisableFunctionNames(Disable_Function_Names)
 	{
 		//Set Endian
-		if (HLData->getBuildPlatform() == Platform::P_PC)
+		if (HLData->getBuildPlatform() == Platform::P_PC && HLData->getBuildType() == BT_GTAV)
 		{
-			AddInt16 = &CompileBase::AddInt16L;
-			AddInt24 = &CompileBase::AddInt24L;
-			AddInt32 = &CompileBase::AddInt32L;
-			AddFloat = &CompileBase::AddFloatL;
+			CodePageData = std::make_unique<CodePageCollectionLit>();
 			AddInt32toBuff = &CompileBase::AddInt32toBuffL;
 			ChangeInt32inBuff = &CompileBase::ChangeInt32inBuffL;
 			AddInt64toBuff = &CompileBase::AddInt64toBuffL;
 			ChangeInt64inBuff = &CompileBase::ChangeInt64inBuffL;
-			ChangeInt16InCodePage = &CompileBase::ChangeInt16InCodePageL;
-			ChangeInt24InCodePage = &CompileBase::ChangeInt24InCodePageL;
-			ChangeInt32InCodePage = &CompileBase::ChangeInt32InCodePageL;
 			ChangeInt32InStringPage = &CompileBase::ChangeInt32InStringPageL;
 		}
 		else
 		{
-			AddInt16 = &CompileBase::AddInt16B;
-			AddInt24 = &CompileBase::AddInt24B;
-			AddInt32 = &CompileBase::AddInt32B;
-			AddFloat = &CompileBase::AddFloatB;
+			CodePageData = std::make_unique<CodePageCollectionBig>();
 			AddInt32toBuff = &CompileBase::AddInt32toBuffB;
 			ChangeInt32inBuff = &CompileBase::ChangeInt32inBuffB;
 			AddInt64toBuff = &CompileBase::AddInt64toBuffB;
 			ChangeInt64inBuff = &CompileBase::ChangeInt64inBuffB;
-			ChangeInt16InCodePage = &CompileBase::ChangeInt16InCodePageB;
-			ChangeInt24InCodePage = &CompileBase::ChangeInt24InCodePageB;
-			ChangeInt32InCodePage = &CompileBase::ChangeInt32InCodePageB;
 			ChangeInt32InStringPage = &CompileBase::ChangeInt32InStringPageB;
 		}
 	}
@@ -156,80 +283,51 @@ protected:
 	virtual void Compile(const std::string& outDirectory) = 0;
 
 	#pragma region Data_Functions
-	void AddPadding(const uint16_t value)
-	{
-		CodePageData.resize(CodePageData.size() + value);
-	}
-	void AddInt8(const uint8_t b)
-	{
-		CodePageData.push_back(b);
-	}
-	
-	void (CompileBase::*AddInt16)(const int16_t value);
-	#define AddInt16 (this->*AddInt16)
-	void AddInt16B(const int16_t value)
-	{
-		CodePageData.resize(CodePageData.size() + 2, 0);
-		*((int16_t*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
-	}
-	void AddInt16L(const int16_t value)
-	{
-		CodePageData.resize(CodePageData.size() + 2, 0);
-		*((int16_t*)(CodePageData.data() + CodePageData.size()) - 1) = value;
-	}
-	void (CompileBase::*AddInt24)(const uint32_t value);
-	#define AddInt24 (this->*AddInt24)
-	void AddInt24B(const uint32_t value)
-	{
-		CodePageData.resize(CodePageData.size() + 3, 0);
-		*((uint32_t*)(CodePageData.data() + CodePageData.size()) - 1) |= Utils::Bitwise::SwapEndian(value & 0xFFFFFF);
-	}
-	void AddInt24L(const uint32_t value)
-	{
-		CodePageData.resize(CodePageData.size() + 3, 0);
-		*((uint32_t*)(CodePageData.data() + CodePageData.size()) - 1) |= (value & 0xFFFFFF) << 8;
-	}
-	void (CompileBase::*AddInt32)(const int32_t value);
-	#define AddInt32 (this->*AddInt32)
-	void AddInt32B(const int32_t value)
-	{
-		CodePageData.resize(CodePageData.size() + 4, 0);
-		*((int32_t*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
-	}
-	void AddInt32L(const int32_t value)
-	{
-		CodePageData.resize(CodePageData.size() + 4, 0);
-		*((int32_t*)(CodePageData.data() + CodePageData.size()) - 1) = value;
-	}
-	void (CompileBase::*AddFloat)(const float value);
-	#define AddFloat (this->*AddFloat)
-	void AddFloatB(const float value)
-	{
-		CodePageData.resize(CodePageData.size() + 4, 0);
-		*((float*)(CodePageData.data() + CodePageData.size()) - 1) = Utils::Bitwise::SwapEndian(value);
-	}
-	void AddFloatL(const float value)
-	{
-		CodePageData.resize(CodePageData.size() + 4, 0);
-		*((float*)(CodePageData.data() + CodePageData.size()) - 1) = value;
-	}
 	void AddString(const std::string& str)//Override: GTAV
 	{
-		CodePageData.resize(CodePageData.size() + str.size() + 1);
-		memcpy(CodePageData.data() + CodePageData.size() - str.size() - 1, str.data(), str.size() + 1);
+		CodePageData->AddString(str);
+
+	}
+	void AddPadding(const uint32_t paddingCount)
+	{
+		CodePageData->AddPadding(paddingCount);
+	}
+	void AddInt8(const uint8_t value){
+		CodePageData->AddInt8(value);
+	}
+	void AddInt16(const int16_t value){
+		CodePageData->AddInt16(value);
+	}
+	void AddInt24(const uint32_t value){
+		CodePageData->AddInt24(value);
+	}
+	void AddInt32(const uint32_t value){
+		CodePageData->AddInt32(value);
+	}
+	void AddFloat(const float value){
+		CodePageData->AddFloat(value);
+	}
+	void ChangeInt16InCodePage(const int16_t value, const size_t index){
+		CodePageData->ChangeInt16(value, index);
+	}
+	void ChangeInt24InCodePage(const uint32_t value, const size_t index){
+		CodePageData->ChangeInt24(value, index);
+	}
+	void ChangeInt32InCodePage(const uint32_t value, const size_t index){
+		CodePageData->ChangeInt32(value, index);
 	}
 	virtual void AddLabel(const std::string& label);
 	void AddFuncLabel(const FunctionData* function)
 	{
 		if (FuncLocations.find(function) == FuncLocations.end())
-			FuncLocations.insert({ function, CodePageData.size() });
+			FuncLocations.insert({ function, CodePageData->getTotalSize() });
 		else
 			Utils::System::Throw("Cannot add function. function \"" + function->getName() + "\" already exists.");
 	}
 	void AddJumpLoc(const JumpInstructionType it, const std::string& label)
 	{
 		// this should only be called on jump forward
-		JumpLocations.push_back({ CodePageData.size(), it, label, false });
+		JumpLocations.push_back({ CodePageData->getTotalSize(), it, label, false });
 		LabelLocations[label].JumpIndexes.push_back(JumpLocations.size() - 1);
 		switch (it)
 		{
@@ -260,11 +358,8 @@ protected:
 	}
 	void DoesOpcodeHaveRoom(const size_t OpcodeLen)
 	{
-		size_t size = CodePageData.size();
-		uint32_t amount = (size + OpcodeLen) % 16384;
-		if (amount < size % 16384 && amount != 0) 
+		if (CodePageData->ReserveBytes(OpcodeLen))
 		{
-			CodePageData.resize(size + (16384 - (size % 16384)));
 			CheckSignedJumps();
 			CheckUnsignedJumps();
 		}
@@ -283,36 +378,7 @@ protected:
 
 		return UnsignedJumpLocationInc < JumpLocations.size();
 	}
-	void (CompileBase::*ChangeInt16InCodePage)(const int16_t value, const uint32_t index);
-	#define ChangeInt16InCodePage (this->*ChangeInt16InCodePage)
-	void ChangeInt16InCodePageB(const int16_t value, const uint32_t index)
-	{
-		*(int16_t*)(CodePageData.data() + index) = Utils::Bitwise::SwapEndian(value);
-	}
-	void ChangeInt16InCodePageL(const int16_t value, const uint32_t index)
-	{
-		*(int16_t*)(CodePageData.data() + index) = value;
-	}
-	void (CompileBase::*ChangeInt24InCodePage)(const uint32_t value, const uint32_t index);
-	#define ChangeInt24InCodePage (this->*ChangeInt24InCodePage)
-	void ChangeInt24InCodePageB(const uint32_t value, const uint32_t index)
-	{
-		*(uint32_t*)(CodePageData.data() + index - 1) |= Utils::Bitwise::SwapEndian(value & 0xFFFFFF);
-	}
-	void ChangeInt24InCodePageL(const uint32_t value, const uint32_t index)
-	{
-		*(uint32_t*)(CodePageData.data() + index - 1) |= (value & 0xFFFFFF) << 8;
-	}
-	void (CompileBase::*ChangeInt32InCodePage)(const uint32_t value, const uint32_t index);
-	#define ChangeInt32InCodePage (this->*ChangeInt32InCodePage)
-	void ChangeInt32InCodePageB(const uint32_t value, const uint32_t index)
-	{
-		*(uint32_t*)(CodePageData.data() + index) = Utils::Bitwise::SwapEndian(value);
-	}
-	void ChangeInt32InCodePageL(const uint32_t value, const uint32_t index)
-	{
-		*(uint32_t*)(CodePageData.data() + index) = value;
-	}
+
 	void (CompileBase::*ChangeInt32InStringPage)(const uint32_t value, const uint32_t index);
 	#define ChangeInt32InStringPage (this->*ChangeInt32InStringPage)
 	void ChangeInt32InStringPageB(const uint32_t value, const uint32_t index)
@@ -348,8 +414,7 @@ protected:
 			AddInt8(function->getParamCount());
 			AddInt16(function->getStackSize());
 			AddInt8(function->getName().size());
-			CodePageData.resize(CodePageData.size() + name.size());
-			memcpy(CodePageData.data() + CodePageData.size() - name.size(), name.data(), name.size());
+			CodePageData->AddString(name, false);
 		}
 	}
 	virtual void PushInt(const int32_t Literal);//Override: GTAIV
@@ -407,7 +472,6 @@ protected:
 		SavedOffsets = {};
 		headerLocation = 0;
 		headerFlag = 0;
-		CodePageCount = 0;
 		BuildBuffer.clear();
 	}
 	void (CompileBase::*AddInt32toBuff)(int32_t value);

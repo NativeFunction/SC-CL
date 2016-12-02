@@ -47,6 +47,8 @@ class FunctionData
 	std::vector<StaticData*> _usedStatics;
 	bool allowUnsafe = false;
 	OptimisationLevel _optLevel = OptimisationLevel::OL_None;
+	void optimisePushBytes();
+	void jumpThreading();
 public:
 	
 	FunctionData(std::string name, uint8_t pcount, uint8_t rcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount), rcount(rcount)
@@ -87,6 +89,7 @@ public:
 	{
 		_processed = true;
 		optimisePushBytes();
+		jumpThreading();
 	}
 	bool isBuiltIn()const{ return _isBuiltIn; }
 	void setBuiltIn(){ _isBuiltIn = true; }
@@ -98,7 +101,6 @@ public:
 
 	void setUnsafe(){ allowUnsafe = true; }
 	bool isUnsafe()const{ return allowUnsafe; }
-	void optimisePushBytes();
 	void moveInto(std::vector<Opcode*>& source);
 #pragma region CreateOpcodes
 	void addOpNop(uint16_t nopCount)

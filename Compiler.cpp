@@ -197,12 +197,12 @@ void CompileBase::AddLabel(const string& label)
 	auto it = LabelLocations.find(label);
 	if (it == LabelLocations.end())
 	{
-		LabelLocations.insert({ label,{ CodePageData.size(), true } });
+		LabelLocations.insert({ label,{ CodePageData->getTotalSize(), true } });
 	}
 	else if (!it->second.isSet)
 	{
 		it->second.isSet = true;
-		it->second.LabelLocation = CodePageData.size();
+		it->second.LabelLocation = CodePageData->getTotalSize();
 		for (uint32_t i = 0; i < it->second.JumpIndexes.size(); i++)
 		{
 			//Fix jump forwards that are in range. Out of range jumps should have already been fixed.
@@ -228,7 +228,7 @@ void CompileBase::AddLabel(const string& label)
 						Utils::System::Throw("Get label loc \"" + label + "\" out of jump range");
 
 					ChangeInt24InCodePage(it->second.LabelLocation, JumpLocations[it->second.JumpIndexes[i]].JumpLocation);
-					*(CodePageData.data() + JumpLocations[it->second.JumpIndexes[i]].JumpLocation - 1) = BaseOpcodes->PushI24;
+					*(CodePageData->getCodePositionAddress(JumpLocations[it->second.JumpIndexes[i]].JumpLocation - 1)) = BaseOpcodes->PushI24;
 					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
 				}
 			}
@@ -260,7 +260,7 @@ void CompileBase::AddJump(const JumpInstructionType type, const string& label)
 	else
 	{
 		//jump backward
-		int32_t offset = it->second.LabelLocation - CodePageData.size() - 3;//estimate
+		int32_t offset = it->second.LabelLocation - CodePageData->getTotalSize() - 3;//estimate
 		assert(offset < 0);
 
 		if (offset >= -32768 + 3 + 2)//3 for opcode size, 2 for possible DoesOpcodeHaveRoom padding
@@ -268,14 +268,14 @@ void CompileBase::AddJump(const JumpInstructionType type, const string& label)
 			switch (type)
 			{
 
-				case JumpInstructionType::Jump:			DoesOpcodeHaveRoom(3); AddOpcode(Jump); AddInt16(it->second.LabelLocation - CodePageData.size() - 2); break;
-				case JumpInstructionType::JumpFalse:	DoesOpcodeHaveRoom(3); AddOpcode(JumpFalse); AddInt16(it->second.LabelLocation - CodePageData.size() - 2); break;
-				case JumpInstructionType::JumpNE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpNE); AddInt16(it->second.LabelLocation - CodePageData.size() - 2); break;
-				case JumpInstructionType::JumpEQ:		DoesOpcodeHaveRoom(3); AddOpcode(JumpEQ); AddInt16(it->second.LabelLocation - CodePageData.size() - 2); break;
-				case JumpInstructionType::JumpLE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLE); AddInt16(it->second.LabelLocation - CodePageData.size() - 2); break;
-				case JumpInstructionType::JumpLT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLT); AddInt16(it->second.LabelLocation - CodePageData.size() - 2); break;
-				case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); AddInt16(it->second.LabelLocation - CodePageData.size() - 2); break;
-				case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); AddInt16(it->second.LabelLocation - CodePageData.size() - 2); break;
+				case JumpInstructionType::Jump:			DoesOpcodeHaveRoom(3); AddOpcode(Jump); AddInt16(it->second.LabelLocation - CodePageData->getTotalSize() - 2); break;
+				case JumpInstructionType::JumpFalse:	DoesOpcodeHaveRoom(3); AddOpcode(JumpFalse); AddInt16(it->second.LabelLocation - CodePageData->getTotalSize() - 2); break;
+				case JumpInstructionType::JumpNE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpNE); AddInt16(it->second.LabelLocation - CodePageData->getTotalSize() - 2); break;
+				case JumpInstructionType::JumpEQ:		DoesOpcodeHaveRoom(3); AddOpcode(JumpEQ); AddInt16(it->second.LabelLocation - CodePageData->getTotalSize() - 2); break;
+				case JumpInstructionType::JumpLE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLE); AddInt16(it->second.LabelLocation - CodePageData->getTotalSize() - 2); break;
+				case JumpInstructionType::JumpLT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpLT); AddInt16(it->second.LabelLocation - CodePageData->getTotalSize() - 2); break;
+				case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGE); AddInt16(it->second.LabelLocation - CodePageData->getTotalSize() - 2); break;
+				case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(3); AddOpcode(JumpGT); AddInt16(it->second.LabelLocation - CodePageData->getTotalSize() - 2); break;
 				case JumpInstructionType::LabelLoc:		PushInt(it->second.LabelLocation); break;
 				default: assert(false && "Invalid JumpInstructionType"); break;
 			}
@@ -303,7 +303,7 @@ CompileBase::JumpLabelData CompileBase::AddSwitchJump(const JumpInstructionType 
 	else
 	{
 		//jump backward
-		assert(it->second.LabelLocation - CodePageData.size() - 2 >= 0);
+		assert(it->second.LabelLocation - CodePageData->getTotalSize() - 2 >= 0);
 
 		AddInt16(0);
 
@@ -318,19 +318,19 @@ void CompileBase::CheckSignedJumps()
 	if (!FindNextSignedJumpLocation())
 		return;
 
-	int32_t offset = (CodePageData.size() + 3) - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
+	int32_t offset = (CodePageData->getTotalSize() + 3) - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
 	if (offset > 31135)//to make this easier im going on the assumption that the max size of an opcode is 1532 (nothing can be added that is 1632) 100 bytes of leeway
 	{
 		//jump to jump code
 
 		DoesOpcodeHaveRoom(3);
 		AddOpcode(Jump);
-		uint32_t JumpOverOffset = CodePageData.size();
+		uint32_t JumpOverOffset = CodePageData->getTotalSize();
 		AddInt16(0);
 
 		//need to update jumps of same label that are out of bounds to jumps that are already added. instead of adding another jump to jump.
 
-		offset = CodePageData.size() - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
+		offset = CodePageData->getTotalSize() - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
 
 		do
 		{
@@ -349,12 +349,12 @@ void CompileBase::CheckSignedJumps()
 			if (!FindNextSignedJumpLocation())
 				return;
 
-			offset = CodePageData.size() - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
+			offset = CodePageData->getTotalSize() - JumpLocations[SignedJumpLocationInc].JumpLocation - 2;
 		} while (offset > 30000);
 
 
 		//set jump over jump
-		ChangeInt16InCodePage(CodePageData.size() - JumpOverOffset - 2, JumpOverOffset);
+		ChangeInt16InCodePage(CodePageData->getTotalSize() - JumpOverOffset - 2, JumpOverOffset);
 	}
 
 }
@@ -363,19 +363,19 @@ void CompileBase::CheckUnsignedJumps()
 	if (!FindNextUnsignedJumpLocation())
 		return;
 
-	int32_t offset = (CodePageData.size() + 3) - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
+	int32_t offset = (CodePageData->getTotalSize() + 3) - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
 	if (offset > 63903)//to make this easier im going on the assumption that the max size of an opcode is 1532 (nothing can be added that is 1632) 10 bytes of leeway
 	{
 		//jump to jump code
 
 		DoesOpcodeHaveRoom(3);
 		AddOpcode(Jump);
-		uint32_t JumpOverOffset = CodePageData.size();
+		uint32_t JumpOverOffset = CodePageData->getTotalSize();
 		AddInt16(0);
 
 		//need to update jumps of same label that are out of bounds to jumps that are already added. instead of adding another jump to jump.
 
-		offset = CodePageData.size() - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
+		offset = CodePageData->getTotalSize() - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
 
 		do
 		{
@@ -393,12 +393,12 @@ void CompileBase::CheckUnsignedJumps()
 			if (!FindNextUnsignedJumpLocation())
 				return;
 
-			offset = CodePageData.size() - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
+			offset = CodePageData->getTotalSize() - JumpLocations[UnsignedJumpLocationInc].JumpLocation - 2;
 		} while (offset > 63903);
 
 
 		//set jump over jump
-		ChangeInt16InCodePage((CodePageData.size() - JumpOverOffset - 2), JumpOverOffset);
+		ChangeInt16InCodePage((CodePageData->getTotalSize() - JumpOverOffset - 2), JumpOverOffset);
 	}
 
 }
@@ -610,7 +610,7 @@ void CompileBase::AddFuncLoc(const FunctionData* function)
 {
 	DoesOpcodeHaveRoom(4);
 	AddOpcode(PushI24);
-	CallLocations.push_back({ CodePageData.size(), CallInstructionType::FuncLoc, function });
+	CallLocations.push_back({ CodePageData->getTotalSize(), CallInstructionType::FuncLoc, function });
 	AddInt24(0);
 }
 void CompileBase::Switch(){
@@ -646,7 +646,7 @@ void CompileBase::Switch(){
 
 			DoesOpcodeHaveRoom(3);
 			AddOpcode(Jump);
-			uint32_t JumpOverOffset = CodePageData.size();
+			uint32_t JumpOverOffset = CodePageData->getTotalSize();
 			AddInt16(0);
 
 			//need to update jumps of same label that are out of bounds to jumps that are already added. instead of adding another jump to jump.
@@ -655,7 +655,7 @@ void CompileBase::Switch(){
 
 			for (uint32_t i = 0; i < CasesToBeFixed.size(); i++)
 			{
-				offset = CodePageData.size() - CasesToBeFixed[i].JumpInfo.JumpLocation - 2;
+				offset = CodePageData->getTotalSize() - CasesToBeFixed[i].JumpInfo.JumpLocation - 2;
 				if (offset > 65535)
 					Throw("Jump label \"" + CasesToBeFixed[i].JumpInfo.Label + "\" out of jump range on jump to jump " + to_string(offset));
 
@@ -664,7 +664,7 @@ void CompileBase::Switch(){
 				cout << "fixed switch jump " + CasesToBeFixed[i].JumpInfo.Label << endl;
 
 
-				offset = CasesToBeFixed[i].LabelInfo.LabelLocation - CodePageData.size() - 2;
+				offset = CasesToBeFixed[i].LabelInfo.LabelLocation - CodePageData->getTotalSize() - 2;
 				if (offset >= -32768)
 				{
 					DoesOpcodeHaveRoom(3);
@@ -680,7 +680,7 @@ void CompileBase::Switch(){
 
 
 			//set jump over jump
-			ChangeInt16InCodePage(CodePageData.size() - JumpOverOffset - 2, JumpOverOffset);
+			ChangeInt16InCodePage(CodePageData->getTotalSize() - JumpOverOffset - 2, JumpOverOffset);
 		}
 	}
 	if (switchStore->hasDefaultJumpLoc())
@@ -783,21 +783,21 @@ void CompileBase::FMultImm()
 #pragma region Write_Functions
 void CompileBase::WriteCodePagesNoPadding()
 {
-	for (uint32_t i = 0; i < CodePageCount - 1; i++)
+	for (uint32_t i = 0; i < CodePageData->getPageCount() - 1; i++)
 	{	
 		SavedOffsets.CodePagePointers[i] = BuildBuffer.size();
 		BuildBuffer.resize(BuildBuffer.size() + 16384);
-		memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, CodePageData.data() + i * 16384, 16384);
+		memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, CodePageData->getPageAddress(i), 16384);
 	}
-	const uint32_t LastCodePageSize = CodePageData.size() % 16384;
-	SavedOffsets.CodePagePointers[CodePageCount - 1] = BuildBuffer.size();
+	const uint32_t LastCodePageSize = CodePageData->getLastPageSize();
+	SavedOffsets.CodePagePointers[CodePageData->getPageCount() - 1] = BuildBuffer.size();
 	BuildBuffer.resize(BuildBuffer.size() + LastCodePageSize);
-	memcpy(BuildBuffer.data() + BuildBuffer.size() - LastCodePageSize, CodePageData.data() + CodePageData.size() - LastCodePageSize, LastCodePageSize);
+	memcpy(BuildBuffer.data() + BuildBuffer.size() - LastCodePageSize, CodePageData->getPageAddress(CodePageData->getPageCount() - 1), LastCodePageSize);
 };
 void CompileBase::Write16384CodePages()
 {
-	SavedOffsets.CodePagePointers.resize(CodePageCount);
-	for (uint32_t i = 0; i < CodePageCount - 1; i++)
+	SavedOffsets.CodePagePointers.resize(CodePageData->getPageCount());
+	for (uint32_t i = 0; i < CodePageData->getPageCount() - 1; i++)
 	{
 
 		if (GetSpaceLeft(16384) < 16384)
@@ -811,17 +811,17 @@ void CompileBase::Write16384CodePages()
 		SavedOffsets.CodePagePointers[i] = BuildBuffer.size();
 
 		BuildBuffer.resize(BuildBuffer.size() + 16384);
-		memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, CodePageData.data() + i * 16384, 16384);
+		memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, CodePageData->getPageAddress(i), 16384);
 
 		PadNops();
 	}
 }
 void CompileBase::WriteFinalCodePage()
 {
-	const uint32_t LastCodePageSize = CodePageData.size() % 16384;
-	SavedOffsets.CodePagePointers[CodePageCount - 1] = BuildBuffer.size();
+	const uint32_t LastCodePageSize = CodePageData->getTotalSize() % 16384;
+	SavedOffsets.CodePagePointers[CodePageData->getPageCount() - 1] = BuildBuffer.size();
 	BuildBuffer.resize(BuildBuffer.size() + LastCodePageSize);
-	memcpy(BuildBuffer.data() + BuildBuffer.size() - LastCodePageSize, CodePageData.data() + CodePageData.size() - LastCodePageSize, LastCodePageSize);
+	memcpy(BuildBuffer.data() + BuildBuffer.size() - LastCodePageSize, CodePageData->getPageAddress(CodePageData->getPageCount() - 1), LastCodePageSize);
 	Pad();
 }
 void CompileBase::WriteNativesNoPadding()
@@ -923,18 +923,18 @@ void CompileRDR::fixFunctionCalls()
 		{
 			case CallInstructionType::FuncLoc:
 				ChangeInt24InCodePage(pos, CallInfo.CallLocation);
-				*(CodePageData.data() + CallInfo.CallLocation - 1) = BaseOpcodes->PushI24;
+				*(CodePageData->getCodePositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->PushI24;
 			break;
 			case CallInstructionType::Call:
 				if (pos > 1048575)
 				{
 					ChangeInt24InCodePage(pos, CallInfo.CallLocation);
-					*(CodePageData.data() + CallInfo.CallLocation - 1) = BaseOpcodes->PushI24;
-					*(CodePageData.data() + CallInfo.CallLocation + 4) = RDROpcodes.pCall;
+					*(CodePageData->getCodePositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->PushI24;
+					*(CodePageData->getCodePositionAddress(CallInfo.CallLocation) + 4) = RDROpcodes.pCall;
 				}
 				else
 				{
-					*(CodePageData.data() + CallInfo.CallLocation) = GetNewCallOpCode(pos);//any out of range errors already been caught
+					*(CodePageData->getCodePositionAddress(CallInfo.CallLocation)) = GetNewCallOpCode(pos);//any out of range errors already been caught
 					ChangeInt16InCodePage(GetNewCallOffset((uint16_t)pos), CallInfo.CallLocation + 1);
 				}
 			break;
@@ -1052,7 +1052,7 @@ void CompileRDR::Call()
 	if (it == FuncLocations.end())
 	{
 		DoesOpcodeHaveRoom(4);//4 because pcall can be separate
-		CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, func });
+		CallLocations.push_back({ CodePageData->getTotalSize(), CallInstructionType::Call, func });
 		AddInt24(0);//call, int16 loc / pushi24, int16 loc part
 		AddInt16(0);//int16 loc part 2, pcall
 	}
@@ -1135,7 +1135,7 @@ void CompileRDR::AddJumpTable()
 		AddInt8(len);
 		for (unsigned i = 0; i < jumpTable->getItemCount();i++)
 		{
-			jumpTableLocs.push_back({ CodePageData.size(), jumpTable->getJumpLocAsString(i) });
+			jumpTableLocs.push_back({ CodePageData->getTotalSize(), jumpTable->getJumpLocAsString(i) });
 			AddInt32(0);//place holder
 		}
 	}
@@ -1146,7 +1146,7 @@ void CompileRDR::AddJumpTable()
 		AddInt32(len);
 		for (unsigned i = 0; i < jumpTable->getItemCount(); i++)
 		{
-			jumpTableLocs.push_back({ CodePageData.size(), jumpTable->getJumpLocAsString(i) });
+			jumpTableLocs.push_back({ CodePageData->getTotalSize(), jumpTable->getJumpLocAsString(i) });
 			AddInt32(0);//place holder
 		}
 		AddImm(4);//Skip past the size of the array
@@ -1161,7 +1161,7 @@ void CompileRDR::WriteHeader()
 	AddInt32toBuff(0xA8D74300);//Page Base
 	AddInt32toBuff(0); //Page Map ptr
 	AddInt32toBuff(0); //codeBlocksListOffsetPtr
-	AddInt32toBuff(CodePageData.size());//code length
+	AddInt32toBuff(CodePageData->getTotalSize());//code length
 	AddInt32toBuff(HLData->getParameterCount());//script ParameterCount (this needs to be implemented)
 	AddInt32toBuff(HLData->getStaticCount());//statics count
 	AddInt32toBuff(0); //Statics offset
@@ -1181,16 +1181,16 @@ void CompileRDR::WritePointers()
 	AddInt32toBuff(0);//unkPTRData
 	Pad();
 
-	uint64_t padcount = Utils::Math::CeilDivInt(CodePageCount * 4, 16);
+	uint64_t padcount = Utils::Math::CeilDivInt(CodePageData->getPageCount() * 4, 16);
 	for (uint64_t i = 0; i < padcount; i++)
 		ForcePad();
 
 	//Write code page pointers
-	if (GetSpaceLeft(16384) < CodePageCount * 4)
+	if (GetSpaceLeft(16384) < CodePageData->getPageCount() * 4)
 		FillPageDynamic(16384);
 
 	SavedOffsets.CodeBlocks = BuildBuffer.size();
-	BuildBuffer.resize(BuildBuffer.size() + CodePageCount * 4, 0);
+	BuildBuffer.resize(BuildBuffer.size() + CodePageData->getPageCount() * 4, 0);
 
 
 	Pad();
@@ -1236,11 +1236,10 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 {
 	FilePadding = 0xCD;
 	ClearWriteVars();
-	CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
 
 	#pragma region Write_Pages_and_header
 
-	const uint32_t CodePagePtrsSize = CodePageCount * 4;
+	const uint32_t CodePagePtrsSize = CodePageData->getPageCount() * 4;
 
 	uint32_t TotalData = GetPadExpectedAmount(NativeHashMap.size() * 4) +
 		GetPadExpectedAmount(HLData->getStaticSize() * 4) +
@@ -1248,7 +1247,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 		GetPadExpectedAmount(40) + //header
 		GetPadExpectedAmount(CodePagePtrsSize);//code page pointers
 
-	uint32_t LastCodePageSize = GetPadExpectedAmount(CodePageData.size() % 16384);//code page pointers * padding for unk1
+	uint32_t LastCodePageSize = GetPadExpectedAmount(CodePageData->getTotalSize() % 16384);//code page pointers * padding for unk1
 
 	//cout << "Natives: " << GetPadExpectedAmount(NativeHashMap.size() * 4) << '\n';
 	//cout << "Statics: " << GetPadExpectedAmount(HLData->getStaticSize() * 4) << '\n';
@@ -1392,7 +1391,6 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 {
 	FilePadding = 0xCD;
 	ClearWriteVars();
-	CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
 
 	WriteCodePagesNoPadding();
 	WriteNativesNoPadding();
@@ -1537,11 +1535,11 @@ void CompileGTAV::fixFunctionCalls()
 		{
 			case CallInstructionType::FuncLoc:
 			ChangeInt24InCodePage(pos, CallInfo.CallLocation);
-			*(CodePageData.data() + CallInfo.CallLocation - 1) = BaseOpcodes->PushI24;
+			*(CodePageData->getCodePositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->PushI24;
 			break;
 			case CallInstructionType::Call:
 			ChangeInt24InCodePage(pos, CallInfo.CallLocation);
-			*(CodePageData.data() + CallInfo.CallLocation - 1) = BaseOpcodes->Call;
+			*(CodePageData->getCodePositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->Call;
 			break;
 			default: assert(false && "Invalid Call Instruction"); break;
 		}
@@ -1603,7 +1601,7 @@ void CompileGTAV::Call()
 	// gta5: 3 byte loc
 	DoesOpcodeHaveRoom(4);
 	AddOpcode(Call);
-	CallLocations.push_back({ CodePageData.size(), CallInstructionType::Call, DATA->getFunctionData() });
+	CallLocations.push_back({ CodePageData->getTotalSize(), CallInstructionType::Call, DATA->getFunctionData() });
 	AddInt24(0);
 }
 void CompileGTAV::PushString()
@@ -1702,7 +1700,7 @@ void CompileGTAV::WriteHeader()
 	AddInt32toBuff(0); //Unk1 ptr
 	AddInt32toBuff(0); //codeBlocksListOffsetPtr
 	AddInt32toBuff(0x11CD39A2);//unk2
-	AddInt32toBuff(CodePageData.size());//code length
+	AddInt32toBuff(CodePageData->getTotalSize());//code length
 	AddInt32toBuff(HLData->getParameterCount());//script ParameterCount (this needs to be implemented)
 	AddInt32toBuff(HLData->getStaticCount());//statics count
 	AddInt32toBuff(0);//GlobalsSize
@@ -1735,11 +1733,11 @@ void CompileGTAV::WritePointers()
 	Pad();
 
 	//Write code page pointers
-	if (GetSpaceLeft(16384) < CodePageCount * 4)
+	if (GetSpaceLeft(16384) < CodePageData->getPageCount() * 4)
 		FillPageDynamic(16384);
 
 	SavedOffsets.CodeBlocks = BuildBuffer.size();
-	BuildBuffer.resize(BuildBuffer.size() + CodePageCount * 4, 0);
+	BuildBuffer.resize(BuildBuffer.size() + CodePageData->getPageCount() * 4, 0);
 	Pad();
 
 	//Write string page pointers
@@ -1804,7 +1802,6 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 {
 	FilePadding = 0;
 	ClearWriteVars();
-	CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
 	StringPageCount = Utils::Math::CeilDivInt(StringPageData.size(), 16384);
 
 	WriteHeader();
@@ -1900,7 +1897,7 @@ void CompileGTAVPC::WriteHeader()
 	AddInt64toBuff(0); //Unk1 ptr
 	AddInt64toBuff(0); //codeBlocksListOffsetPtr
 	AddInt32toBuff(0xB0AC45A4);//unk2
-	AddInt32toBuff(CodePageData.size());//code length
+	AddInt32toBuff(CodePageData->getTotalSize());//code length
 	AddInt32toBuff(HLData->getParameterCount());//script ParameterCount (this needs to be implemented)
 	AddInt32toBuff(HLData->getStaticCount());//statics count
 	AddInt32toBuff(0);//GlobalsSize
@@ -1934,11 +1931,11 @@ void CompileGTAVPC::WritePointers()
 	Pad();
 
 	//Write code page pointers
-	if (GetSpaceLeft(16384) < CodePageCount * 4)
+	if (GetSpaceLeft(16384) < CodePageData->getPageCount() * 4)
 		FillPageDynamic(16384);
 
 	SavedOffsets.CodeBlocks = BuildBuffer.size();
-	BuildBuffer.resize(BuildBuffer.size() + CodePageCount * 8, 0);
+	BuildBuffer.resize(BuildBuffer.size() + CodePageData->getPageCount() * 8, 0);
 	Pad();
 
 	//Write string page pointers
@@ -1983,7 +1980,7 @@ void CompileGTAVPC::WriteNatives()
 		BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
 		for (unordered_map<uint64_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
 		{
-			*(uint64_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 8) = _rotr64(nativeTranslation.Translate(it->first), it->second + CodePageData.size());
+			*(uint64_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 8) = _rotr64(nativeTranslation.Translate(it->first), it->second + CodePageData->getTotalSize());
 		}
 
 		Pad();
@@ -2029,7 +2026,6 @@ void CompileGTAVPC::XSCWrite(const char* path, bool AddRsc7Header)
 {
 	FilePadding = 0;
 	ClearWriteVars();
-	CodePageCount = Utils::Math::CeilDivInt(CodePageData.size(), 16384);
 	StringPageCount = Utils::Math::CeilDivInt(StringPageData.size(), 16384);
 
 	WriteHeader();
