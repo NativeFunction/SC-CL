@@ -12,7 +12,7 @@ void InitMenuExecution();
 void AsynchronousLoop();
 
 //For Description and AlternateExecution use nullptr for disabled
-void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt);
+void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt, bool IsMenuDynamic);
 void AddItemAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, void(*Callback)(), void(*AlternateCallback)());
 void AddItemIntAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), void(*AlternateCallback)());
 void AddItemFloatAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)(), void(*AlternateCallback)());

@@ -15,6 +15,8 @@ enum MenuBits
 {
 	MB_FlyMod,
 	MB_FlyModToggle,
+	MB_GodMode,
+	MB_VehicleHelper
 };
 static int MenuLoopedBitset;
 #pragma endregion
@@ -145,21 +147,55 @@ void Option_FlyMod()
 		bit_reset(&MenuLoopedBitset, MB_FlyMod);
 
 }
+void Option_GodMode()
+{
+	if (GetCurrentItem()->Selection.Value.Int)
+		bit_set(&MenuLoopedBitset, MB_GodMode);
+	else
+	{
+		Ped MyPed = player_ped_id();
+		bit_reset(&MenuLoopedBitset, MB_GodMode);
+		set_player_invincible(player_id(), false);
+		set_ped_can_be_knocked_off_vehicle(MyPed, 0);
+		set_ped_can_be_dragged_out(MyPed, true);
+		set_ped_can_ragdoll(MyPed, true);
+		set_ped_can_ragdoll_from_player_impact(MyPed, true);
+		set_ped_config_flag(MyPed, 32, true);
+	}
+
+}
+void Option_VehicleHelper()
+{
+	if (GetCurrentItem()->Selection.Value.Int)
+		bit_set(&MenuLoopedBitset, MB_VehicleHelper);
+	else
+	{
+		bit_reset(&MenuLoopedBitset, MB_VehicleHelper);
+		Vehicle MyVeh = GetCurrentVehicle();
+		if (MyVeh)
+		{
+			set_vehicle_can_be_visibly_damaged(MyVeh, true);
+			set_entity_can_be_damaged(MyVeh, true);
+			set_entity_invincible(MyVeh, false);
+			set_vehicle_can_break(MyVeh, true);
+			set_vehicle_engine_can_degrade(MyVeh, true);
+		}
+		
+	}
+
+}
+
 #pragma endregion
 
 #pragma region Menus
 void Menu_PlayerList()
 {
-	SetHeader("Player list");
+	SetHeaderAdvanced("Player list", false, true);
 	for (int i = 0; i < LobbySizeWithSpectators; i++)
 	{
 		if (IsPlayerInGame(i))
 			AddItemPlayer(i, Option_Blank);
 	}
-}
-void Async_PlayerList()
-{
-
 }
 void Menu_LargeSubmenuTest()
 {
@@ -215,6 +251,16 @@ void Menu_LargeSubmenuTest()
 	AddItem("Item49", Option_Blank);
 	AddItem("Item50", Option_Blank);
 }
+void Menu_PlayerOptions()
+{
+	SetHeader("Player Options");
+	AddItemBoolAdvanced("God Mode", false, "Makes player invincible.", nullptr, false, bit_test(MenuLoopedBitset, MB_GodMode), Option_GodMode, nullptr);
+}
+void Menu_VehicleOptions()
+{
+	SetHeader("Vehicle Options");
+	AddItemBoolAdvanced("Vehicle Helper", false, "Makes vehicle invincible.", nullptr, false, bit_test(MenuLoopedBitset, MB_VehicleHelper), Option_VehicleHelper, nullptr);
+}
 void Menu_MiscOptions()
 {
 	SetHeader("Misc Options");
@@ -242,6 +288,8 @@ inline void MainMenu()
 	SetHeader("Main Menu");
 
 	AddItemMenu("Player List", Menu_PlayerList);
+	AddItemMenu("Player Options", Menu_PlayerOptions);
+	AddItemMenu("Vehicle Options", Menu_VehicleOptions);
 	AddItemMenu("Misc Options", Menu_MiscOptions);
 	AddItemMenu("Debug Options", Menu_DebugOptions);
 
@@ -316,9 +364,46 @@ void FlyModController(Player CurrentPlayerPed)
 inline void LoopedOptions()
 {
 	Player CurrentPlayerPed = player_ped_id();
+	Vehicle CurrentVehicle = GetCurrentVehicle();
 
 	if (bit_test(MenuLoopedBitset, MB_FlyMod) && !is_pause_menu_active())
 		FlyModController(CurrentPlayerPed);
+
+	if (bit_test(MenuLoopedBitset, MB_GodMode))
+	{
+		set_player_invincible(player_id(), true);
+		set_ped_can_ragdoll(CurrentPlayerPed, false);
+		set_ped_can_ragdoll_from_player_impact(CurrentPlayerPed, false);
+
+		if (is_ped_in_any_vehicle(CurrentPlayerPed, false))
+		{
+			set_ped_can_be_knocked_off_vehicle(CurrentPlayerPed, 1);
+
+			if (!network_is_game_in_progress())
+			{
+				set_ped_can_be_dragged_out(CurrentPlayerPed, false);
+				set_ped_config_flag(CurrentPlayerPed, 32, false);
+			}
+		}
+
+	}
+	if (bit_test(MenuLoopedBitset, MB_VehicleHelper) && CurrentVehicle != 0)
+	{
+		set_vehicle_can_be_visibly_damaged(CurrentVehicle, false);
+		set_entity_can_be_damaged(CurrentVehicle, false);
+		set_vehicle_tyres_can_burst(CurrentVehicle, false);
+		set_entity_invincible(CurrentVehicle, true);
+		set_vehicle_can_break(CurrentVehicle, false);
+		set_vehicle_engine_can_degrade(CurrentVehicle, false);
+		set_vehicle_undriveable(CurrentVehicle, false);
+		set_entity_health(CurrentVehicle, 1000);
+		set_vehicle_engine_health(CurrentVehicle, 1000.0f);
+		set_vehicle_petrol_tank_health(CurrentVehicle, 1000.0f);
+		set_vehicle_body_health(CurrentVehicle, 1000.0f);
+		if (!get_is_vehicle_engine_running(CurrentVehicle))
+			set_vehicle_engine_on(CurrentVehicle, true, true, false);
+	}
+	
 }
 #pragma endregion
 

@@ -39,11 +39,12 @@ static void ResetCurrentItem()
 #pragma endregion
 
 #pragma region ItemTypes
-void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt)
+void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt, bool IsMenuDynamic)
 {
 	AddItemCounter = 0;
 	Container->TotalItemCount = 0;
-	
+	Container->IsCurrentMenuDynamic = IsMenuDynamic;
+
 	Container->Ui.HeaderText = (char*)HeaderText;
 	Container->Ui.IsHeaderGxt = IsItemGxt;
 }
@@ -324,6 +325,7 @@ void SetHeader(const char* HeaderText)
 {
 	AddItemCounter = 0;
 	Container->TotalItemCount = 0;
+	Container->IsCurrentMenuDynamic = false;
 
 	Container->Ui.HeaderText = (char*)HeaderText;
 }
@@ -521,6 +523,7 @@ void AddItemPlayer(int PlayerId, void(*Callback)())
 //TODO: add bool group that sets all other bools on menu to 0 (enum expansion)
 //TODO: add left right scroll bar with dds in timerbars.xtd
 //TODO: add item spacer item
+//TODO: support going back to selected index on back press
 
 //TODO: add item small spacers between items to make items appear as buttons
 //TODO: have cursor blink slow on selected item
