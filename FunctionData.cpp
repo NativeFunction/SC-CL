@@ -907,6 +907,7 @@ void FunctionData::addOpNot()
 			case OK_Not:
 				delete Instructions.back();
 				Instructions.pop_back();
+				addOpIsNotZero();
 				return;
 			default:
 				Instructions.push_back(new Opcode(OK_Not));

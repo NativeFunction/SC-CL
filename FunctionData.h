@@ -437,9 +437,8 @@ public:
 			switch (last->getKind()){
 				case OK_JumpFalse:
 					Instructions.pop_back();
-					addOpNot();
-					last->setString(loc);
-					Instructions.push_back(last);
+					addOpJumpTrue(last->getString());
+					delete last;
 					break;
 				case OK_JumpEQ:
 					last->setKind(OK_JumpNE);
