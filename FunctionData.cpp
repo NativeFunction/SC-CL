@@ -603,7 +603,7 @@ void FunctionData::jumpThreading()
 {
 	if (getOptLevel() <= OptimisationLevel::OL_Trivial)
 		return;
-	for (int count = 0; count < (getOptLevel() > OptimisationLevel::OL_Normal ? 3 : 1); count++){
+	for (int count = 0; count < (getOptLevel() > OptimisationLevel::OL_Normal ? 3 : 1); count++){//looping it takes more compile time so only on O3 but it will be able to produce more optimised code
 		unordered_map<string, vector<size_t>> JumpLocs;
 		unordered_map<string, vector<SwitchCaseStorage*>> switchCaseLocs;
 		unordered_map<string, vector<SwitchStorage*>> switchDefaultLocs;
@@ -687,6 +687,7 @@ void FunctionData::jumpThreading()
 					for (auto index : locs->second){
 						Instructions[index]->setString(it->second);
 					}
+					JumpLocs.erase(it->first);
 				}
 			}
 			{
@@ -696,6 +697,7 @@ void FunctionData::jumpThreading()
 						switchCase->setCaseLocation(it->second);
 					}
 				}
+				switchCaseLocs.erase(it->first);
 			}
 			{
 				auto locs = switchDefaultLocs.find(it->first);
@@ -704,6 +706,7 @@ void FunctionData::jumpThreading()
 						switchStore->overWriteDefaultJumpLoc(it->second);
 					}
 				}
+				switchDefaultLocs.erase(it->first);
 			}
 			{
 				auto locs = jumpTableLocs.find(it->first);
@@ -712,6 +715,7 @@ void FunctionData::jumpThreading()
 						jTable.first->setJumpLoc(jTable.second, it->second);
 					}
 				}
+				jumpTableLocs.erase(it->first);
 			}
 		}
 		for (auto it = LabelLocs.begin(); it != LabelLocs.end(); it++){
