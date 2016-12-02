@@ -4,6 +4,7 @@
 #include <vector>
 #include <cassert>
 #include "Utils.h"
+#include <memory>
 
 enum OpcodeKind{
 	OK_Null,
@@ -170,8 +171,10 @@ public:
 	}
 
 	std::string getCaseLocation()const { return _jumpLoc; }
+	void setCaseLocation(const std::string& newCaseLoc){ _jumpLoc = newCaseLoc; }
 	int getCaseValue()const { return _caseVal; }
 	bool hasNextCase()const { return _next; }
+	SwitchCaseStorage *getNextCase(){ return _next; }
 	const SwitchCaseStorage *getNextCase()const { return _next; }
 	void setNextCase(SwitchCaseStorage* next)
 	{
@@ -222,11 +225,17 @@ public:
 		}
 	}
 	const SwitchCaseStorage* getFirstCase() const { return _first; }
+	SwitchCaseStorage* getFirstCase(){ return _first; }
 	uint32_t getCount() const{ return _count; }
 	void setDefaultJumpLoc(const std::string& defCase)
 	{
 		assert(!_defaultJumpLoc && "Default jump case alread specified");
 		_defaultJumpLoc = new StringStorage(defCase);
+	}
+	void overWriteDefaultJumpLoc(const std::string& newDefCase){
+		assert(_defaultJumpLoc && "Default jump case not already specified");
+		delete _defaultJumpLoc;
+		_defaultJumpLoc = new StringStorage(newDefCase);
 	}
 	void setDefaultJumpLoc(llvm::StringRef defCase)
 	{
@@ -281,30 +290,25 @@ public:
 struct JumpTableStorage
 {
 private:
-	std::vector<StringStorage*> jumpLocs;
+	std::vector<std::unique_ptr<StringStorage>> jumpLocs;
 public:
 	JumpTableStorage(){}
 	uint32_t getByteSize()const{ return jumpLocs.size() << 2; }
 	uint32_t getItemCount()const{ return jumpLocs.size(); }
-	void addJumpLoc(const std::string& jumpLoc){ jumpLocs.push_back(new StringStorage(jumpLoc)); }
-	void addJumpLoc(llvm::StringRef jumpLoc){ jumpLocs.push_back(new StringStorage(jumpLoc)); }
-	void addJumpLoc(StringStorage* jumpLoc){ jumpLocs.push_back(jumpLoc); }
+	void addJumpLoc(const std::string& jumpLoc){ jumpLocs.push_back(std::make_unique<StringStorage>(jumpLoc)); }
+	void addJumpLoc(llvm::StringRef jumpLoc){ jumpLocs.push_back(std::make_unique<StringStorage>(jumpLoc)); }
 	const StringStorage* getJumpLoc(unsigned index) const
 	{
 		assert(index >= 0 && index < jumpLocs.size() && "Index out of range for jump table");
-		return jumpLocs[index];
+		return jumpLocs[index].get();
 	}
 	std::string getJumpLocAsString(unsigned index) const
 	{
 		assert(index >= 0 && index < jumpLocs.size() && "Index out of range for jump table");
 		return jumpLocs[index]->toString();
 	}
-	~JumpTableStorage()
-	{
-		for (auto item : jumpLocs)
-		{
-			delete item;
-		}
+	void setJumpLoc(unsigned index, const std::string& newJumpLoc){
+		jumpLocs[index] = std::make_unique<StringStorage>(newJumpLoc);
 	}
 };
 

@@ -6,6 +6,7 @@
 #include <random>
 #include <chrono>
 #include "Script.h"
+#include <unordered_map>
 
 
 using namespace std;
@@ -593,6 +594,132 @@ void FunctionData::optimisePushBytes()
 						i++;
 					}
 				}
+			}
+		}
+	}
+}
+
+void FunctionData::jumpThreading()
+{
+	if (getOptLevel() <= OptimisationLevel::OL_Trivial)
+		return;
+	for (int count = 0; count < (getOptLevel() > OptimisationLevel::OL_Normal ? 3 : 1); count++){
+		unordered_map<string, vector<size_t>> JumpLocs;
+		unordered_map<string, vector<SwitchCaseStorage*>> switchCaseLocs;
+		unordered_map<string, vector<SwitchStorage*>> switchDefaultLocs;
+		unordered_map<string, vector<pair<JumpTableStorage*, size_t>>> jumpTableLocs;
+		vector<pair<string, size_t>> LabelLocs;
+		vector<pair<string, string>> JumpReplace;
+		const size_t instructionCount = Instructions.size();
+		for (size_t i = 0; i < instructionCount; i++){
+			auto opcode = Instructions[i];
+			switch (opcode->getKind()){
+				case OK_Jump:
+					JumpLocs[opcode->getString()].push_back(i);
+					//remove any code immediately after an unconditional jump that isnt a Label, it will never be executed
+					for (i++; i < instructionCount; i++){
+						auto next = Instructions[i];
+						if (next->getKind() != OK_Label){
+							next->makeNull();
+						}
+						else{
+							i--;
+							break;
+						}
+					}
+					break;
+				case OK_JumpFalse:
+				case OK_JumpEQ:
+				case OK_JumpNE:
+				case OK_JumpGT:
+				case OK_JumpGE:
+				case OK_JumpLT:
+				case OK_JumpLE:
+				case OK_LabelLoc:
+					JumpLocs[opcode->getString()].push_back(i);
+					break;
+				case OK_Switch:
+				{
+					auto switchStorage = opcode->storage.switchCase;
+					for (auto switchCase = switchStorage->getFirstCase(); switchCase; switchCase = switchCase->getNextCase()){
+						switchCaseLocs[switchCase->getCaseLocation()].push_back(switchCase);
+					}
+					if (switchStorage->hasDefaultJumpLoc()){
+						switchDefaultLocs[switchStorage->getDefaultJumpLoc()->toString()].push_back(switchStorage);
+					}
+					break;
+				}
+				case OK_JumpTable:
+				{
+					auto jumpTable = opcode->storage.jTable;
+					for (size_t i = 0; i < jumpTable->getItemCount(); i++){
+						jumpTableLocs[jumpTable->getJumpLocAsString(i)].push_back(make_pair(jumpTable, i));
+					}
+				}
+				case OK_Label:
+				{
+					const string orig = opcode->getString();
+					LabelLocs.push_back(make_pair(orig, i));
+					for (i++; i < instructionCount; i++){
+						auto next = Instructions[i];
+						if (next->getKind() == OK_Null)//ignore nops
+							continue;
+						if (next->getKind() == OK_Jump){
+
+							const string repl = next->getString();
+							if (orig != repl){//would only be the same in an infinite loop
+								JumpReplace.push_back(make_pair(orig, repl));
+							}
+						}
+						i--;
+						break;
+					}
+					break;
+				}
+				default:
+					break;
+			}
+		}
+		for (auto it = JumpReplace.begin(); it != JumpReplace.end(); it++){
+			{
+				auto locs = JumpLocs.find(it->first);
+				if (locs != JumpLocs.end()){
+					for (auto index : locs->second){
+						Instructions[index]->setString(it->second);
+					}
+				}
+			}
+			{
+				auto locs = switchCaseLocs.find(it->first);
+				if (locs != switchCaseLocs.end()){
+					for (auto switchCase : locs->second){
+						switchCase->setCaseLocation(it->second);
+					}
+				}
+			}
+			{
+				auto locs = switchDefaultLocs.find(it->first);
+				if (locs != switchDefaultLocs.end()){
+					for (auto switchStore : locs->second){
+						switchStore->overWriteDefaultJumpLoc(it->second);
+					}
+				}
+			}
+			{
+				auto locs = jumpTableLocs.find(it->first);
+				if (locs != jumpTableLocs.end()){
+					for (auto jTable : locs->second){
+						jTable.first->setJumpLoc(jTable.second, it->second);
+					}
+				}
+			}
+		}
+		for (auto it = LabelLocs.begin(); it != LabelLocs.end(); it++){
+			if (JumpLocs.find(it->first) == JumpLocs.end() &&
+				switchCaseLocs.find(it->first) == switchCaseLocs.end() &&
+				switchDefaultLocs.find(it->first) == switchDefaultLocs.end() &&
+				jumpTableLocs.find(it->first) == jumpTableLocs.end()){
+				Instructions[it->second]->makeNull();
 			}
 		}
 	}
