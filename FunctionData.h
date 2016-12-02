@@ -406,7 +406,73 @@ public:
 #pragma region Jumps
 	void addOpJump(const std::string& loc)
 	{
-		Instructions.push_back(Opcode::makeStringOpcode(OK_Jump, loc));
+		if (getOptLevel() > OptimisationLevel::OL_Trivial && Instructions.size()){
+			//this optimisation will make control flow look weird if there was code straight after the jump
+			//but that code would never get executed so the end result would be the same.
+			//Its main use is for things like in a loop
+			/*
+			for (int i = 0;I<5;i++){
+				if (!check(i)){
+					continue;
+				}
+				doSomething(i);
+			}			
+			the condition will look like
+
+			---GetFrame i
+			---Call @Check
+			---JumpFalse @ContinueJump
+
+			instead of
+
+			---GetFrame i
+			---Call @Check
+			---Not
+			---JumpFalse @CondOK
+			---Jump &ContinueJump
+
+			:CondOk
+			*/
+			auto last = Instructions.back();
+			switch (last->getKind()){
+				case OK_JumpFalse:
+					Instructions.pop_back();
+					addOpNot();
+					last->setString(loc);
+					Instructions.push_back(last);
+					break;
+				case OK_JumpEQ:
+					last->setKind(OK_JumpNE);
+					last->setString(loc);
+					break;
+				case OK_JumpNE:
+					last->setKind(OK_JumpEQ);
+					last->setString(loc);
+					break;
+				case OK_JumpGT:
+					last->setKind(OK_JumpLE);
+					last->setString(loc);
+					break;
+				case OK_JumpGE:
+					last->setKind(OK_JumpLT);
+					last->setString(loc);
+					break;
+				case OK_JumpLT:
+					last->setKind(OK_JumpGE);
+					last->setString(loc);
+					break;
+				case OK_JumpLE:
+					last->setKind(OK_JumpGT);
+					last->setString(loc);
+					break;
+				default:
+					Instructions.push_back(Opcode::makeStringOpcode(OK_Jump, loc));
+					break;
+			}
+		}
+		else{
+			Instructions.push_back(Opcode::makeStringOpcode(OK_Jump, loc));
+		}
 	}
 	void addOpJumpTrue(const std::string& loc)
 	{

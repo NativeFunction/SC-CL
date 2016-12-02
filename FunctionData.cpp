@@ -904,6 +904,10 @@ void FunctionData::addOpNot()
 			case OK_PushInt:
 				back->setInt(Instructions.back()->getInt() == 0);
 				return;
+			case OK_Not:
+				delete Instructions.back();
+				Instructions.pop_back();
+				return;
 			default:
 				Instructions.push_back(new Opcode(OK_Not));
 				return;

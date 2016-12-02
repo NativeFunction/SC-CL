@@ -5267,7 +5267,7 @@ public:
 			{
 				case obf_none: break;
 				case obf_low: func->codeLayoutRandomisation(scriptData, 50, 30, false, false); break;
-				case obf_default: func->codeLayoutRandomisation(scriptData, 30, 15, false, true); break;
+				case obf_default: func->codeLayoutRandomisation(scriptData, 30, 15, false, false); break;
 				case obf_high: func->codeLayoutRandomisation(scriptData, 15, 5, false, true); break;
 				case obf_veryhigh: func->codeLayoutRandomisation(scriptData, 5, 1, false, true); break;
 				default: Throw("Unknown Obfuscation Level: " + Option_ObfuscationLevel);
