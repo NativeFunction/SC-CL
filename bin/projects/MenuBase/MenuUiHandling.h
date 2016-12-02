@@ -53,6 +53,12 @@ typedef struct ItemContainer
 
 } ItemContainer;
 
+typedef struct MenuLevel
+{
+	void(*UpdateToMenuLevel)();
+	short SavedMenuPos[2];//menu pos for going back (curson index, startindex)
+} MenuLevel;
+
 typedef struct Page//Menu Page
 {
 	vector2 UiTestCoords;
@@ -65,9 +71,10 @@ typedef struct Page//Menu Page
 	int CursorIndex;
 	int TotalItemCount;
 	int ItemStartIndex;//index for draw MaxDisplayableItems
+	bool IsCurrentMenuDynamic;//Dynamic Updating
 
 	int CurrentMenuLevel;
-	void(*UpdateToMenuLevel[MaxMenuLevels])();//might have to add a param for it ItemStartIndex
+	MenuLevel Level[MaxMenuLevels];
 	
 	//size: 4
 	union

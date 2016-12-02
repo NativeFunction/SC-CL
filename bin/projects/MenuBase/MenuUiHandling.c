@@ -12,7 +12,7 @@ static Page Container =
 {
 	.Ui.HeaderFont = Font_SignPainter_HouseScript,
 	.Ui.TextFont = Font_Chalet_LondonNineteenSixty,
-	.UpdateToMenuLevel = { ExecutionEntry },
+	.Level = { ExecutionEntry },
 	.Ui.DrawPos = { 0.76f, 0.16f },
 	.Ui.BackgroundDrawSize = { 0.25000, 0.08f },
 	.Ui.BackgroundColor = { 0, 0, 0, 180 },
@@ -286,7 +286,7 @@ void ParseMenuControls()
 				{
 					//sets draw index for scroll
 					Container.ItemStartIndex = Container.TotalItemCount - MaxDisplayableItems;
-					Container.UpdateToMenuLevel[Container.CurrentMenuLevel]();//update text for scroll
+					Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();//update text for scroll
 				}
 
 			}
@@ -294,7 +294,7 @@ void ParseMenuControls()
 			{
 				Container.ItemStartIndex--;
 				Container.CursorIndex--;
-				Container.UpdateToMenuLevel[Container.CurrentMenuLevel]();//update text for scroll
+				Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();//update text for scroll
 			}
 			else
 				Container.CursorIndex--;
@@ -308,7 +308,7 @@ void ParseMenuControls()
 				if (Container.TotalItemCount > MaxDisplayableItems)
 				{
 					Container.ItemStartIndex = 0;
-					Container.UpdateToMenuLevel[Container.CurrentMenuLevel]();//update text for scroll
+					Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();//update text for scroll
 				}
 			}
 			else if (Container.TotalItemCount > MaxDisplayableItems &&
@@ -317,7 +317,7 @@ void ParseMenuControls()
 			{
 				Container.CursorIndex++;
 				Container.ItemStartIndex = Container.CursorIndex - (MaxDisplayableItems - 1);
-				Container.UpdateToMenuLevel[Container.CurrentMenuLevel]();//update text for scroll
+				Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();//update text for scroll
 			}
 			else
 				Container.CursorIndex++;
@@ -408,12 +408,12 @@ void ParseMenuControls()
 						Container.CurrentMenuLevel++;
 						if (Container.CurrentMenuLevel < MaxMenuLevels)
 						{
-							Container.UpdateToMenuLevel[Container.CurrentMenuLevel] = Container.Item[GetRelativeCursorIndex].Execute;
+							Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel = Container.Item[GetRelativeCursorIndex].Execute;
 
 							//Update to menu level
 							Container.ItemStartIndex = 0;
 							Container.CursorIndex = 0;
-							Container.UpdateToMenuLevel[Container.CurrentMenuLevel]();
+							Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
 							return;
 						}
 						else
@@ -458,12 +458,12 @@ void ParseMenuControls()
 		{
 			PlayMenuSound("BACK");
 			Container.CurrentMenuLevel--;
-			if (Container.UpdateToMenuLevel[Container.CurrentMenuLevel] != nullptr)
+			if (Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel != nullptr)
 			{
 				//TODO: update to last sel cursor index
 				Container.ItemStartIndex = 0;
 				Container.CursorIndex = 0;
-				Container.UpdateToMenuLevel[Container.CurrentMenuLevel]();
+				Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
 			}
 			else
 				Throw(straddiGlobal("MenuLevel change was null at: ", Container.CurrentMenuLevel));
@@ -1005,6 +1005,31 @@ void DrawMenu()
 }
 #pragma endregion
 
+void DynamicMenuHandling()
+{
+	int SavedCursorIndex = Container.CursorIndex;
+	char* SavedOptions[MaxDisplayableItems];
+
+	if (Container.TotalItemCount > MaxDisplayableItems)
+	{
+	}
+	else
+	{
+		Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
+		for (int i = 0; i < GetItemCountWithMaxItemLimit(); i++)
+		{
+			if (are_strings_equal(Container.Item[i].Ui.ItemText, SavedOptions[SavedCursorIndex]))
+			{
+				Container.CursorIndex = i;
+				break;
+			}
+
+		}
+
+
+	}
+}
+
 void InitMenuDraw()
 {
 	InitMenuExecution();
@@ -1012,7 +1037,7 @@ void InitMenuDraw()
 	Container.Loading.IsMenuLoading = false;
 	Container.Ui.HeaderFont = Font_SignPainter_HouseScript;
 	Container.Ui.TextFont = Font_Chalet_LondonNineteenSixty;
-	Container.UpdateToMenuLevel[0] = ExecutionEntry;
+	Container.Level[0] = (MenuLevel) { ExecutionEntry, {0, 0} };
 	Container.Ui.DrawPos = (vector2) { 0.76f, 0.16f };
 	Container.Ui.BackgroundDrawSize = (vector2) { 0.25000, 0.08f };
 	Container.Ui.BackgroundColor = (RGBA) { 0, 0, 0, 180 };
@@ -1063,6 +1088,9 @@ void HandleMenuUi()
 
 		DisableUnusedInputs();
 		ParseMenuControls();
+
+		if(Container.IsCurrentMenuDynamic)
+			DynamicMenuHandling();
 
 		DrawMenu();
 	}
