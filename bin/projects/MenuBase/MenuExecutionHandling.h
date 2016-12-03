@@ -19,11 +19,13 @@ void AddItemFloatAdvanced(const char* ItemText, bool IsItemGxt, const char* Desc
 void AddItemBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool StartIndex, void(*Callback)(), void(*AlternateCallback)());
 void AddItemEnumAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), const char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)());
 void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, void(*Callback)());
-void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, flint Param, void(*Callback)(), void(*AlternateCallback)());
+void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, int Param, void(*Callback)(), void(*AlternateCallback)());
 void AddItemIntBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, int MinValue, int MaxValue, int StartIndex, int Precision, bool BoolStartIndex, void(*Callback)(), void(*AlternateCallback)());
 void AddItemEnumBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, int MinValue, int MaxValue, int StartIndex, int Precision, bool BoolStartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)());
 void AddItemFloatBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, float MinValue, float MaxValue, float StartIndex, float Precision, bool BoolStartIndex, void(*Callback)(), void(*AlternateCallback)());
 void AddItemPlayerAdvanced(int PlayerId, const char* Description, const char* AltExeControlText, bool IsDisabled, void(*Callback)(), void(*AlternateCallback)());
+void AddItemVehicleAdvanced(int VehicleHash, const char* Description, const char* AltExeControlText, bool IsDisabled, void(*Callback)(), void(*AlternateCallback)());
+
 
 void SetHeader(const char* HeaderText);
 void AddItem(const char* ItemText, void(*Callback)());
@@ -32,12 +34,12 @@ void AddItemFloat(const char* ItemText, bool ExecuteOnChange, float MinValue, fl
 void AddItemBool(const char* ItemText, bool StartIndex, void(*Callback)());
 void AddItemEnum(const char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex));
 void AddItemMenu(const char* ItemText, void(*Callback)());
-void AddItemWithParam(const char* ItemText, flint Param, void(*Callback)());
+void AddItemWithParam(const char* ItemText, int Param, void(*Callback)());
 void AddItemIntBool(const char* ItemText, int MinValue, int MaxValue, int StartIndex, bool BoolStartIndex, void(*Callback)());
 void AddItemEnumBool(const char* ItemText, int MinValue, int MaxValue, int StartIndex, bool BoolStartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex));
 void AddItemFloatBool(const char* ItemText, float MinValue, float MaxValue, float StartIndex, float Precision, bool BoolStartIndex, void(*Callback)());
 void AddItemPlayer(int PlayerId, void(*Callback)());
-
+void AddItemVehicle(int VehicleHash, void(*Callback)());
 
 ItemContainer* GetCurrentItem();
 int FloatToPrecision(float Precision);

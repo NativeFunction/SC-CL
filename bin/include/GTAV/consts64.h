@@ -1151,3 +1151,12 @@ typedef enum PickupHash
 	//please add pc dlc pickups
 	
 } PickupHash;
+
+enum Tuneable
+{//TODO: Dump rest of tuneables into enum format
+	TUNEABLE_BASE = 262145,
+	TUNEABLE_IDLEKICK_WARNING1 = 86,
+	TUNEABLE_IDLEKICK_WARNING2 = 87,
+	TUNEABLE_IDLEKICK_WARNING3 = 88,
+	TUNEABLE_IDLEKICK_KICK = 89,
+};

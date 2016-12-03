@@ -405,6 +405,9 @@ void ParseMenuControls()
 					break;
 					case MST_Menu:
 					{
+						Container.Level[Container.CurrentMenuLevel].SavedCursor.CursorIndex = Container.CursorIndex;
+						Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex = Container.ItemStartIndex;
+
 						Container.CurrentMenuLevel++;
 						if (Container.CurrentMenuLevel < MaxMenuLevels)
 						{
@@ -461,8 +464,8 @@ void ParseMenuControls()
 			if (Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel != nullptr)
 			{
 				//TODO: update to last sel cursor index
-				Container.ItemStartIndex = 0;
-				Container.CursorIndex = 0;
+				Container.ItemStartIndex = Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex;
+				Container.CursorIndex = Container.Level[Container.CurrentMenuLevel].SavedCursor.CursorIndex;
 				Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
 			}
 			else

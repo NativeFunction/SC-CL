@@ -192,7 +192,7 @@ void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Descr
 
 	Container->TotalItemCount++;
 }
-void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, flint Param, void(*Callback)(), void(*AlternateCallback)())
+void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, int Param, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -319,7 +319,26 @@ void AddItemPlayerAdvanced(int PlayerId, const char* Description, const char* Al
 
 	Container->TotalItemCount++;
 }
+void AddItemVehicleAdvanced(int VehicleHash, const char* Description, const char* AltExeControlText, bool IsDisabled, void(*Callback)(), void(*AlternateCallback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Selection.Value.Int = VehicleHash;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)get_display_name_from_vehicle_model(VehicleHash);
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
+		if (IsDisabled)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
+		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
 
 void SetHeader(const char* HeaderText)
 {
@@ -429,7 +448,7 @@ void AddItemMenu(const char* ItemText, void(*Callback)())
 
 	Container->TotalItemCount++;
 }
-void AddItemWithParam(const char* ItemText, flint Param, void(*Callback)())
+void AddItemWithParam(const char* ItemText, int Param, void(*Callback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -514,6 +533,20 @@ void AddItemPlayer(int PlayerId, void(*Callback)())
 		Container->Item[AddItemCounter].Ui.ItemText = (char*)get_player_name(PlayerId);
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].Selection.Type = MST_Player;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
+void AddItemVehicle(int VehicleHash, void(*Callback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Selection.Value.Int = VehicleHash;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)get_display_name_from_vehicle_model(VehicleHash);
+		Container->Item[AddItemCounter].Execute = Callback;
+		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		AddItemCounter++;
 	}
 
@@ -634,18 +667,23 @@ bool UpdateBoolConditionalFloor(bool Condition, bool* BoolToSet)
 }
 void StartAsynchronousFunction(bool(*AsynchronousFunction)(uint CurrentFrame, ...), const uint ParamCount, uint FramesToLoop, int Params[MaxAsyncParams])
 {
-	if (ParamCount <= MaxAsyncParams)
+	if ((int)AsyncFunction == nullptr && AsyncFrameCount == 0)
 	{
-		AsyncFrameCount = FramesToLoop;
-		Container->Loading.FramesToLoad = 0;
-		AsyncFunction = AsynchronousFunction;
-		memset(AsyncFunctionParams, 0, sizeof(AsyncFunctionParams));
-		//*AsyncFunctionParams = (int[10]){0};
-		memcpy(AsyncFunctionParams, Params, sizeof(AsyncFunctionParams));
-		AsyncFunctionParamCount = ParamCount;
+		if (ParamCount <= MaxAsyncParams)
+		{
+			AsyncFrameCount = FramesToLoop;
+			Container->Loading.FramesToLoad = 0;
+			AsyncFunction = AsynchronousFunction;
+			memset(AsyncFunctionParams, 0, sizeof(AsyncFunctionParams));
+			//*AsyncFunctionParams = (int[10]){0};
+			memcpy(AsyncFunctionParams, Params, sizeof(AsyncFunctionParams));
+			AsyncFunctionParamCount = ParamCount;
+		}
+		else
+			Warn("Asynchronous function call has too many parameters");
 	}
 	else
-		Warn("Asynchronous function call has too many parameters");
+		Notify("Menu is loading. Please wait.");
 }
 
 
@@ -661,7 +699,7 @@ unsafe void AsynchronousLoop()
 	int CurrentFrames = Container->Loading.FramesToLoad;
 
 	//CError: if ((int)AsyncFunction && CurrentFrames)
-	if ((int)AsyncFunction != 0 && AsyncFrameCount != 0)
+	if ((int)AsyncFunction != nullptr && AsyncFrameCount != 0)
 	{
 		__getNamedFrame("CurrentFrames");
 		__getNamedStatic("AsyncFunctionParamCount");

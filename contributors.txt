@@ -1,2 +1,33 @@
-Nathan James
-ApII And Pik industries
+This file contains a list of people's major contributions
+
+High Level Parser Development:
+	Greg Slomin
+	Nathan James
+	Rocko Tompkins
+
+High Level Compiler Development:
+	Nathan James
+	Rocko Tompkins
+	
+VM Research:
+	Carlos Adkins
+	Greg Slomin
+	Nathan James
+	
+Compiled Script Research:
+	Carlos Adkins
+	Greg Slomin
+	Nathan James
+	Rocko Tompkins
+
+Decompiled Script Research:
+	Alexander Blade / Script Hook Community
+	Rocko Tompkins
+
+Script Testing:
+	Carlos Adkins
+	Nathan James
+	Rocko Tompkins
+
+
+

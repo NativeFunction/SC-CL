@@ -56,7 +56,12 @@ typedef struct ItemContainer
 typedef struct MenuLevel
 {
 	void(*UpdateToMenuLevel)();
-	short SavedMenuPos[2];//menu pos for going back (curson index, startindex)
+	struct
+	{
+		int CursorIndex;
+		int ItemStartIndex;
+	} SavedCursor;
+
 } MenuLevel;
 
 typedef struct Page//Menu Page

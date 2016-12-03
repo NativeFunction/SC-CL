@@ -121,6 +121,18 @@ void Notify(const char* str)
 	add_text_component_substring_player_name(str);
 	_draw_notification(false, true);
 }
+void PrintMult(const char* StrArr[10], int ms)
+{
+	_set_text_entry_2("CELL_EMAIL_BCON");
+	for (int i = 0; i < 10; i++)
+	{
+		if (StrArr[i])
+			add_text_component_substring_player_name(StrArr[i]);
+		else
+			break;
+	}
+	_draw_subtitle_timed(ms, 1);
+}
 bool IsPlayerInGame(int PlayerIndex)
 {
 	return network_is_player_active(PlayerIndex) && does_entity_exist(get_player_ped(PlayerIndex));
@@ -142,3 +154,29 @@ Vehicle GetCurrentVehicle()
 	return is_ped_in_any_vehicle(MyPed, false) ? get_vehicle_ped_is_in(MyPed, false) : 0;
 }
 
+void Assert(const char* File, int Line, const char* Expression)
+{
+	const int FileEndPos = get_length_of_literal_string(File);
+	const int ExprEndPos = get_length_of_literal_string(File);
+	wait(0);
+	while (!is_disabled_control_just_pressed(2, INPUT_FRONTEND_ACCEPT))
+	{
+		set_text_centre(true);
+		_set_text_entry("CELL_EMAIL_BCON");
+		add_text_component_substring_player_name("Assertion failed!~n~~n~File: ");
+
+
+		for (int i = 0; i < FileEndPos; i += 99)
+			add_text_component_substring_player_name(File + i);
+
+		add_text_component_substring_player_name(straddiGlobal("~n~Line: ", Line));
+		add_text_component_substring_player_name("~n~~n~Expression: ");
+
+		for (int i = 0; i < ExprEndPos; i += 99)
+			add_text_component_substring_player_name(Expression + i);
+
+		_draw_text(Vector2(0.5f, 0.5f));
+		wait(0);
+	}
+	wait(0);
+}
