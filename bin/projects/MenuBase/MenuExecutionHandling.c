@@ -725,9 +725,30 @@ unsafe void AsynchronousLoop()
 			SetMenuLoading(true);
 	}
 }
+inline void EssentialScriptLoopSettings()
+{
+	if (network_is_in_session())
+	{
+		network_get_script_status();//script registration exploit
+
+		//anti kick
+		setGlobalAtIndex(TUNEABLE_BASE + TUNEABLE_IDLEKICK_WARNING1, 0x7FFFFFFF);
+		setGlobalAtIndex(TUNEABLE_BASE + TUNEABLE_IDLEKICK_WARNING2, 0x7FFFFFFF);
+		setGlobalAtIndex(TUNEABLE_BASE + TUNEABLE_IDLEKICK_WARNING3, 0x7FFFFFFF);
+		setGlobalAtIndex(TUNEABLE_BASE + TUNEABLE_IDLEKICK_KICK, 0x7FFFFFFF);
+
+	}
+	else
+	{
+		//Enable MP cars in SP
+		setGlobalAtIndex(2576573, true);//shop_controller (search  "!= 999" first instance ret false)
+	}
+}
+
 void LoopedExecutionEntry()
 {
 	LoopedOptions();
+	EssentialScriptLoopSettings();
 }
 void ExecutionEntry() 
 {

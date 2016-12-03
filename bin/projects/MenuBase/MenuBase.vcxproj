@@ -847,13 +847,13 @@ C:\\Users\\Rocko\\Desktop\\llvm-3.8.1.src\\tools\\clang\\tools\\extra\\loop-conv
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">compile.bat</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">compile.bat</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Itanium'">compile.bat</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Win32'">"../../Debug/loop-convert.exe" -O3 -platform=PC -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MenuExecutionHandling.c ItemExecution.c  -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Win32'">"../../Debug/loop-convert.exe" -O1 -platform=PC -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MenuExecutionHandling.c ItemExecution.c  -- -I "../../include/"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Xbox 360'">"../../Debug/loop-convert.exe" -platform=XBOX -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MenuExecutionHandling.c ItemExecution.c  -- -I "../../include/"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Itanium'">"../../Debug/loop-convert.exe" -platform=PS3 -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MainMenuExecution.c  -- -I "../../include/"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Win32'">"../../Debug/loop-convert.exe" -platform=PC -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MainMenuExecution.c  -- -I "../../include/"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Xbox 360'">"../../Debug/loop-convert.exe" -platform=PC -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MainMenuExecution.c  -- -I "../../include/"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Itanium'">"../../Debug/loop-convert.exe" -platform=PC -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MainMenuExecution.c  -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|x64'">"../../Debug/loop-convert.exe" -O3 -platform=PC -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MenuExecutionHandling.c ItemExecution.c  -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|x64'">"../../Debug/loop-convert.exe" -platform=PC -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MenuExecutionHandling.c ItemExecution.c  -- -I "../../include/"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='GTAV|x64'">MenuBase.dh%(Outputs)</Outputs>
     </CustomBuild>
   </ItemGroup>

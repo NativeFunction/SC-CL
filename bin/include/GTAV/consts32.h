@@ -924,3 +924,24 @@ enum Tuneable
 	TUNEABLE_IDLEKICK_WARNING3 = 75,
 	TUNEABLE_IDLEKICK_KICK = 76,
 };
+
+typedef enum Update
+{
+	Update_mpBeach = 0x4EC3310F,//mpbeach dlc (Beach Bum Update)
+	Update_mpChristmas = 0x3EF29868,//(Holiday Gifts)
+	Update_mpValentines = 0xAF0ED36B,//mpvalentines dlc (Valentine's Day Massacre Special)
+	Update_mpBusiness = 0x02812BB0,//mpbusiness dlc (Business Update)
+	Update_mpBusiness2 = 0xF3D281F4,//(High Life Update)
+	Update_mpHipster = 0x6A71D920,//mphipster dlc ("I'm Not a Hipster" Update)
+	Update_mpIndependence = 0x9B328228,//(Independence Day Special)
+	Update_CollectorsEdition = 0x4F98C2A7,//dlc_collectorsedition
+	Update_SpecialEdition = 0x02040A77,//dlc_specialedition
+	Update_AtomicBlimp = 0xB6DE61E2,//dlc_atomicblimp
+	Update_mpPilot = 0x55292CC7,//(San Andreas Flight School Update)
+	Update_spUpgrade = 0xB319EA37,//(Enhanced edition)
+	Update_mpLTS = 0xC40B8B70,//(Last Team Standing Update)
+	Update_mpHeist = 0x8CD51A8F,//(Heists Update)
+	Update_mpChristmas2 = 0x05D4E680,//(Festive Surprise)
+	Update_mpLuxe = 0x9AB941C0,//(Ill-Gotten Gains Part 1)
+	Update_mpLuxe2 = 0xF83EC19E,//Ill-Gotten Gains Part 2)
+} Update;

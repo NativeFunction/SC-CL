@@ -1160,3 +1160,49 @@ enum Tuneable
 	TUNEABLE_IDLEKICK_WARNING3 = 88,
 	TUNEABLE_IDLEKICK_KICK = 89,
 };
+
+typedef enum Update
+{
+	Update_mpBeach = 0x4EC3310F,//mpbeach dlc (Beach Bum Update)
+	Update_mpChristmas = 0x3EF29868,//(Holiday Gifts)
+	Update_mpValentines = 0xAF0ED36B,//mpvalentines dlc (Valentine's Day Massacre Special)
+	Update_mpBusiness = 0x02812BB0,//mpbusiness dlc (Business Update)
+	Update_mpBusiness2 = 0xF3D281F4,//(High Life Update)
+	Update_mpHipster = 0x6A71D920,//mphipster dlc ("I'm Not a Hipster" Update)
+	Update_mpIndependence = 0x9B328228,//(Independence Day Special)
+	Update_CollectorsEdition = 0x4F98C2A7,//dlc_collectorsedition
+	Update_SpecialEdition = 0x02040A77,//dlc_specialedition
+	Update_AtomicBlimp = 0xB6DE61E2,//dlc_atomicblimp
+	Update_mpPilot = 0x55292CC7,//(San Andreas Flight School Update)
+	Update_spUpgrade = 0xB319EA37,//(Enhanced edition)
+	Update_mpLTS = 0xC40B8B70,//(Last Team Standing Update)
+	Update_mpHeist = 0x8CD51A8F,//(Heists Update)
+	Update_mpPatchesNG = 0x796AAE29,
+	Update_PatchDay1NG = 0xF326276D,
+	Update_PatchDay2NG = 0x1278FCF7,
+	Update_mpChristmas2 = 0x05D4E680,//(Festive Surprise)
+	Update_PatchDay2bNG = 0xD1DB156C,
+	Update_PatchDay3NG = 0x2B77BA9A,
+	Update_PatchDay4NG = 0xF34899F1,
+	Update_mpLuxe = 0xF83EC19E,//Ill-Gotten Gains Part 1)
+	Update_PatchDay5NG = 0x9DABCD9A,
+	Update_mpLuxe2 = 0xF83EC19E,//Ill-Gotten Gains Part 2)
+	Update_PatchDay6NG = 0x04A50A9C,
+	Update_mpReplay = 0xD8852549,//(Freemode Events Update)
+	Update_PatchDay7NG = 0x0D6D0C76,
+	Update_mpLowrider = 0x61322A35,//(Lowriders)
+	Update_mpHalloween = 0x1F457E3E,//(Halloween Surprise)
+	Update_PatchDay8NG = 0xDD07A99A,
+	Update_mpApartment = 0x81B17DDA,//(Executives and Other Criminals)
+	Update_mpXmas = 0x1E998FD3,//mpXmas_604490 (Festive Surprise 2015)
+	Update_mpLowrider2 = 0x8F13E1D8,//(Lowriders: Custom Classics)
+	Update_mpJanuary2016 = 0x0C8638BD,//(January 2016 Update)
+	Update_mpValentines2 = 0x5D57340C,//(Be My Valentine)
+	Update_PatchDay9NG = 0x4B1C9173,
+	Update_mpExecutive = 0x40C7BCBD,//(Further Adventures in Finance and Felony)
+	Update_PatchDay10NG = 0xAEF07A48,
+	Update_mpStunt = 0xB9A27773,//(Cunning Stunts)
+	Update_PatchDay11NG = 0xD1F114BC,
+	Update_mpBiker = 0x3853FD87,//(Bikers)
+	Update_PatchDay12NG = 0xE1C1CD2A,
+} Update;
