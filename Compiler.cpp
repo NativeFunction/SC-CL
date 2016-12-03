@@ -171,6 +171,17 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		default: assert(false && "Invalid General Opcode");
 	}
 }
+void CompileBase::CheckLabels()
+{
+	for (JumpData Label : JumpLocations)
+	{
+		if (!Label.isSet)
+		{
+			Throw("Label " + Label.Label + " is not set");
+		}
+			
+	}
+}
 void CompileBase::BuildTables()
 {
 	for (FunctionCount = 0; FunctionCount < HLData->getFunctionCount(); FunctionCount++)
@@ -184,6 +195,7 @@ void CompileBase::BuildTables()
 				CheckSignedJumps();
 				CheckUnsignedJumps();
 			}
+			CheckLabels();
 			fixFunctionJumps();
 		}
 	}

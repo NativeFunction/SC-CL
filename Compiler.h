@@ -586,6 +586,7 @@ protected:
 	#pragma endregion
 
 	#pragma region Parse_Functions
+	void CheckLabels();
 	void BuildTables();
 	virtual void fixFunctionJumps() = 0;
 	virtual void fixFunctionCalls() = 0;

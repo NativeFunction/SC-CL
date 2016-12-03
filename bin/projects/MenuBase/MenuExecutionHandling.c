@@ -206,7 +206,7 @@ void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* 
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
 
 		Container->Item[AddItemCounter].Selection.Type = MST_Param;
-		Container->Item[AddItemCounter].Selection.Value = Param;
+		Container->Item[AddItemCounter].Selection.Value.Int = Param;
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 		AddItemCounter++;
@@ -455,7 +455,7 @@ void AddItemWithParam(const char* ItemText, int Param, void(*Callback)())
 		ResetCurrentItem();
 		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
 		Container->Item[AddItemCounter].Selection.Type = MST_Param;
-		Container->Item[AddItemCounter].Selection.Value = Param;
+		Container->Item[AddItemCounter].Selection.Value.Int = Param;
 		Container->Item[AddItemCounter].Execute = Callback;
 		AddItemCounter++;
 	}

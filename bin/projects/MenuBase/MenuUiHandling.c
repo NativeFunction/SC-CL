@@ -325,8 +325,6 @@ void ParseMenuControls()
 
 	}
 
-
-
 	if (!bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
 	{
 		MenuSelectionType CurrentType = Container.Item[GetRelativeCursorIndex].Selection.Type;

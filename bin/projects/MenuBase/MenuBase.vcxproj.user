@@ -15,4 +15,7 @@
     <LocalDebuggerCommand>compile.bat</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAV|Xbox 360'">
+    <DebuggerFlavor>Xbox360Debugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>
