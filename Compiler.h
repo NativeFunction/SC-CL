@@ -11,48 +11,59 @@
 #include "fstream"
 extern std::string globalDirectory;
 
-class CodePageCollection{
+class PageCollection{
 protected:
-	std::vector<std::vector<uint8_t>> codePages;
+	std::vector<std::vector<uint8_t>> Pages;
 	std::vector<uint8_t>* lastPage;
-	void AddInt16L(const int16_t value){
-		lastPage->resize(lastPage->size() + 2);
-		*((int16_t*)(lastPage->data() + lastPage->size()) - 1) = value;
-	}
 public:
-	CodePageCollection(){
+	PageCollection(){
 		std::vector<uint8_t> newPage;
 		newPage.reserve(0x4000);
-		codePages.push_back(std::move(newPage));
-		lastPage = &codePages.back();
+		Pages.push_back(std::move(newPage));
+		lastPage = &Pages.back();
 	}
 	void AddNewPage(){
 		lastPage->resize(0x4000, 0);//fill last page with zeros
 		std::vector<uint8_t> newPage;
 		newPage.reserve(0x4000);
-		codePages.push_back(std::move(newPage));
-		lastPage = &codePages.back();
+		Pages.push_back(std::move(newPage));
+		lastPage = &Pages.back();
 	}
-	size_t getPageCount()const{ return codePages.size(); }
+	size_t getPageCount()const{ return Pages.size(); }
+
+	size_t getPageCountIgnoreEmpty()const {
+		return (lastPage->size() ? Pages.size() : Pages.size() - 1);
+	}
 
 	size_t getTotalSize()const {
-		return ((getPageCount() - 1) << 14) + getLastPageSize();
+		return ((Pages.size() - 1) << 14) + getLastPageSize();
 	}
 	size_t getLastPageSize()const{
 		return lastPage->size();
 	}
-	uint8_t* getCodePositionAddress(size_t position){
+	size_t getLastPageSizeIgnoreEmpty()const{
+		if (lastPage->size()){
+			return lastPage->size();
+		}
+		if (getPageCount() > 1){
+			return 0x4000;
+		}
+		else{
+			return 0;
+		}
+	}
+	uint8_t* getPositionAddress(size_t position){
 		assert(position < getTotalSize() && "Code position out of range");
-		return  codePages[position >> 14].data() + (position & 0x3FFF);
+		return  Pages[position >> 14].data() + (position & 0x3FFF);
 	}
 	uint8_t* getPageAddress(size_t pageIndex){
-		assert(pageIndex < codePages.size() && "Page index out of range");
-		return codePages[pageIndex].data();
+		assert(pageIndex < getPageCount() && "Page index out of range");
+		return Pages[pageIndex].data();
 	}
 	//Ensures there is enough space in the current code page for a specific opcode
 	//Returns true if a new page needed to be created to fit the desired amount of bytes
-	bool ReserveBytes(size_t newSize){
-		if (lastPage->size() + newSize > 0x4000){
+	bool reserveBytes(size_t byteCount){
+		if (lastPage->size() + byteCount > 0x4000){
 			AddNewPage();
 			return true;
 		}
@@ -61,11 +72,17 @@ public:
 	void AddPadding(const uint32_t paddingCount){
 		lastPage->resize(lastPage->size() + paddingCount);
 	}
+};
+
+class CodePageCollection : public PageCollection{
+public:
+	CodePageCollection(){}
+
 	void AddInt8(const uint8_t value){
 		lastPage->push_back(value);
 	}
 	void changeInt8(const uint8_t newValue, const size_t position){
-		*getCodePositionAddress(position) = newValue;
+		*getPositionAddress(position) = newValue;
 	}
 	virtual void AddInt16(const int16_t value) = 0;
 	virtual void ChangeInt16(const int16_t newValue, const size_t position) = 0;
@@ -84,10 +101,8 @@ public:
 		lastPage->resize(curSize + strSize);
 		memcpy(lastPage->data() + curSize, str.data(), strSize);
 	}
-	//virtual void ChangeFloat(const float newValue, const size_t position) = 0;//never going to be used
 
 };
-
 class CodePageCollectionBig : public CodePageCollection{
 public:
 	void AddInt16(const int16_t value)override{
@@ -95,7 +110,7 @@ public:
 		*((int16_t*)(lastPage->data() + lastPage->size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
 	void ChangeInt16(const int16_t newValue, const size_t position)override{
-		*(int16_t*)getCodePositionAddress(position) = Utils::Bitwise::SwapEndian(newValue);
+		*(int16_t*)getPositionAddress(position) = Utils::Bitwise::SwapEndian(newValue);
 	}
 
 	void AddInt24(const uint32_t value)override{
@@ -103,7 +118,7 @@ public:
 		*((uint32_t*)(lastPage->data() + lastPage->size()) - 1) |= Utils::Bitwise::SwapEndian(value & 0xFFFFFF);
 	}
 	void ChangeInt24(const uint32_t newValue, const size_t position)override{
-		*(uint32_t*)(getCodePositionAddress(position) - 1) |= Utils::Bitwise::SwapEndian(newValue & 0xFFFFFF);
+		*(uint32_t*)(getPositionAddress(position) - 1) |= Utils::Bitwise::SwapEndian(newValue & 0xFFFFFF);
 	}
 
 	void AddInt32(const uint32_t value)override{
@@ -111,7 +126,7 @@ public:
 		*((uint32_t*)(lastPage->data() + lastPage->size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
 	void ChangeInt32(const uint32_t newValue, const size_t position)override{
-		*(uint32_t*)getCodePositionAddress(position) = Utils::Bitwise::SwapEndian(newValue);
+		*(uint32_t*)getPositionAddress(position) = Utils::Bitwise::SwapEndian(newValue);
 	}
 
 	void AddFloat(const float value)override{
@@ -127,7 +142,7 @@ public:
 		*((int16_t*)(lastPage->data() + lastPage->size()) - 1) = value;
 	}
 	void ChangeInt16(const int16_t newValue, const size_t position)override{
-		*(int16_t*)getCodePositionAddress(position) = newValue;
+		*(int16_t*)getPositionAddress(position) = newValue;
 	}
 
 	void AddInt24(const uint32_t value)override{
@@ -135,7 +150,7 @@ public:
 		*((uint32_t*)(lastPage->data() + lastPage->size()) - 1) |= (value & 0xFFFFFF) << 8;
 	}
 	void ChangeInt24(const uint32_t newValue, const size_t position)override{
-		*(uint32_t*)(getCodePositionAddress(position) - 1) |= (newValue & 0xFFFFFF) << 8;
+		*(uint32_t*)(getPositionAddress(position) - 1) |= (newValue & 0xFFFFFF) << 8;
 	}
 
 	void AddInt32(const uint32_t value)override{
@@ -143,11 +158,53 @@ public:
 		*((uint32_t*)(lastPage->data() + lastPage->size()) - 1) = value;
 	}
 	void ChangeInt32(const uint32_t newValue, const size_t position)override{
-		*(uint32_t*)getCodePositionAddress(position) = newValue;
+		*(uint32_t*)getPositionAddress(position) = newValue;
 	}
 	void AddFloat(const float value)override{
 		lastPage->resize(lastPage->size() + 4, 0);
 		*((float*)(lastPage->data() + lastPage->size()) - 1) = value;
+	}
+};
+
+class StringPageCollection : public PageCollection{
+private:
+	std::unordered_map<std::string, size_t> stringLocationMap;
+public:
+	StringPageCollection(){}
+	size_t AddString(const std::string& value){
+		auto it = stringLocationMap.find(value);
+		if (it != stringLocationMap.end()){
+			return it->second;
+		}
+		else{
+			auto strSize = value.size() + 1;
+			reserveBytes(strSize);
+			auto index = getTotalSize();
+			auto curSize = lastPage->size();
+			lastPage->resize(curSize + strSize);
+			memcpy(lastPage->data() + curSize, value.data(), strSize);
+			stringLocationMap[value] = index;
+			return index;
+		}
+	}
+	virtual void ChangeInt32(const uint32_t newValue, const size_t position) = 0;
+	size_t AddJumpTable(const uint32_t itemCount){
+		reserveBytes(itemCount * 4);
+		size_t startIndex = lastPage->size();
+		lastPage->resize(startIndex + itemCount * 4);
+		return startIndex;
+	}
+};
+class StringPageCollectionBig : public StringPageCollection{
+public:
+	void ChangeInt32(const uint32_t newValue, const size_t position)override{
+		*(uint32_t*)getPositionAddress(position) = Utils::Bitwise::SwapEndian(newValue);
+	}
+};
+class StringPageCollectionLit : public StringPageCollection{
+public:
+	void ChangeInt32(const uint32_t newValue, const size_t position)override{
+		*(uint32_t*)getPositionAddress(position) = newValue;
 	}
 };
 
@@ -221,11 +278,6 @@ protected:
 	std::unordered_map<uint32_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
 	std::vector<JumpTableData> jumpTableLocs;
 
-	//			GTAV Vars
-	//---------------------------------
-	std::vector<uint8_t> StringPageData;
-	std::unordered_map<std::string, uint32_t> StringPageDataIndexing;
-	uint32_t StringPageCount = 0;
 	#pragma endregion
 
 	#pragma region Parse_Data_Vars
@@ -266,7 +318,6 @@ protected:
 			ChangeInt32inBuff = &CompileBase::ChangeInt32inBuffL;
 			AddInt64toBuff = &CompileBase::AddInt64toBuffL;
 			ChangeInt64inBuff = &CompileBase::ChangeInt64inBuffL;
-			ChangeInt32InStringPage = &CompileBase::ChangeInt32InStringPageL;
 		}
 		else
 		{
@@ -275,7 +326,6 @@ protected:
 			ChangeInt32inBuff = &CompileBase::ChangeInt32inBuffB;
 			AddInt64toBuff = &CompileBase::AddInt64toBuffB;
 			ChangeInt64inBuff = &CompileBase::ChangeInt64inBuffB;
-			ChangeInt32InStringPage = &CompileBase::ChangeInt32InStringPageB;
 		}
 	}
 	virtual ~CompileBase(){}
@@ -358,7 +408,7 @@ protected:
 	}
 	void DoesOpcodeHaveRoom(const size_t OpcodeLen)
 	{
-		if (CodePageData->ReserveBytes(OpcodeLen))
+		if (CodePageData->reserveBytes(OpcodeLen))
 		{
 			CheckSignedJumps();
 			CheckUnsignedJumps();
@@ -378,18 +428,6 @@ protected:
 
 		return UnsignedJumpLocationInc < JumpLocations.size();
 	}
-
-	void (CompileBase::*ChangeInt32InStringPage)(const uint32_t value, const uint32_t index);
-	#define ChangeInt32InStringPage (this->*ChangeInt32InStringPage)
-	void ChangeInt32InStringPageB(const uint32_t value, const uint32_t index)
-	{
-		*(uint32_t*)(StringPageData.data() + index) = Utils::Bitwise::SwapEndian(value);
-	}
-	void ChangeInt32InStringPageL(const uint32_t value, const uint32_t index)
-	{
-		*(uint32_t*)(StringPageData.data() + index) = value;
-	}
-
 
 	#pragma endregion
 
@@ -698,7 +736,14 @@ class CompileGTAV : CompileBase
 {
 	friend class CompileGTAVPC;
 public:
-	CompileGTAV(const Script& data, bool Disable_Function_Names) : CompileBase(GTAVOpcodes, data, 0, 0, Disable_Function_Names) { }
+	CompileGTAV(const Script& data, bool Disable_Function_Names) : CompileBase(GTAVOpcodes, data, 0, 0, Disable_Function_Names) {
+		if (data.getBuildPlatform() == P_PC){
+			StringPageData = std::make_unique<StringPageCollectionLit>();
+		}
+		else{
+			StringPageData = std::make_unique<StringPageCollectionBig>();
+		}
+	}
 
 	virtual void Compile(const std::string& outDirectory) override
 	{
@@ -716,7 +761,7 @@ public:
 
 private:
 	const OpCodes GTAVOpcodes = { VO_Nop, VO_Add, VO_Sub, VO_Mult, VO_Div, VO_Mod, VO_Not, VO_Neg, VO_CmpEq, VO_CmpNe, VO_CmpGt, VO_CmpGe, VO_CmpLt, VO_CmpLe, VO_fAdd, VO_fSub, VO_fMult, VO_fDiv, VO_fMod, VO_fNeg, VO_fCmpEq, VO_fCmpNe, VO_fCmpGt, VO_fCmpGe, VO_fCmpLt, VO_fCmpLe, VO_vAdd, VO_vSub, VO_vMult, VO_vDiv, VO_vNeg, VO_And, VO_Or, VO_Xor, VO_ItoF, VO_FtoI, VO_FtoV, VO_PushB, VO_PushB2, VO_PushB3, VO_Push, VO_PushF, VO_Dup, VO_Drop, VO_CallNative, VO_Function, VO_Return, VO_pGet, VO_pSet, VO_pPeekSet, VO_ToStack, VO_FromStack, VO_GetArrayP1, VO_GetArray1, VO_SetArray1, VO_GetFrameP1, VO_GetFrame1, VO_SetFrame1, VO_GetStaticP1, VO_GetStatic1, VO_SetStatic1, VO_Add1, VO_Mult1, VO_GetImm1, VO_SetImm1, VO_PushS, VO_Add2, VO_Mult2, VO_GetImm2, VO_SetImm2, VO_GetArrayP2, VO_GetArray2, VO_SetArray2, VO_GetFrameP2, VO_GetFrame2, VO_SetFrame2, VO_GetStaticP2, VO_GetStatic2, VO_SetStatic2, VO_GetGlobalP2, VO_GetGlobal2, VO_SetGlobal2, VO_Jump, VO_JumpFalse, VO_JumpNE, VO_JumpEQ, VO_JumpLE, VO_JumpLT, VO_JumpGE, VO_JumpGT, VO_Call, VO_GetGlobalp3, VO_GetGlobal3, VO_SetGlobal3, VO_PushI24, VO_Switch, VO_PushString, VO_StrCopy, VO_ItoS, VO_StrAdd, VO_StrAddi, VO_Memcopy, VO_Catch, VO_Throw, VO_pCall, VO_Push_Neg1, VO_Push_0, VO_Push_1, VO_Push_2, VO_Push_3, VO_Push_4, VO_Push_5, VO_Push_6, VO_Push_7, VO_PushF_Neg1, VO_PushF_0, VO_PushF_1, VO_PushF_2, VO_PushF_3, VO_PushF_4, VO_PushF_5, VO_PushF_6, VO_PushF_7, VO_GetImmP, VO_GetImmP1, VO_GetImmP2, VO_GetHash };
-
+	std::unique_ptr<StringPageCollection> StringPageData;
 	#pragma region Type_Defines
 	enum class ResourceType : uint8_t
 	{
@@ -737,7 +782,6 @@ private:
 	int32_t GetSizeFromSystemFlag(uint32_t flag);
 	int32_t GetSizeFromGraphicsFlag(uint32_t flag);
 	uint32_t GetFlagFromSize(int32_t size);
-	const uint32_t AddStringToStringPage(const std::string& str);
 	void fixFunctionCalls() override;
 	void fixFunctionJumps() override;
 	#pragma endregion

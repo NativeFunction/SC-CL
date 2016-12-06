@@ -240,7 +240,7 @@ void CompileBase::AddLabel(const string& label)
 						Utils::System::Throw("Get label loc \"" + label + "\" out of jump range");
 
 					ChangeInt24InCodePage(it->second.LabelLocation, JumpLocations[it->second.JumpIndexes[i]].JumpLocation);
-					*(CodePageData->getCodePositionAddress(JumpLocations[it->second.JumpIndexes[i]].JumpLocation - 1)) = BaseOpcodes->PushI24;
+					*(CodePageData->getPositionAddress(JumpLocations[it->second.JumpIndexes[i]].JumpLocation - 1)) = BaseOpcodes->PushI24;
 					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
 				}
 			}
@@ -943,18 +943,18 @@ void CompileRDR::fixFunctionCalls()
 		{
 			case CallInstructionType::FuncLoc:
 				ChangeInt24InCodePage(pos, CallInfo.CallLocation);
-				*(CodePageData->getCodePositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->PushI24;
+				*(CodePageData->getPositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->PushI24;
 			break;
 			case CallInstructionType::Call:
 				if (pos > 1048575)
 				{
 					ChangeInt24InCodePage(pos, CallInfo.CallLocation);
-					*(CodePageData->getCodePositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->PushI24;
-					*(CodePageData->getCodePositionAddress(CallInfo.CallLocation) + 4) = RDROpcodes.pCall;
+					*(CodePageData->getPositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->PushI24;
+					*(CodePageData->getPositionAddress(CallInfo.CallLocation) + 4) = RDROpcodes.pCall;
 				}
 				else
 				{
-					*(CodePageData->getCodePositionAddress(CallInfo.CallLocation)) = GetNewCallOpCode(pos);//any out of range errors already been caught
+					*(CodePageData->getPositionAddress(CallInfo.CallLocation)) = GetNewCallOpCode(pos);//any out of range errors already been caught
 					ChangeInt16InCodePage(GetNewCallOffset((uint16_t)pos), CallInfo.CallLocation + 1);
 				}
 			break;
@@ -1514,29 +1514,6 @@ uint32_t CompileGTAV::GetFlagFromSize(int32_t size)
 	assert(false && "GetFlagFromSize: Size Not Found");
 	return 0;
 }
-const uint32_t CompileGTAV::AddStringToStringPage(const string& str)
-{
-	//if string is in table
-	auto it = StringPageDataIndexing.find(str);
-	if (it != StringPageDataIndexing.end())
-	{
-		return it->second;
-	}
-
-	const uint32_t len = str.length();
-	uint32_t pos = StringPageData.size();
-
-	if ((pos + len + 1) % 16384 < pos % 16384)
-	{
-		StringPageData.resize(16384 - (pos % 16384) + pos);
-		pos = StringPageData.size();
-	}
-
-	StringPageDataIndexing[str] = pos;
-	StringPageData.resize(pos + len + 1);
-	memcpy(StringPageData.data() + pos, str.data(), len + 1);
-	return pos;
-}
 void CompileGTAV::fixFunctionCalls()
 {
 	for (auto CallInfo : CallLocations)
@@ -1555,11 +1532,11 @@ void CompileGTAV::fixFunctionCalls()
 		{
 			case CallInstructionType::FuncLoc:
 			ChangeInt24InCodePage(pos, CallInfo.CallLocation);
-			*(CodePageData->getCodePositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->PushI24;
+			*(CodePageData->getPositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->PushI24;
 			break;
 			case CallInstructionType::Call:
 			ChangeInt24InCodePage(pos, CallInfo.CallLocation);
-			*(CodePageData->getCodePositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->Call;
+			*(CodePageData->getPositionAddress(CallInfo.CallLocation) - 1) = BaseOpcodes->Call;
 			break;
 			default: assert(false && "Invalid Call Instruction"); break;
 		}
@@ -1574,7 +1551,7 @@ void CompileGTAV::fixFunctionJumps()
 		{
 			Throw("Jump table label '" + jTableItem.labelName + "' not found");
 		}
-		ChangeInt32InStringPage(it->second.LabelLocation, jTableItem.tableOffset);
+		StringPageData->ChangeInt32(it->second.LabelLocation, jTableItem.tableOffset);
 	}
 	jumpTableLocs.clear();
 	JumpLocations.clear();
@@ -1626,7 +1603,7 @@ void CompileGTAV::Call()
 }
 void CompileGTAV::PushString()
 {
-	PushInt(AddStringToStringPage(DATA->getString()));
+	PushInt(StringPageData->AddString(DATA->getString()));
 	AddOpcode(PushString);
 }
 void CompileGTAV::GetImmP()
@@ -1691,17 +1668,9 @@ void CompileGTAV::GoToStack()
 void CompileGTAV::AddJumpTable()
 {
 	auto jumpTable = DATA->getJumpTable();
-	const uint32_t len = jumpTable->getByteSize() + 1;
-	uint32_t pos = StringPageData.size();
-
-	if ((pos + len) % 16384 < pos % 16384)
-	{
-		StringPageData.resize(16384 - (pos % 16384) + pos);
-		pos = StringPageData.size();
-	}
+	auto pos = StringPageData->AddJumpTable(jumpTable->getItemCount());
 	PushInt(pos);
 	AddOpcode(PushString);
-	StringPageData.resize(pos + len, 0);
 	for (unsigned i = 0; i < jumpTable->getItemCount();i++)
 	{
 		jumpTableLocs.push_back({ pos, jumpTable->getJumpLocAsString(i) });
@@ -1734,7 +1703,7 @@ void CompileGTAV::WriteHeader()
 	AddInt32toBuff(1);//Unk5 typically 1
 	AddInt32toBuff(0); //script name offset
 	AddInt32toBuff(0); //strings offset
-	AddInt32toBuff(StringPageData.size());
+	AddInt32toBuff(StringPageData->getTotalSize());
 	AddInt32toBuff(0);//Unk6
 
 	//no need to pad as its divisible by 16
@@ -1762,13 +1731,13 @@ void CompileGTAV::WritePointers()
 
 	//Write string page pointers
 	
-	if (StringPageCount)
+	if (StringPageData->getPageCountIgnoreEmpty())
 	{
-		if (GetSpaceLeft(16384) < StringPageCount * 4)
+		if (GetSpaceLeft(16384) < StringPageData->getPageCountIgnoreEmpty() * 4)
 			FillPageDynamic(16384);
 
 		SavedOffsets.StringBlocks = BuildBuffer.size();
-		BuildBuffer.resize(BuildBuffer.size() + StringPageCount * 4, 0);
+		BuildBuffer.resize(BuildBuffer.size() + StringPageData->getPageCountIgnoreEmpty() * 4, 0);
 		Pad();
 	}
 	else
@@ -1790,10 +1759,10 @@ void CompileGTAV::WritePointers()
 }
 void CompileGTAV::Write16384StringPages()
 {
-	if (StringPageCount)
+	if (StringPageData->getPageCountIgnoreEmpty())
 	{
-		SavedOffsets.StringPagePointers.resize(StringPageCount);
-		for (uint32_t i = 0; i < StringPageCount - 1; i++)
+		SavedOffsets.StringPagePointers.resize(StringPageData->getPageCountIgnoreEmpty());
+		for (uint32_t i = 0; i < StringPageData->getPageCountIgnoreEmpty() - 1; i++)
 		{
 			if (GetSpaceLeft(16384) < 16384)
 				FillPageDynamic(16384);
@@ -1801,7 +1770,7 @@ void CompileGTAV::Write16384StringPages()
 			SavedOffsets.StringPagePointers[i] = BuildBuffer.size();
 
 			BuildBuffer.resize(BuildBuffer.size() + 16384);
-			memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, StringPageData.data() + i * 16384, 16384);
+			memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, StringPageData->getPageAddress(i), 16384);
 
 			Pad();
 		}
@@ -1809,12 +1778,11 @@ void CompileGTAV::Write16384StringPages()
 }
 void CompileGTAV::WriteFinalStringPage()
 {
-	if (StringPageCount)
+	if (StringPageData->getPageCountIgnoreEmpty())
 	{
-		const uint32_t LastStringPageSize = StringPageData.size() % 16384;
-		SavedOffsets.StringPagePointers[StringPageCount - 1] = BuildBuffer.size();
-		BuildBuffer.resize(BuildBuffer.size() + LastStringPageSize);
-		memcpy(BuildBuffer.data() + BuildBuffer.size() - LastStringPageSize, StringPageData.data() + StringPageData.size() - LastStringPageSize, LastStringPageSize);
+		SavedOffsets.StringPagePointers[StringPageData->getPageCountIgnoreEmpty() - 1] = BuildBuffer.size();
+		BuildBuffer.resize(BuildBuffer.size() + StringPageData->getLastPageSizeIgnoreEmpty());
+		memcpy(BuildBuffer.data() + BuildBuffer.size() - StringPageData->getLastPageSizeIgnoreEmpty(), StringPageData->getPageAddress(StringPageData->getPageCountIgnoreEmpty()-1), StringPageData->getLastPageSizeIgnoreEmpty());
 		Pad();
 	}
 }
@@ -1822,7 +1790,6 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 {
 	FilePadding = 0;
 	ClearWriteVars();
-	StringPageCount = Utils::Math::CeilDivInt(StringPageData.size(), 16384);
 
 	WriteHeader();
 	Write16384CodePages();
@@ -1931,7 +1898,7 @@ void CompileGTAVPC::WriteHeader()
 	AddInt32toBuff(1);//Unk5 typically 1
 	AddInt64toBuff(0); //script name offset
 	AddInt64toBuff(0); //strings offset
-	AddInt32toBuff(StringPageData.size());
+	AddInt32toBuff(StringPageData->getTotalSize());
 	AddInt32toBuff(0);//Unk6
 	AddInt64toBuff(0);//unk7
 
@@ -1960,13 +1927,13 @@ void CompileGTAVPC::WritePointers()
 
 	//Write string page pointers
 
-	if (StringPageCount)
+	if (StringPageData->getPageCountIgnoreEmpty())
 	{
-		if (GetSpaceLeft(16384) < StringPageCount * 8)
+		if (GetSpaceLeft(16384) < StringPageData->getPageCountIgnoreEmpty() * 8)
 			FillPageDynamic(16384);
 
 		SavedOffsets.StringBlocks = BuildBuffer.size();
-		BuildBuffer.resize(BuildBuffer.size() + StringPageCount * 8, 0);
+		BuildBuffer.resize(BuildBuffer.size() + StringPageData->getPageCountIgnoreEmpty() * 8, 0);
 		Pad();
 	}
 	else
@@ -2046,7 +2013,6 @@ void CompileGTAVPC::XSCWrite(const char* path, bool AddRsc7Header)
 {
 	FilePadding = 0;
 	ClearWriteVars();
-	StringPageCount = Utils::Math::CeilDivInt(StringPageData.size(), 16384);
 
 	WriteHeader();
 	Write16384CodePages();
