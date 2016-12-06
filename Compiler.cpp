@@ -154,7 +154,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_JumpLE:		AddJump(JumpInstructionType::JumpLE, DATA->getString()); return;//gta 4 needs to override
 		case OK_Switch:		Switch(); return;
 		case OK_PushString:	PushString(); return;//gta5 needs to override
-		case OK_StrCopy:	StrCopy(); return;//gta4 needs to override
+		case OK_StrCopy:	StrCopy(); return;//gta4 needs to overrideul
 		case OK_ItoS:		ItoS(); return;//gta4 needs to override
 		case OK_StrAdd:		StrAdd(); return;//gta4 needs to override
 		case OK_StrAddI:	StrAddI(); return;//gta4 needs to override
@@ -701,6 +701,9 @@ void CompileBase::Switch(){
 			//set jump over jump
 			if (!switchStore->hasDefaultJumpLoc())
 				ChangeInt16InCodePage(CodePageData->getTotalSize() - JumpOverOffset - 2, JumpOverOffset);
+		}
+		else if (switchStore->hasDefaultJumpLoc()){
+			AddJump(JumpInstructionType::Jump, switchStore->getDefaultJumpLoc()->toString());
 		}
 	}
 	else if (switchStore->hasDefaultJumpLoc())
