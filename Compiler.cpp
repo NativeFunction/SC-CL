@@ -320,7 +320,7 @@ CompileBase::JumpLabelData CompileBase::AddSwitchJump(const JumpInstructionType 
 		AddInt16(0);
 
 		//have to add a jump forward to jump backward
-		return{ { BuildBuffer.size() - 2, type, label, false}, it->second };
+		return{ { CodePageData->getTotalSize() - 2, type, label, false}, it->second };
 	}
 
 }
@@ -655,11 +655,18 @@ void CompileBase::Switch(){
 		//start jump table to fix jumps
 		if (CasesToBeFixed.size() > 0)
 		{
-
-			DoesOpcodeHaveRoom(3);
-			AddOpcode(Jump);
-			uint32_t JumpOverOffset = CodePageData->getTotalSize();
-			AddInt16(0);
+			uint32_t JumpOverOffset;
+			if (switchStore->hasDefaultJumpLoc())
+			{
+				AddJump(JumpInstructionType::Jump, switchStore->getDefaultJumpLoc()->toString());
+			}
+			else{
+				DoesOpcodeHaveRoom(3);
+				AddOpcode(Jump);
+				JumpOverOffset = CodePageData->getTotalSize();
+				AddInt16(0);
+			}
+			
 
 			//need to update jumps of same label that are out of bounds to jumps that are already added. instead of adding another jump to jump.
 
@@ -676,7 +683,7 @@ void CompileBase::Switch(){
 				cout << "fixed switch jump " + CasesToBeFixed[i].JumpInfo.Label << endl;
 
 
-				offset = CasesToBeFixed[i].LabelInfo.LabelLocation - CodePageData->getTotalSize() - 2;
+				offset = CasesToBeFixed[i].LabelInfo.LabelLocation - CodePageData->getTotalSize() - 3;
 				if (offset >= -32768)
 				{
 					DoesOpcodeHaveRoom(3);
@@ -692,10 +699,11 @@ void CompileBase::Switch(){
 
 
 			//set jump over jump
-			ChangeInt16InCodePage(CodePageData->getTotalSize() - JumpOverOffset - 2, JumpOverOffset);
+			if (!switchStore->hasDefaultJumpLoc())
+				ChangeInt16InCodePage(CodePageData->getTotalSize() - JumpOverOffset - 2, JumpOverOffset);
 		}
 	}
-	if (switchStore->hasDefaultJumpLoc())
+	else if (switchStore->hasDefaultJumpLoc())
 	{
 		AddJump(JumpInstructionType::Jump, switchStore->getDefaultJumpLoc()->toString());
 	}
