@@ -3,12 +3,33 @@
 #include "FunctionData.h"
 
 using namespace std;
+void StaticData::setUsedStaticInd(Script* scriptBase)
+{
+	if (!isUsed())
+	{
+		_index = scriptBase->getStaticCount();
+
+		scriptBase->incStaticCount(shared_from_this());
+		if (_isDynamic)
+		{
+			auto entry = scriptBase->getEntryFunction();
+			entry->moveInto(_dynamicInitialisation);
+		}
+		//still copy the initialisation table incase of a struct which has members with static initialisers
+		assert(_initialisation.size() <= getSize() * scriptBase->getStackWidth() && "static initialisation table too large");
+		auto &table = scriptBase->getStaticTable();
+		size_t curSize = table.size();
+		table.resize(table.size() + getSize() * scriptBase->getStackWidth(), 0);
+		memcpy(&table[curSize], _initialisation.data(), min(_initialisation.size(), getSize() * scriptBase->getStackWidth()));
+	}
+}
+
 void StaticData::setUsed(Script & scriptBase)
 {
 	if (!isUsed())
 	{
 		_index = scriptBase.getStaticCount();
-		scriptBase.incStaticCount(this);
+		scriptBase.incStaticCount(shared_from_this());
 		if (_isDynamic)
 		{
 			auto entry = scriptBase.getEntryFunction();

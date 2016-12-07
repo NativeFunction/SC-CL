@@ -840,14 +840,12 @@ void Menu__VehicleSpawner_Offroad()
 	AddItemVehicle(hashof("technical"), Option_SpawnVehicle);
 	AddItemVehicle(hashof("brawler"), Option_SpawnVehicle);
 
+	
+	#ifdef __YSC__
 	if (is_dlc_present(Update_spUpgrade))
 	{
 		AddItemVehicle(VEHICLE_MARSHALL, Option_SpawnVehicle);
-		#ifdef __YSC__
-
-		#endif
 	}
-	#ifdef __YSC__
 	if (is_dlc_present(Update_mpStunt))
 	{
 		AddItemVehicle(VEHICLE_TROPHYTRUCK, Option_SpawnVehicle);
@@ -887,7 +885,7 @@ void Menu__VehicleSpawner_Service()
 	AddItemVehicle(hashof("taxi"), Option_SpawnVehicle);
 	AddItemVehicle(hashof("trash"), Option_SpawnVehicle);
 	AddItemVehicle(hashof("tourbus"), Option_SpawnVehicle);
-	AddItemWithParam("Trashmaster (Rusty Back)", hashof("trash2"), Option_SpawnVehicle);
+	AddItemWithParam("Trashmaster (Rusty)", hashof("trash2"), Option_SpawnVehicle);
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpExecutive))
 	{
@@ -1104,7 +1102,7 @@ void Menu__VehicleSpawner_Helicopter()
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpApartment))
 	{
-		AddItemVehicle(VEHICLE_CARGOBOB4, Option_SpawnVehicle);
+		AddItemWithParam("Cargobob 2-Seater", VEHICLE_CARGOBOB4, Option_SpawnVehicle);
 		AddItemVehicle(VEHICLE_SUPERVOLITO, Option_SpawnVehicle);
 		AddItemVehicle(VEHICLE_SUPERVOLITO2, Option_SpawnVehicle);
 		AddItemVehicle(VEHICLE_VALKYRIE2, Option_SpawnVehicle);
@@ -1273,6 +1271,7 @@ inline void MainMenu()
 #pragma region LoopedOptions
 void FlyMod(Player CurrentPlayerPed)
 {
+	externTest = 20;
 	DisableControl(2, INPUT_VEHICLE_LOOK_BEHIND);
 	DisableControl(2, INPUT_LOOK_BEHIND);
 	set_input_exclusive(2, INPUT_FRONTEND_X);

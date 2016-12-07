@@ -1254,7 +1254,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 	const uint32_t CodePagePtrsSize = CodePageData->getPageCount() * 4;
 
 	uint32_t TotalData = GetPadExpectedAmount(NativeHashMap.size() * 4) +
-		GetPadExpectedAmount(HLData->getStaticSize() * 4) +
+		GetPadExpectedAmount(HLData->getStaticCount() * 4) +
 		GetPadExpectedAmount(16 + CodePagePtrsSize) + //unk1 4 but set as 16 (padded) to avoid miscalculating the pad size
 		GetPadExpectedAmount(40) + //header
 		GetPadExpectedAmount(CodePagePtrsSize);//code page pointers
@@ -1431,7 +1431,7 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 		, Utils::Bitwise::SwapEndian(CompressedSize)
 		, Utils::Bitwise::SwapEndian(-3u)//-3 is_crypt?
 		, Utils::Bitwise::SwapEndian(BuildBuffer.size())
-		, Utils::Bitwise::SwapEndian(HLData->getStaticSize())
+		, Utils::Bitwise::SwapEndian(HLData->getStaticCount())
 		, Utils::Bitwise::SwapEndian(0u)//GlobalsCount
 		, Utils::Bitwise::SwapEndian(0u)//ParameterCount
 		, Utils::Bitwise::SwapEndian(NativeHashMap.size())

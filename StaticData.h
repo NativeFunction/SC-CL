@@ -6,7 +6,7 @@
 
 class Script;
 class FunctionData;
-class StaticData
+class StaticData : public std::enable_shared_from_this<StaticData>
 {
 private:
 	size_t _size;
@@ -52,6 +52,11 @@ public:
 		cleanUpDynamic();
 	}
 
+	std::shared_ptr<StaticData> getptr()
+	{
+		return shared_from_this();
+	}
+
 	size_t getSize()const
 	{
 		return _size;
@@ -72,6 +77,8 @@ public:
 		return _isDynamic;
 	}
 	void setUsed(Script& scriptBase);
+	void setUsedStaticInd(Script* scriptBase);
+	
 	void setDynamic()
 	{
 		_isDynamic = true;

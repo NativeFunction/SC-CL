@@ -4,12 +4,15 @@
 
 using namespace std;
 
-Script::Script(string scriptName, BuildType buildType, Platform platform) : 
-	 mainFunction(NULL), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform), scriptParams()
+Script::Script(string scriptName, BuildType buildType, Platform platform, bool isSingleton, bool isEntryFunctionPadding, OptimisationLevel optLevel) :
+	 mainFunction(NULL), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform), scriptParams(), _isSingleton(isSingleton), EntryFunctionPadding(isEntryFunctionPadding), _optLevel(optLevel)
 {
 	auto entry = std::make_unique<FunctionData>("__builtin__entryPoint", 0, 0);
 	entryFunction = entry.get();
 	entryFunction->setBuiltIn();
+
+	initializeEntryFunction();
+
 	functions.push_back(std::move(entry));
 	_endian = (buildType == BT_GTAV && platform == P_PC) ? END_LITTLE : END_BIG;
 	_stackWidth = (buildType == BT_GTAV && platform == P_PC) ? 8 : 4;
@@ -72,50 +75,52 @@ const FunctionData * Script::getFunctionFromName(const string& name) const
 	assert(false && "Function doesnt exist");
 	return NULL;
 }
+void Script::initializeEntryFunction()
+{
+	if (doesEntryFunctionHavePadding())
+	{
+		/* Size: 9
+		Nop//Push_0
+		Nop//CallNative wait 1 0
+		Nop
+		Nop
+		Nop
+		Nop//Push_0
+		Nop//JumpFalse @-4
+		Nop
+		Nop
+		*/
 
+		entryFunction->addOpNop(9);
+	}
+	if (isSingleton())
+	{
+		switch (getBuildType())
+		{
+			case BT_GTAV:
+			entryFunction->addOpNative("get_this_script_name", (getBuildPlatform() == P_PC ? 0x442E0A7EDE4A738A : JoaatConst("get_this_script_name")), 0, 1);
+			entryFunction->addOpGetHash();
+			entryFunction->addOpNative("_get_number_of_instances_of_streamed_script", (getBuildPlatform() == P_PC ? 0x2C83A9DA6BFFC4F9 : 0x029D3841), 1, 1);
+			entryFunction->addOpPushInt(1);
+			entryFunction->addOpJumpGT("__builtin__singleton__");
+			break;
+			case BT_GTAIV:
+			entryFunction->addOpPushString(getScriptName());//no native for getting the name of a script at runtime
+			entryFunction->addOpNative("get_number_of_instances_of_streamed_script", 1, 1);// iv native takes a string
+			entryFunction->addOpPushInt(1);
+			entryFunction->addOpJumpGT("__builtin__singleton__");
+			Utils::System::Warn("Singleton scripts for GTA IV only work when you dont change the name of the output sco file");
+			break;
+			default:
+			Utils::System::Warn("Singleton scripts are only supported on GTA IV and GTA V");
+			break;
+		}
+	}
+}
 void Script::finaliseEntryFunction()
 {
 	if (mainFunction)
 	{
-		if (doesEntryFunctionHavePadding())
-		{
-			/* Size: 9
-			Nop//Push_0
-			Nop//CallNative wait 1 0
-			Nop
-			Nop
-			Nop
-			Nop//Push_0
-			Nop//JumpFalse @-4 
-			Nop
-			Nop
-			*/
-			
-			entryFunction->addOpNop(9);
-		}
-		if (isSingleton())
-		{
-			switch (getBuildType())
-			{
-				case BT_GTAV:
-					entryFunction->addOpNative("get_this_script_name", (getBuildPlatform() == P_PC ? 0x442E0A7EDE4A738A : JoaatConst("get_this_script_name")), 0, 1);
-					entryFunction->addOpGetHash();
-					entryFunction->addOpNative("_get_number_of_instances_of_streamed_script", (getBuildPlatform() == P_PC ? 0x2C83A9DA6BFFC4F9 : 0x029D3841), 1, 1);
-					entryFunction->addOpPushInt(1);
-					entryFunction->addOpJumpGT("__builtin__singleton__");
-					break;
-				case BT_GTAIV:
-					entryFunction->addOpPushString(getScriptName());//no native for getting the name of a script at runtime
-					entryFunction->addOpNative("get_number_of_instances_of_streamed_script", 1, 1);// iv native takes a string
-					entryFunction->addOpPushInt(1);
-					entryFunction->addOpJumpGT("__builtin__singleton__");
-					Utils::System::Warn("Singleton scripts for GTA IV only work when you dont change the name of the output sco file");
-					break;
-				default:
-					Utils::System::Warn("Singleton scripts are only supported on GTA IV and GTA V");
-					break;
-			}
-		}
 		entryFunction->addUsedFunc(mainFunction);
 		if (scriptParams)
 		{

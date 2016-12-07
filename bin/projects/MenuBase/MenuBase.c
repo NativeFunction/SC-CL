@@ -1,4 +1,4 @@
-int Static0;
+
 #include "natives.h"
 #include "intrinsics.h"
 #include "types.h"

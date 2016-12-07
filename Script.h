@@ -5,20 +5,23 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <unordered_map>
 class Script
 {
 	FunctionData *entryFunction;
 	FunctionData *mainFunction;
 	std::vector<std::unique_ptr<FunctionData>> functions;
-	std::vector<std::unique_ptr<StaticData>> statics;
-	std::map<unsigned, StaticData*> Statics;
-	std::vector<StaticData*> finalStatics;
+
+	std::unordered_multimap<uint32_t, std::shared_ptr<StaticData>> staticMapExtern;//Joaat of Name, StaticData
+	std::unordered_multimap<uint32_t, std::shared_ptr<StaticData>> staticMapStatic;//Joaat of Name, StaticData
+
+	std::vector<std::shared_ptr<StaticData>> UsedStatics;
 	size_t newStaticCount = 0;
-	FunctionData *currentFunc;
+	FunctionData *currentFunc = NULL;
 	StaticData *currentStatic = NULL;
-	std::vector<int32_t> staticTable;
-	std::vector<uint8_t> newStaticTable;
-	std::vector<uint32_t> staticTableShortIndexes;//endian for printing has to be swapped. however for shorts we have to Flip2BytesIn4
+
+	std::vector<uint8_t> staticTable;//used static data
+
 	struct InlineData { uint32_t hash; std::string name; std::string inlineLblAppend; bool unsafe; };
 	std::vector<InlineData> inlineStack;
 	int staticCount = 0;
@@ -28,11 +31,11 @@ class Script
 	uint8_t _stackWidth;
 	std::string _scriptName;
 	std::unique_ptr<StaticData> scriptParams;
-	bool _isSingleton = false,
-	EntryFunctionPadding = false;
-	OptimisationLevel _optLevel = OptimisationLevel::OL_None;
+	const bool _isSingleton = false;
+	const bool EntryFunctionPadding = false;
+	const OptimisationLevel _optLevel = OptimisationLevel::OL_None;
 public:
-	Script(std::string scriptName, BuildType buildType, Platform platform);
+	Script(std::string scriptName, BuildType buildType, Platform platform, bool isSingleton, bool isEntryFunctionPadding, OptimisationLevel optLevel);
 
 	FunctionData *getEntryFunction() const{ return entryFunction; }
 	FunctionData *getCurrentFunction()const{ return currentFunc; }
@@ -71,15 +74,13 @@ public:
 		return scriptParams ? scriptParams->getSize() : 0;
 	}
 
-	void setSingleton(bool makeSingleton = true){ _isSingleton = makeSingleton; }
 	bool isSingleton()const{ return _isSingleton; }
-
-	void setEntryFunctionPadding(bool Entry_Function_Padding = true) { EntryFunctionPadding = Entry_Function_Padding; }
+	
 	bool doesEntryFunctionHavePadding()const { return EntryFunctionPadding; }
 
 	OptimisationLevel getOptLevel()const{ return _optLevel; }
-	void setOptLevel(OptimisationLevel optLevel){ _optLevel = optLevel; }
 
+	void initializeEntryFunction();
 	void finaliseEntryFunction();
 
 	bool isFunctionInInlineStack(std::string name) const;
@@ -92,67 +93,23 @@ public:
 	void removeFunctionInline(const FunctionData *fData);
 
 	bool isUnsafeContext()const;
-
-	void addStaticDecl(const uint32_t size = 1) 
-	{ 
-		staticTable.reserve(staticTable.size() + size); 
-	}
-	uint32_t addStaticInit(const int32_t val = 0)
+	void resetStaticStatics()
 	{
-		staticTable.push_back(Utils::Bitwise::SwapEndian(val));
-		return staticTable.size() - 1;
+		staticMapStatic.clear();
 	}
-	uint32_t addStaticInitBig(const int32_t val = 0)
+	void updateStaticStatics()
 	{
-		staticTable.push_back(val);
-		return staticTable.size() - 1;
-	}
-	uint32_t addStaticInit(const int32_t val, const size_t size)
-	{
-		staticTable.resize(staticTable.size() + size, val);
-		return staticTable.size() - 1;
-	}
-	void modifyLastInitStaticByte(const uint8_t byte, const uint8_t index)
-	{
-		assert((index < 4 && index >= 0) && "modifyLastInitStaticByte index out of bounds");
-		*((uint8_t*)&staticTable.back() + index) = byte;
-	}
-	void modifyLastInitStaticShort(const uint16_t byte, const uint8_t index)
-	{
-		if(staticTableShortIndexes.empty() || staticTableShortIndexes.back() != staticTable.size() - 1)
-			staticTableShortIndexes.push_back(staticTable.size() - 1);
-
-		assert((index == 0 || index == 2) && "modifyLastInitStaticShort index out of bounds");
-		*(uint16_t*)((uint8_t*)&staticTable.back() + index) = Utils::Bitwise::SwapEndian(byte);
-	}
-	uint32_t getStaticSize() const
-	{
-		return staticTable.size();
-	}
-	uint32_t getStaticCapacity() const
-	{
-		return staticTable.capacity();
-	}
-	void fillStaticCapacity()
-	{
-		staticTable.resize(staticTable.capacity());
-	}
-	uint32_t getStaticRemainder() const
-	{
-		return staticTable.capacity() - staticTable.size();
-	}
-	const int32_t* getStaticData() const
-	{
-		return staticTable.data();
+		for (auto item : staticMapStatic)
+			item.second->setUsedStaticInd(this);
 	}
 	const uint8_t* getNewStaticData() const
 	{
-		return newStaticTable.data();
+		return staticTable.data();
 	}
 	std::string getStaticsAsString()
 	{
 		std::string out = "//> Default Static Information\r\nSetStaticsCount " + std::to_string(newStaticCount);
-		for (auto sdata:finalStatics)
+		for (auto sdata : UsedStatics)
 		{
 			out += sdata->getStringOutput(getEndian(), getStackWidth());
 		}
@@ -185,21 +142,24 @@ public:
 	{
 		return newStaticCount;
 	}
-	void incStaticCount(StaticData* staticData)
+	void incStaticCount(std::shared_ptr<StaticData> staticData)
 	{
-		assert(staticData);
+		//assert(staticData);
 		assert(staticData->getSize() && "incAmount must be positive");
 		newStaticCount += staticData->getSize();
-		finalStatics.push_back(staticData);
+
+		UsedStatics.push_back(staticData);
 	}
-	void addStaticNewDecl(unsigned sourceLoc, const std::string& name, int size)
+	void addStaticNewDecl(const std::string& name, int size, bool isStaticStorage)
 	{
-		statics.push_back(std::make_unique<StaticData>(name, size));
-		currentStatic = statics.back().get();
-		Statics.insert({ sourceLoc, currentStatic });
+		uint32_t NameHash = Utils::Hashing::JoaatCased(name);
+		if (isStaticStorage)
+			currentStatic = staticMapStatic.insert({ NameHash , std::make_shared<StaticData>(name, size) })->second.get();
+		else
+			currentStatic = staticMapExtern.insert({ NameHash , std::make_shared<StaticData>(name, size) })->second.get();
 	}
 	StaticData* getCurrentStatic()const{ return currentStatic; }
-	std::vector<uint8_t>& getStaticTable(){ return newStaticTable; }
+	std::vector<uint8_t>& getStaticTable(){ return staticTable; }
 	
 	uint8_t getStackWidth()const 
 	{
@@ -209,13 +169,22 @@ public:
 	{
 		return _endian;
 	}
-	StaticData* findStatic(unsigned sourceLoc)
+	StaticData* findStatic(const std::string& name)
 	{
-		auto it = Statics.find(sourceLoc);
-		if (it != Statics.end())
+		uint32_t NameHash = Utils::Hashing::JoaatCased(name);
+		auto range = staticMapExtern.equal_range(NameHash);
+		for (auto it = range.first; it != range.second; ++it)
 		{
-			return it->second;
+			if (it->second.get()->getName() == name)
+				return it->second.get();
 		}
+		range = staticMapStatic.equal_range(NameHash);
+		for (auto it = range.first; it != range.second; ++it)
+		{
+			if (it->second.get()->getName() == name)
+				return it->second.get();
+		}
+
 		return NULL;
 	}
 

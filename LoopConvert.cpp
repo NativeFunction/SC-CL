@@ -162,12 +162,6 @@ static Rewriter rewriter;
 #pragma region Global_Var_and_Scope_Decls
 unique_ptr<Script> scriptData = nullptr;
 uint32_t CurrentFileId = 0;
-typedef struct NamedIndex
-{
-	uint32_t index;
-	string name;
-} NamedIndex;
-map<uint32_t, NamedIndex> statics;///static decl end loc, StaticData
 static int globalInc = 0;
 static uint32_t staticInc = 0;
 
@@ -519,18 +513,6 @@ const DeclRefExpr *getDeclRefExpr(const Expr *e) {
 	}
 	return NULL;
 }
-bool findStaticIndex(const string& key, uint32_t* sourceLloc)
-{
-	for (auto entry : statics)
-	{
-		if (entry.second.name == key)
-		{
-			*sourceLloc = entry.first;
-			return true;
-		}
-	}
-	return false;
-}
 #pragma endregion
 
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
@@ -732,7 +714,7 @@ public:
 				}
 			}
 		}
-		else if (auto sData = scriptData.findStatic(declref->getDecl()->getLocEnd().getRawEncoding())) {
+		else if (auto sData = scriptData.findStatic(dumpName(cast<NamedDecl>(declref->getDecl())))) {
 
 			scriptData.getCurrentFunction()->addUsedStatic(sData);
 			if (isLtoRValue && !isAddr)
@@ -1017,20 +999,13 @@ public:
 				string str;
 				if (EvaluateAsString(argArray[0], str))
 				{
-					uint32_t loc = 0;
-					
-					if (findStaticIndex(str, &loc))
+					StaticData* data = scriptData.findStatic(str);
+					if (data)
 					{
-						StaticData* data = scriptData.findStatic(loc);
-						if (data)
-						{
-							(scriptData.getCurrentFunction()->*func)(data);
-							scriptData.getCurrentFunction()->pushComment("(ASM Named Static) " + str);
-							ret = true;
-							return;
-						}
-						else
-							Throw("varName \"" + str + "\" not found", rewriter, call->getSourceRange());
+						(scriptData.getCurrentFunction()->*func)(data);
+						scriptData.getCurrentFunction()->pushComment("(ASM Named Static) " + str);
+						ret = true;
+						return;
 					}
 					else
 						Throw("varName \"" + str + "\" not found", rewriter, call->getSourceRange());
@@ -1395,9 +1370,15 @@ public:
 					if (EvaluateAsString(argArray[0], str))
 					{
 						uint32_t index = 0;
-						if (LocalVariables.find(str, &index) || findStaticIndex(str, &index))
+						StaticData* sData = NULL;
+						if (LocalVariables.find(str, &index))
 						{
 							AddInstruction(PushInt, index);
+							return true;
+						}
+						else if((sData = scriptData.findStatic(str)))
+						{
+							AddInstruction(PushInt, sData->getIndex());
 							return true;
 						}
 						else
@@ -5599,7 +5580,6 @@ public:
 			const Type* type = ivie->getType().getTypePtr();
 			uint32_t size = getSizeFromBytes(getSizeOfType(type));
 
-			scriptData.addStaticInit(0, size);
 			scriptData.getCurrentStatic()->pushNullInit(size, scriptData.getStackWidth());
 			return true;
 		}
@@ -5634,10 +5614,10 @@ public:
 
 				if (type->isCharType())
 				{
-					if (intIndex == 0)
-						scriptData.addStaticInit();
-
-					scriptData.modifyLastInitStaticByte(resValue, intIndex);
+					//if (intIndex == 0)
+					//	scriptData.addStaticInit();
+					//
+					//scriptData.modifyLastInitStaticByte(resValue, intIndex);
 
 					if (++intIndex >= stackWidth)
 						intIndex = 0;
@@ -5646,10 +5626,10 @@ public:
 				}
 				else if (type->isSpecificBuiltinType(BuiltinType::Kind::Short) || type->isSpecificBuiltinType(BuiltinType::Kind::UShort))
 				{
-					if (intIndex == 0)
-						scriptData.addStaticInit();
-
-					scriptData.modifyLastInitStaticShort(resValue, intIndex);
+					//if (intIndex == 0)
+					//	scriptData.addStaticInit();
+					//
+					//scriptData.modifyLastInitStaticShort(resValue, intIndex);
 
 					intIndex += 2;
 					if (intIndex >= stackWidth)
@@ -5658,7 +5638,6 @@ public:
 				}
 				else if (isCurrentExprEvaluable)
 				{
-					scriptData.addStaticInit((int32_t)resValue);//remove later
 					scriptData.getCurrentStatic()->pushInit32(resValue, scriptData.getEndian());
 					scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
 				}
@@ -5673,7 +5652,6 @@ public:
 			{
 				if (isCurrentExprEvaluable)
 				{
-					scriptData.addStaticInit(FloatToInt((float)extractAPFloat(result.Val.getFloat())));
 					scriptData.getCurrentStatic()->pushInit32(FloatToInt((float)extractAPFloat(result.Val.getFloat())), scriptData.getEndian());
 				}
 				else
@@ -5685,8 +5663,6 @@ public:
 			else if (result.Val.isComplexFloat())
 			{
 				//can this be unevaluable?
-				scriptData.addStaticInit(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatReal())));
-				scriptData.addStaticInit(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatImag())));
 
 				scriptData.getCurrentStatic()->pushInit32(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatReal())), scriptData.getEndian());
 				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
@@ -5697,9 +5673,6 @@ public:
 			else if (result.Val.isComplexInt())
 			{
 				//can this be unevaluable?
-				scriptData.addStaticInit(result.Val.getComplexIntReal().getSExtValue());
-				scriptData.addStaticInit(result.Val.getComplexIntImag().getSExtValue());
-
 
 				scriptData.getCurrentStatic()->pushInit32(result.Val.getComplexIntReal().getSExtValue(), scriptData.getEndian());
 				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
@@ -5715,35 +5688,35 @@ public:
 			{
 				scriptData.getCurrentStatic()->pushStringInit(literal->getString().str(), scriptData.getStackWidth() * getSizeFromBytes(getLiteralSizeOfType(e->getType().getTypePtr())));
 				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
-				string strlit = literal->getString().str();
-				e->getType().getTypePtr();
-
-				int32_t strsize = getLiteralSizeOfType(e->getType().getTypePtr());
-
-				int32_t buffer = 0;
-				int32_t i = 0, b = 0;
-				for (; i < strsize; i++, b++)
-				{
-					if (b >= stackWidth)
-					{
-						scriptData.addStaticInitBig(buffer);
-						b = 0;
-						buffer = 0;
-
-						if (i >= (int32_t)strlit.length())
-						{
-							scriptData.addStaticInit(0, Utils::Math::CeilDivInt(strsize - i, stackWidth));
-							break;
-						}
-					}
-					if (i >= (int32_t)strlit.length())
-						((uint8_t*)&buffer)[b] = 0;//add padding
-					else
-						((uint8_t*)&buffer)[b] = strlit[i];
-
-				}
-				if (b != 0)
-					scriptData.addStaticInitBig(buffer);
+				//string strlit = literal->getString().str();
+				//e->getType().getTypePtr();
+				//
+				//int32_t strsize = getLiteralSizeOfType(e->getType().getTypePtr());
+				//
+				//int32_t buffer = 0;
+				//int32_t i = 0, b = 0;
+				//for (; i < strsize; i++, b++)
+				//{
+				//	if (b >= stackWidth)
+				//	{
+				//		scriptData.addStaticInitBig(buffer);
+				//		b = 0;
+				//		buffer = 0;
+				//
+				//		if (i >= (int32_t)strlit.length())
+				//		{
+				//			scriptData.addStaticInit(0, Utils::Math::CeilDivInt(strsize - i, stackWidth));
+				//			break;
+				//		}
+				//	}
+				//	if (i >= (int32_t)strlit.length())
+				//		((uint8_t*)&buffer)[b] = 0;//add padding
+				//	else
+				//		((uint8_t*)&buffer)[b] = strlit[i];
+				//
+				//}
+				//if (b != 0)
+				//	scriptData.addStaticInitBig(buffer);
 
 			}
 
@@ -5753,7 +5726,6 @@ public:
 		{
 			const InitListExpr *I = cast<const InitListExpr>(e);
 			uint32_t size = getSizeFromBytes(getSizeOfType(I->getType().getTypePtr()));
-			uint32_t SavedStaticInc = scriptData.getStaticSize();
 			size_t curSize = scriptData.getCurrentStatic()->getStackInitSize(scriptData.getStackWidth());
 			resetIntIndex();
 			for (uint32_t i = 0; i < I->getNumInits(); i++)
@@ -5763,7 +5735,6 @@ public:
 				ParseLiteral(I->getInit(i), false, true);
 				if (doesCurrentValueNeedSet)
 				{
-					scriptData.addStaticInit();//needs removing
 					scriptData.getCurrentStatic()->addOpSetThisStatic(scriptData);
 				}
 			}
@@ -5773,12 +5744,6 @@ public:
 			isCurrentExprEvaluable = true;
 			doesCurrentValueNeedSet = false;
 
-			if (scriptData.getStaticSize() - SavedStaticInc < size)
-			{
-				//cout << "init list size is less adding " << size - (oldStaticInc - SavedStaticInc) << " size: " << size << endl;
-
-				scriptData.addStaticInit(0, size - (scriptData.getStaticSize() - SavedStaticInc));
-			}
 			if (scriptData.getCurrentStatic()->getStackInitSize(scriptData.getStackWidth()) - curSize < size)
 			{
 				scriptData.getCurrentStatic()->pushNullInit(size -(scriptData.getCurrentStatic()->getStackInitSize(scriptData.getStackWidth()) - curSize), scriptData.getStackWidth());
@@ -5805,7 +5770,7 @@ public:
 					}
 					else{
 						//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
-						StaticData* staticData = scriptData.findStatic(DRE->getDecl()->getLocEnd().getRawEncoding());
+						StaticData* staticData = scriptData.findStatic(dumpName(cast<NamedDecl>(DRE->getDecl())));
 						assert(staticData && "Static Not Found");
 						scriptData.getCurrentStatic()->addOpGetStaticP(staticData);
 						scriptData.getCurrentStatic()->setDynamic();
@@ -5833,7 +5798,6 @@ public:
 					scriptData.getCurrentStatic()->addOpPushString(literal->getString().str());
 					scriptData.getCurrentStatic()->addOpSetThisStatic(scriptData);
 					scriptData.getCurrentStatic()->setDynamic();
-					scriptData.addStaticInit();//prevents errors with old methods
 				}
 				else if (isa<DeclRefExpr>(icast->getSubExpr()))//int vstack[10] = {1,2,3,4,5,6,7,8,9,10}, *vstack_ptr = vstack;
 				{
@@ -5841,7 +5805,7 @@ public:
 					doesCurrentValueNeedSet = true;
 
 					//we can index because the name has to be declared in clang to use the declare, we will let clang handle errors
-					StaticData* staticData = scriptData.findStatic(DRE->getDecl()->getLocEnd().getRawEncoding());
+					StaticData* staticData = scriptData.findStatic(dumpName(cast<NamedDecl>(DRE->getDecl())));
 					assert(staticData && "Static Not Found");
 					scriptData.getCurrentStatic()->addOpGetStaticP(staticData);
 					scriptData.getCurrentStatic()->setDynamic();
@@ -5861,8 +5825,6 @@ public:
 						if (!function)
 							Throw("Static function pointer \"" + decl->getNameAsString() + "\" not found");
 
-						scriptData.addStaticInit();
-						//New Handling
 						scriptData.getCurrentStatic()->addOpFuncLoc(function);
 						scriptData.getCurrentStatic()->addOpSetThisStatic(scriptData);
 						scriptData.getCurrentStatic()->setDynamic();
@@ -6051,7 +6013,7 @@ public:
 					cur->setDynamic();
 					if (!inc)
 					{
-						cur->addOpGetStaticP(scriptData.findStatic(declRef->getDecl()->getLocEnd().getRawEncoding()));
+						cur->addOpGetStaticP(scriptData.findStatic(dumpName(cast<NamedDecl>(declRef->getDecl()))));
 					}
 
 					if (!ssize)
@@ -6131,7 +6093,7 @@ public:
 			{
 				if (auto varDecl = dyn_cast_or_null<VarDecl>(declRef->getFoundDecl()))
 				{
-					scriptData.getCurrentStatic()->addOpGetStaticP(scriptData.findStatic(varDecl->getLocEnd().getRawEncoding()));
+					scriptData.getCurrentStatic()->addOpGetStaticP(scriptData.findStatic(dumpName(cast<NamedDecl>(varDecl))));
 					scriptData.getCurrentStatic()->setDynamic();
 					return 1;
 				}else
@@ -6171,56 +6133,72 @@ public:
 				}
 				else
 				{
-					uint32_t staticLoc = globalVarDecl->getLocEnd().getRawEncoding();// +dumpName(cast<NamedDecl>(D));
+					//TODO: this will have to catch exturning vars
+					if (scriptData.findStatic(dumpName(cast<NamedDecl>(D))) == NULL)
+					{
+						string varName = dumpName(cast<NamedDecl>(D));
+						uint32_t size = getSizeOfType(globalVarDecl->getType().getTypePtr());
+						const Expr *initializer = globalVarDecl->getAnyInitializer();
 
-					if (statics.find(staticLoc) == statics.end()) {
 
-						auto size = getSizeOfType(globalVarDecl->getType().getTypePtr());
-						scriptData.addStaticNewDecl(staticLoc, dumpName(cast<NamedDecl>(D)), getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())));
+						switch (globalVarDecl->getStorageClass())
+						{
+							case SC_None:
+							scriptData.addStaticNewDecl(varName, getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())), false);
+							break;
+							case SC_Extern:
+							if (initializer)
+								scriptData.addStaticNewDecl(varName, getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())), false);
+							else
+								return true;//this is prototyped
+							break;
+							case SC_Static:
+							scriptData.addStaticNewDecl(varName, getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())), true);
+							break;
+							default:
+							Throw("Unhandled Storage Class", rewriter, globalVarDecl->getSourceRange());
+						}
+
 						resetIntIndex();
 						savedType = nullptr;
 
 						isCurrentExprEvaluable = true;
 						doesCurrentValueNeedSet = false;
 
-						statics.insert({ staticLoc, {staticInc, dumpName(cast<NamedDecl>(D))} });
-
-						scriptData.addStaticDecl(getSizeFromBytes(size));
 						staticInc += getSizeFromBytes(size);
-
-						const Expr *initializer = globalVarDecl->getAnyInitializer();
-
 
 						if (initializer) {
 
 							ParseLiteral(initializer, false, true);
 
-							if (scriptData.getStaticSize() > staticInc)//undefined length arrays (should check if it is an undefined length array)
-								staticInc = scriptData.getStaticSize();
+							//if (scriptData.getStaticSize() > staticInc)//undefined length arrays (should check if it is an undefined length array)
+							//	staticInc = scriptData.getStaticSize();
 
 							if (doesCurrentValueNeedSet)
 							{
-								scriptData.addStaticInit();
 								scriptData.getCurrentStatic()->addOpSetThisStatic(scriptData);
 							}
 							scriptData.getCurrentStatic()->fillCapacity(scriptData.getStackWidth());
 						}
 						else
 						{
-							scriptData.fillStaticCapacity();
 							scriptData.getCurrentStatic()->fillCapacity(scriptData.getStackWidth());
 						}
 
 
-						if (scriptData.getStaticSize() > staticInc)
-							Warn("Static Overflow Old:" + to_string(scriptData.getStaticSize()) + " New:" + to_string(staticInc));
-
-						if (scriptData.getStaticSize() != scriptData.getStaticCapacity())
-							Throw("not all values in static decl were initialized");
+						//if (scriptData.getStaticSize() > staticInc)
+						//	Warn("Static Overflow Old:" + to_string(scriptData.getStaticSize()) + " New:" + to_string(staticInc));
+						//
+						//if (scriptData.getStaticSize() != scriptData.getStaticCapacity())
+						//	Throw("not all values in static decl were initialized");
 
 					}
 					else
-						Throw("Var " + dumpName(cast<NamedDecl>(D)) + " is already defined", rewriter, D->getLocStart());
+					{
+						if (globalVarDecl->getStorageClass() != SC_Extern)
+							Throw("Var " + dumpName(cast<NamedDecl>(D)) + " is already defined", rewriter, D->getLocStart());
+					}
+						
 				}
 			}
 		}
@@ -6326,6 +6304,9 @@ public:
 	}
 	~MyFrontendAction()
 	{
+		scriptData->updateStaticStatics();
+		scriptData->resetStaticStatics();
+
 		//this should not be needed anymore
 		if (diagnostics->getClient()->getNumErrors())
 			exit(EXIT_FAILURE);
@@ -6504,18 +6485,9 @@ int ProcessFiles(ClangTool &Tool)
 
 		string outDir = GetDir(SourcePaths[0]);
 		string scriptName = (Option_OutputFileName != "" ? Option_OutputFileName : GetBaseNameFromDir(SourcePaths[0]));
-		scriptData.reset(new Script(scriptName, Option_BuildType, Option_Platform));
-
-		if (Option_Singleton)
-			scriptData->setSingleton();
-
-		if (Option_EntryFunctionPadding)
-			scriptData->setEntryFunctionPadding();
-
-		scriptData->setOptLevel(Option_OptimizationLevel);
+		scriptData.reset(new Script(scriptName, Option_BuildType, Option_Platform, Option_Singleton, Option_EntryFunctionPadding, Option_OptimizationLevel));
 
 		stackWidth = scriptData->getStackWidth();
-
 		cout << "Starting Clang 3.8.1\r\n";
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 		/// ClangTool::run accepts a FrontendActionFactory, which is then used to

@@ -8,6 +8,8 @@
 #include "MenuExecutionHandling.h"
 #include "MenuUiHandling.h"
 
+int externTest;
+
 static Page Container =
 {
 	.Ui.HeaderFont = Font_SignPainter_HouseScript,
@@ -31,6 +33,7 @@ static Page Container =
 #pragma region MenuCommands
 bool HasPlayerOpenedMenu()
 {
+	externTest = 5;
 	if (is_disabled_control_pressed(2, INPUT_SCRIPT_RB))
 	{
 		set_input_exclusive(2, INPUT_FRONTEND_X);
