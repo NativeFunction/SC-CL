@@ -7,6 +7,7 @@
 #include <chrono>
 #include "Script.h"
 #include <unordered_map>
+#include <iterator>
 
 
 using namespace std;
@@ -603,7 +604,7 @@ void FunctionData::jumpThreading()
 {
 	if (getOptLevel() <= OptimisationLevel::OL_Trivial)
 		return;
-	for (int count = 0; count < (getOptLevel() > OptimisationLevel::OL_Normal ? 3 : 1); count++){//looping it takes more compile time so only on O3 but it will be able to produce more optimised code
+	for (int count = 0; count < (getOptLevel() > OptimisationLevel::OL_Normal ? 4 : 1); count++){//looping it takes more compile time so only on O3 but it will be able to produce more optimised code
 		unordered_map<string, vector<size_t>> JumpLocs;
 		unordered_map<string, vector<SwitchCaseStorage*>> switchCaseLocs;
 		unordered_map<string, vector<SwitchStorage*>> switchDefaultLocs;
@@ -646,6 +647,16 @@ void FunctionData::jumpThreading()
 					}
 					if (switchStorage->hasDefaultJumpLoc()){
 						switchDefaultLocs[switchStorage->getDefaultJumpLoc()->toString()].push_back(switchStorage);
+						for (i++; i < instructionCount; i++){
+							auto next = Instructions[i];
+							if (next->getKind() != OK_Label){
+								next->makeNull();
+							}
+							else{
+								i--;
+								break;
+							}
+						}
 					}
 					break;
 				}
@@ -687,6 +698,9 @@ void FunctionData::jumpThreading()
 					for (auto index : locs->second){
 						Instructions[index]->setString(it->second);
 					}
+					auto &src = locs->second;
+					auto &dst = JumpLocs[it->second];
+					std::move(src.begin(), src.end(), std::back_inserter(dst));
 					JumpLocs.erase(it->first);
 				}
 			}
@@ -696,8 +710,11 @@ void FunctionData::jumpThreading()
 					for (auto switchCase : locs->second){
 						switchCase->setCaseLocation(it->second);
 					}
+					auto &src = locs->second;
+					auto &dst = switchCaseLocs[it->second];
+					std::move(src.begin(), src.end(), std::back_inserter(dst));
+					switchCaseLocs.erase(it->first);
 				}
-				switchCaseLocs.erase(it->first);
 			}
 			{
 				auto locs = switchDefaultLocs.find(it->first);
@@ -705,8 +722,11 @@ void FunctionData::jumpThreading()
 					for (auto switchStore : locs->second){
 						switchStore->overWriteDefaultJumpLoc(it->second);
 					}
+					auto &src = locs->second;
+					auto &dst = switchDefaultLocs[it->second];
+					std::move(src.begin(), src.end(), std::back_inserter(dst));
+					switchDefaultLocs.erase(it->first);
 				}
-				switchDefaultLocs.erase(it->first);
 			}
 			{
 				auto locs = jumpTableLocs.find(it->first);
@@ -714,8 +734,12 @@ void FunctionData::jumpThreading()
 					for (auto jTable : locs->second){
 						jTable.first->setJumpLoc(jTable.second, it->second);
 					}
+					auto &src = locs->second;
+					auto &dst = jumpTableLocs[it->second];
+					std::move(src.begin(), src.end(), std::back_inserter(dst));
+					jumpTableLocs.erase(it->first);
 				}
-				jumpTableLocs.erase(it->first);
+				
 			}
 		}
 		for (auto it = LabelLocs.begin(); it != LabelLocs.end(); it++){
