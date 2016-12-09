@@ -12,12 +12,12 @@
 #define GetRelativeCursorIndex Container->CursorIndex - Container->ItemStartIndex
 #define this Container->Item[GetRelativeCursorIndex].Selection
 
-static int AddItemCounter = 0;
-static Page* Container;
-static bool(*AsyncFunction)(uint CurrentFrame, ...);
-static int AsyncFunctionParams[MaxAsyncParams];
-static uint AsyncFunctionParamCount;
-static uint AsyncFrameCount;//this is needed to provide nice 0 - FrameCountMax for CurrentFrame on AsynchronousFunction and for loading ui display slow start
+static int AddItemCounter = null;
+static Page* Container = nullptr;
+static bool(*AsyncFunction)(uint CurrentFrame, ...) = nullptr;
+static int AsyncFunctionParams[MaxAsyncParams] = {null};
+static uint AsyncFunctionParamCount = null;
+static uint AsyncFrameCount = null;//this is needed to provide nice 0 - FrameCountMax for CurrentFrame on AsynchronousFunction and for loading ui display slow start
 
 #pragma region Reset
 static void ResetCurrentItem()

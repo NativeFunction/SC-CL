@@ -31,8 +31,6 @@ const char* strcatGlobal(const char* str1, const char* str2)
 	//this takes advantage of strings being global
 	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
 
-	//reset pointer (only needed if statics was reset)
-	GlobalCharBuffer = GlobalCharBufferD;
 
 	strcpy((char*)GlobalCharBuffer, str1, 255);
 	stradd((char*)GlobalCharBuffer, str2, 255);
@@ -42,9 +40,6 @@ const char* straddiGlobal(const char* str1, int i)
 {
 	//this takes advantage of strings being global
 	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
-	
-	//reset pointer (only needed if statics was reset)
-	GlobalCharBuffer = GlobalCharBufferD;
 
 	strcpy((char*)GlobalCharBuffer, str1, 255);
 	straddi((char*)GlobalCharBuffer, i, 255);
@@ -54,9 +49,6 @@ const char* itosGlobal(int i)
 {
 	//this takes advantage of strings being global
 	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
-	
-	//reset pointer (only needed if statics was reset)
-	GlobalCharBuffer = GlobalCharBufferD;
 
 	itos((char*)GlobalCharBuffer, i, 64);
 	return (char*)GlobalCharBuffer;

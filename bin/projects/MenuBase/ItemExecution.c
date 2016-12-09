@@ -270,12 +270,12 @@ void Option_TestInt()
 }
 void Option_BoolTest()
 {
-	short sArr2D[3][5] = { { 1000,2000,3000,4000 },{ 6000,7000,8000,9000,10000 },{ 11000,12000,13000,14000,15000 } };
+	//short sArr2D[3][5] = { { 1000,2000,3000,4000 },{ 6000,7000,8000,9000,10000 },{ 11000,12000,13000,14000,15000 } };
 
 	if (!UpdateBoolConditional(DEBUG__GetContainer()->TestInt != 5, &SavedBoolTest))
 		Warn("Unable to toggle bool at this test int index");
-	print(itosGlobal(sArr2D[1][1]), 5000);
-	assert(false && "hello");
+	//print(itosGlobal(sArr2D[1][1]), 5000);
+	//assert(false && "hello");
 
 }
 void Option_EnumTest()
@@ -1271,7 +1271,6 @@ inline void MainMenu()
 #pragma region LoopedOptions
 void FlyMod(Player CurrentPlayerPed)
 {
-	externTest = 20;
 	DisableControl(2, INPUT_VEHICLE_LOOK_BEHIND);
 	DisableControl(2, INPUT_LOOK_BEHIND);
 	set_input_exclusive(2, INPUT_FRONTEND_X);

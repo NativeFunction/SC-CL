@@ -4,8 +4,6 @@
 #define MaxDisplayableItems 25
 #define MaxMenuLevels 10
 
-extern int externTest;
-
 typedef enum MenuSelectionType
 {
 	MST_None,

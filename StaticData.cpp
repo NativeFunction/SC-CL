@@ -64,6 +64,37 @@ void StaticData::addOpSetThisStatic(Script & scriptBase)
 	_initialisation.resize(_initialisation.size() + scriptBase.getStackWidth());
 }
 
+void StaticData::addOpSetThisStaticMult(Script & scriptBase, int32_t value, int32_t count)
+{
+	assert(!(_initialisation.size() % scriptBase.getStackWidth()) && "invalid initialisation size");
+
+	while(count > 0)
+	{
+		uint32_t currentCount = count > 50 ? 50 : count;
+
+		for (int i = 0; i < currentCount; i++)
+		{
+			Opcode * opPush = new Opcode(OK_PushInt);
+			opPush->setInt(value);
+			_dynamicInitialisation.push_back(opPush);
+		}
+		
+
+		Opcode * opPush = new Opcode(OK_PushInt);
+		opPush->setInt(currentCount);
+		Opcode * opPTR = new Opcode(OK_GetStaticP);
+		opPTR->storage.staticData = new OpStaticStorage(this, _initialisation.size() / scriptBase.getStackWidth());
+		Opcode * opFS = new Opcode(OK_FromStack);
+		_dynamicInitialisation.push_back(opPush);
+		_dynamicInitialisation.push_back(opPTR);
+		_dynamicInitialisation.push_back(opFS);
+		_initialisation.resize(_initialisation.size() + scriptBase.getStackWidth() * currentCount);
+
+		count -= 50;
+	}
+	
+}
+
 void StaticData::addOpFuncLoc(FunctionData * functionData)
 {
 	addReferencedFunction(functionData);
