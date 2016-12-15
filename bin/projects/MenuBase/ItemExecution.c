@@ -19,7 +19,7 @@ enum MenuBits
 	MB_VehicleHelper,
 	MB_NeverWanted
 };
-static int MenuLoopedBitset;
+static int MenuLoopedBitset = 0;
 #pragma endregion
 
 #pragma region AlignedDataTesting
@@ -162,6 +162,28 @@ void ShortTesting()
 #pragma endregion
 
 #pragma region Helpers
+//GetVehicleMetaFromHash (search CARNOTFOUND in exe from GET_VEHICLE_CLASS_FROM_NAME)
+int* Sub64P(int* x, int y)
+{
+	int out[2];
+	out[0] = *x - y;
+	*(int*)((char*)out + 4) = *(int*)((char*)x + 4) - (y + 4);
+	return (int*)out[0];
+}
+int* Add64P(int* x, int y)
+{
+	int out[2];
+	out[0] = *x + y;
+	*(int*)((char*)out + 4) = *(int*)((char*)x + 4) + (y + 4);
+	return (int*)out[0];
+}
+int* Push64P(int x[2])
+{
+	int out[2];
+	out[0] = x[0];
+	*(int*)((char*)out + 4) = x[1];
+	return (int*)out[0];
+}
 #pragma endregion
 
 #pragma region Parsers
@@ -275,7 +297,21 @@ void Option_TestInt()
 void Option_BoolTest()
 {
 	//short sArr2D[3][5] = { { 1000,2000,3000,4000 },{ 6000,7000,8000,9000,10000 },{ 11000,12000,13000,14000,15000 } };
-	is_this_model_a_heli(VEHICLE_ADDER);
+	const char* EXEStringAddr = _get_online_version();
+	#define EXEStringAddrDiff 31273176
+
+	int* BaseAddr = (int*)EXEStringAddr;
+	Break(itosGlobal((int)&BaseAddr));
+	Break(itosGlobal((int)((char*)&BaseAddr + 4)));
+
+	BaseAddr = Sub64P(&BaseAddr, EXEStringAddrDiff);
+	Break(itosGlobal((int)&BaseAddr));
+	Break(itosGlobal((int)((char*)&BaseAddr + 4)));
+
+	Break(itosGlobal(*Add64P(&BaseAddr, 0x1D206D8)));
+	Break(itosGlobal((int)&BaseAddr));
+	Break(itosGlobal((int)((char*)&BaseAddr + 4)));
+
 	if (!UpdateBoolConditional(DEBUG__GetContainer()->TestInt != 5, &SavedBoolTest))
 		Warn("Unable to toggle bool at this test int index");
 	//print(itosGlobal(sArr2D[1][1]), 5000);
@@ -1010,7 +1046,7 @@ void Menu__VehicleSpawner_Offroad()
 	if (is_dlc_present(Update_mpImportExport))
 	{
 		AddItemVehicle(VEHICLE_BLAZER5, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_DUNE4, Option_SpawnVehicle);
+		AddItemWithParam("Ramp Buggy Custom", VEHICLE_DUNE4, Option_SpawnVehicle);
 		AddItemVehicle(VEHICLE_DUNE5, Option_SpawnVehicle);
 		AddItemVehicle(VEHICLE_TECHNICAL2, Option_SpawnVehicle);
 	}

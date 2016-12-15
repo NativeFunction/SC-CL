@@ -18,6 +18,7 @@ static Page Container =
 	.TotalItemCount = null,
 	.ItemStartIndex = null,
 	.IsCurrentMenuDynamic = false,
+	.IsCurrentMenuInvalid = false,
 	.CurrentMenuLevel = null,
 	.Loading = {null},
 	.Item = {null},
