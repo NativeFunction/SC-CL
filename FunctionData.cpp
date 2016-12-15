@@ -756,10 +756,13 @@ void FunctionData::jumpThreading()
 
 void FunctionData::moveInto(std::vector<Opcode*>& source)
 {
-	size_t curSize = Instructions.size();
-	Instructions.resize(Instructions.size() + source.size());
-	memcpy(&Instructions[curSize], source.data(), source.size() * sizeof(Opcode*));
-	source.clear();
+	if (source.size() > 0)
+	{
+		size_t curSize = Instructions.size();
+		Instructions.resize(Instructions.size() + source.size());
+		memcpy(&Instructions[curSize], source.data(), source.size() * sizeof(Opcode*));
+		source.clear();
+	}
 }
 
 void FunctionData::addOpAdd()

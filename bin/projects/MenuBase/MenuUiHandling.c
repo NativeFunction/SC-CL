@@ -8,13 +8,28 @@
 #include "MenuExecutionHandling.h"
 #include "MenuUiHandling.h"
 
-int externTest;
-
 static Page Container =
 {
+	.UiTestCoords = {null},
+	.TestInt = null,
+	.IsMenuOpen = false,
+	.DisableMenuOpenControls = null,
+	.CursorIndex = null,
+	.TotalItemCount = null,
+	.ItemStartIndex = null,
+	.IsCurrentMenuDynamic = false,
+	.CurrentMenuLevel = null,
+	.Loading = {null},
+	.Item = {null},
+	.Ui.HeaderText = nullptr,
+	.Ui.IsHeaderGxt = false,
+	.Ui.MenuControlSFID = null,
+	.Ui.MenuControlSFID2 = null,
+
+
+	.Level = { ExecutionEntry },
 	.Ui.HeaderFont = Font_SignPainter_HouseScript,
 	.Ui.TextFont = Font_Chalet_LondonNineteenSixty,
-	.Level = { ExecutionEntry },
 	.Ui.DrawPos = { 0.76f, 0.16f },
 	.Ui.BackgroundDrawSize = { 0.25000, 0.08f },
 	.Ui.BackgroundColor = { 0, 0, 0, 180 },
@@ -33,7 +48,6 @@ static Page Container =
 #pragma region MenuCommands
 bool HasPlayerOpenedMenu()
 {
-	externTest = 5;
 	if (is_disabled_control_pressed(2, INPUT_SCRIPT_RB))
 	{
 		set_input_exclusive(2, INPUT_FRONTEND_X);
@@ -1038,20 +1052,6 @@ void InitMenuDraw()
 {
 	InitMenuExecution();
 
-	Container.Loading.IsMenuLoading = false;
-	Container.Ui.HeaderFont = Font_SignPainter_HouseScript;
-	Container.Ui.TextFont = Font_Chalet_LondonNineteenSixty;
-	Container.Level[0] = (MenuLevel) { ExecutionEntry, {0, 0} };
-	Container.Ui.DrawPos = (vector2) { 0.76f, 0.16f };
-	Container.Ui.BackgroundDrawSize = (vector2) { 0.25000, 0.08f };
-	Container.Ui.BackgroundColor = (RGBA) { 0, 0, 0, 180 };
-	Container.Ui.HeaderTextColor = (RGBA) { 255, 255, 255, 255 };
-	Container.Ui.ScrollBarColor = (RGBA) { 230, 230, 230, 255 };
-	Container.Ui.SelectedTextColor = (RGBA) { 0, 0, 0, 255 };
-	Container.Ui.UnselectedTextColor = (RGBA) { 230, 230, 230, 255 };
-	Container.Ui.DisabledUnselectedTextColor = (RGBA) { 155,155,155,255 };
-	Container.Ui.DisabledSelectedTextColor = (RGBA) { 50, 50, 50, 255 };
-	Container.Ui.DisabledScrollBarColor = (RGBA) { 190, 190, 190, 255 };
 	LoadTextureDictionary("CommonMenu");
 	LoadTextureDictionary("mpleaderboard");
 

@@ -52,11 +52,6 @@ public:
 		cleanUpDynamic();
 	}
 
-	std::shared_ptr<StaticData> getptr()
-	{
-		return shared_from_this();
-	}
-
 	size_t getSize()const
 	{
 		return _size;
@@ -149,6 +144,7 @@ public:
 		_dynamicInitialisation.push_back(op);
 	}
 	void addOpSetThisStatic(Script& scriptBase);//will only ever called on this static data so no point passing params
+	void addOpSetThisStaticMult(Script & scriptBase, int32_t value, int32_t count);
 	void addOpGetStaticP(StaticData* staticData)
 	{
 		addReferencedStatic(staticData);

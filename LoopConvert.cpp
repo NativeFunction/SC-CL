@@ -5580,6 +5580,13 @@ public:
 			const Type* type = ivie->getType().getTypePtr();
 			uint32_t size = getSizeFromBytes(getSizeOfType(type));
 
+			if (Option_EntryFunctionPadding)
+			{
+				isCurrentExprEvaluable = false;
+				scriptData.getCurrentStatic()->addOpSetThisStaticMult(scriptData, 0, size);
+				scriptData.getCurrentStatic()->setDynamic();
+			}
+			else
 			scriptData.getCurrentStatic()->pushNullInit(size, scriptData.getStackWidth());
 			return true;
 		}
@@ -5622,6 +5629,7 @@ public:
 					if (++intIndex >= stackWidth)
 						intIndex = 0;
 
+					//TODO:  if (!isCurrentExprEvaluable)
 					scriptData.getCurrentStatic()->pushInit8(resValue);
 				}
 				else if (type->isSpecificBuiltinType(BuiltinType::Kind::Short) || type->isSpecificBuiltinType(BuiltinType::Kind::UShort))
@@ -5634,50 +5642,78 @@ public:
 					intIndex += 2;
 					if (intIndex >= stackWidth)
 						intIndex = 0;
+
+					//TODO:  if (!isCurrentExprEvaluable)
 					scriptData.getCurrentStatic()->pushInit16(resValue, scriptData.getEndian());
 				}
-				else if (isCurrentExprEvaluable)
+				else if (!isCurrentExprEvaluable || Option_EntryFunctionPadding)
 				{
-					scriptData.getCurrentStatic()->pushInit32(resValue, scriptData.getEndian());
-					scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
+					isCurrentExprEvaluable = false;
+					doesCurrentValueNeedSet = true;
+					scriptData.getCurrentStatic()->addOpPushInt(resValue);
+					scriptData.getCurrentStatic()->setDynamic();
 				}
 				else
 				{
-					scriptData.getCurrentStatic()->addOpPushInt(resValue);
+
+					scriptData.getCurrentStatic()->pushInit32(resValue, scriptData.getEndian());
+					scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
 				}
 
 				return true;
 			}
 			else if (result.Val.isFloat())
 			{
-				if (isCurrentExprEvaluable)
+				if (!isCurrentExprEvaluable || Option_EntryFunctionPadding)
 				{
-					scriptData.getCurrentStatic()->pushInit32(FloatToInt((float)extractAPFloat(result.Val.getFloat())), scriptData.getEndian());
+					isCurrentExprEvaluable = false;
+					doesCurrentValueNeedSet = true;
+					scriptData.getCurrentStatic()->addOpPushFloat((float)extractAPFloat(result.Val.getFloat()));
+					scriptData.getCurrentStatic()->setDynamic();
 				}
 				else
 				{
-					scriptData.getCurrentStatic()->addOpPushFloat((float)extractAPFloat(result.Val.getFloat()));
+					scriptData.getCurrentStatic()->pushInit32(FloatToInt((float)extractAPFloat(result.Val.getFloat())), scriptData.getEndian());
 				}
 				return true;
 			}
 			else if (result.Val.isComplexFloat())
 			{
-				//can this be unevaluable?
-
-				scriptData.getCurrentStatic()->pushInit32(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatReal())), scriptData.getEndian());
-				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
-				scriptData.getCurrentStatic()->pushInit32(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatImag())), scriptData.getEndian());
-				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
+				if (!isCurrentExprEvaluable || Option_EntryFunctionPadding)
+				{
+					isCurrentExprEvaluable = false;
+					doesCurrentValueNeedSet = true;
+					scriptData.getCurrentStatic()->addOpPushFloat((float)extractAPFloat(result.Val.getComplexFloatReal()));
+					scriptData.getCurrentStatic()->addOpPushFloat((float)extractAPFloat(result.Val.getComplexFloatImag()));
+					scriptData.getCurrentStatic()->setDynamic();
+				}
+				else
+				{
+					scriptData.getCurrentStatic()->pushInit32(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatReal())), scriptData.getEndian());
+					scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
+					scriptData.getCurrentStatic()->pushInit32(FloatToInt((float)extractAPFloat(result.Val.getComplexFloatImag())), scriptData.getEndian());
+					scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
+				}
 				return true;
 			}
 			else if (result.Val.isComplexInt())
 			{
-				//can this be unevaluable?
+				if (!isCurrentExprEvaluable || Option_EntryFunctionPadding)
+				{
+					isCurrentExprEvaluable = false;
+					doesCurrentValueNeedSet = true;
+					scriptData.getCurrentStatic()->addOpPushInt(result.Val.getComplexIntReal().getSExtValue());
+					scriptData.getCurrentStatic()->addOpPushInt(result.Val.getComplexIntImag().getSExtValue());
+					scriptData.getCurrentStatic()->setDynamic();
+				}
+				else
+				{
+					scriptData.getCurrentStatic()->pushInit32(result.Val.getComplexIntReal().getSExtValue(), scriptData.getEndian());
+					scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
+					scriptData.getCurrentStatic()->pushInit32(result.Val.getComplexIntImag().getSExtValue(), scriptData.getEndian());
+					scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
 
-				scriptData.getCurrentStatic()->pushInit32(result.Val.getComplexIntReal().getSExtValue(), scriptData.getEndian());
-				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
-				scriptData.getCurrentStatic()->pushInit32(result.Val.getComplexIntImag().getSExtValue(), scriptData.getEndian());
-				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
+				}
 				return true;
 			}
 		}
@@ -5686,8 +5722,19 @@ public:
 			const StringLiteral *literal = cast<const StringLiteral>(e);
 			if (literal->getString().str().length() > 0)
 			{
-				scriptData.getCurrentStatic()->pushStringInit(literal->getString().str(), scriptData.getStackWidth() * getSizeFromBytes(getLiteralSizeOfType(e->getType().getTypePtr())));
-				scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
+				if (Option_EntryFunctionPadding)
+				{
+					isCurrentExprEvaluable = false;
+					scriptData.getCurrentStatic()->addOpPushString(literal->getString().str());
+					scriptData.getCurrentStatic()->addOpSetThisStatic(scriptData);
+					scriptData.getCurrentStatic()->setDynamic();
+				}
+				else
+				{
+					scriptData.getCurrentStatic()->pushStringInit(literal->getString().str(), scriptData.getStackWidth() * getSizeFromBytes(getLiteralSizeOfType(e->getType().getTypePtr())));
+					scriptData.getCurrentStatic()->padInitTable(scriptData.getStackWidth());
+				}
+				
 				//string strlit = literal->getString().str();
 				//e->getType().getTypePtr();
 				//
@@ -5746,7 +5793,15 @@ public:
 
 			if (scriptData.getCurrentStatic()->getStackInitSize(scriptData.getStackWidth()) - curSize < size)
 			{
-				scriptData.getCurrentStatic()->pushNullInit(size -(scriptData.getCurrentStatic()->getStackInitSize(scriptData.getStackWidth()) - curSize), scriptData.getStackWidth());
+				int count = size - (scriptData.getCurrentStatic()->getStackInitSize(scriptData.getStackWidth()) - curSize);
+				if (Option_EntryFunctionPadding)
+				{
+					isCurrentExprEvaluable = false;
+					scriptData.getCurrentStatic()->addOpSetThisStaticMult(scriptData, 0, count);
+					scriptData.getCurrentStatic()->setDynamic();
+				}
+				else
+					scriptData.getCurrentStatic()->pushNullInit(count, scriptData.getStackWidth());
 			}
 			return true;
 		}
@@ -5811,7 +5866,7 @@ public:
 					scriptData.getCurrentStatic()->setDynamic();
 				}
 				else// need to test byte* t = {1,2,3};
-					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getExprLoc());
+					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getSourceRange());
 				break;
 
 				case CK_FunctionToPointerDecay://int (*ggg)(int, float) = test; // test is a function
@@ -5834,7 +5889,7 @@ public:
 
 				}
 				else
-					Throw("Unimplemented CK_FunctionToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()));
+					Throw("Unimplemented CK_FunctionToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getSourceRange());
 				break;
 
 				case clang::CK_PointerToIntegral://int ptoitest = &addrptrtest;
@@ -5843,13 +5898,15 @@ public:
 				case clang::CK_IntegralToPointer://*vstack_ptr = &vstack[9] - &vstack[0];
 				ParseLiteral(icast->getSubExpr(), false, isLtoRValue);
 				break;
-
 				case clang::CK_BitCast://short* testok = &addrptrtest;//(addrptrtest is an int)
+				ParseLiteral(icast->getSubExpr(), false, isLtoRValue);
+				break;
+				case clang::CK_NullToPointer://char* HeaderText = nullptr,
 				ParseLiteral(icast->getSubExpr(), false, isLtoRValue);
 				break;
 
 				default:
-				Throw("Unimplemented ImplicitCastExpr of type " + string(icast->getCastKindName()));
+				Throw("Unimplemented ImplicitCastExpr of type " + string(icast->getCastKindName()), rewriter, icast->getSourceRange());
 			}
 
 
@@ -5932,6 +5989,7 @@ public:
 					int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 					int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
+					//TODO: double check this code
 					if (pSize > 1)
 						scriptData.getCurrentStatic()->addOpMultImm(pSize);
 				}
@@ -6096,7 +6154,8 @@ public:
 					scriptData.getCurrentStatic()->addOpGetStaticP(scriptData.findStatic(dumpName(cast<NamedDecl>(varDecl))));
 					scriptData.getCurrentStatic()->setDynamic();
 					return 1;
-				}else
+				}
+				else
 				{
 					Throw("DeclRefExpr error", rewriter, e->getSourceRange());
 				}
