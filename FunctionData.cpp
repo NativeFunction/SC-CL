@@ -617,7 +617,8 @@ void FunctionData::jumpThreading()
 			switch (opcode->getKind()){
 				case OK_Jump:
 					JumpLocs[opcode->getString()].push_back(i);
-					//remove any code immediately after an unconditional jump that isnt a Label, it will never be executed
+				case OK_Return:
+					//Remove any code after a unconditional jump/return until a label is reached, the code will never get executed
 					for (i++; i < instructionCount; i++){
 						auto next = Instructions[i];
 						if (next->getKind() != OK_Label){
