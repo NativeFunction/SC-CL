@@ -524,15 +524,18 @@ void AddItemFloatBool(const char* ItemText, float MinValue, float MaxValue, floa
 
 	Container->TotalItemCount++;
 }
-void AddItemPlayer(int PlayerId, void(*Callback)())
+//TODO: PlayerId acts as a id for a dynamic menu. Add dynamic menu
+void AddItemPlayer(int PlayerId, void(*Callback)(), char* netTestName)
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
 		Container->Item[AddItemCounter].Selection.Value.Int = PlayerId;
-		Container->Item[AddItemCounter].Ui.ItemText = (char*)get_player_name(PlayerId);
+		//Container->Item[AddItemCounter].Ui.ItemText = (char*)get_player_name(PlayerId);
+		Container->Item[AddItemCounter].Ui.ItemText = netTestName;
+
 		Container->Item[AddItemCounter].Execute = Callback;
-		Container->Item[AddItemCounter].Selection.Type = MST_Player;
+		//Container->Item[AddItemCounter].Selection.Type = MST_Player;
 		AddItemCounter++;
 	}
 
@@ -572,6 +575,14 @@ void InitMenuExecution()
 	Container = GetMenuContainer();
 	if (Container == nullptr)
 		Throw("Container Was Null");
+}
+inline int GetCurrentItemCount()
+{
+	return Container->TotalItemCount;
+}
+inline void SetCurrentMenuInvalid(bool value)
+{
+	Container->IsCurrentMenuInvalid = value;
 }
 inline ItemContainer* GetCurrentItem()
 {
@@ -737,11 +748,19 @@ inline void EssentialScriptLoopSettings()
 		setGlobalAtIndex(TUNEABLE_BASE + TUNEABLE_IDLEKICK_WARNING3, 0x7FFFFFFF);
 		setGlobalAtIndex(TUNEABLE_BASE + TUNEABLE_IDLEKICK_KICK, 0x7FFFFFFF);
 
+		#ifdef __YSC__
+		//Enable duke2 in mp
+		setGlobalAtIndex(TUNEABLE_BASE + TUNEABLE_ENABLE_DUKES2_MP, false);//tuneableprocessing hash = 857589231
+		#endif
+
+		
 	}
 	else
 	{
+		#ifdef __YSC__
 		//Enable MP cars in SP
-		setGlobalAtIndex(2576573, true);//shop_controller (search  "!= 999" first instance ret false)
+		setGlobalAtIndex(2593910, true);//shop_controller (search  "!= 999" first instance ret false)
+		#endif
 	}
 }
 

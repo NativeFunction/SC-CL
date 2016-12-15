@@ -121,17 +121,6 @@ void Script::finaliseEntryFunction()
 {
 	if (mainFunction)
 	{
-		//if (doesEntryFunctionHavePadding())
-		//{
-		//	for (uint32_t i = 0; i < staticTable.size(); i+=_stackWidth)
-		//	{
-		//		if (*(int32_t*)(staticTable.data() + i))
-		//		{
-		//
-		//		}
-		//	}
-		//}
-
 		entryFunction->addUsedFunc(mainFunction);
 		if (scriptParams)
 		{

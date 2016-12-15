@@ -161,6 +161,9 @@ void ShortTesting()
 
 #pragma endregion
 
+#pragma region Helpers
+#pragma endregion
+
 #pragma region Parsers
 const char* Parser_EnumTest(int ItemIndex)
 {
@@ -199,6 +202,7 @@ bool Async_SpawnVehicle(uint CurrentFrame, Hash Model)
 
 				if (does_entity_exist(MyVehicle))
 				{
+					decor_set_int(MyVehicle, "MPBitset", 0);
 					Vehicle CurrentVehicle = GetCurrentVehicle();
 					float CurrentSpeed = 0.0f;
 					if (CurrentVehicle)
@@ -271,7 +275,7 @@ void Option_TestInt()
 void Option_BoolTest()
 {
 	//short sArr2D[3][5] = { { 1000,2000,3000,4000 },{ 6000,7000,8000,9000,10000 },{ 11000,12000,13000,14000,15000 } };
-
+	is_this_model_a_heli(VEHICLE_ADDER);
 	if (!UpdateBoolConditional(DEBUG__GetContainer()->TestInt != 5, &SavedBoolTest))
 		Warn("Unable to toggle bool at this test int index");
 	//print(itosGlobal(sArr2D[1][1]), 5000);
@@ -352,11 +356,134 @@ void Option_SpawnVehicle()
 void Menu__PlayerList()
 {
 	SetHeaderAdvanced("Player list", false, true);
-	for (int i = 0; i < LobbySizeWithSpectators; i++)
+	//for (int i = 0; i < LobbySizeWithSpectators; i++)
+	//{
+	//	if (IsPlayerInGame(i))
+	//		AddItemPlayer(i, Option_Blank);
+	//}
+
+	#pragma region net sim
+	static int netsimstart = true;
+	startnettime:
+	if (netsimstart)
 	{
-		if (IsPlayerInGame(i))
-			AddItemPlayer(i, Option_Blank);
+		settimera(0);
+		netsimstart = false;
 	}
+	if (timera() < 10000)
+	{
+		AddItemPlayer(0, Option_Blank, "player0");
+		AddItemPlayer(1, Option_Blank, "player1");
+		AddItemPlayer(2, Option_Blank, "player2");
+		AddItemPlayer(3, Option_Blank, "player3");
+		AddItemPlayer(4, Option_Blank, "player4");
+		AddItemPlayer(5, Option_Blank, "player5");
+		AddItemPlayer(6, Option_Blank, "player6");
+		AddItemPlayer(7, Option_Blank, "player7");
+		AddItemPlayer(8, Option_Blank, "player8");
+		AddItemPlayer(9, Option_Blank, "player9");
+		AddItemPlayer(10, Option_Blank, "player10");
+		AddItemPlayer(11, Option_Blank, "player11");
+		AddItemPlayer(12, Option_Blank, "player12");
+		AddItemPlayer(13, Option_Blank, "player13");
+		AddItemPlayer(14, Option_Blank, "player14");
+		AddItemPlayer(15, Option_Blank, "player15");
+		AddItemPlayer(16, Option_Blank, "player16");
+		AddItemPlayer(17, Option_Blank, "player17");
+		AddItemPlayer(18, Option_Blank, "player18");
+		AddItemPlayer(19, Option_Blank, "player19");
+		AddItemPlayer(20, Option_Blank, "player20");
+		AddItemPlayer(21, Option_Blank, "player21");
+		AddItemPlayer(22, Option_Blank, "player22");
+		AddItemPlayer(23, Option_Blank, "player23");
+		AddItemPlayer(24, Option_Blank, "player24");
+		AddItemPlayer(25, Option_Blank, "player25");
+		AddItemPlayer(26, Option_Blank, "player26");
+		AddItemPlayer(27, Option_Blank, "player27");
+		AddItemPlayer(28, Option_Blank, "player28");
+		AddItemPlayer(29, Option_Blank, "player29");
+		AddItemPlayer(30, Option_Blank, "player30");
+		AddItemPlayer(31, Option_Blank, "player31");
+	}
+	else if (timera() < 20000)
+	{
+		//AddItemPlayer(0, Option_Blank, "player0");
+		AddItemPlayer(1, Option_Blank, "player1");
+		AddItemPlayer(2, Option_Blank, "player2");
+		AddItemPlayer(3, Option_Blank, "player3");
+		//AddItemPlayer(4, Option_Blank, "player4");
+		AddItemPlayer(5, Option_Blank, "player5");
+		AddItemPlayer(6, Option_Blank, "player6");
+		AddItemPlayer(7, Option_Blank, "player7");
+		AddItemPlayer(8, Option_Blank, "player8");
+		AddItemPlayer(9, Option_Blank, "player9");
+		AddItemPlayer(10, Option_Blank, "player10");
+		AddItemPlayer(11, Option_Blank, "player11");
+		AddItemPlayer(12, Option_Blank, "player12");
+		AddItemPlayer(13, Option_Blank, "player13");
+		//AddItemPlayer(14, Option_Blank, "player14");
+		AddItemPlayer(15, Option_Blank, "player15");
+		AddItemPlayer(16, Option_Blank, "player16");
+		AddItemPlayer(17, Option_Blank, "player17");
+		AddItemPlayer(18, Option_Blank, "player18");
+		AddItemPlayer(19, Option_Blank, "player19");
+		AddItemPlayer(20, Option_Blank, "player20");
+		AddItemPlayer(21, Option_Blank, "player21");
+		AddItemPlayer(22, Option_Blank, "player22");
+		AddItemPlayer(23, Option_Blank, "player23");
+		AddItemPlayer(24, Option_Blank, "player24");
+		//AddItemPlayer(25, Option_Blank, "player25");
+		AddItemPlayer(26, Option_Blank, "player26");
+		AddItemPlayer(27, Option_Blank, "player27");
+		AddItemPlayer(28, Option_Blank, "player28");
+		AddItemPlayer(29, Option_Blank, "player29");
+		AddItemPlayer(30, Option_Blank, "player30");
+		//AddItemPlayer(31, Option_Blank, "player31");
+	}
+	else if (timera() < 30000)
+	{
+		//AddItemPlayer(0, Option_Blank, "player0");
+		//AddItemPlayer(1, Option_Blank, "player1");
+		//AddItemPlayer(2, Option_Blank, "player2");
+		//AddItemPlayer(3, Option_Blank, "player3");
+		//AddItemPlayer(4, Option_Blank, "player4");
+		//AddItemPlayer(5, Option_Blank, "player5");
+		//AddItemPlayer(6, Option_Blank, "player6");
+		AddItemPlayer(7, Option_Blank, "player7");
+		AddItemPlayer(8, Option_Blank, "player8");
+		AddItemPlayer(9, Option_Blank, "player9");
+		AddItemPlayer(10, Option_Blank, "player10");
+		AddItemPlayer(11, Option_Blank, "player11");
+		AddItemPlayer(12, Option_Blank, "player12");
+		AddItemPlayer(13, Option_Blank, "player13");
+		//AddItemPlayer(14, Option_Blank, "player14");
+		AddItemPlayer(15, Option_Blank, "player15");
+		AddItemPlayer(16, Option_Blank, "player16");
+		AddItemPlayer(17, Option_Blank, "player17");
+		AddItemPlayer(18, Option_Blank, "player18");
+		AddItemPlayer(19, Option_Blank, "player19");
+		//AddItemPlayer(20, Option_Blank, "player20");
+		AddItemPlayer(21, Option_Blank, "player21");
+		AddItemPlayer(22, Option_Blank, "player22");
+		AddItemPlayer(23, Option_Blank, "player23");
+		AddItemPlayer(24, Option_Blank, "player24");
+		//AddItemPlayer(25, Option_Blank, "player25");
+		AddItemPlayer(26, Option_Blank, "player26");
+		AddItemPlayer(27, Option_Blank, "player27");
+		AddItemPlayer(28, Option_Blank, "player28");
+		AddItemPlayer(29, Option_Blank, "player29");
+		AddItemPlayer(30, Option_Blank, "player30");
+		//AddItemPlayer(31, Option_Blank, "player31");
+	}
+	else
+	{
+		netsimstart = true;
+		goto startnettime;
+	}
+	#pragma endregion
+	//todo: fix menu invalid (soft freezes)
+	if(!GetCurrentItemCount())
+		SetCurrentMenuInvalid(true);
 }
 void Menu__LargeSubmenuTest()
 {
@@ -490,6 +617,13 @@ void Menu__VehicleSpawner_Sports()
 	{
 		AddItemVehicle(VEHICLE_RAPTOR, Option_SpawnVehicle);
 	}
+	if (is_dlc_present(Update_mpImportExport))
+	{
+		AddItemVehicle(VEHICLE_ELEGY, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_SPECTER, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_SPECTER2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_COMET3, Option_SpawnVehicle);
+	}
 
 	#endif
 	
@@ -527,6 +661,16 @@ void Menu__VehicleSpawner_Super()
 		AddItemVehicle(VEHICLE_TYRUS, Option_SpawnVehicle);
 		AddItemVehicle(VEHICLE_SHEAVA, Option_SpawnVehicle);
 		AddItemVehicle(VEHICLE_LE7B, Option_SpawnVehicle);
+	}
+	if (is_dlc_present(Update_mpImportExport))
+	{
+		AddItemVehicle(VEHICLE_TEMPESTA, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_ITALIGTB, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_ITALIGTB2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_NERO, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_NERO2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_VOLTIC2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_PENETRATOR, Option_SpawnVehicle);
 	}
 
 	#endif
@@ -721,7 +865,11 @@ void Menu__VehicleSpawner_Muscle()
 		AddItemVehicle(VEHICLE_VIRGO2, Option_SpawnVehicle);
 		AddItemVehicle(VEHICLE_VIRGO3, Option_SpawnVehicle);
 	}
-	
+	if (is_dlc_present(Update_mpImportExport))
+	{
+		AddItemVehicle(VEHICLE_RUINER2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_RUINER3, Option_SpawnVehicle);
+	}
 	#endif
 }
 void Menu__VehicleSpawner_Suv()
@@ -811,6 +959,10 @@ void Menu__VehicleSpawner_Van()
 	}
 	if (is_dlc_present(Update_mpBiker))
 		AddItemVehicle(VEHICLE_YOUGA2, Option_SpawnVehicle);
+	if (is_dlc_present(Update_mpImportExport))
+	{
+		AddItemVehicle(VEHICLE_BOXVILLE5, Option_SpawnVehicle);
+	}
 	#endif
 }
 void Menu__VehicleSpawner_Offroad()
@@ -855,6 +1007,13 @@ void Menu__VehicleSpawner_Offroad()
 	{
 		AddItemVehicle(VEHICLE_BLAZER4, Option_SpawnVehicle);
 	}
+	if (is_dlc_present(Update_mpImportExport))
+	{
+		AddItemVehicle(VEHICLE_BLAZER5, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_DUNE4, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_DUNE5, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_TECHNICAL2, Option_SpawnVehicle);
+	}
 	#endif
 }
 void Menu__VehicleSpawner_Commercial()
@@ -872,7 +1031,10 @@ void Menu__VehicleSpawner_Commercial()
 	AddItemWithParam("Stockade (Snowy)", hashof("stockade3"), Option_SpawnVehicle);
 	AddItemWithParam("Mule (No Livery)", hashof("mule3"), Option_SpawnVehicle);
 	#ifdef __YSC__
-
+	if (is_dlc_present(Update_mpImportExport))
+	{
+		AddItemVehicle(VEHICLE_PHANTOM2, Option_SpawnVehicle);
+	}
 	#endif
 }
 void Menu__VehicleSpawner_Service()
@@ -894,6 +1056,10 @@ void Menu__VehicleSpawner_Service()
 	if (is_dlc_present(Update_mpStunt))
 	{
 		AddItemVehicle(VEHICLE_RALLYTRUCK, Option_SpawnVehicle);
+	}
+	if (is_dlc_present(Update_mpImportExport))
+	{
+		AddItemVehicle(VEHICLE_WASTELANDER, Option_SpawnVehicle);
 	}
 	#endif
 }
@@ -1029,6 +1195,13 @@ void Menu__VehicleSpawner_Motorcycle()
 		AddItemVehicle(VEHICLE_RATBIKE, Option_SpawnVehicle);
 		AddItemVehicle(VEHICLE_SHOTARO, Option_SpawnVehicle);
 		AddItemVehicle(VEHICLE_MANCHEZ, Option_SpawnVehicle);
+	}
+	if (is_dlc_present(Update_mpImportExport))
+	{
+		AddItemVehicle(VEHICLE_DIABLOUS, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_DIABLOUS2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_FCR, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_FCR2, Option_SpawnVehicle);
 	}
 	#endif
 }
@@ -1359,10 +1532,9 @@ inline void LoopedOptions()
 		if (is_ped_in_any_vehicle(CurrentPlayerPed, false))
 		{
 			set_ped_can_be_knocked_off_vehicle(CurrentPlayerPed, 1);
-
+			set_ped_can_be_dragged_out(CurrentPlayerPed, false);
 			if (!network_is_game_in_progress())
 			{
-				set_ped_can_be_dragged_out(CurrentPlayerPed, false);
 				set_ped_config_flag(CurrentPlayerPed, 32, false);
 			}
 		}

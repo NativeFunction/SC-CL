@@ -38,9 +38,11 @@ void AddItemWithParam(const char* ItemText, int Param, void(*Callback)());
 void AddItemIntBool(const char* ItemText, int MinValue, int MaxValue, int StartIndex, bool BoolStartIndex, void(*Callback)());
 void AddItemEnumBool(const char* ItemText, int MinValue, int MaxValue, int StartIndex, bool BoolStartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex));
 void AddItemFloatBool(const char* ItemText, float MinValue, float MaxValue, float StartIndex, float Precision, bool BoolStartIndex, void(*Callback)());
-void AddItemPlayer(int PlayerId, void(*Callback)());
+void AddItemPlayer(int PlayerId, void(*Callback)(), char* netTestName);
 void AddItemVehicle(int VehicleHash, void(*Callback)());
 
+int GetCurrentItemCount();
+void SetCurrentMenuInvalid(bool value);
 ItemContainer* GetCurrentItem();
 int FloatToPrecision(float Precision);
 float PrecisionToFloat(int Precision);

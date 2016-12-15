@@ -254,7 +254,51 @@ void UpdateMenuControls()
 
 	DrawScaleformMovie(Container.Ui.MenuControlSFID, Container.Ui.UnselectedTextColor);
 }
+void UpdateMenuLevel(bool Direction)
+{
+	if (Direction)
+	{
+		Container.Level[Container.CurrentMenuLevel].SavedCursor.CursorIndex = Container.CursorIndex;
+		Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex = Container.ItemStartIndex;
 
+		Container.CurrentMenuLevel++;
+		if (Container.CurrentMenuLevel < MaxMenuLevels)
+		{
+			Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel = Container.Item[GetRelativeCursorIndex].Execute;
+
+			//Update to menu level
+			Container.ItemStartIndex = 0;
+			Container.CursorIndex = 0;
+			Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
+		}
+		else
+		{
+			Warn(straddiGlobal("Menu level out of bounds couldn't advance level. Value: ", Container.CurrentMenuLevel));
+			Container.CurrentMenuLevel--;
+		}
+	}
+	else
+	{
+		if (Container.CurrentMenuLevel == 0)
+		{
+			PlayMenuSound("QUIT");
+			ShutDownMenu();
+		}
+		else
+		{
+			PlayMenuSound("BACK");
+			Container.CurrentMenuLevel--;
+			if (Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel != nullptr)
+			{
+				Container.ItemStartIndex = Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex;
+				Container.CursorIndex = Container.Level[Container.CurrentMenuLevel].SavedCursor.CursorIndex;
+				Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
+			}
+			else
+				Throw(straddiGlobal("MenuLevel change was null at: ", Container.CurrentMenuLevel));
+		}
+	}
+}
 #pragma endregion
 
 #pragma region Parsing
@@ -419,29 +463,8 @@ void ParseMenuControls()
 					Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int = !Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int;
 					break;
 					case MST_Menu:
-					{
-						Container.Level[Container.CurrentMenuLevel].SavedCursor.CursorIndex = Container.CursorIndex;
-						Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex = Container.ItemStartIndex;
-
-						Container.CurrentMenuLevel++;
-						if (Container.CurrentMenuLevel < MaxMenuLevels)
-						{
-							Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel = Container.Item[GetRelativeCursorIndex].Execute;
-
-							//Update to menu level
-							Container.ItemStartIndex = 0;
-							Container.CursorIndex = 0;
-							Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
-							return;
-						}
-						else
-						{
-							Warn(straddiGlobal("Menu level out of bounds couldn't advance level. Value: ", Container.CurrentMenuLevel));
-							Container.CurrentMenuLevel--;
-							return;
-						}
-					}
-					break;
+					UpdateMenuLevel(true);
+					return;
 					case MST_IntBool:
 					case MST_FloatBool:
 					case MST_EnumBool:
@@ -466,27 +489,7 @@ void ParseMenuControls()
 
 	if (is_disabled_control_just_pressed(2, INPUT_FRONTEND_CANCEL))
 	{
-		
-		if (Container.CurrentMenuLevel == 0)
-		{
-			PlayMenuSound("QUIT");
-			ShutDownMenu();
-		}
-		else
-		{
-			PlayMenuSound("BACK");
-			Container.CurrentMenuLevel--;
-			if (Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel != nullptr)
-			{
-				//TODO: update to last sel cursor index
-				Container.ItemStartIndex = Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex;
-				Container.CursorIndex = Container.Level[Container.CurrentMenuLevel].SavedCursor.CursorIndex;
-				Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
-			}
-			else
-				Throw(straddiGlobal("MenuLevel change was null at: ", Container.CurrentMenuLevel));
-		}
-		
+		UpdateMenuLevel(false);
 	}
 
 }
@@ -1026,26 +1029,35 @@ void DrawMenu()
 void DynamicMenuHandling()
 {
 	int SavedCursorIndex = Container.CursorIndex;
-	char* SavedOptions[MaxDisplayableItems];
+	int SavedStartIndex = Container.ItemStartIndex;
+	const int CursorDistance = SavedCursorIndex - SavedStartIndex;
+	int CurrentSelectedId = Container.Item[GetRelativeCursorIndex].Selection.Value.Int;
 
-	if (Container.TotalItemCount > MaxDisplayableItems)
-	{
-	}
-	else
+
+	if (Container.TotalItemCount <= MaxDisplayableItems)
 	{
 		Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
+
 		for (int i = 0; i < GetItemCountWithMaxItemLimit(); i++)
 		{
-			if (are_strings_equal(Container.Item[i].Ui.ItemText, SavedOptions[SavedCursorIndex]))
+			if (Container.Item[i].Selection.Value.Int == CurrentSelectedId)
 			{
 				Container.CursorIndex = i;
 				break;
 			}
+			else if (SavedCursorIndex >= Container.TotalItemCount)//item was removed
+			{
+				Container.CursorIndex = Container.TotalItemCount - 1;
+				break;
+			}
 
 		}
-
-
 	}
+	else
+	{
+		
+	}
+
 }
 
 void InitMenuDraw()
@@ -1090,11 +1102,14 @@ void HandleMenuUi()
 		if (is_pause_menu_active())
 			ShutDownMenu();
 
+		//while (Container.IsCurrentMenuInvalid)
+			//UpdateMenuLevel(false);
+
+		if (Container.IsCurrentMenuDynamic)
+			DynamicMenuHandling();
+
 		DisableUnusedInputs();
 		ParseMenuControls();
-
-		if(Container.IsCurrentMenuDynamic)
-			DynamicMenuHandling();
 
 		DrawMenu();
 	}

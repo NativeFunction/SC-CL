@@ -76,7 +76,10 @@ typedef struct Page//Menu Page
 	int CursorIndex;
 	int TotalItemCount;
 	int ItemStartIndex;//index for draw MaxDisplayableItems
+
+
 	bool IsCurrentMenuDynamic;//Dynamic Updating
+	bool IsCurrentMenuInvalid;//ex: invalid selected player index
 
 	int CurrentMenuLevel;
 	MenuLevel Level[MaxMenuLevels];
