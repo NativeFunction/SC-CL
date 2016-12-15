@@ -976,7 +976,7 @@ extern _native64(0x34AD89078831A4BC) void set_all_vehicle_generators_active();
 extern _native64(0x608207E7A8FB787C) void set_all_low_priority_vehicle_generators_active(bool active);
 extern _native64(0x9A75585FB2E54FAD) void unk_0x9A75585FB2E54FAD(float p0, float p1, float p2, float p3);
 extern _native64(0x0A436B8643716D14) void unk_0x0A436B8643716D14();
-extern _native64(0x49733E92263139D1) bool set_vehicle_on_ground_properly(Vehicle vehicle);
+extern _native64(0x49733E92263139D1) bool set_vehicle_on_ground_properly(Vehicle vehicle, float p1);
 extern _native64(0xE023E8AC4EF7C117) any set_all_vehicles_spawn(Vehicle p0, bool p1, bool p2, bool p3);
 extern _native64(0xB497F06B288DCFDF) bool is_vehicle_stuck_on_roof(Vehicle vehicle);
 extern _native64(0xB72E26D81006005B) void add_vehicle_upsidedown_check(Vehicle vehicle);
