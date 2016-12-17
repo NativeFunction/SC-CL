@@ -291,3 +291,41 @@ float StringToFloat(const char* str)
 	}
 	return rez * fact;
 }
+
+bool CmpLtU(int a, int b)
+{
+	if (a >= 0 && b >= 0)
+		return a < b;
+	else
+	{
+		if (a == b)
+			return false;
+
+		int ltb = ~a & b;
+
+		ltb |= ltb >> 1;
+		ltb |= ltb >> 2;
+		ltb |= ltb >> 4;
+		ltb |= ltb >> 8;
+		ltb |= ltb >> 16;
+		return ((a & ~b) & ~ltb) == 0;
+	}
+}
+bool CmpGtU(int a, int b)
+{
+	if (a >= 0 && b >= 0)
+		return a > b;
+	else
+	{
+		int ltb = ~a & b;
+
+		ltb |= ltb >> 1;
+		ltb |= ltb >> 2;
+		ltb |= ltb >> 4;
+		ltb |= ltb >> 8;
+		ltb |= ltb >> 16;
+
+		return ((a & ~b) & ~ltb) != 0;
+	}
+}
+

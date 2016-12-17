@@ -37,4 +37,5 @@ float asin(float number);
 #endif
 #endif
 float StringToFloat(const char* str);
-
+bool CmpLtU(int a, int b);
+bool CmpGtU(int a, int b);
