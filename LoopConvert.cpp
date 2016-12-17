@@ -652,7 +652,7 @@ public:
 				AddInstructionComment(GetFrame, "(pdecl)" + key, index);
 				if (size == 1 || size == 2)
 				{
-					AddInstruction(GetConv, size, declref->getType()->isSignedIntegerType());
+					AddInstruction(GetConv, scriptData, size, declref->getType()->isSignedIntegerType());
 				}
 			}
 			else if (isAddr)
@@ -673,7 +673,7 @@ public:
 				{
 					if (size == 1 || size == 2)
 					{
-						AddInstruction(SetConv, size);
+						AddInstruction(SetConv, scriptData, size);
 					}
 					AddInstructionComment(SetFrame, "(pdecl)" + key, index);
 				}
@@ -687,7 +687,7 @@ public:
 				AddInstructionComment(GetGlobal, "Global_" + key, index);
 				if (size == 1 || size == 2)
 				{
-					AddInstruction(GetConv, size, declref->getType()->isSignedIntegerType());
+					AddInstruction(GetConv, scriptData, size, declref->getType()->isSignedIntegerType());
 				}
 			}
 			else if (isAddr)
@@ -708,7 +708,7 @@ public:
 				{
 					if (size == 1 || size == 2)
 					{
-						AddInstruction(SetConv, size);
+						AddInstruction(SetConv, scriptData, size);
 					}
 					AddInstructionComment(SetGlobal, key, index);
 				}
@@ -722,7 +722,7 @@ public:
 				AddInstructionComment(GetStatic, key, sData);
 				if (size == 1 || size == 2)
 				{
-					AddInstruction(GetConv, size, declref->getType()->isSignedIntegerType());
+					AddInstruction(GetConv, scriptData, size, declref->getType()->isSignedIntegerType());
 				}
 			}
 			else if (isAddr)
@@ -744,7 +744,7 @@ public:
 				{
 					if (size == 1 || size == 2)
 					{
-						AddInstruction(SetConv, size);
+						AddInstruction(SetConv, scriptData, size);
 					}
 					AddInstructionComment(SetStatic, key, sData);
 				}
@@ -865,7 +865,7 @@ public:
 						else {
 							if (size == 1 || size == 2)
 							{
-								AddInstruction(SetConv, size);
+								AddInstruction(SetConv, scriptData, size);
 							}
 							AddInstructionComment(SetFrame, "(init)" + var->getName().str(), curIndex);
 						}
@@ -2913,7 +2913,7 @@ public:
 					const Type* type = argArray[i]->getType().getTypePtr();
 					if (type->isCharType() || type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 					{
-						AddInstruction(SetConv, getSizeOfType(type));
+						AddInstruction(SetConv, scriptData, getSizeOfType(type));
 					}
 				}
 
@@ -3515,19 +3515,58 @@ public:
 					else if ((size == 1 || size == 2) && isAssign)
 					{
 						LocalVariables.addLevel();
-						int index = LocalVariables.addDecl("DerefSavedVar", 1);
-						AddInstruction(SetConv, size);
 
-						parseExpression(subE, subE->getType().getTypePtr()->isArrayType(), true);
-						AddInstruction(Dup);
-						AddInstructionComment(SetFrame, "DerefSavedVar", index);
+						if (scriptData.getBuildPlatform() == P_PC)
+						{
+							int index = LocalVariables.addDecl("DerefSavedVar", 1);
+							int buffer = LocalVariables.addDecl("64BitTempStorage", 2);
 
-						AddInstruction(PGet);
-						AddInstruction(PushInt, size == 1 ? 0xFFFFFF : 0xFFFF);
-						AddInstruction(And);
-						AddInstruction(Or);
+							AddInstruction(SetConv, scriptData, size);
 
-						AddInstructionComment(GetFrame, "DerefSavedVar", index);
+							AddInstruction(PushInt, 0);
+							AddInstructionComment(SetFrame, "64BitTempStorage[0]", buffer);
+							AddInstruction(PushInt, 0);
+							AddInstructionComment(SetFrame, "64BitTempStorage[1]", buffer + 1);
+
+							
+
+							parseExpression(subE, subE->getType().getTypePtr()->isArrayType(), true);
+							AddInstruction(Dup);
+							AddInstructionComment(SetFrame, "DerefSavedVar", index);
+							
+
+							AddInstruction(PGet);
+							AddInstruction(PushInt, size == 1 ? 0xFFFFFF : 0xFFFF0000);
+							AddInstruction(And);
+							AddInstruction(Or);
+							AddInstructionComment(SetFrame, "64BitTempStorage[0]", buffer);
+
+							AddInstructionComment(GetFrame, "DerefSavedVar", index);
+							AddInstruction(AddImm, 4);
+							AddInstruction(PGet);
+							AddInstructionComment(GetFrameP, "64BitTempStorage[0]", buffer);
+							AddInstruction(AddImm, 4);
+							AddInstruction(PSet);
+
+							AddInstructionComment(GetFrame, "64BitTempStorage[0]", buffer);
+							AddInstructionComment(GetFrame, "DerefSavedVar", index);
+						}
+						else
+						{
+							int index = LocalVariables.addDecl("DerefSavedVar", 1);
+							AddInstruction(SetConv, scriptData, size);
+
+							parseExpression(subE, subE->getType().getTypePtr()->isArrayType(), true);
+							AddInstruction(Dup);
+							AddInstructionComment(SetFrame, "DerefSavedVar", index);
+
+							AddInstruction(PGet);
+							AddInstruction(PushInt, size == 1 ? 0xFFFFFF : 0xFFFF);
+							AddInstruction(And);
+							AddInstruction(Or);
+
+							AddInstructionComment(GetFrame, "DerefSavedVar", index);
+						}
 						LocalVariables.removeLevel();
 						goto DerefPtrOnStack;
 					}
@@ -3559,7 +3598,7 @@ public:
 							AddInstruction(PGet);
 							if (size == 1 || size == 2)
 							{
-								AddInstruction(GetConv, size, e->getType()->isSignedIntegerType());
+								AddInstruction(GetConv, scriptData, size, e->getType()->isSignedIntegerType());
 							}
 						}
 					}
@@ -5022,7 +5061,7 @@ public:
 			if (type->isCharType())
 			{
 				//mod for narrowing conversion
-				AddInstruction(SetConv, 1);
+				AddInstruction(SetConv, scriptData, 1);
 				parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
 
 				if (isCst)
@@ -5049,7 +5088,7 @@ public:
 			{
 				//mod for narrowing conversion
 				
-				AddInstruction(SetConv, 2);
+				AddInstruction(SetConv, scriptData, 2);
 				parseExpression(base, base->getType().getTypePtr()->isArrayType(), true);
 				if (isCst)
 				{
@@ -5113,12 +5152,12 @@ public:
 				//1 byte indexing
 				if (type->isCharType())
 				{
-					AddInstruction(GetConv, 1, e->getType()->isSignedIntegerType());
+					AddInstruction(GetConv, scriptData, 1, e->getType()->isSignedIntegerType());
 				}
 				//2 byte indexing
 				else if (type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 				{
-					AddInstruction(GetConv, 2, e->getType()->isSignedIntegerType());
+					AddInstruction(GetConv, scriptData, 2, e->getType()->isSignedIntegerType());
 				}
 
 			}

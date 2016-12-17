@@ -72,7 +72,7 @@ void StaticData::addOpSetThisStaticMult(Script & scriptBase, int32_t value, int3
 	{
 		uint32_t currentCount = count > 50 ? 50 : count;
 
-		for (int i = 0; i < currentCount; i++)
+		for (uint32_t i = 0; i < currentCount; i++)
 		{
 			Opcode * opPush = new Opcode(OK_PushInt);
 			opPush->setInt(value);

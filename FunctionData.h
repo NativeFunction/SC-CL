@@ -308,8 +308,8 @@ public:
 		}
 	}
 	void addOpIsNotZero();
-	void addOpGetConv(int size, bool isSigned);
-	void addOpSetConv(int size);
+	void addOpGetConv(const Script& scriptData, int size, bool isSigned);
+	void addOpSetConv(const Script& scriptData, int size);
 #pragma endregion 
 
 	void addOpDup(){ Instructions.push_back(new Opcode(OK_Dup)); }

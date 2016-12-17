@@ -124,18 +124,28 @@ void FunctionData::addOpIsNotZero()
 	}
 }
 
-void FunctionData::addOpGetConv(int size, bool isSigned)
+void FunctionData::addOpGetConv(const Script& scriptData, int size, bool isSigned)
 {
 	assert(size == 1 || size == 2);
 	if (!(size == 1 || size == 2))
 		return;
 
 	const uint32_t extSW = size == 1 ? 0xFF000000 : size == 2 ? 0xFFFF0000 : 0;
-	const uint32_t shiftSize = size == 1 ? 24 : size == 2 ? 16 : 0;
 	const string type = size == 1 ? "Char Type" : size == 2 ? "Short Type" : "";
 	static uint32_t ExtSignWordLabelCounter = 0;
 
-	addOpShiftRight(shiftSize);
+	if (scriptData.getBuildPlatform() != P_PC)
+	{
+		const uint32_t shiftSize = size == 1 ? 24 : size == 2 ? 16 : 0;
+		addOpShiftRight(shiftSize);
+	}
+	else
+	{
+		const uint32_t andSize = size == 1 ? 0xFF : size == 2 ? 0xFFFF : 0;
+		addOpPushInt(andSize);
+		addOpAnd();//this only clears the right 2 bytes. if issues arise with the remaining 4 bytes that is why.
+	}
+	
 	pushComment(type);
 	if (isSigned)
 	{
@@ -149,7 +159,7 @@ void FunctionData::addOpGetConv(int size, bool isSigned)
 	}
 
 }
-void FunctionData::addOpSetConv(int size)
+void FunctionData::addOpSetConv(const Script& scriptData, int size)
 {
 	assert(size == 1 || size == 2);
 	if (!(size == 1 || size == 2))
@@ -162,11 +172,15 @@ void FunctionData::addOpSetConv(int size)
 	Opcode *last = Instructions.back();
 	if (getOptLevel() > OptimisationLevel::OL_None && last->getKind() == OK_PushInt)
 	{
-		last->setInt(last->getInt() << shiftSize);
+		if(scriptData.getBuildPlatform() != P_PC)
+			last->setInt(last->getInt() << shiftSize);
+
 	}
 	else
 	{
-		addOpShiftLeft(shiftSize);
+		if (scriptData.getBuildPlatform() != P_PC)
+			addOpShiftLeft(shiftSize);
+
 		pushComment(type);
 	}
 
