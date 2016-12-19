@@ -1,6 +1,7 @@
 #pragma once
 
 //Max item count displayable
+#define MaxDynamicItems 100
 #define MaxDisplayableItems 25
 #define MaxMenuLevels 10
 
@@ -18,14 +19,22 @@ typedef enum MenuSelectionType
 	MST_FloatBool,
 	MST_Player
 } MenuSelectionType;
-
 enum ItemContainerBits
 {
 	ICB_IsItemGxt,//Gets whether the item is using gxt text
 	ICB_ExecuteOnChange,//Gets whether the item executes on left, right scroll
 	ICB_IsItemDisabled,//Gets whether the item is disabled
-	ICB_BoolNumValue//Current bool value for BoolNum operations
+	ICB_BoolNumValue,//Current bool value for BoolNum operations
 };
+enum PageBits
+{
+	PB_IsMenuOpen,
+	PB_IsCurrentMenuDynamic,//Dynamic Updating
+	PB_IsCurrentMenuInvalid,//ex: invalid selected player index
+	PB_LastMenuDirection,//Back = 0, Forward = 1
+};
+
+
 typedef struct ItemContainer
 {
 	//using ItemContainerBits
@@ -70,16 +79,13 @@ typedef struct Page//Menu Page
 	int TestInt;
 
 	//size: 64
-	bool IsMenuOpen;
+
+	int Bitset;
 	int DisableMenuOpenControls;//frames to disable controls to prevent miss clicks when exiting the menu
 
 	int CursorIndex;
 	int TotalItemCount;
 	int ItemStartIndex;//index for draw MaxDisplayableItems
-
-
-	bool IsCurrentMenuDynamic;//Dynamic Updating
-	bool IsCurrentMenuInvalid;//ex: invalid selected player index
 
 	int CurrentMenuLevel;
 	MenuLevel Level[MaxMenuLevels];

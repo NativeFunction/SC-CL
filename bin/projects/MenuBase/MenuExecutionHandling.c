@@ -15,9 +15,15 @@
 static int AddItemCounter = null;
 static Page* Container = nullptr;
 static bool(*AsyncFunction)(uint CurrentFrame, ...) = nullptr;
-static int AsyncFunctionParams[MaxAsyncParams] = {null};
+static int AsyncFunctionParams[MaxAsyncParams] = { null };
 static uint AsyncFunctionParamCount = null;
 static uint AsyncFrameCount = null;//this is needed to provide nice 0 - FrameCountMax for CurrentFrame on AsynchronousFunction and for loading ui display slow start
+static int* ExeBaseAddr = nullptr;
+static union
+{
+	int* DynamicDumpPtr;
+	bool IsDumpingDynamicIds;
+}  DynamicDumping = { null };
 
 #pragma region Reset
 static void ResetCurrentItem()
@@ -39,11 +45,15 @@ static void ResetCurrentItem()
 #pragma endregion
 
 #pragma region ItemTypes
+
 void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt, bool IsMenuDynamic)
 {
 	AddItemCounter = 0;
 	Container->TotalItemCount = 0;
-	Container->IsCurrentMenuDynamic = IsMenuDynamic;
+	if(IsMenuDynamic)
+		bit_set(&Container->Bitset, PB_IsCurrentMenuDynamic);
+	else
+		bit_reset(&Container->Bitset, PB_IsCurrentMenuDynamic);
 
 	Container->Ui.HeaderText = (char*)HeaderText;
 	Container->Ui.IsHeaderGxt = IsItemGxt;
@@ -192,6 +202,28 @@ void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Descr
 
 	Container->TotalItemCount++;
 }
+void AddItemMenuWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, int Param, void(*Callback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		if (IsItemGxt)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
+		if (IsDisabled)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+
+		Container->Item[AddItemCounter].Selection.Type = MST_Param;
+		Container->Item[AddItemCounter].Selection.Value.Int = Param;
+
+		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].Selection.Type = MST_Menu;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
 void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, int Param, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
@@ -333,6 +365,7 @@ void AddItemVehicleAdvanced(int VehicleHash, const char* Description, const char
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
+		Container->Item[AddItemCounter].Selection.Type = MST_Menu;
 
 		AddItemCounter++;
 	}
@@ -344,9 +377,10 @@ void SetHeader(const char* HeaderText)
 {
 	AddItemCounter = 0;
 	Container->TotalItemCount = 0;
-	Container->IsCurrentMenuDynamic = false;
+	bit_reset(&Container->Bitset, PB_IsCurrentMenuDynamic);
 
 	Container->Ui.HeaderText = (char*)HeaderText;
+	Container->Ui.IsHeaderGxt = false;
 }
 void AddItem(const char* ItemText, void(*Callback)())
 {
@@ -448,6 +482,21 @@ void AddItemMenu(const char* ItemText, void(*Callback)())
 
 	Container->TotalItemCount++;
 }
+void AddItemMenuWithParam(const char* ItemText, int Param, void(*Callback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+		Container->Item[AddItemCounter].Selection.Type = MST_Param;
+		Container->Item[AddItemCounter].Selection.Value.Int = Param;
+		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].Selection.Type = MST_Menu;
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
 void AddItemWithParam(const char* ItemText, int Param, void(*Callback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
@@ -527,17 +576,26 @@ void AddItemFloatBool(const char* ItemText, float MinValue, float MaxValue, floa
 //TODO: PlayerId acts as a id for a dynamic menu. Add dynamic menu
 void AddItemPlayer(int PlayerId, void(*Callback)(), char* netTestName)
 {
-	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	if (DynamicDumping.IsDumpingDynamicIds)
 	{
-		ResetCurrentItem();
-		Container->Item[AddItemCounter].Selection.Value.Int = PlayerId;
-		//Container->Item[AddItemCounter].Ui.ItemText = (char*)get_player_name(PlayerId);
-		Container->Item[AddItemCounter].Ui.ItemText = netTestName;
-
-		Container->Item[AddItemCounter].Execute = Callback;
-		//Container->Item[AddItemCounter].Selection.Type = MST_Player;
-		AddItemCounter++;
+		if(Container->TotalItemCount < MaxDynamicItems)
+			DynamicDumping.DynamicDumpPtr[Container->TotalItemCount] = PlayerId;
 	}
+	else
+	{
+		if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+		{
+			ResetCurrentItem();
+			Container->Item[AddItemCounter].Selection.Value.Int = PlayerId;
+			//Container->Item[AddItemCounter].Ui.ItemText = (char*)get_player_name(PlayerId);
+			Container->Item[AddItemCounter].Ui.ItemText = netTestName;
+
+			Container->Item[AddItemCounter].Execute = Callback;
+			//Container->Item[AddItemCounter].Selection.Type = MST_Player;
+			AddItemCounter++;
+		}
+	}
+	
 
 	Container->TotalItemCount++;
 }
@@ -546,9 +604,11 @@ void AddItemVehicle(int VehicleHash, void(*Callback)())
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
+		Container->Item[AddItemCounter].Selection.Type = MST_Param;
 		Container->Item[AddItemCounter].Selection.Value.Int = VehicleHash;
 		Container->Item[AddItemCounter].Ui.ItemText = (char*)get_display_name_from_vehicle_model(VehicleHash);
 		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].Selection.Type = MST_Menu;
 		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		AddItemCounter++;
 	}
@@ -570,8 +630,31 @@ void AddItemVehicle(int VehicleHash, void(*Callback)())
 #pragma endregion
 
 #pragma region ExternalMenuCommands
+DynamicIdArray DumpDynamicIds()
+{
+	DynamicIdArray Return;
+	DynamicDumping.DynamicDumpPtr = Return.Items;
+	Container->Level[Container->CurrentMenuLevel].UpdateToMenuLevel();
+	DynamicDumping.IsDumpingDynamicIds = false;
+	return Return;
+}
+
 void InitMenuExecution()
 {
+	#ifdef __YSC__
+	#define ExeBaseToStringDist 31273176
+	ExeBaseAddr = Sub64P((int*)_get_online_version(), ExeBaseToStringDist);
+	#undef ExeBaseToStringDist
+	#else
+	#ifdef __XSC__
+	ExeBaseAddr = (int*)0x82000000;
+	#else
+	#ifdef __CSC__
+	//TODO: ps3 base addr
+	#endif
+	#endif
+	#endif
+
 	Container = GetMenuContainer();
 	if (Container == nullptr)
 		Throw("Container Was Null");
@@ -582,11 +665,27 @@ inline int GetCurrentItemCount()
 }
 inline void SetCurrentMenuInvalid(bool value)
 {
-	Container->IsCurrentMenuInvalid = value;
+	if (value)
+		bit_set(&Container->Bitset, PB_IsCurrentMenuInvalid);
+	else
+		bit_reset(&Container->Bitset, PB_IsCurrentMenuInvalid);
+}
+inline bool WasLastMenuDirectionForward()
+{
+	return bit_test(Container->Bitset, PB_LastMenuDirection);
+}
+inline ItemContainer* GetCurrentItemFromLastMenu()
+{
+	int LevelIndex = Container->CurrentMenuLevel > 0 ? Container->CurrentMenuLevel - 1 : 0;
+	return &Container->Item[Container->Level[LevelIndex].SavedCursor.CursorIndex - Container->Level[LevelIndex].SavedCursor.ItemStartIndex];
 }
 inline ItemContainer* GetCurrentItem()
 {
 	return &Container->Item[GetRelativeCursorIndex];
+}
+inline ItemContainer* GetCurrentItemAtIndex(int Index)
+{
+	return &Container->Item[Index - Container->ItemStartIndex];
 }
 float PrecisionToFloat(int Precision)
 {
@@ -696,7 +795,10 @@ void StartAsynchronousFunction(bool(*AsynchronousFunction)(uint CurrentFrame, ..
 	else
 		Notify("Menu is loading. Please wait.");
 }
-
+inline int* GetExecutableAddress()
+{
+	return ExeBaseAddr;
+}
 
 //[Do not use] This is for menu ui testing
 inline Page* DEBUG__GetContainer()

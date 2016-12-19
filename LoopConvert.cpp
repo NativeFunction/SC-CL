@@ -6633,6 +6633,7 @@ void ParseCommandLine(int argc, const char **argv, const char* Overview, unique_
 }
 int main(int argc, const char **argv) {
 
+
 	globalDirectory = GetDir(string(argv[0]));
 	cl::SetVersionPrinter(PrintVersion);
 	unique_ptr<CompilationDatabase> Compilations;

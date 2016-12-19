@@ -5,11 +5,14 @@
 #include "Utils.h"
 #include "common.h"
 
+
 #include "MenuExecutionHandling.h"
+#include "Memory.h"
 
 #pragma region SavedMenuVars
 static float SavedTestCoordPrecision = 0;
 static bool SavedBoolTest = false;
+static int SavedMenuParam[3] = { 0 };
 
 enum MenuBits
 {
@@ -162,28 +165,9 @@ void ShortTesting()
 #pragma endregion
 
 #pragma region Helpers
-//GetVehicleMetaFromHash (search CARNOTFOUND in exe from GET_VEHICLE_CLASS_FROM_NAME)
-int* Sub64P(int* x, int y)
-{
-	int out[2];
-	out[0] = *x - y;
-	*(int*)((char*)out + 4) = *(int*)((char*)x + 4) - (y + 4);
-	return (int*)out[0];
-}
-int* Add64P(int* x, int y)
-{
-	int out[2];
-	out[0] = *x + y;
-	*(int*)((char*)out + 4) = *(int*)((char*)x + 4) + (y + 4);
-	return (int*)out[0];
-}
-int* Push64P(int x[2])
-{
-	int out[2];
-	out[0] = x[0];
-	*(int*)((char*)out + 4) = x[1];
-	return (int*)out[0];
-}
+
+
+
 #pragma endregion
 
 #pragma region Parsers
@@ -297,20 +281,22 @@ void Option_TestInt()
 void Option_BoolTest()
 {
 	//short sArr2D[3][5] = { { 1000,2000,3000,4000 },{ 6000,7000,8000,9000,10000 },{ 11000,12000,13000,14000,15000 } };
-	const char* EXEStringAddr = _get_online_version();
-	#define EXEStringAddrDiff 31273176
 
-	int* BaseAddr = (int*)EXEStringAddr;
-	Break(itosGlobal((int)&BaseAddr));
-	Break(itosGlobal((int)((char*)&BaseAddr + 4)));
+	//*Add64P(GetVehicleMetaAddress(VEHICLE_ADDER), VMI_VehicleType) = VEHICLE_TYPE_HELI;
+	//*Add64P(GetVehicleMetaAddress(VEHICLE_ADDER), VMI_HandlingId) = 239;//ANNIHL
+	//
+	//*Add64P(GetVehicleMetaAddress(VEHICLE_DUMP), VMI_VehicleType) = VEHICLE_TYPE_AMPHIBIOUS_QUADBIKE;
+	//*Add64P(GetVehicleMetaAddress(VEHICLE_DUMP), VMI_HandlingId) = 398;//blazer aqua
 
-	BaseAddr = Sub64P(&BaseAddr, EXEStringAddrDiff);
-	Break(itosGlobal((int)&BaseAddr));
-	Break(itosGlobal((int)((char*)&BaseAddr + 4)));
 
-	Break(itosGlobal(*Add64P(&BaseAddr, 0x1D206D8)));
-	Break(itosGlobal((int)&BaseAddr));
-	Break(itosGlobal((int)((char*)&BaseAddr + 4)));
+	int data = 0xDEADBAB4;
+	short* ptr = (short*)&data;
+	*ptr = 34901;
+	Break(itosGlobal(*ptr));
+
+	short stest = *ptr;
+	stest++;
+	stest = 1000;
 
 	if (!UpdateBoolConditional(DEBUG__GetContainer()->TestInt != 5, &SavedBoolTest))
 		Warn("Unable to toggle bool at this test int index");
@@ -385,12 +371,55 @@ void Option_SpawnVehicle()
 {
 	StartAsynchronousFunction(Async(Async_SpawnVehicle), 1, 150, AsyncParam(GetCurrentItem()->Selection.Value.Int));
 }
+void Option_SetVehicleType()
+{
+	const int Type = GetCurrentItem()->Selection.Value.Int;
+	const int* MetaAddress = GetVehicleMetaAddress(SavedMenuParam[0]);
+
+	*Add64P(MetaAddress, VMI_VehicleType) = Type;
+
+	switch (Type)
+	{
+		case VEHICLE_TYPE_CAR:
+		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_BUFFALO;
+		break;
+		case VEHICLE_TYPE_PLANE:
+		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_LAZER;
+		break;
+		case VEHICLE_TYPE_QUADBIKE:
+		#ifdef __YSC__
+		case VEHICLE_TYPE_AMPHIBIOUS_AUTOMOBILE:
+		*Add64P(MetaAddress, VMI_HandlingId) = 397;//technical aqua
+		break;
+		case VEHICLE_TYPE_AMPHIBIOUS_QUADBIKE:
+		//*Add64P(MetaAddress, VMI_HandlingId) = 398;//blazer aqua
+		break;
+		#endif
+		case VEHICLE_TYPE_HELI:
+		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_ANNIHL;
+		break;
+		case VEHICLE_TYPE_BLIMP:
+		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_BLIMP;
+		break;
+		case VEHICLE_TYPE_BIKE:
+		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_RUFFIAN;
+		break;
+		case VEHICLE_TYPE_BICYCLE:
+		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_BMX;
+		break;
+		case VEHICLE_TYPE_BOAT:
+		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_DINGHY;
+		break;
+	}
+	Notify("Type has been set");
+}
 #pragma endregion
 
 #pragma region Menus
 
 void Menu__PlayerList()
 {
+	
 	SetHeaderAdvanced("Player list", false, true);
 	//for (int i = 0; i < LobbySizeWithSpectators; i++)
 	//{
@@ -481,7 +510,7 @@ void Menu__PlayerList()
 		//AddItemPlayer(0, Option_Blank, "player0");
 		//AddItemPlayer(1, Option_Blank, "player1");
 		//AddItemPlayer(2, Option_Blank, "player2");
-		//AddItemPlayer(3, Option_Blank, "player3");
+		AddItemPlayer(3, Option_Blank, "player3");
 		//AddItemPlayer(4, Option_Blank, "player4");
 		//AddItemPlayer(5, Option_Blank, "player5");
 		//AddItemPlayer(6, Option_Blank, "player6");
@@ -494,7 +523,7 @@ void Menu__PlayerList()
 		AddItemPlayer(13, Option_Blank, "player13");
 		//AddItemPlayer(14, Option_Blank, "player14");
 		AddItemPlayer(15, Option_Blank, "player15");
-		AddItemPlayer(16, Option_Blank, "player16");
+		//AddItemPlayer(16, Option_Blank, "player16");
 		AddItemPlayer(17, Option_Blank, "player17");
 		AddItemPlayer(18, Option_Blank, "player18");
 		AddItemPlayer(19, Option_Blank, "player19");
@@ -583,853 +612,884 @@ void Menu__PlayerOptions()
 
 }
 
-#pragma region VehicleSpawner
-void Menu__VehicleSpawner_Sports()
+#pragma region VehicleList
+void Menu__VehicleList_Options_ChangeType()
+{
+	SetHeader("Change Type");
+	AddItemWithParam("Car", VEHICLE_TYPE_CAR, Option_SetVehicleType);
+	AddItemWithParam("Plane", VEHICLE_TYPE_PLANE, Option_SetVehicleType);
+	AddItemWithParam("Quadbike", VEHICLE_TYPE_QUADBIKE, Option_SetVehicleType);
+	#ifdef __YSC__
+	AddItemWithParam("Amphibious Automobile", VEHICLE_TYPE_AMPHIBIOUS_AUTOMOBILE, Option_SetVehicleType);
+	AddItemWithParam("Amphibious Quadbike", VEHICLE_TYPE_AMPHIBIOUS_QUADBIKE, Option_SetVehicleType);
+	#endif
+	AddItemWithParam("Helicopter", VEHICLE_TYPE_HELI, Option_SetVehicleType);
+	AddItemWithParam("Blimp", VEHICLE_TYPE_BLIMP, Option_SetVehicleType);
+	AddItemWithParam("Bike", VEHICLE_TYPE_BIKE, Option_SetVehicleType);
+	AddItemWithParam("Bicycle", VEHICLE_TYPE_BICYCLE, Option_SetVehicleType);
+	AddItemWithParam("Boat", VEHICLE_TYPE_BOAT, Option_SetVehicleType);
+
+}
+
+void Menu__VehicleList_Options()
+{
+	if (WasLastMenuDirectionForward())
+	{
+		SavedMenuParam[0] = GetCurrentItemFromLastMenu()->Selection.Value.Int;
+		SavedMenuParam[1] = (int)GetCurrentItemFromLastMenu()->Ui.ItemText;
+		SavedMenuParam[2] = (int)GetCurrentItemFromLastMenu()->BitSet;
+	}
+
+	SetHeaderAdvanced((const char*)SavedMenuParam[1], bit_test(SavedMenuParam[2], ICB_IsItemGxt), false);
+	AddItemWithParam("Spawn Vehicle", SavedMenuParam[0], Option_SpawnVehicle);
+	AddItemMenu("Change Type", Menu__VehicleList_Options_ChangeType);
+}
+void Menu__VehicleList_Sports()
 {
 	SetHeader("Sports");
-	AddItemVehicle(hashof("ninef"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("ninef2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("banshee"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("buffalo"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("buffalo2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("carbonizzare"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("comet2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("coquette"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("elegy2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("feltzer2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("fusilade"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("futo"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("khamelion"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("penumbra"), Option_SpawnVehicle);
-	AddItemWithParam("Rapid GT Cabrio", hashof("rapidgt2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("schwarzer"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("sultan"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("surano"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("jester"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("ninef"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("ninef2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("banshee"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("buffalo"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("buffalo2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("carbonizzare"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("comet2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("coquette"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("elegy2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("feltzer2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("fusilade"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("futo"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("khamelion"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("penumbra"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Rapid GT Cabrio", hashof("rapidgt2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("schwarzer"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("sultan"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("surano"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("jester"), Menu__VehicleList_Options);
 
 	if (is_dlc_present(Update_mpBusiness))
-		AddItemVehicle(hashof("alpha"), Option_SpawnVehicle);
+		AddItemVehicle(hashof("alpha"), Menu__VehicleList_Options);
 	if (is_dlc_present(Update_mpBusiness2))
-		AddItemVehicle(hashof("massacro"), Option_SpawnVehicle);
+		AddItemVehicle(hashof("massacro"), Menu__VehicleList_Options);
 	if (is_dlc_present(Update_mpLTS))
-		AddItemVehicle(hashof("furoregt"), Option_SpawnVehicle);
+		AddItemVehicle(hashof("furoregt"), Menu__VehicleList_Options);
 	if (is_dlc_present(Update_mpChristmas2))
 	{
-		AddItemVehicle(hashof("jester2"), Option_SpawnVehicle);
-		AddItemVehicle(hashof("massacro2"), Option_SpawnVehicle);
+		AddItemVehicle(hashof("jester2"), Menu__VehicleList_Options);
+		AddItemVehicle(hashof("massacro2"), Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpHeist))
 	{
-		AddItemVehicle(hashof("kuruma"), Option_SpawnVehicle);
-		AddItemVehicle(hashof("kuruma2"), Option_SpawnVehicle);
+		AddItemVehicle(hashof("kuruma"), Menu__VehicleList_Options);
+		AddItemVehicle(hashof("kuruma2"), Menu__VehicleList_Options);
 	}
 	
 	#ifdef __YSC__
 	if (is_dlc_present(Update_spUpgrade))
 	{
-		AddItemVehicle(VEHICLE_BLISTA2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_BLISTA3, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_BUFFALO3, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_BLISTA2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_BLISTA3, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_BUFFALO3, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpApartment))
 	{
-		AddItemVehicle(VEHICLE_SCHAFTER3, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SCHAFTER4, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_VERLIERER2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_SCHAFTER3, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SCHAFTER4, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_VERLIERER2, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpExecutive))
 	{
-		AddItemVehicle(VEHICLE_SEVEN70, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_BESTIAGTS, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_SEVEN70, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_BESTIAGTS, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpStunt))
 	{
-		AddItemVehicle(VEHICLE_LYNX, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_OMNIS, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_TROPOS, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_TAMPA2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_LYNX, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_OMNIS, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_TROPOS, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_TAMPA2, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpBiker))
 	{
-		AddItemVehicle(VEHICLE_RAPTOR, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_RAPTOR, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpImportExport))
 	{
-		AddItemVehicle(VEHICLE_ELEGY, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SPECTER, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SPECTER2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_COMET3, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_ELEGY, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SPECTER, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SPECTER2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_COMET3, Menu__VehicleList_Options);
 	}
 
 	#endif
 	
 }
-void Menu__VehicleSpawner_Super()
+void Menu__VehicleList_Super()
 {
 	SetHeader("Super");
-	AddItemVehicle(hashof("bullet"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("cheetah"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("entityxf"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("infernus"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("adder"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("voltic"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("vacca"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("turismor"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("zentorno"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("osiris"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("t20"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("bullet"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("cheetah"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("entityxf"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("infernus"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("adder"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("voltic"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("vacca"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("turismor"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("zentorno"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("osiris"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("t20"), Menu__VehicleList_Options);
 
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpJanuary2016))
 	{
-		AddItemVehicle(VEHICLE_SULTANRS, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_BANSHEE2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_SULTANRS, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_BANSHEE2, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpExecutive))
 	{
-		AddItemVehicle(VEHICLE_FMJ, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_PFISTER811, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_PROTOTIPO, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_REAPER, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_FMJ, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_PFISTER811, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_PROTOTIPO, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_REAPER, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpStunt))
 	{
-		AddItemVehicle(VEHICLE_TYRUS, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SHEAVA, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_LE7B, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_TYRUS, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SHEAVA, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_LE7B, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpImportExport))
 	{
-		AddItemVehicle(VEHICLE_TEMPESTA, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_ITALIGTB, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_ITALIGTB2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_NERO, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_NERO2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_VOLTIC2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_PENETRATOR, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_TEMPESTA, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_ITALIGTB, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_ITALIGTB2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_NERO, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_NERO2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_VOLTIC2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_PENETRATOR, Menu__VehicleList_Options);
 	}
 
 	#endif
 
 }
-void Menu__VehicleSpawner_Coupes()
+void Menu__VehicleList_Coupes()
 {
 	SetHeader("Coupes");
-	AddItemVehicle(hashof("cogcabrio"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("exemplar"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("f620"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("felon"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("felon2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("Jackal"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("oracle"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("oracle2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("sentinel"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("sentinel2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("zion"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("zion2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("windsor"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("cogcabrio"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("exemplar"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("f620"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("felon"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("felon2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("Jackal"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("oracle"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("oracle2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("sentinel"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("sentinel2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("zion"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("zion2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("windsor"), Menu__VehicleList_Options);
 
 
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpExecutive))
 	{
-		AddItemVehicle(VEHICLE_WINDSOR2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_WINDSOR2, Menu__VehicleList_Options);
 	}
 	#endif
 
 }
-void Menu__VehicleSpawner_Compacts()
+void Menu__VehicleList_Compacts()
 {
 	SetHeader("Compacts");
-	AddItemVehicle(hashof("blista"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("dilettante"), Option_SpawnVehicle);
-	AddItemWithParam("Dilettante (Merryweather)", hashof("dilettante2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("issi2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("prairie"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("rhapsody"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("panto"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("blista"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("dilettante"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Dilettante (Merryweather)", hashof("dilettante2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("issi2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("prairie"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("rhapsody"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("panto"), Menu__VehicleList_Options);
 
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpStunt))
 	{
-		AddItemVehicle(VEHICLE_BRIOSO, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_BRIOSO, Menu__VehicleList_Options);
 	}
 	#endif
 
 }
-void Menu__VehicleSpawner_Sedans()
+void Menu__VehicleList_Sedans()
 {
 	SetHeader("Sedans");
 
-	AddItemVehicle(hashof("asea"), Option_SpawnVehicle);
-	AddItemWithParam("Asea (Snowy)", hashof("asea2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("asterope"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("emperor"), Option_SpawnVehicle);
-	AddItemWithParam("Emperor (Rusty)", hashof("emperor2"), Option_SpawnVehicle);
-	AddItemWithParam("Emperor (Snowy)", hashof("emperor3"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("fugitive"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("ingot"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("intruder"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("premier"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("primo"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("regina"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("romero"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("schafter2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("stanier"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("stratum"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("stretch"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("superd"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("surge"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("tailgater"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("washington"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("warrener"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("glendale"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("asea"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Asea (Snowy)", hashof("asea2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("asterope"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("emperor"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Emperor (Rusty)", hashof("emperor2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Emperor (Snowy)", hashof("emperor3"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("fugitive"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("ingot"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("intruder"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("premier"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("primo"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("regina"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("romero"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("schafter2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("stanier"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("stratum"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("stretch"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("superd"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("surge"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("tailgater"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("washington"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("warrener"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("glendale"), Menu__VehicleList_Options);
 
 
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpLowrider))
 	{
-		AddItemVehicle(VEHICLE_PRIMO2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_PRIMO2, Menu__VehicleList_Options);
 	}
 
 	if (is_dlc_present(Update_mpApartment))
 	{
-		AddItemVehicle(VEHICLE_LIMO2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SCHAFTER5, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SCHAFTER6, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_COG55, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_COG552, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_COGNOSCENTI, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_COGNOSCENTI2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_LIMO2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SCHAFTER5, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SCHAFTER6, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_COG55, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_COG552, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_COGNOSCENTI, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_COGNOSCENTI2, Menu__VehicleList_Options);
 	}
 	#endif
 }
-void Menu__VehicleSpawner_SportsClassic()
+void Menu__VehicleList_SportsClassic()
 {
 	SetHeader("Sports Classics");
-	AddItemVehicle(hashof("jb700"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("manana"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("monroe"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("peyote"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("stinger"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("stingergt"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("tornado"), Option_SpawnVehicle);
-	AddItemWithParam("Tornado Cabrio", hashof("tornado2"), Option_SpawnVehicle);
-	AddItemWithParam("Tornado (Rusty)", hashof("tornado3"), Option_SpawnVehicle);
-	AddItemWithParam("Tornado (Guitar)", hashof("tornado4"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("ztype"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("btype"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("pigalle"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("coquette2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("casco"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("feltzer3"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("jb700"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("manana"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("monroe"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("peyote"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("stinger"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("stingergt"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("tornado"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Tornado Cabrio", hashof("tornado2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Tornado (Rusty)", hashof("tornado3"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Tornado (Guitar)", hashof("tornado4"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("ztype"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("btype"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("pigalle"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("coquette2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("casco"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("feltzer3"), Menu__VehicleList_Options);
 	
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpHalloween))
-		AddItemVehicle(VEHICLE_BTYPE2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_BTYPE2, Menu__VehicleList_Options);
 	if (is_dlc_present(Update_mpApartment))
-		AddItemVehicle(VEHICLE_MAMBA, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_MAMBA, Menu__VehicleList_Options);
 	if (is_dlc_present(Update_mpValentines2))
-		AddItemVehicle(VEHICLE_BTYPE3, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_BTYPE3, Menu__VehicleList_Options);
 	if (is_dlc_present(Update_mpLowrider2))
-		AddItemVehicle(VEHICLE_TORNADO5, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_TORNADO5, Menu__VehicleList_Options);
 	if (is_dlc_present(Update_mpBiker))
-		AddItemVehicle(VEHICLE_TORNADO6, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_TORNADO6, Menu__VehicleList_Options);
 
 	#endif
 }
-void Menu__VehicleSpawner_Muscle()
+void Menu__VehicleList_Muscle()
 {
 	SetHeader("Muscle");
-	AddItemVehicle(hashof("buccaneer"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("hotknife"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("dominator"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("gauntlet"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("phoenix"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("picador"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("ratloader"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("ruiner"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("sabregt"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("voodoo2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("vigero"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("blade"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("ratloader2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("slamvan"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("slamvan2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("virgo"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("chino"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("coquette3"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("buccaneer"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("hotknife"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("dominator"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("gauntlet"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("phoenix"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("picador"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("ratloader"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("ruiner"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("sabregt"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("voodoo2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("vigero"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("blade"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("ratloader2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("slamvan"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("slamvan2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("virgo"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("chino"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("coquette3"), Menu__VehicleList_Options);
 
 	
 	#ifdef __YSC__
 	if (is_dlc_present(Update_spUpgrade))
 	{
-		AddItemVehicle(VEHICLE_DUKES, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_DUKES2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_DOMINATOR2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_GAUNTLET2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_STALION, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_STALION2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_DUKES, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_DUKES2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_DOMINATOR2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_GAUNTLET2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_STALION, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_STALION2, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpLowrider))
 	{
-		AddItemVehicle(VEHICLE_MOONBEAM, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_MOONBEAM2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_FACTION, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_FACTION2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_CHINO2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_BUCCANEER2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_VOODOO, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_MOONBEAM, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_MOONBEAM2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_FACTION, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_FACTION2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_CHINO2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_BUCCANEER2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_VOODOO, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpHalloween))
 	{
-		AddItemVehicle(VEHICLE_LURCHER, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_LURCHER, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpApartment))
 	{
-		AddItemVehicle(VEHICLE_NIGHTSHADE, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_NIGHTSHADE, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpXmas))
 	{
-		AddItemVehicle(VEHICLE_TAMPA, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_TAMPA, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpLowrider2))
 	{
-		AddItemVehicle(VEHICLE_FACTION3, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SABREGT2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SLAMVAN3, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_VIRGO2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_VIRGO3, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_FACTION3, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SABREGT2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SLAMVAN3, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_VIRGO2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_VIRGO3, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpImportExport))
 	{
-		AddItemVehicle(VEHICLE_RUINER2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_RUINER3, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_RUINER2, Menu__VehicleList_Options);
+		AddItemMenuWithParam("Ruiner (Destroyed)", VEHICLE_RUINER3, Menu__VehicleList_Options);
 	}
 	#endif
 }
-void Menu__VehicleSpawner_Suv()
+void Menu__VehicleList_Suv()
 {
 	SetHeader("SUVs");
-	AddItemVehicle(hashof("baller2"), Option_SpawnVehicle);
-	AddItemWithParam("Baller (Old)", hashof("baller"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("bjxl"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("cavalcade2"), Option_SpawnVehicle);
-	AddItemWithParam("Cavalcade (Old)", hashof("cavalcade"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("gresley"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("dubsta"), Option_SpawnVehicle);
-	AddItemWithParam("Dubsta (Blacked Out)", hashof("dubsta2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("fq2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("granger"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("habanero"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("landstalker"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("mesa"), Option_SpawnVehicle);
-	AddItemWithParam("Mesa (Snowy)", hashof("mesa2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("patriot"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("radi"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("rocoto"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("seminole"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("serrano"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("huntley"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("baller2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Baller (Old)", hashof("baller"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("bjxl"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("cavalcade2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Cavalcade (Old)", hashof("cavalcade"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("gresley"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("dubsta"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Dubsta (Blacked Out)", hashof("dubsta2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("fq2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("granger"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("habanero"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("landstalker"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("mesa"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Mesa (Snowy)", hashof("mesa2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("patriot"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("radi"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("rocoto"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("seminole"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("serrano"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("huntley"), Menu__VehicleList_Options);
 
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpApartment))
 	{
-		AddItemVehicle(VEHICLE_BALLER3, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_BALLER4, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_BALLER5, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_BALLER6, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_BALLER3, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_BALLER4, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_BALLER5, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_BALLER6, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpExecutive))
 	{
-		AddItemVehicle(VEHICLE_XLS, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_XLS2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_XLS, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_XLS2, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpStunt))
 	{
-		AddItemVehicle(VEHICLE_CONTENDER, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_CONTENDER, Menu__VehicleList_Options);
 	}
 	#endif
 }
-void Menu__VehicleSpawner_Van()
+void Menu__VehicleList_Van()
 {
 	SetHeader("Vans");
-	AddItemVehicle(hashof("bison"), Option_SpawnVehicle);
-	AddItemWithParam("Bison (Construction)", hashof("bison2"), Option_SpawnVehicle);
-	AddItemWithParam("Bison (Landscapeing)", hashof("bison3"), Option_SpawnVehicle);
-	AddItemWithParam("Boxville (Water&Power)", hashof("boxville"), Option_SpawnVehicle);
-	AddItemWithParam("Boxville (Postal)", hashof("boxville2"), Option_SpawnVehicle);
-	AddItemWithParam("Boxville (Humane)", hashof("boxville3"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("bobcatxl"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("burrito3"), Option_SpawnVehicle);
-	AddItemWithParam("Burrito (Multi Livery)", hashof("burrito"), Option_SpawnVehicle);
-	AddItemWithParam("Burrito (Bugstars)", hashof("burrito2"), Option_SpawnVehicle);
-	AddItemWithParam("Burrito (Construction)", hashof("burrito4"), Option_SpawnVehicle);
-	AddItemWithParam("Burrito (Snowy)", hashof("burrito5"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("gburrito"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("camper"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("journey"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("minivan"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("pony"), Option_SpawnVehicle);
-	AddItemWithParam("Weed Van", hashof("pony2"), Option_SpawnVehicle);
-	AddItemWithParam("Rumpo (Weazel News)", hashof("rumpo"), Option_SpawnVehicle);
-	AddItemWithParam("Rumpo (Deludamol)", hashof("rumpo2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("speedo"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("speedo2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("surfer"), Option_SpawnVehicle);
-	AddItemWithParam("Surfer (Rusty)", hashof("surfer2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("taco"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("youga"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("paradise"), Option_SpawnVehicle);
-	AddItemWithParam("Boxville (Post OP)", hashof("boxville4"), Option_SpawnVehicle);
-	AddItemWithParam("Gang Burrito (No Livery)", hashof("gburrito2"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("bison"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Bison (Construction)", hashof("bison2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Bison (Landscapeing)", hashof("bison3"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Boxville (Water&Power)", hashof("boxville"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Boxville (Postal)", hashof("boxville2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Boxville (Humane)", hashof("boxville3"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("bobcatxl"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("burrito3"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Burrito (Multi Livery)", hashof("burrito"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Burrito (Bugstars)", hashof("burrito2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Burrito (Construction)", hashof("burrito4"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Burrito (Snowy)", hashof("burrito5"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("gburrito"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("camper"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("journey"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("minivan"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("pony"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Weed Van", hashof("pony2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Rumpo (Weazel News)", hashof("rumpo"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Rumpo (Deludamol)", hashof("rumpo2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("speedo"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("speedo2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("surfer"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Surfer (Rusty)", hashof("surfer2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("taco"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("youga"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("paradise"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Boxville (Post OP)", hashof("boxville4"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Gang Burrito (No Livery)", hashof("gburrito2"), Menu__VehicleList_Options);
 	
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpLowrider2))
 	{
-		AddItemVehicle(VEHICLE_MINIVAN2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_MINIVAN2, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpExecutive))
 	{
-		AddItemVehicle(VEHICLE_RUMPO3, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_RUMPO3, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpBiker))
-		AddItemVehicle(VEHICLE_YOUGA2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_YOUGA2, Menu__VehicleList_Options);
 	if (is_dlc_present(Update_mpImportExport))
 	{
-		AddItemVehicle(VEHICLE_BOXVILLE5, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_BOXVILLE5, Menu__VehicleList_Options);
 	}
 	#endif
 }
-void Menu__VehicleSpawner_Offroad()
+void Menu__VehicleList_Offroad()
 {
 	SetHeader("Off-Road");
-	AddItemVehicle(hashof("bfinjection"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("blazer"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("blazer2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("blazer3"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("bodhi2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("dune"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("dune2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("dloader"), Option_SpawnVehicle);
-	AddItemWithParam("Mesa (Merryweather)", hashof("mesa3"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("rancherxl"), Option_SpawnVehicle);
-	AddItemWithParam("Rancher XL (Snowy)", hashof("rancherxl2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("rebel2"), Option_SpawnVehicle);
-	AddItemWithParam("Rebel (Rusty)", hashof("rebel"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("sandking"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("sandking2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("bifta"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("kalahari"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("dubsta3"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("monster"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("insurgent"), Option_SpawnVehicle);
-	AddItemWithParam("Insurgent Transport", hashof("insurgent2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("technical"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("brawler"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("bfinjection"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("blazer"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("blazer2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("blazer3"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("bodhi2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("dune"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("dune2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("dloader"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Mesa (Merryweather)", hashof("mesa3"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("rancherxl"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Rancher XL (Snowy)", hashof("rancherxl2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("rebel2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Rebel (Rusty)", hashof("rebel"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("sandking"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("sandking2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("bifta"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("kalahari"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("dubsta3"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("monster"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("insurgent"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Insurgent Transport", hashof("insurgent2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("technical"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("brawler"), Menu__VehicleList_Options);
 
 	
 	#ifdef __YSC__
 	if (is_dlc_present(Update_spUpgrade))
 	{
-		AddItemVehicle(VEHICLE_MARSHALL, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_MARSHALL, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpStunt))
 	{
-		AddItemVehicle(VEHICLE_TROPHYTRUCK, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_TROPHYTRUCK2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_TROPHYTRUCK, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_TROPHYTRUCK2, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpBiker))
 	{
-		AddItemVehicle(VEHICLE_BLAZER4, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_BLAZER4, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpImportExport))
 	{
-		AddItemVehicle(VEHICLE_BLAZER5, Option_SpawnVehicle);
-		AddItemWithParam("Ramp Buggy Custom", VEHICLE_DUNE4, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_DUNE5, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_TECHNICAL2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_BLAZER5, Menu__VehicleList_Options);
+		AddItemMenuWithParam("Ramp Buggy Custom", VEHICLE_DUNE4, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_DUNE5, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_TECHNICAL2, Menu__VehicleList_Options);
 	}
 	#endif
 }
-void Menu__VehicleSpawner_Commercial()
+void Menu__VehicleList_Commercial()
 {
 	SetHeader("Commercial");
-	AddItemVehicle(hashof("benson"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("biff"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("hauler"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("mule"), Option_SpawnVehicle);
-	AddItemWithParam("Mule (Drop Down Trunk)", hashof("mule2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("packer"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("phantom"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("pounder"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("stockade"), Option_SpawnVehicle);
-	AddItemWithParam("Stockade (Snowy)", hashof("stockade3"), Option_SpawnVehicle);
-	AddItemWithParam("Mule (No Livery)", hashof("mule3"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("benson"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("biff"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("hauler"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("mule"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Mule (Drop Down Trunk)", hashof("mule2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("packer"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("phantom"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("pounder"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("stockade"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Stockade (Snowy)", hashof("stockade3"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Mule (No Livery)", hashof("mule3"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpImportExport))
 	{
-		AddItemVehicle(VEHICLE_PHANTOM2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_PHANTOM2, Menu__VehicleList_Options);
 	}
 	#endif
 }
-void Menu__VehicleSpawner_Service()
+void Menu__VehicleList_Service()
 {
 	SetHeader("Service");
-	AddItemVehicle(hashof("bus"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("coach"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("airbus"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("rentalbus"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("taxi"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("trash"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("tourbus"), Option_SpawnVehicle);
-	AddItemWithParam("Trashmaster (Rusty)", hashof("trash2"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("bus"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("coach"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("airbus"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("rentalbus"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("taxi"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("trash"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("tourbus"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Trashmaster (Rusty)", hashof("trash2"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpExecutive))
 	{
-		AddItemVehicle(VEHICLE_BRICKADE, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_BRICKADE, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpStunt))
 	{
-		AddItemVehicle(VEHICLE_RALLYTRUCK, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_RALLYTRUCK, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpImportExport))
 	{
-		AddItemVehicle(VEHICLE_WASTELANDER, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_WASTELANDER, Menu__VehicleList_Options);
 	}
 	#endif
 }
-void Menu__VehicleSpawner_Utility()
+void Menu__VehicleList_Utility()
 {
 	SetHeader("Utility");
-	AddItemVehicle(hashof("airtug"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("caddy"), Option_SpawnVehicle);
-	AddItemWithParam("Caddy (Old)", hashof("caddy2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("docktug"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("forklift"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("mower"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("ripley"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("sadler"), Option_SpawnVehicle);
-	AddItemWithParam("Sadler (Snowy)", hashof("sadler2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("scrap"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("tractor2"), Option_SpawnVehicle);
-	AddItemWithParam("Tractor (Rusty)", hashof("tractor"), Option_SpawnVehicle);
-	AddItemWithParam("Tractor (Snowy)", hashof("tractor3"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("towtruck"), Option_SpawnVehicle);
-	AddItemWithParam("Towtruck (Small)", hashof("towtruck2"), Option_SpawnVehicle);
-	AddItemWithParam("Basket Truck", hashof("utillitruck"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("utillitruck2"), Option_SpawnVehicle);
-	AddItemWithParam("Utility Pick-up Truck", hashof("utillitruck3"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("airtug"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("caddy"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Caddy (Old)", hashof("caddy2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("docktug"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("forklift"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("mower"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("ripley"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("sadler"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Sadler (Snowy)", hashof("sadler2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("scrap"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("tractor2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Tractor (Rusty)", hashof("tractor"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Tractor (Snowy)", hashof("tractor3"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("towtruck"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Towtruck (Small)", hashof("towtruck2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Basket Truck", hashof("utillitruck"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("utillitruck2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Utility Pick-up Truck", hashof("utillitruck3"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
 	#endif
 }
-void Menu__VehicleSpawner_Industrial()
+void Menu__VehicleList_Industrial()
 {
 	SetHeader("Industrial");
-	AddItemVehicle(hashof("bulldozer"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("cutter"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("dump"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("rubble"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("flatbed"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("handler"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("mixer"), Option_SpawnVehicle);
-	AddItemWithParam("Mixer (Wheels On Back)", hashof("mixer2"), Option_SpawnVehicle);
-	AddItemWithParam("Tipper (6-Wheeler)", hashof("tiptruck"), Option_SpawnVehicle);
-	AddItemWithParam("Tipper (10-Wheeler)", hashof("tiptruck2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("guardian"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("bulldozer"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("cutter"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("dump"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("rubble"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("flatbed"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("handler"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("mixer"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Mixer (Wheels On Back)", hashof("mixer2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Tipper (6-Wheeler)", hashof("tiptruck"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Tipper (10-Wheeler)", hashof("tiptruck2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("guardian"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
 	#endif
 }
-void Menu__VehicleSpawner_Emergency()
+void Menu__VehicleList_Emergency()
 {
 	SetHeader("Emergency");
-	AddItemVehicle(hashof("ambulance"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("policet"), Option_SpawnVehicle);
-	AddItemWithParam("FIB Buffalo", hashof("fbi"), Option_SpawnVehicle);
-	AddItemWithParam("FIB Granger", hashof("fbi2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("firetruk"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("lguard"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("pbus"), Option_SpawnVehicle);
-	AddItemWithParam("Police Stanier", hashof("police"), Option_SpawnVehicle);
-	AddItemWithParam("Police Buffalo", hashof("police2"), Option_SpawnVehicle);
-	AddItemWithParam("Police Interceptor", hashof("police3"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("police4"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("policeold1"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("policeold2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("pranger"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("riot"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("sheriff"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("sheriff2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("policeb"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("ambulance"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("policet"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("FIB Buffalo", hashof("fbi"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("FIB Granger", hashof("fbi2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("firetruk"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("lguard"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("pbus"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Police Stanier", hashof("police"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Police Buffalo", hashof("police2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Police Interceptor", hashof("police3"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("police4"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("policeold1"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("policeold2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("pranger"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("riot"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("sheriff"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("sheriff2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("policeb"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
 	#endif
 }
-void Menu__VehicleSpawner_Military()
+void Menu__VehicleList_Military()
 {
 	SetHeader("Military");
-	AddItemVehicle(hashof("barracks"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("barracks2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("crusader"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("rhino"), Option_SpawnVehicle);
-	AddItemWithParam("Barracks (Dark Camo)", hashof("barracks3"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("barracks"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("barracks2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("crusader"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("rhino"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Barracks (Dark Camo)", hashof("barracks3"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
 	#endif
 }
-void Menu__VehicleSpawner_Motorcycle()
+void Menu__VehicleList_Motorcycle()
 {
 	SetHeader("Motorcycles");
-	AddItemVehicle(hashof("sanchez"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("sanchez2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("akuma"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("carbonrs"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("bagger"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("bati"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("bati2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("ruffian"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("daemon"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("double"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("pcj"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("vader"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("faggio2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("hexer"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("nemesis"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("thrust"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("sovereign"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("innovation"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("hakuchou"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("enduro"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("lectro"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("vindicator"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("sanchez"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("sanchez2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("akuma"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("carbonrs"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("bagger"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("bati"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("bati2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("ruffian"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("daemon"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("double"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("pcj"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("vader"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("faggio2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("hexer"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("nemesis"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("thrust"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("sovereign"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("innovation"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("hakuchou"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("enduro"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("lectro"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("vindicator"), Menu__VehicleList_Options);
 
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpStunt))
 	{
-		AddItemVehicle(VEHICLE_GARGOYLE, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_CLIFFHANGER, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_BF400, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_GARGOYLE, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_CLIFFHANGER, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_BF400, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpBiker))
 	{
-		AddItemVehicle(VEHICLE_FAGGIO3, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_FAGGIO, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_VORTEX, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_AVARUS, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SANCTUS, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_HAKUCHOU2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_NIGHTBLADE, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_CHIMERA, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_ESSKEY, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_WOLFSBANE, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_ZOMBIEA, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_ZOMBIEB, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_DEFILER, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_DAEMON2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_RATBIKE, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SHOTARO, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_MANCHEZ, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_FAGGIO3, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_FAGGIO, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_VORTEX, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_AVARUS, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SANCTUS, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_HAKUCHOU2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_NIGHTBLADE, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_CHIMERA, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_ESSKEY, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_WOLFSBANE, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_ZOMBIEA, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_ZOMBIEB, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_DEFILER, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_DAEMON2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_RATBIKE, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SHOTARO, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_MANCHEZ, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpImportExport))
 	{
-		AddItemVehicle(VEHICLE_DIABLOUS, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_DIABLOUS2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_FCR, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_FCR2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_DIABLOUS, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_DIABLOUS2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_FCR, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_FCR2, Menu__VehicleList_Options);
 	}
 	#endif
 }
-void Menu__VehicleSpawner_Bicycle()
+void Menu__VehicleList_Bicycle()
 {
 	SetHeader("Cycles");
-	AddItemVehicle(hashof("scorcher"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("tribike"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("tribike2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("tribike3"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("fixter"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("cruiser"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("BMX"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("scorcher"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("tribike"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("tribike2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("tribike3"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("fixter"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("cruiser"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("BMX"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
 	#endif
 }
-void Menu__VehicleSpawner_Plane()
+void Menu__VehicleList_Plane()
 {
 	SetHeader("Planes");
-	AddItemVehicle(hashof("blimp"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("cuban800"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("duster"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("stunt"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("mammatus"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("jet"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("shamal"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("luxor"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("titan"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("lazer"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("cargoplane"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("velum"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("vestra"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("besra"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("miljet"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("velum2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("hydra"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("luxor2"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("blimp"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("cuban800"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("duster"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("stunt"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("mammatus"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("jet"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("shamal"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("luxor"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("titan"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("lazer"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("cargoplane"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("velum"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("vestra"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("besra"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("miljet"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("velum2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("hydra"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("luxor2"), Menu__VehicleList_Options);
 
 	
 	#ifdef __YSC__
 	if (is_dlc_present(Update_spUpgrade))
 	{
-		AddItemVehicle(VEHICLE_DODO, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_BLIMP2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_DODO, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_BLIMP2, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpExecutive))
 	{
-		AddItemVehicle(VEHICLE_NIMBUS, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_NIMBUS, Menu__VehicleList_Options);
 	}
 	#endif
 }
-void Menu__VehicleSpawner_Helicopter()
+void Menu__VehicleList_Helicopter()
 {
 	SetHeader("Helicopters");
-	AddItemVehicle(hashof("annihilator"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("buzzard"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("buzzard2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("cargobob"), Option_SpawnVehicle);
-	AddItemWithParam("Medical Cargobob", hashof("cargobob2"), Option_SpawnVehicle);
-	AddItemWithParam("Trevor's Cargobob", hashof("cargobob3"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("skylift"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("polmav"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("maverick"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("frogger"), Option_SpawnVehicle);
-	AddItemWithParam("Trevor's Frogger", hashof("frogger2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("swift"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("savage"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("valkyrie"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("swift2"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("annihilator"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("buzzard"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("buzzard2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("cargobob"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Medical Cargobob", hashof("cargobob2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Trevor's Cargobob", hashof("cargobob3"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("skylift"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("polmav"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("maverick"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("frogger"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Trevor's Frogger", hashof("frogger2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("swift"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("savage"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("valkyrie"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("swift2"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpApartment))
 	{
-		AddItemWithParam("Cargobob 2-Seater", VEHICLE_CARGOBOB4, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SUPERVOLITO, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SUPERVOLITO2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_VALKYRIE2, Option_SpawnVehicle);
+		AddItemMenuWithParam("Cargobob 2-Seater", VEHICLE_CARGOBOB4, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SUPERVOLITO, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SUPERVOLITO2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_VALKYRIE2, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpExecutive))
 	{
-		AddItemVehicle(VEHICLE_VOLATUS, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_VOLATUS, Menu__VehicleList_Options);
 	}
 	#endif
 }
-void Menu__VehicleSpawner_Boat()
+void Menu__VehicleList_Boat()
 {
 	SetHeader("Boats");
-	AddItemVehicle(hashof("squalo"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("marquis"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("dinghy"), Option_SpawnVehicle);
-	AddItemWithParam("Dinghy 2-Seater", hashof("dinghy2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("jetmax"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("predator"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("tropic"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("seashark"), Option_SpawnVehicle);
-	AddItemWithParam("Seashark Lifeguard", hashof("seashark2"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("submersible"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("suntrap"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("speeder"), Option_SpawnVehicle);
-	AddItemWithParam("Dinghy (Heist)", hashof("dinghy3"), Option_SpawnVehicle);
-	AddItemVehicle(hashof("toro"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("squalo"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("marquis"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("dinghy"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Dinghy 2-Seater", hashof("dinghy2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("jetmax"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("predator"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("tropic"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("seashark"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Seashark Lifeguard", hashof("seashark2"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("submersible"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("suntrap"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("speeder"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Dinghy (Heist)", hashof("dinghy3"), Menu__VehicleList_Options);
+	AddItemVehicle(hashof("toro"), Menu__VehicleList_Options);
 
 	
 	#ifdef __YSC__
 	if (is_dlc_present(Update_spUpgrade))
 	{
-		AddItemVehicle(VEHICLE_SUBMERSIBLE2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_SUBMERSIBLE2, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpApartment))
 	{
-		AddItemVehicle(VEHICLE_TORO2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SEASHARK3, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_DINGHY4, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_TROPIC2, Option_SpawnVehicle);
-		AddItemVehicle(VEHICLE_SPEEDER2, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_TORO2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SEASHARK3, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_DINGHY4, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_TROPIC2, Menu__VehicleList_Options);
+		AddItemVehicle(VEHICLE_SPEEDER2, Menu__VehicleList_Options);
 	}
 	if (is_dlc_present(Update_mpExecutive))
 	{
-		AddItemVehicle(VEHICLE_TUG, Option_SpawnVehicle);
+		AddItemVehicle(VEHICLE_TUG, Menu__VehicleList_Options);
 	}
 	#endif
 }
-void Menu__VehicleSpawner_Trailer()
+void Menu__VehicleList_Trailer()
 {
 	SetHeader("Trailers");
-	AddItemVehicle(hashof("boattrailer"), Option_SpawnVehicle);
-	AddItemWithParam("Army Tanker", hashof("armytanker"), Option_SpawnVehicle);
-	AddItemWithParam("Army Flatbed", hashof("armytrailer"), Option_SpawnVehicle);
-	AddItemWithParam("Army Flatbed With Cutter", hashof("armytrailer2"), Option_SpawnVehicle);
-	AddItemWithParam("Freight Train Flatbed", hashof("freighttrailer"), Option_SpawnVehicle);
-	AddItemWithParam("Mobile Home", hashof("proptrailer"), Option_SpawnVehicle);
-	AddItemWithParam("Grain Trailer", hashof("graintrailer"), Option_SpawnVehicle);
-	AddItemWithParam("Hay Bale Trailer", hashof("baletrailer"), Option_SpawnVehicle);
-	AddItemWithParam("Shipping Container Trailer", hashof("docktrailer"), Option_SpawnVehicle);
-	AddItemWithParam("Metal/Tarp Covered Trailer", hashof("trailers"), Option_SpawnVehicle);
-	AddItemWithParam("Misc Livery Trailer", hashof("trailers2"), Option_SpawnVehicle);
-	AddItemWithParam("Big Goods Trailer", hashof("trailers3"), Option_SpawnVehicle);
-	AddItemWithParam("Fame or Shame Trailer", hashof("tvtrailer"), Option_SpawnVehicle);
-	AddItemWithParam("Farm Cultivator", hashof("raketrailer"), Option_SpawnVehicle);
-	AddItemWithParam("Tanker", hashof("tanker"), Option_SpawnVehicle);
-	AddItemWithParam("Log Trailer", hashof("trailerlogs"), Option_SpawnVehicle);
-	AddItemWithParam("Empty Car Carrier Trailer", hashof("tr2"), Option_SpawnVehicle);
-	AddItemWithParam("Marquis Trailer", hashof("tr3"), Option_SpawnVehicle);
-	AddItemWithParam("Super Car Carrier Trailer", hashof("tr4"), Option_SpawnVehicle);
-	AddItemWithParam("Flatbed", hashof("trflat"), Option_SpawnVehicle);
-	AddItemWithParam("Small Construction Trailer", hashof("trailersmall"), Option_SpawnVehicle);
-	AddItemWithParam("Tanker (No Livery)", hashof("tanker2"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("boattrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Army Tanker", hashof("armytanker"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Army Flatbed", hashof("armytrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Army Flatbed With Cutter", hashof("armytrailer2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Freight Train Flatbed", hashof("freighttrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Mobile Home", hashof("proptrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Grain Trailer", hashof("graintrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Hay Bale Trailer", hashof("baletrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Shipping Container Trailer", hashof("docktrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Metal/Tarp Covered Trailer", hashof("trailers"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Misc Livery Trailer", hashof("trailers2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Big Goods Trailer", hashof("trailers3"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Fame or Shame Trailer", hashof("tvtrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Farm Cultivator", hashof("raketrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Tanker", hashof("tanker"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Log Trailer", hashof("trailerlogs"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Empty Car Carrier Trailer", hashof("tr2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Marquis Trailer", hashof("tr3"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Super Car Carrier Trailer", hashof("tr4"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Flatbed", hashof("trflat"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Small Construction Trailer", hashof("trailersmall"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Tanker (No Livery)", hashof("tanker2"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
 	#endif
 }
-void Menu__VehicleSpawner_Rail()
+void Menu__VehicleList_Rail()
 {
 	SetHeader("Trains");
-	AddItemVehicle(hashof("cablecar"), Option_SpawnVehicle);
-	AddItemWithParam("Freight Train", hashof("freight"), Option_SpawnVehicle);
-	AddItemWithParam("Train Well Car", hashof("freightcar"), Option_SpawnVehicle);
-	AddItemWithParam("Train Container", hashof("freightcont1"), Option_SpawnVehicle);
-	AddItemWithParam("Train Container (livery)", hashof("freightcont2"), Option_SpawnVehicle);
-	AddItemWithParam("Train Boxcar", hashof("freightgrain"), Option_SpawnVehicle);
-	AddItemWithParam("Train Fuel Tank Car", hashof("tankercar"), Option_SpawnVehicle);
-	AddItemWithParam("Metro Train", hashof("metrotrain"), Option_SpawnVehicle);
+	AddItemVehicle(hashof("cablecar"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Freight Train", hashof("freight"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Train Well Car", hashof("freightcar"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Train Container", hashof("freightcont1"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Train Container (livery)", hashof("freightcont2"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Train Boxcar", hashof("freightgrain"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Train Fuel Tank Car", hashof("tankercar"), Menu__VehicleList_Options);
+	AddItemMenuWithParam("Metro Train", hashof("metrotrain"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
 	#endif
 }
-void Menu__VehicleSpawner()
+void Menu__VehicleList()
 {
 	SetHeader("Vehicle Spawner");
-	AddItemMenu("Sports", Menu__VehicleSpawner_Sports);
-	AddItemMenu("Super", Menu__VehicleSpawner_Super);
-	AddItemMenu("Coupes", Menu__VehicleSpawner_Coupes);
-	AddItemMenu("Compacts", Menu__VehicleSpawner_Compacts);
-	AddItemMenu("Sedans", Menu__VehicleSpawner_Sedans);
-	AddItemMenu("Sports Classics", Menu__VehicleSpawner_SportsClassic);
-	AddItemMenu("Muscle", Menu__VehicleSpawner_Muscle);
-	AddItemMenu("SUVs", Menu__VehicleSpawner_Suv);
-	AddItemMenu("Vans", Menu__VehicleSpawner_Van);
-	AddItemMenu("Off-Road", Menu__VehicleSpawner_Offroad);
-	AddItemMenu("Commercial", Menu__VehicleSpawner_Commercial);
-	AddItemMenu("Service", Menu__VehicleSpawner_Service);
-	AddItemMenu("Utility", Menu__VehicleSpawner_Utility);
-	AddItemMenu("Industrial", Menu__VehicleSpawner_Industrial);
-	AddItemMenu("Emergency", Menu__VehicleSpawner_Emergency);
-	AddItemMenu("Military", Menu__VehicleSpawner_Military);
-	AddItemMenu("Motorcycles", Menu__VehicleSpawner_Motorcycle);
-	AddItemMenu("Cycles", Menu__VehicleSpawner_Bicycle);
-	AddItemMenu("Planes", Menu__VehicleSpawner_Plane);
-	AddItemMenu("Helicopters", Menu__VehicleSpawner_Helicopter);
-	AddItemMenu("Boats", Menu__VehicleSpawner_Boat);
-	AddItemMenu("Trailers", Menu__VehicleSpawner_Trailer);
-	AddItemMenu("Trains", Menu__VehicleSpawner_Rail);
+	AddItemMenu("Sports", Menu__VehicleList_Sports);
+	AddItemMenu("Super", Menu__VehicleList_Super);
+	AddItemMenu("Coupes", Menu__VehicleList_Coupes);
+	AddItemMenu("Compacts", Menu__VehicleList_Compacts);
+	AddItemMenu("Sedans", Menu__VehicleList_Sedans);
+	AddItemMenu("Sports Classics", Menu__VehicleList_SportsClassic);
+	AddItemMenu("Muscle", Menu__VehicleList_Muscle);
+	AddItemMenu("SUVs", Menu__VehicleList_Suv);
+	AddItemMenu("Vans", Menu__VehicleList_Van);
+	AddItemMenu("Off-Road", Menu__VehicleList_Offroad);
+	AddItemMenu("Commercial", Menu__VehicleList_Commercial);
+	AddItemMenu("Service", Menu__VehicleList_Service);
+	AddItemMenu("Utility", Menu__VehicleList_Utility);
+	AddItemMenu("Industrial", Menu__VehicleList_Industrial);
+	AddItemMenu("Emergency", Menu__VehicleList_Emergency);
+	AddItemMenu("Military", Menu__VehicleList_Military);
+	AddItemMenu("Motorcycles", Menu__VehicleList_Motorcycle);
+	AddItemMenu("Cycles", Menu__VehicleList_Bicycle);
+	AddItemMenu("Planes", Menu__VehicleList_Plane);
+	AddItemMenu("Helicopters", Menu__VehicleList_Helicopter);
+	AddItemMenu("Boats", Menu__VehicleList_Boat);
+	AddItemMenu("Trailers", Menu__VehicleList_Trailer);
+	AddItemMenu("Trains", Menu__VehicleList_Rail);
 	#ifdef __YSC__
 
 	#endif
@@ -1439,7 +1499,7 @@ void Menu__VehicleSpawner()
 void Menu__VehicleOptions()
 {
 	SetHeader("Vehicle Options");
-	AddItemMenu("Vehicle Spawner", Menu__VehicleSpawner);
+	AddItemMenu("Vehicle List", Menu__VehicleList);
 	AddItemBoolAdvanced("Vehicle Helper", false, "Makes vehicle invincible.", nullptr, false, bit_test(MenuLoopedBitset, MB_VehicleHelper), Option_VehicleHelper, nullptr);
 }
 void Menu__MiscOptions()

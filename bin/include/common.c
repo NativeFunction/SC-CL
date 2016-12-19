@@ -328,4 +328,39 @@ bool CmpGtU(int a, int b)
 		return ((a & ~b) & ~ltb) != 0;
 	}
 }
+//TODO: add these as intrinsics
+int* Sub64P(const int* x, int y)
+{
+	int out[2];
+	out[0] = (int)x - y;
+	#ifdef __YSC__
+	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) - *(int*)((char*)&y + 4);
+	if (CmpGtU(out[0], (int)x))
+		out[1]--;
+	#endif
+	return (int*)out[0];
+
+}
+int* Add64P(const int* x, int y)
+{
+	int out[2];
+	out[0] = (int)x + y;
+	#ifdef __YSC__
+	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) - *(int*)((char*)&y + 4);
+	if (CmpLtU(out[0], (int)x))
+		out[1]++;
+	#endif
+	return (int*)out[0];
+}
+int* Push64P(int x[2])
+{
+	#ifdef __YSC__
+	int out[2];
+	out[0] = x[0];
+	*(int*)((char*)out + 4) = x[1];
+	return (int*)out[0];
+	#else
+	return (int*)x[0];
+	#endif
+}
 
