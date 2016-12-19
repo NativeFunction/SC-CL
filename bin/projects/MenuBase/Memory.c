@@ -6,8 +6,12 @@
 
 #define ImageBase 0x7FF654150000
 #define GetImageBaseRem(x) ((x) - 0x7FF654150000)//imagebase
-//GetVehicleMetaFromHash (search CARNOTFOUND in exe from GET_VEHICLE_CLASS_FROM_NAME)
 int* GetVehicleMetaAddress(VehicleHash Hash)
 {
-	return Sub64P((int*)get_display_name_from_vehicle_model(Hash), VMI_DisplayName);
+	const char* DisplayName = get_display_name_from_vehicle_model(Hash);
+	
+	if (are_strings_equal(DisplayName, "CARNOTFOUND"))
+		return nullptr;
+	else
+		return Sub64P((int*)DisplayName, VMI_DisplayName);
 }

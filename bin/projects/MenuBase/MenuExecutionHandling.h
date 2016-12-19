@@ -52,6 +52,7 @@ int GetCurrentItemCount();
 void SetCurrentMenuInvalid(bool value);
 bool WasLastMenuDirectionForward();
 ItemContainer* GetCurrentItem();
+//Note: Only works in the forward direction
 ItemContainer* GetCurrentItemFromLastMenu();
 ItemContainer* GetCurrentItemAtIndex(int Index);
 int FloatToPrecision(float Precision);

@@ -352,15 +352,15 @@ int* Add64P(const int* x, int y)
 	#endif
 	return (int*)out[0];
 }
-int* Push64P(int x[2])
+int* Push64P(int LeftMost, int RightMost)
 {
 	#ifdef __YSC__
 	int out[2];
-	out[0] = x[0];
-	*(int*)((char*)out + 4) = x[1];
+	out[0] = LeftMost;
+	*(int*)((char*)out + 4) = RightMost;
 	return (int*)out[0];
 	#else
-	return (int*)x[0];
+	return (int*)LeftMost;
 	#endif
 }
 

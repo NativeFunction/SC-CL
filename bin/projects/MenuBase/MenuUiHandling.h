@@ -25,6 +25,7 @@ enum ItemContainerBits
 	ICB_ExecuteOnChange,//Gets whether the item executes on left, right scroll
 	ICB_IsItemDisabled,//Gets whether the item is disabled
 	ICB_BoolNumValue,//Current bool value for BoolNum operations
+	ICB_DoesItemHaveConfirmation,
 };
 enum PageBits
 {
