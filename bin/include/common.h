@@ -41,4 +41,4 @@ bool CmpLtU(int a, int b);
 bool CmpGtU(int a, int b);
 int* Sub64P(const int* x, int y);
 int* Add64P(const int* x, int y);
-int* Push64P(int x[2]);
+int* Push64P(int LeftMost, int RightMost)
