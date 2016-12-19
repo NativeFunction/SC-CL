@@ -374,7 +374,7 @@ void Option_SpawnVehicle()
 void Option_SetVehicleType()
 {
 	const int Type = GetCurrentItem()->Selection.Value.Int;
-	const int* MetaAddress = GetVehicleMetaAddress(SavedMenuParam[0]);
+	int* MetaAddress = GetVehicleMetaAddress(SavedMenuParam[0]);
 
 	*Add64P(MetaAddress, VMI_VehicleType) = Type;
 

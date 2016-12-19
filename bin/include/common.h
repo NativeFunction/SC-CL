@@ -39,6 +39,7 @@ float asin(float number);
 float StringToFloat(const char* str);
 bool CmpLtU(int a, int b);
 bool CmpGtU(int a, int b);
-int* Sub64P(const int* x, int y);
-int* Add64P(const int* x, int y);
-int* Push64P(int LeftMost, int RightMost)
+int Diff64P(int* x, int* y);
+int* Sub64P(int* x, int y);
+int* Add64P(int* x, int y);
+int* Push64P(int LeftMost, int RightMost);
