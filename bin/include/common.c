@@ -18,11 +18,9 @@ void print(const char* str, int ms)
 		_set_text_entry_2("STRING");
 		add_text_component_substring_player_name(str);
 		_draw_subtitle_timed(ms, 1);
-	#else
-		#ifdef __RDR__
-			_clear_prints();
-			_print_subtitle(str, ms != 0 ? (float)ms / 1000.0f : 0, true, 2, 1, 0, 0, 0);
-		#endif
+	#elif defined(__RDR__)
+		_clear_prints();
+		_print_subtitle(str, ms != 0 ? (float)ms / 1000.0f : 0, true, 2, 1, 0, 0, 0);
 	#endif
 }
 

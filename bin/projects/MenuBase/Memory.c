@@ -6,7 +6,7 @@
 #include "Memory.h"
 
 #define ImageBase 0x7FF654150000
-#define GetImageBaseRem(x) ((x) - 0x7FF654150000)//imagebase
+#define GetImageBaseRem(x) ((x) - ImageBase)
 int* GetVehicleMetaAddress(VehicleHash Hash)
 {
 	const char* DisplayName = get_display_name_from_vehicle_model(Hash);
@@ -22,13 +22,9 @@ int* GetExecutableAddress()
 		#define ExeBaseToStringDist 31273176
 		return Sub64P((int*)_get_online_version(), ExeBaseToStringDist, 0);
 		#undef ExeBaseToStringDist
-	#else
-		#ifdef __XSC__
+	#elif defined(__XSC__)
 		return (int*)0x82000000;
-		#else
-			#ifdef __CSC__
-			return (int*)0x00010000;
-			#endif
-		#endif
+	#elif defined(__CSC__)
+		return (int*)0x00010000;
 	#endif
 }

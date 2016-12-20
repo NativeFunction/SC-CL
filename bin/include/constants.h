@@ -15,15 +15,12 @@
 
 #include "RDR/consts32.h"
 
-#else
-	#ifdef	__GTAV__
-		#include "GTAV/constsShared.h"
+#elif defined(__GTAV__)
+	#include "GTAV/constsShared.h"
 		
-		#ifdef __YSC__
-			#include "GTAV/consts64.h"
-		#else
-			#include "GTAV/consts32.h"
-		#endif
-		
+	#ifdef __YSC__
+		#include "GTAV/consts64.h"
+	#else
+		#include "GTAV/consts32.h"
 	#endif
 #endif

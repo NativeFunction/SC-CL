@@ -294,7 +294,7 @@ void Option_BoolTest()
 	Break(itosGlobal(*(int*)((char*)&t + 4)));
 
 	
-
+	int h = GetExecutableAddress();
 	//int data = 0xDEADBAB4;
 	//short* ptr = (short*)&data;
 	//*ptr = 34901;
