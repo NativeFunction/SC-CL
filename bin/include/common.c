@@ -341,26 +341,26 @@ int Diff64P(int* x, int* y)
 	return out[0];
 
 }
-int* Sub64P(int* x, int y)
+int* Sub64P(int* x, int yLeft, int yRight)
 {
 	int out[2];
-	out[0] = (int)x - y;
+	out[0] = (int)x - yLeft;
 	#ifdef __YSC__
-	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) - *(int*)((char*)&y + 4);
+	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) - yRight;
 	if (CmpGtU(out[0], (int)x))
 		out[1]--;
 	#endif
 	return (int*)out[0];
 
 }
-int* Add64P(int* x, int y)
+int* Add64P(int* x, int yLeft, int yRight)
 {
 	int out[2];
-	out[0] = (int)x + y;
+	out[0] = (int)x + yLeft;
 	#ifdef __YSC__
-	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) - *(int*)((char*)&y + 4);
-	if (CmpLtU(out[0], (int)x))
-		out[1]++;
+	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) + yRight;
+	//if (CmpLtU(out[0], (int)x))
+		//out[1]++;
 	#endif
 	return (int*)out[0];
 }

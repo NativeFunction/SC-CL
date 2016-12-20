@@ -1,5 +1,6 @@
 
 int* GetVehicleMetaAddress(VehicleHash Hash);
+int* GetExecutableAddress();
 
 enum HandlingIndexes
 {

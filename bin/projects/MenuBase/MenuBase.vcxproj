@@ -13,15 +13,7 @@
       <Configuration>Debug</Configuration>
       <Platform>Xbox 360</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="GTAV YSC|Itanium">
-      <Configuration>GTAV YSC</Configuration>
-      <Platform>Itanium</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="GTAV YSC|Xbox 360">
-      <Configuration>GTAV YSC</Configuration>
-      <Platform>Xbox 360</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="GTAV|Itanium">
+	<ProjectConfiguration Include="GTAV|Itanium">
       <Configuration>GTAV</Configuration>
       <Platform>Itanium</Platform>
     </ProjectConfiguration>
@@ -33,15 +25,7 @@
       <Configuration>GTAV</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="GTAV YSC|Win32">
-      <Configuration>GTAV YSC</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="GTAV YSC|x64">
-      <Configuration>GTAV YSC</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="GTAV|Xbox 360">
+	<ProjectConfiguration Include="GTAV|Xbox 360">
       <Configuration>GTAV</Configuration>
       <Platform>Xbox 360</Platform>
     </ProjectConfiguration>
@@ -73,19 +57,19 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Itanium'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -132,49 +116,21 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Win32'" Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Xbox 360'" Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Itanium'" Label="Configuration">
-    <ConfigurationType>Utility</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAV|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -212,15 +168,6 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='GTAV|Itanium'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Xbox 360'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Itanium'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -228,9 +175,6 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='GTAV|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -526,9 +470,59 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
+      <WarningLevel>
+      </WarningLevel>
+      <Optimization>
+      </Optimization>
+      <SDLCheck>
+      </SDLCheck>
+      <AdditionalIncludeDirectories>"../../include/"</AdditionalIncludeDirectories>
+      <SuppressStartupBanner />
+      <TreatWarningAsError />
+      <FavorSizeOrSpeed />
+      <WholeProgramOptimization />
+      <UndefineAllPreprocessorDefinitions />
+      <RuntimeLibrary />
+      <BufferSecurityCheck />
+      <FloatingPointModel />
+      <TreatWChar_tAsBuiltInType />
+      <ForceConformanceInForLoopScope />
+      <RemoveUnreferencedCodeData />
+      <ExpandAttributedSource />
+      <XMLDocumentationFileName />
+      <DebugInformationFormat />
+      <BasicRuntimeChecks />
+      <DisableLanguageExtensions />
+      <AssemblerListingLocation />
+      <BrowseInformationFile />
+      <CallingConvention />
+      <InlineFunctionExpansion />
+      <IntrinsicFunctions />
+      <OmitFramePointers />
+      <EnableFiberSafeOptimizations />
+      <PreprocessorDefinitions />
+      <IgnoreStandardIncludePath />
+      <PreprocessToFile />
+      <PreprocessSuppressLineNumbers />
+      <PreprocessKeepComments />
+      <MinimalRebuild />
+      <ExceptionHandling />
+      <EnableEnhancedInstructionSet />
+      <PrecompiledHeader />
+      <PrecompiledHeaderFile />
+      <PrecompiledHeaderOutputFile />
+      <AssemblerOutput />
+      <ObjectFileName />
+      <ProgramDataBaseFileName />
+      <GenerateXMLDocumentationFiles />
+      <BrowseInformation />
+      <CompileAs />
+      <OmitDefaultLibName />
+      <ErrorReporting />
+      <SmallerTypeCheck />
+      <StructMemberAlignment />
+      <ShowIncludes />
+      <UseFullPaths />
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -564,7 +558,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__YSC__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__XSC__</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -589,7 +583,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__YSC__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__CSC__</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -639,7 +633,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__YSC__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__XSC__</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -664,82 +658,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__YSC__</PreprocessorDefinitions>
-      <AdditionalOptions>
-      </AdditionalOptions>
-      <ExceptionHandling>false</ExceptionHandling>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <CompileAs>CompileAsC</CompileAs>
-    </ClCompile>
-    <Link>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
-    <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-    </ProjectReference>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>"../../include/"</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__YSC__</PreprocessorDefinitions>
-      <AdditionalOptions>
-      </AdditionalOptions>
-      <ExceptionHandling>false</ExceptionHandling>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <CompileAs>CompileAsC</CompileAs>
-    </ClCompile>
-    <Link>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
-    <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-    </ProjectReference>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Xbox 360'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>"../../include/"</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__YSC__</PreprocessorDefinitions>
-      <AdditionalOptions>
-      </AdditionalOptions>
-      <ExceptionHandling>false</ExceptionHandling>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <CompileAs>CompileAsC</CompileAs>
-    </ClCompile>
-    <Link>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
-    <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
-    </ProjectReference>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Itanium'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>false</FunctionLevelLinking>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
-      <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>"../../include/"</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__YSC__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__CSC__</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -772,27 +691,26 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>"../../include/"</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__YSC__</PreprocessorDefinitions>
+      <AdditionalOptions>
+      </AdditionalOptions>
+      <ExceptionHandling>false</ExceptionHandling>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
-    <Link>
+     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-    </ClCompile>
-    <Link>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CustomBuild Include="MenuBase.c">
@@ -802,30 +720,24 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
         <ItemGroup>
           <CustomBuild>
-            <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-C:\\Users\\Rocko\\Desktop\\llvm-3.8.1.src\\tools\\clang\\tools\\extra\\loop-convert\\bin\projects\\MenuBase\\compile.bat
-    </Command>
-            <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\\Users\\Rocko\\Desktop\\llvm-3.8.1.src\\tools\\clang\\tools\\extra\\loop-convert\\bin\projects\\MenuBase\\compile.bat;%(Outputs)</Outputs>
+            <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">compile.bat</Command>
+            <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">compile.bat;%(Outputs)</Outputs>
           </CustomBuild>
         </ItemGroup>
       </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'">
         <ItemGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
           <CustomBuild>
-            <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-C:\\Users\\Rocko\\Desktop\\llvm-3.8.1.src\\tools\\clang\\tools\\extra\\loop-convert\\bin\projects\\MenuBase\\compile.bat
-    </Command>
-            <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\\Users\\Rocko\\Desktop\\llvm-3.8.1.src\\tools\\clang\\tools\\extra\\loop-convert\\bin\projects\\MenuBase\\compile.bat;%(Outputs)</Outputs>
+            <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">compile.bat</Command>
+            <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">compile.bat;%(Outputs)</Outputs>
           </CustomBuild>
         </ItemGroup>
       </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Itanium'">
         <ItemGroup xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
           <CustomBuild>
-            <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-C:\\Users\\Rocko\\Desktop\\llvm-3.8.1.src\\tools\\clang\\tools\\extra\\loop-convert\\bin\projects\\MenuBase\\compile.bat
-    </Command>
-            <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\\Users\\Rocko\\Desktop\\llvm-3.8.1.src\\tools\\clang\\tools\\extra\\loop-convert\\bin\projects\\MenuBase\\compile.bat;%(Outputs)</Outputs>
+            <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">compile.bat</Command>
+            <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">compile.bat;%(Outputs)</Outputs>
           </CustomBuild>
         </ItemGroup>
       </Command>
@@ -841,19 +753,13 @@ C:\\Users\\Rocko\\Desktop\\llvm-3.8.1.src\\tools\\clang\\tools\\extra\\loop-conv
       <Outputs Condition="'$(Configuration)|$(Platform)'=='GTAV|Win32'">MenuBase.dh%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='GTAV|Xbox 360'">MenuBase.dh%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='GTAV|Itanium'">MenuBase.dh%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Win32'">MenuBase.dh%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Xbox 360'">MenuBase.dh%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Itanium'">MenuBase.dh%(Outputs)</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">compile.bat</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">compile.bat</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Itanium'">compile.bat</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Win32'">"../../Debug/loop-convert.exe" -g -platform=PC -build_type=GTAV -pc_version=944 -snb MenuBase.c ../../include/common.c Utils.c Memory.c MenuUiHandling.c MenuExecutionHandling.c ItemExecution.c  -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Xbox 360'">"../../Debug/loop-convert.exe" -platform=XBOX -build_type=GTAV -pc_version=944 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MenuExecutionHandling.c ItemExecution.c  -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Itanium'">"../../Debug/loop-convert.exe" -platform=PS3 -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MainMenuExecution.c  -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Win32'">"../../Debug/loop-convert.exe" -platform=PC -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MainMenuExecution.c  -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Xbox 360'">"../../Debug/loop-convert.exe" -platform=PC -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MainMenuExecution.c  -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV YSC|Itanium'">"../../Debug/loop-convert.exe" -platform=PC -build_type=GTAV -pc_version=877 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MainMenuExecution.c  -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|x64'">"../../Debug/loop-convert.exe" -g -platform=PC -build_type=GTAV -pc_version=944 -snb MenuBase.c ../../include/common.c Utils.c MenuUiHandling.c MenuExecutionHandling.c ItemExecution.c  -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Xbox 360'">"../../Debug/loop-convert.exe" -platform=XBOX -build_type=GTAV -snb MenuBase.c ../../include/common.c Utils.c Memory.c MenuUiHandling.c MenuExecutionHandling.c ItemExecution.c  -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Itanium'">"../../Debug/loop-convert.exe" -platform=PS3 -build_type=GTAV -snb MenuBase.c ../../include/common.c Utils.c Memory.c MenuUiHandling.c MenuExecutionHandling.c ItemExecution.c  -- -I "../../include/"</Command>
+	  <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|x64'">"../../Debug/loop-convert.exe" -g -platform=PC -build_type=GTAV -pc_version=944 -snb MenuBase.c ../../include/common.c Utils.c Memory.c MenuUiHandling.c MenuExecutionHandling.c ItemExecution.c  -- -I "../../include/"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='GTAV|x64'">MenuBase.dh%(Outputs)</Outputs>
     </CustomBuild>
   </ItemGroup>

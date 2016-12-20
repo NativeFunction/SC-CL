@@ -33,6 +33,7 @@ enum PageBits
 	PB_IsCurrentMenuDynamic,//Dynamic Updating
 	PB_IsCurrentMenuInvalid,//ex: invalid selected player index
 	PB_LastMenuDirection,//Back = 0, Forward = 1
+	PB_IsDisplayingConfirmation,
 };
 
 
@@ -81,7 +82,7 @@ typedef struct Page//Menu Page
 
 	//size: 64
 
-	int Bitset;
+	int BitSet;
 	int DisableMenuOpenControls;//frames to disable controls to prevent miss clicks when exiting the menu
 
 	int CursorIndex;

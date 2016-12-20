@@ -12,7 +12,7 @@ static Page Container =
 {
 	.UiTestCoords = {null},
 	.TestInt = null,
-	.Bitset = null,
+	.BitSet = null,
 	.DisableMenuOpenControls = null,
 	.CursorIndex = null,
 	.TotalItemCount = null,
@@ -57,7 +57,7 @@ bool HasPlayerOpenedMenu()
 }
 inline void ShutDownMenu()
 {
-	bit_reset(&Container.Bitset, PB_IsMenuOpen);
+	bit_reset(&Container.BitSet, PB_IsMenuOpen);
 	Container.DisableMenuOpenControls = 30;
 	set_cinematic_button_active(true);
 }
@@ -198,7 +198,7 @@ void UpdateMenuControls()
 	if (Container.Loading.FramesToLoad >= 5)
 		SetDataSlot(SlotIdCounter++, 255, "                  ", false);
 
-	if (bit_test(Container.Bitset, PB_IsMenuOpen))
+	if (bit_test(Container.BitSet, PB_IsMenuOpen))
 	{
 		bool IsItemEnabled = !bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled);
 
@@ -255,9 +255,11 @@ void UpdateMenuControls()
 }
 void UpdateMenuLevel(bool Direction)
 {
+	bit_reset(&Container.BitSet, PB_IsDisplayingConfirmation);
+
 	if (Direction)
 	{
-		bit_set(&Container.Bitset, PB_LastMenuDirection);
+		bit_set(&Container.BitSet, PB_LastMenuDirection);
 		Container.Level[Container.CurrentMenuLevel].SavedCursor.CursorIndex = Container.CursorIndex;
 		Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex = Container.ItemStartIndex;
 
@@ -279,7 +281,7 @@ void UpdateMenuLevel(bool Direction)
 	}
 	else
 	{
-		bit_reset(&Container.Bitset, PB_LastMenuDirection);
+		bit_reset(&Container.BitSet, PB_LastMenuDirection);
 		if (Container.CurrentMenuLevel == 0)
 		{
 			PlayMenuSound("QUIT");
@@ -335,8 +337,10 @@ bool IsAutoScrollActive(uint* HoldCounter, int ScrollInput)
 void ParseMenuControls()
 {
 	static uint HoldUpCounter = 0, HoldDownCounter = 0, HoldLeftCounter = 0, HoldRightCounter = 0;
-	
-	if (Container.TotalItemCount > 1)
+	static char* SavedDescription = nullstr;
+	ItemContainer* CurrentItem = &Container.Item[GetRelativeCursorIndex];
+
+	if (Container.TotalItemCount > 1 && !bit_test(Container.BitSet, PB_IsDisplayingConfirmation))
 	{
 		if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_UP) || (IsAutoScrollActive(&HoldUpCounter, INPUT_SCRIPT_PAD_UP)))
 		{
@@ -387,81 +391,111 @@ void ParseMenuControls()
 
 	}
 
-	if (!bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemDisabled))
+	if (!bit_test(CurrentItem->BitSet, ICB_IsItemDisabled))
 	{
-		MenuSelectionType CurrentType = Container.Item[GetRelativeCursorIndex].Selection.Type;
-		
+		MenuSelectionType CurrentType = CurrentItem->Selection.Type;
+
 		//Number selector
-		switch (CurrentType)
+		if (!bit_test(Container.BitSet, PB_IsDisplayingConfirmation))
 		{
-			case MST_Int:
-			case MST_Enum:
-			case MST_IntBool:
-			case MST_EnumBool:
+			switch (CurrentType)
 			{
-				if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_LEFT) || (IsAutoScrollActive(&HoldLeftCounter, INPUT_SCRIPT_PAD_LEFT)))
+				case MST_Int:
+				case MST_Enum:
+				case MST_IntBool:
+				case MST_EnumBool:
 				{
-					PlayMenuSound("NAV_LEFT_RIGHT");
-					if (Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int <= Container.Item[GetRelativeCursorIndex].Selection.StartIndex.Int)
-						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int = Container.Item[GetRelativeCursorIndex].Selection.EndIndex.Int;
-					else
-						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int -= (int)Container.Item[GetRelativeCursorIndex].Selection.Precision;
+					if (bit_test(CurrentItem->BitSet, ICB_ExecuteOnChange) && bit_test(CurrentItem->BitSet, ICB_DoesItemHaveConfirmation) && !bit_test(Container.BitSet, PB_IsDisplayingConfirmation))
+					{
+						SavedDescription = CurrentItem->Ui.Description;
+						CurrentItem->Ui.Description = "Are you sure you want to select this item?";
+						bit_set(&Container.BitSet, PB_IsDisplayingConfirmation);
+						return;
+					}
+					if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_LEFT) || (IsAutoScrollActive(&HoldLeftCounter, INPUT_SCRIPT_PAD_LEFT)))
+					{
+						PlayMenuSound("NAV_LEFT_RIGHT");
+						if (CurrentItem->Selection.CursorIndex.Int <= CurrentItem->Selection.StartIndex.Int)
+							CurrentItem->Selection.CursorIndex.Int = CurrentItem->Selection.EndIndex.Int;
+						else
+							CurrentItem->Selection.CursorIndex.Int -= (int)CurrentItem->Selection.Precision;
 
+					}
+					else if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_RIGHT) || (IsAutoScrollActive(&HoldRightCounter, INPUT_SCRIPT_PAD_RIGHT)))
+					{
+						PlayMenuSound("NAV_LEFT_RIGHT");
+						if (CurrentItem->Selection.CursorIndex.Int >= CurrentItem->Selection.EndIndex.Int)
+							CurrentItem->Selection.CursorIndex.Int = CurrentItem->Selection.StartIndex.Int;
+						else
+							CurrentItem->Selection.CursorIndex.Int += (int)CurrentItem->Selection.Precision;
+
+					}
+
+					if (bit_test(CurrentItem->BitSet, ICB_ExecuteOnChange))
+						CurrentItem->Execute();
 				}
-				else if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_RIGHT) || (IsAutoScrollActive(&HoldRightCounter, INPUT_SCRIPT_PAD_RIGHT)))
+				break;
+				case MST_Float:
+				case MST_FloatBool:
 				{
-					PlayMenuSound("NAV_LEFT_RIGHT");
-					if (Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int >= Container.Item[GetRelativeCursorIndex].Selection.EndIndex.Int)
-						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int = Container.Item[GetRelativeCursorIndex].Selection.StartIndex.Int;
-					else
-						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int += (int)Container.Item[GetRelativeCursorIndex].Selection.Precision;
+					if (bit_test(CurrentItem->BitSet, ICB_ExecuteOnChange) && bit_test(CurrentItem->BitSet, ICB_DoesItemHaveConfirmation) && !bit_test(Container.BitSet, PB_IsDisplayingConfirmation))
+					{
+						SavedDescription = CurrentItem->Ui.Description;
+						CurrentItem->Ui.Description = "Are you sure you want to select this item?";
+						bit_set(&Container.BitSet, PB_IsDisplayingConfirmation);
+						return;
+					}
 
+					if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_LEFT) || (IsAutoScrollActive(&HoldLeftCounter, INPUT_SCRIPT_PAD_LEFT)))
+					{
+						PlayMenuSound("NAV_LEFT_RIGHT");
+						if (CurrentItem->Selection.CursorIndex.Float <= CurrentItem->Selection.StartIndex.Float + 0.000015)//0.000000015 fixes rounding errors
+							CurrentItem->Selection.CursorIndex.Float = CurrentItem->Selection.EndIndex.Float;
+						else
+							CurrentItem->Selection.CursorIndex.Float -= CurrentItem->Selection.Precision;
+
+					}
+					else if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_RIGHT) || (IsAutoScrollActive(&HoldRightCounter, INPUT_SCRIPT_PAD_RIGHT)))
+					{
+						PlayMenuSound("NAV_LEFT_RIGHT");
+						if (CurrentItem->Selection.CursorIndex.Float >= CurrentItem->Selection.EndIndex.Float)
+							CurrentItem->Selection.CursorIndex.Float = CurrentItem->Selection.StartIndex.Float;
+						else
+							CurrentItem->Selection.CursorIndex.Float += CurrentItem->Selection.Precision;
+
+					}
+
+					if (bit_test(CurrentItem->BitSet, ICB_ExecuteOnChange))
+						CurrentItem->Execute();
 				}
-
-				if (bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_ExecuteOnChange))
-					Container.Item[GetRelativeCursorIndex].Execute();
+				break;
+				default:
+				break;
 			}
-			break;
-			case MST_Float:
-			case MST_FloatBool:
-			{
-				if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_LEFT) || (IsAutoScrollActive(&HoldLeftCounter, INPUT_SCRIPT_PAD_LEFT)))
-				{
-					PlayMenuSound("NAV_LEFT_RIGHT");
-					if (Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float <= Container.Item[GetRelativeCursorIndex].Selection.StartIndex.Float + 0.000015)//0.000000015 fixes rounding errors
-						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float = Container.Item[GetRelativeCursorIndex].Selection.EndIndex.Float;
-					else
-						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float -= Container.Item[GetRelativeCursorIndex].Selection.Precision;
-
-				}
-				else if (is_disabled_control_just_pressed(2, INPUT_SCRIPT_PAD_RIGHT) || (IsAutoScrollActive(&HoldRightCounter, INPUT_SCRIPT_PAD_RIGHT)))
-				{
-					PlayMenuSound("NAV_LEFT_RIGHT");
-					if (Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float >= Container.Item[GetRelativeCursorIndex].Selection.EndIndex.Float)
-						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float = Container.Item[GetRelativeCursorIndex].Selection.StartIndex.Float;
-					else
-						Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Float += Container.Item[GetRelativeCursorIndex].Selection.Precision;
-
-				}
-
-				if (bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_ExecuteOnChange))
-					Container.Item[GetRelativeCursorIndex].Execute();
-			}
-			break;
-			default:
-			break;
 		}
-
+		
 		if (is_disabled_control_just_pressed(2, INPUT_FRONTEND_ACCEPT))
 		{
 			PlayMenuSound("SELECT");
-			
-			if (Container.Item[GetRelativeCursorIndex].Execute != nullptr)
+			if (CurrentItem->Execute != nullptr)
 			{
+				if (bit_test(CurrentItem->BitSet, ICB_DoesItemHaveConfirmation) && !bit_test(Container.BitSet, PB_IsDisplayingConfirmation))
+				{
+					SavedDescription = CurrentItem->Ui.Description;
+					CurrentItem->Ui.Description = "Are you sure you want to select this item?";
+					bit_set(&Container.BitSet, PB_IsDisplayingConfirmation);
+					return;
+				}
+				if (bit_test(Container.BitSet, PB_IsDisplayingConfirmation))
+				{
+					bit_reset(&Container.BitSet, PB_IsDisplayingConfirmation);
+					CurrentItem->Ui.Description = SavedDescription;
+				}
+
 				switch (CurrentType)
 				{
 					case MST_Bool:
-					Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int = !Container.Item[GetRelativeCursorIndex].Selection.CursorIndex.Int;
+					CurrentItem->Selection.CursorIndex.Int = !CurrentItem->Selection.CursorIndex.Int;
 					break;
 					case MST_Menu:
 					UpdateMenuLevel(true);
@@ -469,28 +503,57 @@ void ParseMenuControls()
 					case MST_IntBool:
 					case MST_FloatBool:
 					case MST_EnumBool:
-					bit_flip(&Container.Item[GetRelativeCursorIndex].BitSet, ICB_BoolNumValue);
+					bit_flip(&CurrentItem->BitSet, ICB_BoolNumValue);
 					break;
 					default:
 					break;
 				}
-				Container.Item[GetRelativeCursorIndex].Execute();
+				CurrentItem->Execute();
 			}
 			else
 				Throw(straddiGlobal("Execute was null at: ", Container.CursorIndex));
+			
 		}
-		
-		if (Container.Item[GetRelativeCursorIndex].HasAlternateExecution && is_disabled_control_just_pressed(2, INPUT_FRONTEND_X))
+
+		if (CurrentItem->HasAlternateExecution && is_disabled_control_just_pressed(2, INPUT_FRONTEND_X))
 		{
 			PlayMenuSound("SELECT");
-			Container.Item[GetRelativeCursorIndex].AlternateExecute();
+
+			if (bit_test(Container.BitSet, PB_IsDisplayingConfirmation))
+			{
+				bit_reset(&Container.BitSet, PB_IsDisplayingConfirmation);
+				CurrentItem->Ui.Description = SavedDescription;
+			}
+			else
+			{
+				if (CurrentItem->AlternateExecute != nullptr)
+				{
+					if (bit_test(CurrentItem->BitSet, ICB_DoesItemHaveConfirmation) && !bit_test(Container.BitSet, PB_IsDisplayingConfirmation))
+					{
+						SavedDescription = CurrentItem->Ui.Description;
+						CurrentItem->Ui.Description = "Are you sure you want to select this item?";
+						bit_set(&Container.BitSet, PB_IsDisplayingConfirmation);
+						return;
+					}
+					CurrentItem->AlternateExecute();
+				}
+				else
+					Throw(straddiGlobal("Alternate Execute was null at: ", Container.CursorIndex));
+			}
 		}
 
 	}
 
 	if (is_disabled_control_just_pressed(2, INPUT_FRONTEND_CANCEL))
 	{
-		UpdateMenuLevel(false);
+		if (bit_test(Container.BitSet, PB_IsDisplayingConfirmation))
+		{
+			PlayMenuSound("BACK");
+			bit_reset(&Container.BitSet, PB_IsDisplayingConfirmation);
+			CurrentItem->Ui.Description = SavedDescription;
+		}
+		else
+			UpdateMenuLevel(false);
 	}
 
 }
@@ -1175,16 +1238,16 @@ void HandleMenuUi()
 
 	if (HasPlayerOpenedMenu())
 	{
-		if (bit_test(Container.Bitset, PB_IsMenuOpen))
+		if (bit_test(Container.BitSet, PB_IsMenuOpen))
 		{
 			PlayMenuSound("QUIT");
 			ShutDownMenu();
 		}
 		else 
-			bit_set(&Container.Bitset, PB_IsMenuOpen);
+			bit_set(&Container.BitSet, PB_IsMenuOpen);
 	}
 
-	if (bit_test(Container.Bitset, PB_IsMenuOpen))
+	if (bit_test(Container.BitSet, PB_IsMenuOpen))
 	{
 		CheckTextureDictionary("CommonMenu");
 		CheckTextureDictionary("mpleaderboard");
@@ -1194,10 +1257,10 @@ void HandleMenuUi()
 		if (is_pause_menu_active())
 			ShutDownMenu();
 
-		//while (bit_test(Container.Bitset, PB_IsCurrentMenuInvalid))
+		//while (bit_test(Container.BitSet, PB_IsCurrentMenuInvalid))
 			//UpdateMenuLevel(false);
 
-		//if (bit_test(Container.Bitset, PB_IsCurrentMenuDynamic))
+		//if (bit_test(Container.BitSet, PB_IsCurrentMenuDynamic))
 			//DynamicMenuHandling();
 
 		DisableUnusedInputs();
@@ -1205,7 +1268,7 @@ void HandleMenuUi()
 
 		DrawMenu();
 	}
-	if (bit_test(Container.Bitset, PB_IsMenuOpen) || Container.Loading.FramesToLoad >= 5)
+	if (bit_test(Container.BitSet, PB_IsMenuOpen) || Container.Loading.FramesToLoad >= 5)
 	{
 		UpdateMenuControls();
 		DrawScaleformMovie(Container.Ui.MenuControlSFID2, Container.Ui.UnselectedTextColor);

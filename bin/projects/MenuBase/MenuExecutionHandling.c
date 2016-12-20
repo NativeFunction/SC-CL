@@ -51,14 +51,14 @@ void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt, bool IsMenuDynami
 	AddItemCounter = 0;
 	Container->TotalItemCount = 0;
 	if(IsMenuDynamic)
-		bit_set(&Container->Bitset, PB_IsCurrentMenuDynamic);
+		bit_set(&Container->BitSet, PB_IsCurrentMenuDynamic);
 	else
-		bit_reset(&Container->Bitset, PB_IsCurrentMenuDynamic);
+		bit_reset(&Container->BitSet, PB_IsCurrentMenuDynamic);
 
 	Container->Ui.HeaderText = (char*)HeaderText;
 	Container->Ui.IsHeaderGxt = IsItemGxt;
 }
-void AddItemAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, void(*Callback)(), void(*AlternateCallback)())
+void AddItemAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -70,6 +70,8 @@ void AddItemAdvanced(const char* ItemText, bool IsItemGxt, const char* Descripti
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 		AddItemCounter++;
@@ -77,7 +79,7 @@ void AddItemAdvanced(const char* ItemText, bool IsItemGxt, const char* Descripti
 
 	Container->TotalItemCount++;
 }
-void AddItemIntAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), void(*AlternateCallback)())
+void AddItemIntAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, bool HasConformation, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -90,6 +92,8 @@ void AddItemIntAdvanced(const char* ItemText, bool IsItemGxt, const char* Descri
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
@@ -106,7 +110,7 @@ void AddItemIntAdvanced(const char* ItemText, bool IsItemGxt, const char* Descri
 
 	Container->TotalItemCount++;
 }
-void AddItemFloatAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)(), void(*AlternateCallback)())
+void AddItemFloatAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, bool HasConformation, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -118,6 +122,8 @@ void AddItemFloatAdvanced(const char* ItemText, bool IsItemGxt, const char* Desc
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 
@@ -133,7 +139,7 @@ void AddItemFloatAdvanced(const char* ItemText, bool IsItemGxt, const char* Desc
 
 	Container->TotalItemCount++;
 }
-void AddItemBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool StartIndex, void(*Callback)(), void(*AlternateCallback)())
+void AddItemBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, bool StartIndex, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -145,6 +151,8 @@ void AddItemBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Descr
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 
@@ -156,7 +164,7 @@ void AddItemBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Descr
 
 	Container->TotalItemCount++;
 }
-void AddItemEnumAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), const char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)())
+void AddItemEnumAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, bool HasConformation, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), const char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -168,6 +176,8 @@ void AddItemEnumAdvanced(const char* ItemText, bool IsItemGxt, const char* Descr
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 
@@ -184,7 +194,7 @@ void AddItemEnumAdvanced(const char* ItemText, bool IsItemGxt, const char* Descr
 
 	Container->TotalItemCount++;
 }
-void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, void(*Callback)())
+void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, void(*Callback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -195,6 +205,8 @@ void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Descr
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].Selection.Type = MST_Menu;
 		AddItemCounter++;
@@ -202,7 +214,7 @@ void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Descr
 
 	Container->TotalItemCount++;
 }
-void AddItemMenuWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, int Param, void(*Callback)())
+void AddItemMenuWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, int Param, void(*Callback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -213,6 +225,8 @@ void AddItemMenuWithParamAdvanced(const char* ItemText, bool IsItemGxt, const ch
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 
 		Container->Item[AddItemCounter].Selection.Type = MST_Param;
 		Container->Item[AddItemCounter].Selection.Value.Int = Param;
@@ -224,7 +238,7 @@ void AddItemMenuWithParamAdvanced(const char* ItemText, bool IsItemGxt, const ch
 
 	Container->TotalItemCount++;
 }
-void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, int Param, void(*Callback)(), void(*AlternateCallback)())
+void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, int Param, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -236,6 +250,9 @@ void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* 
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if(HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
+
 
 		Container->Item[AddItemCounter].Selection.Type = MST_Param;
 		Container->Item[AddItemCounter].Selection.Value.Int = Param;
@@ -246,7 +263,7 @@ void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* 
 
 	Container->TotalItemCount++;
 }
-void AddItemIntBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, int MinValue, int MaxValue, int StartIndex, int Precision, bool BoolStartIndex, void(*Callback)(), void(*AlternateCallback)())
+void AddItemIntBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, int MinValue, int MaxValue, int StartIndex, int Precision, bool BoolStartIndex, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -261,6 +278,8 @@ void AddItemIntBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* De
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
 		if (BoolStartIndex)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_BoolNumValue);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
@@ -276,7 +295,7 @@ void AddItemIntBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* De
 
 	Container->TotalItemCount++;
 }
-void AddItemEnumBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, int MinValue, int MaxValue, int StartIndex, int Precision, bool BoolStartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)())
+void AddItemEnumBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, int MinValue, int MaxValue, int StartIndex, int Precision, bool BoolStartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -290,6 +309,8 @@ void AddItemEnumBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* D
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
 		if (BoolStartIndex)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_BoolNumValue);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 
@@ -305,7 +326,7 @@ void AddItemEnumBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* D
 
 	Container->TotalItemCount++;
 }
-void AddItemFloatBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, float MinValue, float MaxValue, float StartIndex, float Precision, bool BoolStartIndex, void(*Callback)(), void(*AlternateCallback)())
+void AddItemFloatBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, float MinValue, float MaxValue, float StartIndex, float Precision, bool BoolStartIndex, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -319,6 +340,8 @@ void AddItemFloatBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* 
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
 		if (BoolStartIndex)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_BoolNumValue);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 
@@ -333,7 +356,7 @@ void AddItemFloatBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* 
 
 	Container->TotalItemCount++;
 }
-void AddItemPlayerAdvanced(int PlayerId, const char* Description, const char* AltExeControlText, bool IsDisabled, void(*Callback)(), void(*AlternateCallback)())
+void AddItemPlayerAdvanced(int PlayerId, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -343,6 +366,8 @@ void AddItemPlayerAdvanced(int PlayerId, const char* Description, const char* Al
 		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 		Container->Item[AddItemCounter].Selection.Type = MST_Player;
@@ -351,7 +376,7 @@ void AddItemPlayerAdvanced(int PlayerId, const char* Description, const char* Al
 
 	Container->TotalItemCount++;
 }
-void AddItemVehicleAdvanced(int VehicleHash, const char* Description, const char* AltExeControlText, bool IsDisabled, void(*Callback)(), void(*AlternateCallback)())
+void AddItemVehicleAdvanced(int VehicleHash, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, void(*Callback)(), void(*AlternateCallback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
@@ -362,6 +387,8 @@ void AddItemVehicleAdvanced(int VehicleHash, const char* Description, const char
 		Container->Item[AddItemCounter].Ui.AltExeControlText = (char*)AltExeControlText;
 		if (IsDisabled)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+		if (HasConformation)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
@@ -377,7 +404,7 @@ void SetHeader(const char* HeaderText)
 {
 	AddItemCounter = 0;
 	Container->TotalItemCount = 0;
-	bit_reset(&Container->Bitset, PB_IsCurrentMenuDynamic);
+	bit_reset(&Container->BitSet, PB_IsCurrentMenuDynamic);
 
 	Container->Ui.HeaderText = (char*)HeaderText;
 	Container->Ui.IsHeaderGxt = false;
@@ -641,20 +668,6 @@ DynamicIdArray DumpDynamicIds()
 
 void InitMenuExecution()
 {
-	#ifdef __YSC__
-	#define ExeBaseToStringDist 31273176
-	ExeBaseAddr = Sub64P((int*)_get_online_version(), ExeBaseToStringDist);
-	#undef ExeBaseToStringDist
-	#else
-	#ifdef __XSC__
-	ExeBaseAddr = (int*)0x82000000;
-	#else
-	#ifdef __CSC__
-	//TODO: ps3 base addr
-	#endif
-	#endif
-	#endif
-
 	Container = GetMenuContainer();
 	if (Container == nullptr)
 		Throw("Container Was Null");
@@ -666,13 +679,13 @@ inline int GetCurrentItemCount()
 inline void SetCurrentMenuInvalid(bool value)
 {
 	if (value)
-		bit_set(&Container->Bitset, PB_IsCurrentMenuInvalid);
+		bit_set(&Container->BitSet, PB_IsCurrentMenuInvalid);
 	else
-		bit_reset(&Container->Bitset, PB_IsCurrentMenuInvalid);
+		bit_reset(&Container->BitSet, PB_IsCurrentMenuInvalid);
 }
 inline bool WasLastMenuDirectionForward()
 {
-	return bit_test(Container->Bitset, PB_LastMenuDirection);
+	return bit_test(Container->BitSet, PB_LastMenuDirection);
 }
 inline ItemContainer* GetCurrentItemFromLastMenu()
 {
@@ -794,10 +807,6 @@ void StartAsynchronousFunction(bool(*AsynchronousFunction)(uint CurrentFrame, ..
 	}
 	else
 		Notify("Menu is loading. Please wait.");
-}
-inline int* GetExecutableAddress()
-{
-	return ExeBaseAddr;
 }
 
 //[Do not use] This is for menu ui testing

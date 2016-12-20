@@ -6586,7 +6586,6 @@ int ProcessFiles(ClangTool &Tool)
 		scriptData.reset(new Script(scriptName, Option_BuildType, Option_Platform, Option_Singleton, Option_EntryFunctionPadding, Option_OptimizationLevel));
 
 		stackWidth = scriptData->getStackWidth();
-		cout << "Starting Clang 3.8.1\r\n";
 		ProcessingFailed = Tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 		/// ClangTool::run accepts a FrontendActionFactory, which is then used to
 		/// create new objects implementing the FrontendAction interface. Here we use
@@ -6631,8 +6630,9 @@ void ParseCommandLine(int argc, const char **argv, const char* Overview, unique_
 	AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
 	Compilations = std::move(AdjustingCompilations);
 }
-int main(int argc, const char **argv) {
-
+int main(int argc, const char **argv)
+{
+	cout << "Starting Clang 3.8.1\n";
 
 	globalDirectory = GetDir(string(argv[0]));
 	cl::SetVersionPrinter(PrintVersion);

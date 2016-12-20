@@ -288,15 +288,21 @@ void Option_BoolTest()
 	//*Add64P(GetVehicleMetaAddress(VEHICLE_DUMP), VMI_VehicleType) = VEHICLE_TYPE_AMPHIBIOUS_QUADBIKE;
 	//*Add64P(GetVehicleMetaAddress(VEHICLE_DUMP), VMI_HandlingId) = 398;//blazer aqua
 
+	int t = (int)Push64P(0xFFFFFFFF, 0xFFFFFFFF);
+	t = (int)Add64P((int*)t, 1, 0);
+	Break(itosGlobal(t));
+	Break(itosGlobal(*(int*)((char*)&t + 4)));
 
-	int data = 0xDEADBAB4;
-	short* ptr = (short*)&data;
-	*ptr = 34901;
-	Break(itosGlobal(*ptr));
+	
 
-	short stest = *ptr;
-	stest++;
-	stest = 1000;
+	//int data = 0xDEADBAB4;
+	//short* ptr = (short*)&data;
+	//*ptr = 34901;
+	//Break(itosGlobal(*ptr));
+	//
+	//short stest = *ptr;
+	//stest++;
+	//stest = 1000;
 
 	if (!UpdateBoolConditional(DEBUG__GetContainer()->TestInt != 5, &SavedBoolTest))
 		Warn("Unable to toggle bool at this test int index");
@@ -376,39 +382,45 @@ void Option_SetVehicleType()
 	const int Type = GetCurrentItem()->Selection.Value.Int;
 	int* MetaAddress = GetVehicleMetaAddress(SavedMenuParam[0]);
 
-	*Add64P(MetaAddress, VMI_VehicleType) = Type;
-
+	if (MetaAddress == nullptr)
+	{
+		Notify("Vehicle was not found");
+		return;
+	}
+	
+	*Add64P(MetaAddress, VMI_VehicleType, 0) = Type;
+	
 	switch (Type)
 	{
 		case VEHICLE_TYPE_CAR:
-		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_BUFFALO;
+		*Add64P(MetaAddress, VMI_HandlingId, 0) = HANDLING_INDEX_BUFFALO;
 		break;
 		case VEHICLE_TYPE_PLANE:
-		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_LAZER;
+		*Add64P(MetaAddress, VMI_HandlingId, 0) = HANDLING_INDEX_LAZER;
 		break;
 		case VEHICLE_TYPE_QUADBIKE:
 		#ifdef __YSC__
 		case VEHICLE_TYPE_AMPHIBIOUS_AUTOMOBILE:
-		*Add64P(MetaAddress, VMI_HandlingId) = 397;//technical aqua
+		*Add64P(MetaAddress, VMI_HandlingId, 0) = 397;//technical aqua
 		break;
 		case VEHICLE_TYPE_AMPHIBIOUS_QUADBIKE:
-		//*Add64P(MetaAddress, VMI_HandlingId) = 398;//blazer aqua
+		//*Add64P(MetaAddress, VMI_HandlingId, 0) = 398;//blazer aqua
 		break;
 		#endif
 		case VEHICLE_TYPE_HELI:
-		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_ANNIHL;
+		*Add64P(MetaAddress, VMI_HandlingId, 0) = HANDLING_INDEX_ANNIHL;
 		break;
 		case VEHICLE_TYPE_BLIMP:
-		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_BLIMP;
+		*Add64P(MetaAddress, VMI_HandlingId, 0) = HANDLING_INDEX_BLIMP;
 		break;
 		case VEHICLE_TYPE_BIKE:
-		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_RUFFIAN;
+		*Add64P(MetaAddress, VMI_HandlingId, 0) = HANDLING_INDEX_RUFFIAN;
 		break;
 		case VEHICLE_TYPE_BICYCLE:
-		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_BMX;
+		*Add64P(MetaAddress, VMI_HandlingId, 0) = HANDLING_INDEX_BMX;
 		break;
 		case VEHICLE_TYPE_BOAT:
-		*Add64P(MetaAddress, VMI_HandlingId) = HANDLING_INDEX_DINGHY;
+		*Add64P(MetaAddress, VMI_HandlingId, 0) = HANDLING_INDEX_DINGHY;
 		break;
 	}
 	Notify("Type has been set");
@@ -562,13 +574,13 @@ void Menu__LargeSubmenuTest()
 	AddItem("Item7", Option_Blank);
 	AddItem("Item8", Option_Blank);
 	AddItem("Item9", Option_Blank);
-	AddItemIntAdvanced("Item10", false, nullptr, nullptr, true, false, 0, 50, 0, 1, Option_Blank, nullptr);
-	AddItemFloatAdvanced("Item11", false, nullptr, nullptr, true, false, 0, 10, 0, 1, Option_Blank, nullptr);
-	AddItemBoolAdvanced("Item12", false, nullptr, nullptr, true, false, Option_Blank, nullptr);
-	AddItemEnumAdvanced("Item13", false, nullptr, nullptr, true, false, 0, 50, 0, 1, Option_Blank, Parser_EnumTest, nullptr);
-	AddItemAdvanced("BJ_JUMP_06", true, "Must Come Down.~n~(Gxt Test)", nullptr, true, Option_Blank, nullptr);
-	AddItemAdvanced("Item15", false, "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW", nullptr, false, Option_Blank, nullptr);
-	AddItemAdvanced("Item16", false, nullptr, nullptr, false, Option_Blank, nullptr);
+	AddItemIntAdvanced("Item10", false, nullptr, nullptr, true, false, false, 0, 50, 0, 1, Option_Blank, nullptr);
+	AddItemFloatAdvanced("Item11", false, nullptr, nullptr, true, false, false, 0, 10, 0, 1, Option_Blank, nullptr);
+	AddItemBoolAdvanced("Item12", false, nullptr, nullptr, true, false, false, Option_Blank, nullptr);
+	AddItemEnumAdvanced("Item13", false, nullptr, nullptr, true, false, false, 0, 50, 0, 1, Option_Blank, Parser_EnumTest, nullptr);
+	AddItemAdvanced("BJ_JUMP_06", true, "Must Come Down.~n~(Gxt Test)", nullptr, true, false, Option_Blank, nullptr);
+	AddItemAdvanced("Item15", false, "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW", nullptr, false, false, Option_Blank, nullptr);
+	AddItemAdvanced("Item16", false, nullptr, nullptr, false, false, Option_Blank, nullptr);
 	AddItem("Item17", Option_Blank);
 	AddItem("Item18", Option_Blank);
 	AddItem("Item19", Option_Blank);
@@ -607,8 +619,8 @@ void Menu__LargeSubmenuTest()
 void Menu__PlayerOptions()
 {
 	SetHeader("Player Options");
-	AddItemBoolAdvanced("God Mode", false, "Makes player invincible.", nullptr, false, bit_test(MenuLoopedBitset, MB_GodMode), Option_GodMode, nullptr);
-	AddItemBoolAdvanced("Never Wanted", false, "Disables police.", nullptr, false, bit_test(MenuLoopedBitset, MB_NeverWanted), Option_NeverWanted, nullptr);
+	AddItemBoolAdvanced("God Mode", false, "Makes player invincible.", nullptr, false, false, bit_test(MenuLoopedBitset, MB_GodMode), Option_GodMode, nullptr);
+	AddItemBoolAdvanced("Never Wanted", false, "Disables police.", nullptr, false, false, bit_test(MenuLoopedBitset, MB_NeverWanted), Option_NeverWanted, nullptr);
 
 }
 
@@ -625,9 +637,9 @@ void Menu__VehicleList_Options_ChangeType()
 	#endif
 	AddItemWithParam("Helicopter", VEHICLE_TYPE_HELI, Option_SetVehicleType);
 	AddItemWithParam("Blimp", VEHICLE_TYPE_BLIMP, Option_SetVehicleType);
-	AddItemWithParam("Bike", VEHICLE_TYPE_BIKE, Option_SetVehicleType);
-	AddItemWithParam("Bicycle", VEHICLE_TYPE_BICYCLE, Option_SetVehicleType);
-	AddItemWithParam("Boat", VEHICLE_TYPE_BOAT, Option_SetVehicleType);
+	AddItemWithParamAdvanced("Bike", false, "This type is unstable on most vehicles", nullptr, false, true, VEHICLE_TYPE_BIKE, Option_SetVehicleType, nullptr);
+	AddItemWithParamAdvanced("Bicycle", false, "This type is unstable on most vehicles", nullptr, false, true, VEHICLE_TYPE_BICYCLE, Option_SetVehicleType, nullptr);
+	AddItemWithParamAdvanced("Boat", false, "This type is unstable on most vehicles", nullptr, false, true, VEHICLE_TYPE_BOAT, Option_SetVehicleType, nullptr);
 
 }
 
@@ -1500,18 +1512,18 @@ void Menu__VehicleOptions()
 {
 	SetHeader("Vehicle Options");
 	AddItemMenu("Vehicle List", Menu__VehicleList);
-	AddItemBoolAdvanced("Vehicle Helper", false, "Makes vehicle invincible.", nullptr, false, bit_test(MenuLoopedBitset, MB_VehicleHelper), Option_VehicleHelper, nullptr);
+	AddItemBoolAdvanced("Vehicle Helper", false, "Makes vehicle invincible.", nullptr, false, false, bit_test(MenuLoopedBitset, MB_VehicleHelper), Option_VehicleHelper, nullptr);
 }
 void Menu__MiscOptions()
 {
 	SetHeader("Misc Options");
-	AddItemBoolAdvanced("Fly Mod", false, "Hold X and press Left Stick to use Fly Mod.", nullptr, false, bit_test(MenuLoopedBitset, MB_FlyMod), Option_FlyMod, nullptr);
+	AddItemBoolAdvanced("Fly Mod", false, "Hold X and press Left Stick to use Fly Mod.", nullptr, false, false, bit_test(MenuLoopedBitset, MB_FlyMod), Option_FlyMod, nullptr);
 }
 void Menu__DebugOptions()
 {
 	SetHeader("Debug Options");
-	AddItemAdvanced("Vehicle Spawn Test", false, "Spawns the adder.", nullptr, false, Option_DebugTest0, nullptr);
-	AddItemAdvanced("Loading Off Test", false, "Turns loading icon off.", "test", false, Option_LoadingOffTest, Option_Blank);
+	AddItemAdvanced("Vehicle Spawn Test", false, "Spawns the adder.", nullptr, false, false, Option_DebugTest0, nullptr);
+	AddItemAdvanced("Loading Off Test", false, "Turns loading icon off.", "test", false, false, Option_LoadingOffTest, Option_Blank);
 	AddItemInt("Ui Test Precision", true, 0, 4, FloatToPrecision(SavedTestCoordPrecision), Option_UiTestPrecision);
 	AddItemFloat("Ui Test Coord X", true, 0, 10, DEBUG__GetContainer()->UiTestCoords.x, SavedTestCoordPrecision, Option_TestUiCoordX);
 	AddItemFloat("Ui Test Coord Y", true, 0, 10, DEBUG__GetContainer()->UiTestCoords.y, SavedTestCoordPrecision, Option_TestUiCoordY);
