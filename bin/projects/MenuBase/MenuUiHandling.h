@@ -14,10 +14,11 @@ typedef enum MenuSelectionType
 	MST_Float,
 	MST_Bool,
 	MST_Menu,
+	MST_MenuParam,
 	MST_IntBool,
 	MST_EnumBool,
 	MST_FloatBool,
-	MST_Player
+	MST_Player,
 } MenuSelectionType;
 enum ItemContainerBits
 {
@@ -54,6 +55,7 @@ typedef struct ItemContainer
 	struct
 	{
 		MenuSelectionType Type;
+		int DynamicId;
 		union { flint CursorIndex; flint Value; };
 		float Precision;
 		flint StartIndex;
@@ -67,10 +69,11 @@ typedef struct ItemContainer
 typedef struct MenuLevel
 {
 	void(*UpdateToMenuLevel)();
+	bool(*DynamicChecker)(int Id);
 	struct
 	{
-		int CursorIndex;
-		int ItemStartIndex;
+		union { int CursorIndex; int DynamicId; };
+		union { int ItemStartIndex; int DynamicRange; };
 	} SavedCursor;
 
 } MenuLevel;
@@ -91,6 +94,7 @@ typedef struct Page//Menu Page
 
 	int CurrentMenuLevel;
 	MenuLevel Level[MaxMenuLevels];
+
 	
 	//size: 4
 	union

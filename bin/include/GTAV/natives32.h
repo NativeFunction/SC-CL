@@ -4045,7 +4045,7 @@ extern _native bool network_player_is_badsport();
 extern _native bool unk_0xF9A51B92(any p0, any p1, any p2);
 extern _native bool bad_sport_player_left_detected(any* p0, any p1, any p2);
 extern _native void unk_0x4818ACD0(any p0, any p1);
-extern _native void network_set_this_script_is_network_script(any p0, bool p1, any p2);
+extern _native void network_set_this_script_is_network_script(int lobbySize, bool p1, int p2);
 extern _native bool network_get_this_script_is_network_script();
 extern _native32(0xCCD8C02D) int _network_get_num_participants_host();
 extern _native int network_get_num_participants();

@@ -8,15 +8,10 @@
 
 typedef struct { int Items[MaxDynamicItems]; } DynamicIdArray;
 
-void ExecutionEntry();//MenuUiHandling uses MainMenu 
-void LoopedExecutionEntry();
-void InitMenuExecution();
-void AsynchronousLoop();
-
 //For Description and AlternateExecution use nullptr for disabled
-
-//if IsMenuDynamic then menu items have to be dynamic items
-void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt, bool IsMenuDynamic);
+#pragma region AdvancedItems
+//if DynamicChecker is enabled then menu items have to be dynamic items
+void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt, bool(*DynamicChecker)(int Id));
 void AddItemAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, void(*Callback)(), void(*AlternateCallback)());
 void AddItemIntAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, bool HasConformation, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), void(*AlternateCallback)());
 void AddItemFloatAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, bool HasConformation, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)(), void(*AlternateCallback)());
@@ -30,8 +25,9 @@ void AddItemEnumBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* D
 void AddItemFloatBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, float MinValue, float MaxValue, float StartIndex, float Precision, bool BoolStartIndex, void(*Callback)(), void(*AlternateCallback)());
 void AddItemPlayerAdvanced(int PlayerId, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, void(*Callback)(), void(*AlternateCallback)());
 void AddItemVehicleAdvanced(int VehicleHash, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, void(*Callback)(), void(*AlternateCallback)());
+#pragma endregion
 
-
+#pragma region NormalItems
 void SetHeader(const char* HeaderText);
 void AddItem(const char* ItemText, void(*Callback)());
 void AddItemInt(const char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, void(*Callback)());
@@ -44,12 +40,18 @@ void AddItemWithParam(const char* ItemText, int Param, void(*Callback)());
 void AddItemIntBool(const char* ItemText, int MinValue, int MaxValue, int StartIndex, bool BoolStartIndex, void(*Callback)());
 void AddItemEnumBool(const char* ItemText, int MinValue, int MaxValue, int StartIndex, bool BoolStartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex));
 void AddItemFloatBool(const char* ItemText, float MinValue, float MaxValue, float StartIndex, float Precision, bool BoolStartIndex, void(*Callback)());
-void AddItemPlayer(int PlayerId, void(*Callback)(), char* netTestName);
 void AddItemVehicle(int VehicleHash, void(*Callback)());
+#pragma endregion
 
+#pragma region DynamicNormalItems
+void AddItemDynamic(const char* ItemText, int DynamicId, void(*Callback)());
+void AddItemPlayer(int PlayerId, void(*Callback)());
+#pragma endregion
+
+#pragma region ExternalMenuCommands
 DynamicIdArray DumpDynamicIds();
 int GetCurrentItemCount();
-void SetCurrentMenuInvalid(bool value);
+void SetCurrentMenuInvalid(bool value, const char* Reason);
 bool WasLastMenuDirectionForward();
 ItemContainer* GetCurrentItem();
 //Note: Only works in the forward direction
@@ -64,5 +66,14 @@ bool UpdateBoolConditional(bool Condition, bool* BoolToSet);
 bool UpdateBoolConditionalCeil(bool Condition, bool* BoolToSet);
 bool UpdateBoolConditionalFloor(bool Condition, bool* BoolToSet);
 void StartAsynchronousFunction(bool(*AsynchronousFunction)(uint CurrentFrame, ...), const uint ParamCount, uint FramesToLoop, int Params[MaxAsyncParams]);
-
+//[Do not use] This is for menu ui testing
 Page* DEBUG__GetContainer();
+#pragma endregion
+
+#pragma region InternalMenuCommands
+//ExecutionEntry uses MainMenu as entry
+void ExecutionEntry();
+void LoopedExecutionEntry();
+void InitMenuExecution();
+void AsynchronousLoop();
+#pragma endregion

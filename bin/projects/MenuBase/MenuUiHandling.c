@@ -260,8 +260,18 @@ void UpdateMenuLevel(bool Direction)
 	if (Direction)
 	{
 		bit_set(&Container.BitSet, PB_LastMenuDirection);
-		Container.Level[Container.CurrentMenuLevel].SavedCursor.CursorIndex = Container.CursorIndex;
-		Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex = Container.ItemStartIndex;
+
+		if (bit_test(Container.BitSet, PB_IsCurrentMenuDynamic))
+		{
+			Container.Level[Container.CurrentMenuLevel].SavedCursor.DynamicId = Container.Item[GetRelativeCursorIndex].Selection.DynamicId;
+			Container.Level[Container.CurrentMenuLevel].SavedCursor.DynamicRange = Container.CursorIndex - Container.ItemStartIndex;
+		}
+		else
+		{
+			Container.Level[Container.CurrentMenuLevel].SavedCursor.CursorIndex = Container.CursorIndex;
+			Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex = Container.ItemStartIndex;
+		}
+
 
 		Container.CurrentMenuLevel++;
 		if (Container.CurrentMenuLevel < MaxMenuLevels)
@@ -282,6 +292,7 @@ void UpdateMenuLevel(bool Direction)
 	else
 	{
 		bit_reset(&Container.BitSet, PB_LastMenuDirection);
+		bit_reset(&Container.BitSet, PB_IsCurrentMenuInvalid);
 		if (Container.CurrentMenuLevel == 0)
 		{
 			PlayMenuSound("QUIT");
@@ -293,12 +304,22 @@ void UpdateMenuLevel(bool Direction)
 			Container.CurrentMenuLevel--;
 			if (Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel != nullptr)
 			{
-				Container.ItemStartIndex = Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex;
-				Container.CursorIndex = Container.Level[Container.CurrentMenuLevel].SavedCursor.CursorIndex;
+				Container.Level[Container.CurrentMenuLevel + 1] = (MenuLevel){ 0 };
+
+				if (Container.Level[Container.CurrentMenuLevel].DynamicChecker != nullptr)
+				{
+
+				}
+				else
+				{
+					Container.ItemStartIndex = Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex;
+					Container.CursorIndex = Container.Level[Container.CurrentMenuLevel].SavedCursor.CursorIndex;
+				}
+
 				Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
 			}
 			else
-				Throw(straddiGlobal("MenuLevel change was null at: ", Container.CurrentMenuLevel));
+				Throw(straddiGlobal("MenuLevel change was null at: ", Container.CurrentMenuLevel++));
 		}
 	}
 }
@@ -498,6 +519,7 @@ void ParseMenuControls()
 					CurrentItem->Selection.CursorIndex.Int = !CurrentItem->Selection.CursorIndex.Int;
 					break;
 					case MST_Menu:
+					case MST_MenuParam:
 					UpdateMenuLevel(true);
 					return;
 					case MST_IntBool:
@@ -983,6 +1005,7 @@ void DrawItems()
 				case MST_Param:
 				break;
 				case MST_Menu:
+				case MST_MenuParam:
 				{
 					//Hamburger Button
 					SetUpDraw(Font_RockstarTAG, 1.0f, 0.5f, false, false, false, false, CurrentColor);
@@ -1042,6 +1065,7 @@ void DrawItems()
 				case MST_None:
 				case MST_Param:
 				case MST_Menu:
+				case MST_MenuParam:
 				break;
 				case MST_Int:
 				case MST_Enum:
@@ -1096,7 +1120,7 @@ void DynamicMenuHandling()
 	int SavedStartIndex = Container.ItemStartIndex;
 	const int CursorDistance = SavedCursorIndex - SavedStartIndex;
 
-	int CurrentSelectedId = Container.Item[GetRelativeCursorIndex].Selection.Value.Int;
+	int CurrentSelectedId = Container.Item[GetRelativeCursorIndex].Selection.DynamicId;
 	bool HasFoundIndex = false;
 	int ClosestIndexBefore = 0;
 
@@ -1134,7 +1158,7 @@ void DynamicMenuHandling()
 			if (Container.CursorIndex != SavedCursorIndex)
 			{
 				char* str = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-				//CERROR: no strcpy on char* init
+				//CError: no strcpy on char* init
 				strcpy(str, "CursorIndex: ", 32);
 				straddi(str, Container.CursorIndex, 32);
 				stradd(str, " StartIndex: ", 32);
@@ -1208,7 +1232,7 @@ void DynamicMenuHandling()
 			#endif
 		}
 		else
-			SetCurrentMenuInvalid(true);
+			SetCurrentMenuInvalid(true, "Invalid dynamic menu id");
 	}
 
 	Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
@@ -1257,14 +1281,15 @@ void HandleMenuUi()
 		if (is_pause_menu_active())
 			ShutDownMenu();
 
-		//while (bit_test(Container.BitSet, PB_IsCurrentMenuInvalid))
-			//UpdateMenuLevel(false);
-
-		//if (bit_test(Container.BitSet, PB_IsCurrentMenuDynamic))
-			//DynamicMenuHandling();
+		if (bit_test(Container.BitSet, PB_IsCurrentMenuDynamic))
+			DynamicMenuHandling();
 
 		DisableUnusedInputs();
 		ParseMenuControls();
+
+		//this is not perfect
+		while (bit_test(Container.BitSet, PB_IsCurrentMenuInvalid))
+			UpdateMenuLevel(false);
 
 		DrawMenu();
 	}

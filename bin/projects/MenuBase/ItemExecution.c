@@ -293,8 +293,6 @@ void Option_BoolTest()
 	Break(itosGlobal(t));
 	Break(itosGlobal(*(int*)((char*)&t + 4)));
 
-	
-	int h = GetExecutableAddress();
 	//int data = 0xDEADBAB4;
 	//short* ptr = (short*)&data;
 	//*ptr = 34901;
@@ -387,7 +385,7 @@ void Option_SetVehicleType()
 		Notify("Vehicle was not found");
 		return;
 	}
-	
+	//CError:	On PC VMI_VehicleType and VMI_HandlingId are 4 bytes in memory yet we are setting 8 bytes
 	*Add64P(MetaAddress, VMI_VehicleType, 0) = Type;
 	
 	switch (Type)
@@ -429,16 +427,27 @@ void Option_SetVehicleType()
 
 #pragma region Menus
 
+void Menu__PlayerList_Options()
+{
+	SetHeaderAdvanced("Player list", false, false);
+}
+bool DynamicChecker__PlayerList(int Id)
+{
+	return IsPlayerInGame(Id);
+}
 void Menu__PlayerList()
 {
+	//savedcursorindex = id
+	//savedstartindex = range
+	//DynamicChecker[MaxMenuLevels]
 	
-	SetHeaderAdvanced("Player list", false, true);
+	SetHeaderAdvanced("Player list", false, DynamicChecker__PlayerList);
 	//for (int i = 0; i < LobbySizeWithSpectators; i++)
 	//{
-	//	if (IsPlayerInGame(i))
+	//	if (DynamicChecker__PlayerList(i))
 	//		AddItemPlayer(i, Option_Blank);
 	//}
-
+	
 	#pragma region net sim
 	static int netsimstart = true;
 	startnettime:
@@ -449,118 +458,121 @@ void Menu__PlayerList()
 	}
 	if (timera() < 10000)
 	{
-		AddItemPlayer(0, Option_Blank, "player0");
-		AddItemPlayer(1, Option_Blank, "player1");
-		AddItemPlayer(2, Option_Blank, "player2");
-		AddItemPlayer(3, Option_Blank, "player3");
-		AddItemPlayer(4, Option_Blank, "player4");
-		AddItemPlayer(5, Option_Blank, "player5");
-		AddItemPlayer(6, Option_Blank, "player6");
-		AddItemPlayer(7, Option_Blank, "player7");
-		AddItemPlayer(8, Option_Blank, "player8");
-		AddItemPlayer(9, Option_Blank, "player9");
-		AddItemPlayer(10, Option_Blank, "player10");
-		AddItemPlayer(11, Option_Blank, "player11");
-		AddItemPlayer(12, Option_Blank, "player12");
-		AddItemPlayer(13, Option_Blank, "player13");
-		AddItemPlayer(14, Option_Blank, "player14");
-		AddItemPlayer(15, Option_Blank, "player15");
-		AddItemPlayer(16, Option_Blank, "player16");
-		AddItemPlayer(17, Option_Blank, "player17");
-		AddItemPlayer(18, Option_Blank, "player18");
-		AddItemPlayer(19, Option_Blank, "player19");
-		AddItemPlayer(20, Option_Blank, "player20");
-		AddItemPlayer(21, Option_Blank, "player21");
-		AddItemPlayer(22, Option_Blank, "player22");
-		AddItemPlayer(23, Option_Blank, "player23");
-		AddItemPlayer(24, Option_Blank, "player24");
-		AddItemPlayer(25, Option_Blank, "player25");
-		AddItemPlayer(26, Option_Blank, "player26");
-		AddItemPlayer(27, Option_Blank, "player27");
-		AddItemPlayer(28, Option_Blank, "player28");
-		AddItemPlayer(29, Option_Blank, "player29");
-		AddItemPlayer(30, Option_Blank, "player30");
-		AddItemPlayer(31, Option_Blank, "player31");
+		AddItemDynamic("player0", 0, Option_Blank);
+		AddItemDynamic("player1", 1, Option_Blank);
+		AddItemDynamic("player2", 2, Option_Blank);
+		AddItemDynamic("player3", 3, Option_Blank);
+		AddItemDynamic("player4", 4, Option_Blank);
+		AddItemDynamic("player5", 5, Option_Blank);
+		AddItemDynamic("player6", 6, Option_Blank);
+		AddItemDynamic("player7", 7, Option_Blank);
+		AddItemDynamic("player8", 8, Option_Blank);
+		AddItemDynamic("player9", 9, Option_Blank);
+		AddItemDynamic("player10", 10, Option_Blank);
+		AddItemDynamic("player11", 11, Option_Blank);
+		AddItemDynamic("player12", 12, Option_Blank);
+		AddItemDynamic("player13", 13, Option_Blank);
+		AddItemDynamic("player14", 14, Option_Blank);
+		AddItemDynamic("player15", 15, Option_Blank);
+		AddItemDynamic("player16", 16, Option_Blank);
+		AddItemDynamic("player17", 17, Option_Blank);
+		AddItemDynamic("player18", 18, Option_Blank);
+		AddItemDynamic("player19", 19, Option_Blank);
+		AddItemDynamic("player20", 20, Option_Blank);
+		AddItemDynamic("player21", 21, Option_Blank);
+		AddItemDynamic("player22", 22, Option_Blank);
+		AddItemDynamic("player23", 23, Option_Blank);
+		AddItemDynamic("player24", 24, Option_Blank);
+		AddItemDynamic("player25", 25, Option_Blank);
+		AddItemDynamic("player26", 26, Option_Blank);
+		AddItemDynamic("player27", 27, Option_Blank);
+		AddItemDynamic("player28", 28, Option_Blank);
+		AddItemDynamic("player29", 29, Option_Blank);
+		AddItemDynamic("player30", 30, Option_Blank);
+		AddItemDynamic("player31", 31, Option_Blank);
 	}
 	else if (timera() < 20000)
 	{
-		//AddItemPlayer(0, Option_Blank, "player0");
-		AddItemPlayer(1, Option_Blank, "player1");
-		AddItemPlayer(2, Option_Blank, "player2");
-		AddItemPlayer(3, Option_Blank, "player3");
-		//AddItemPlayer(4, Option_Blank, "player4");
-		AddItemPlayer(5, Option_Blank, "player5");
-		AddItemPlayer(6, Option_Blank, "player6");
-		AddItemPlayer(7, Option_Blank, "player7");
-		AddItemPlayer(8, Option_Blank, "player8");
-		AddItemPlayer(9, Option_Blank, "player9");
-		AddItemPlayer(10, Option_Blank, "player10");
-		AddItemPlayer(11, Option_Blank, "player11");
-		AddItemPlayer(12, Option_Blank, "player12");
-		AddItemPlayer(13, Option_Blank, "player13");
-		//AddItemPlayer(14, Option_Blank, "player14");
-		AddItemPlayer(15, Option_Blank, "player15");
-		AddItemPlayer(16, Option_Blank, "player16");
-		AddItemPlayer(17, Option_Blank, "player17");
-		AddItemPlayer(18, Option_Blank, "player18");
-		AddItemPlayer(19, Option_Blank, "player19");
-		AddItemPlayer(20, Option_Blank, "player20");
-		AddItemPlayer(21, Option_Blank, "player21");
-		AddItemPlayer(22, Option_Blank, "player22");
-		AddItemPlayer(23, Option_Blank, "player23");
-		AddItemPlayer(24, Option_Blank, "player24");
-		//AddItemPlayer(25, Option_Blank, "player25");
-		AddItemPlayer(26, Option_Blank, "player26");
-		AddItemPlayer(27, Option_Blank, "player27");
-		AddItemPlayer(28, Option_Blank, "player28");
-		AddItemPlayer(29, Option_Blank, "player29");
-		AddItemPlayer(30, Option_Blank, "player30");
-		//AddItemPlayer(31, Option_Blank, "player31");
+		//AddItemDynamic("player0", 0, Option_Blank);
+		AddItemDynamic("player1", 1, Option_Blank);
+		AddItemDynamic("player2", 2, Option_Blank);
+		AddItemDynamic("player3", 3, Option_Blank);
+		//AddItemDynamic("player4", 4, Option_Blank);
+		AddItemDynamic("player5", 5, Option_Blank);
+		AddItemDynamic("player6", 6, Option_Blank);
+		AddItemDynamic("player7", 7, Option_Blank);
+		AddItemDynamic("player8", 8, Option_Blank);
+		AddItemDynamic("player9", 9, Option_Blank);
+		AddItemDynamic("player10", 10, Option_Blank);
+		AddItemDynamic("player11", 11, Option_Blank);
+		AddItemDynamic("player12", 12, Option_Blank);
+		AddItemDynamic("player13", 13, Option_Blank);
+		//AddItemDynamic("player14", 14, Option_Blank);
+		AddItemDynamic("player15", 15, Option_Blank);
+		AddItemDynamic("player16", 16, Option_Blank);
+		AddItemDynamic("player17", 17, Option_Blank);
+		AddItemDynamic("player18", 18, Option_Blank);
+		AddItemDynamic("player19", 19, Option_Blank);
+		AddItemDynamic("player20", 20, Option_Blank);
+		AddItemDynamic("player21", 21, Option_Blank);
+		AddItemDynamic("player22", 22, Option_Blank);
+		AddItemDynamic("player23", 23, Option_Blank);
+		AddItemDynamic("player24", 24, Option_Blank);
+		//AddItemDynamic("player25", 25, Option_Blank);
+		AddItemDynamic("player26", 26, Option_Blank);
+		AddItemDynamic("player27", 27, Option_Blank);
+		AddItemDynamic("player28", 28, Option_Blank);
+		AddItemDynamic("player29", 29, Option_Blank);
+		AddItemDynamic("player30", 30, Option_Blank);
+		//AddItemDynamic("player31", 31, Option_Blank);
 	}
 	else if (timera() < 30000)
 	{
-		//AddItemPlayer(0, Option_Blank, "player0");
-		//AddItemPlayer(1, Option_Blank, "player1");
-		//AddItemPlayer(2, Option_Blank, "player2");
-		AddItemPlayer(3, Option_Blank, "player3");
-		//AddItemPlayer(4, Option_Blank, "player4");
-		//AddItemPlayer(5, Option_Blank, "player5");
-		//AddItemPlayer(6, Option_Blank, "player6");
-		AddItemPlayer(7, Option_Blank, "player7");
-		AddItemPlayer(8, Option_Blank, "player8");
-		AddItemPlayer(9, Option_Blank, "player9");
-		AddItemPlayer(10, Option_Blank, "player10");
-		AddItemPlayer(11, Option_Blank, "player11");
-		AddItemPlayer(12, Option_Blank, "player12");
-		AddItemPlayer(13, Option_Blank, "player13");
-		//AddItemPlayer(14, Option_Blank, "player14");
-		AddItemPlayer(15, Option_Blank, "player15");
-		//AddItemPlayer(16, Option_Blank, "player16");
-		AddItemPlayer(17, Option_Blank, "player17");
-		AddItemPlayer(18, Option_Blank, "player18");
-		AddItemPlayer(19, Option_Blank, "player19");
-		//AddItemPlayer(20, Option_Blank, "player20");
-		AddItemPlayer(21, Option_Blank, "player21");
-		AddItemPlayer(22, Option_Blank, "player22");
-		AddItemPlayer(23, Option_Blank, "player23");
-		AddItemPlayer(24, Option_Blank, "player24");
-		//AddItemPlayer(25, Option_Blank, "player25");
-		AddItemPlayer(26, Option_Blank, "player26");
-		AddItemPlayer(27, Option_Blank, "player27");
-		AddItemPlayer(28, Option_Blank, "player28");
-		AddItemPlayer(29, Option_Blank, "player29");
-		AddItemPlayer(30, Option_Blank, "player30");
-		//AddItemPlayer(31, Option_Blank, "player31");
+		//AddItemDynamic("player0", 0, Option_Blank);
+		//AddItemDynamic("player1", 1, Option_Blank);
+		//AddItemDynamic("player2", 2, Option_Blank);
+		AddItemDynamic("player3", 3, Option_Blank);
+		//AddItemDynamic("player4", 4, Option_Blank);
+		//AddItemDynamic("player5", 5, Option_Blank);
+		//AddItemDynamic("player6", 6, Option_Blank);
+		AddItemDynamic("player7", 7, Option_Blank);
+		AddItemDynamic("player8", 8, Option_Blank);
+		AddItemDynamic("player9", 9, Option_Blank);
+		AddItemDynamic("player10", 10, Option_Blank);
+		AddItemDynamic("player11", 11, Option_Blank);
+		AddItemDynamic("player12", 12, Option_Blank);
+		AddItemDynamic("player13", 13, Option_Blank);
+		//AddItemDynamic("player14", 14, Option_Blank);
+		AddItemDynamic("player15", 15, Option_Blank);
+		//AddItemDynamic("player16", 16, Option_Blank);
+		AddItemDynamic("player17", 17, Option_Blank);
+		AddItemDynamic("player18", 18, Option_Blank);
+		AddItemDynamic("player19", 19, Option_Blank);
+		//AddItemDynamic("player20", 20, Option_Blank);
+		AddItemDynamic("player21", 21, Option_Blank);
+		AddItemDynamic("player22", 22, Option_Blank);
+		AddItemDynamic("player23", 23, Option_Blank);
+		AddItemDynamic("player24", 24, Option_Blank);
+		//AddItemDynamic("player25", 25, Option_Blank);
+		AddItemDynamic("player26", 26, Option_Blank);
+		AddItemDynamic("player27", 27, Option_Blank);
+		AddItemDynamic("player28", 28, Option_Blank);
+		AddItemDynamic("player29", 29, Option_Blank);
+		AddItemDynamic("player30", 30, Option_Blank);
+		//AddItemDynamic("player31", 31, Option_Blank);
 	}
+	//else if (timera() < 40000)
+	//{
+	//}
 	else
 	{
 		netsimstart = true;
 		goto startnettime;
 	}
 	#pragma endregion
-	//todo: fix menu invalid (soft freezes)
+
 	if(!GetCurrentItemCount())
-		SetCurrentMenuInvalid(true);
+		SetCurrentMenuInvalid(true, "No active players in session");
 }
 void Menu__LargeSubmenuTest()
 {
