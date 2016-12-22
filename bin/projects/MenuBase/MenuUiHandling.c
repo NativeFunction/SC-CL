@@ -89,8 +89,8 @@ void DisableUnusedInputs()
 
 	DisableControl(2, INPUT_NEXT_CAMERA);
 	DisableControl(0, INPUT_NEXT_CAMERA);
-	DisableControl(0, INPUT_VEHICLE_SELECT_NEXT_WEAPON);
-	DisableControl(2, INPUT_VEHICLE_CIN_CAM);
+	DisableControl(0, INPUT_VEH_SELECT_NEXT_WEAPON);
+	DisableControl(2, INPUT_VEH_CIN_CAM);
 	DisableControl(0, INPUT_HUD_SPECIAL);
 
 	set_input_exclusive(2, INPUT_FRONTEND_ACCEPT);
@@ -111,18 +111,18 @@ void DisableUnusedInputs()
 	DisableControl(0, INPUT_WEAPON_WHEEL_NEXT);
 	DisableControl(0, INPUT_WEAPON_WHEEL_PREV);
 	DisableControl(0, INPUT_WEAPON_SPECIAL);
-	DisableControl(0, INPUT_WEAPON_SPECIAL2);
+	DisableControl(0, INPUT_WEAPON_SPECIAL_TWO);
 	DisableControl(0, INPUT_MELEE_ATTACK_LIGHT);
 	DisableControl(0, INPUT_MELEE_ATTACK_HEAVY);
 	DisableControl(0, INPUT_MELEE_BLOCK);
 	DisableControl(0, INPUT_DETONATE);
-	DisableControl(0, INPUT_VEHICLE_HEADLIGHT);
-	DisableControl(0, INPUT_VEHICLE_RADIO_WHEEL);
+	DisableControl(0, INPUT_VEH_HEADLIGHT);
+	DisableControl(0, INPUT_VEH_RADIO_WHEEL);
 	DisableControl(0, INPUT_CONTEXT);
 	DisableControl(0, INPUT_RELOAD);
 	DisableControl(0, INPUT_DIVE);
-	DisableControl(0, INPUT_VEHICLE_SELECT_NEXT_WEAPON);
-	DisableControl(0, INPUT_VEHICLE_FLY_SELECT_NEXT_WEAPON);
+	DisableControl(0, INPUT_VEH_SELECT_NEXT_WEAPON);
+	DisableControl(0, INPUT_VEH_FLY_SELECT_NEXT_WEAPON);
 	DisableControl(0, INPUT_SELECT_CHARACTER_FRANKLIN);
 	DisableControl(0, INPUT_SELECT_CHARACTER_MICHAEL);
 	DisableControl(0, INPUT_SELECT_CHARACTER_TREVOR);
@@ -1256,7 +1256,7 @@ void HandleMenuUi()
 {
 	if (Container.DisableMenuOpenControls > 0)
 	{
-		DisableControl(0, INPUT_VEHICLE_CIN_CAM);
+		DisableControl(0, INPUT_VEH_CIN_CAM);
 		DisableControl(0, INPUT_COVER);
 		Container.DisableMenuOpenControls--;
 	}
