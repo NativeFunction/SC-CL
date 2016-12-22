@@ -1124,6 +1124,7 @@ void DynamicMenuHandling()
 	bool HasFoundIndex = false;
 	int ClosestIndexBefore = 0;
 
+
 	DynamicIdArray Menu = DumpDynamicIds();
 
 	#define BreakDynamicMenu 0
