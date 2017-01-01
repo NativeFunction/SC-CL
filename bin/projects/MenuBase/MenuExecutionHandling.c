@@ -46,14 +46,21 @@ static void ResetCurrentItem()
 
 #pragma region ItemTypes
 
-void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt, bool IsMenuDynamic)
+#pragma region AdvancedItems
+void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt, bool(*DynamicChecker)(int Id))
 {
 	AddItemCounter = 0;
 	Container->TotalItemCount = 0;
-	if(IsMenuDynamic)
+	if (DynamicChecker)
+	{
 		bit_set(&Container->BitSet, PB_IsCurrentMenuDynamic);
+		Container->Level[Container->CurrentMenuLevel].DynamicChecker = DynamicChecker;
+	}
 	else
+	{
 		bit_reset(&Container->BitSet, PB_IsCurrentMenuDynamic);
+		Container->Level[Container->CurrentMenuLevel].DynamicChecker = nullptr;
+	}
 
 	Container->Ui.HeaderText = (char*)HeaderText;
 	Container->Ui.IsHeaderGxt = IsItemGxt;
@@ -74,6 +81,7 @@ void AddItemAdvanced(const char* ItemText, bool IsItemGxt, const char* Descripti
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
+		Container->Item[AddItemCounter].Selection.Type = MST_None;
 		AddItemCounter++;
 	}
 
@@ -228,11 +236,10 @@ void AddItemMenuWithParamAdvanced(const char* ItemText, bool IsItemGxt, const ch
 		if (HasConformation)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
 
-		Container->Item[AddItemCounter].Selection.Type = MST_Param;
 		Container->Item[AddItemCounter].Selection.Value.Int = Param;
 
 		Container->Item[AddItemCounter].Execute = Callback;
-		Container->Item[AddItemCounter].Selection.Type = MST_Menu;
+		Container->Item[AddItemCounter].Selection.Type = MST_MenuParam;
 		AddItemCounter++;
 	}
 
@@ -392,14 +399,16 @@ void AddItemVehicleAdvanced(int VehicleHash, const char* Description, const char
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].AlternateExecute = AlternateCallback;
 		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
-		Container->Item[AddItemCounter].Selection.Type = MST_Menu;
+		Container->Item[AddItemCounter].Selection.Type = MST_MenuParam;
 
 		AddItemCounter++;
 	}
 
 	Container->TotalItemCount++;
 }
+#pragma endregion
 
+#pragma region NormalItems
 void SetHeader(const char* HeaderText)
 {
 	AddItemCounter = 0;
@@ -416,6 +425,7 @@ void AddItem(const char* ItemText, void(*Callback)())
 		ResetCurrentItem();
 		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
 		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].Selection.Type = MST_None;
 		AddItemCounter++;
 	}
 
@@ -515,10 +525,9 @@ void AddItemMenuWithParam(const char* ItemText, int Param, void(*Callback)())
 	{
 		ResetCurrentItem();
 		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
-		Container->Item[AddItemCounter].Selection.Type = MST_Param;
 		Container->Item[AddItemCounter].Selection.Value.Int = Param;
 		Container->Item[AddItemCounter].Execute = Callback;
-		Container->Item[AddItemCounter].Selection.Type = MST_Menu;
+		Container->Item[AddItemCounter].Selection.Type = MST_MenuParam;
 		AddItemCounter++;
 	}
 
@@ -600,8 +609,48 @@ void AddItemFloatBool(const char* ItemText, float MinValue, float MaxValue, floa
 
 	Container->TotalItemCount++;
 }
-//TODO: PlayerId acts as a id for a dynamic menu. Add dynamic menu
-void AddItemPlayer(int PlayerId, void(*Callback)(), char* netTestName)
+void AddItemVehicle(int VehicleHash, void(*Callback)())
+{
+	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+	{
+		ResetCurrentItem();
+		Container->Item[AddItemCounter].Selection.Type = MST_Param;
+		Container->Item[AddItemCounter].Selection.Value.Int = VehicleHash;
+		Container->Item[AddItemCounter].Ui.ItemText = (char*)get_display_name_from_vehicle_model(VehicleHash);
+		Container->Item[AddItemCounter].Execute = Callback;
+		Container->Item[AddItemCounter].Selection.Type = MST_MenuParam;
+		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
+		AddItemCounter++;
+	}
+
+	Container->TotalItemCount++;
+}
+#pragma endregion
+
+#pragma region DynamicNormalItems
+//TODO: add rest of dynamic items
+void AddItemDynamic(const char* ItemText, int DynamicId, void(*Callback)())
+{
+	if (DynamicDumping.IsDumpingDynamicIds)
+	{
+		if (Container->TotalItemCount < MaxDynamicItems)
+			DynamicDumping.DynamicDumpPtr[Container->TotalItemCount] = DynamicId;
+	}
+	else
+	{
+		if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+		{
+			ResetCurrentItem();
+			Container->Item[AddItemCounter].Selection.DynamicId = DynamicId;
+			Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+			Container->Item[AddItemCounter].Execute = Callback;
+			Container->Item[AddItemCounter].Selection.Type = MST_None;
+			AddItemCounter++;
+		}
+	}
+	Container->TotalItemCount++;
+}
+void AddItemPlayer(int PlayerId, void(*Callback)())
 {
 	if (DynamicDumping.IsDumpingDynamicIds)
 	{
@@ -613,12 +662,10 @@ void AddItemPlayer(int PlayerId, void(*Callback)(), char* netTestName)
 		if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 		{
 			ResetCurrentItem();
-			Container->Item[AddItemCounter].Selection.Value.Int = PlayerId;
-			//Container->Item[AddItemCounter].Ui.ItemText = (char*)get_player_name(PlayerId);
-			Container->Item[AddItemCounter].Ui.ItemText = netTestName;
-
+			Container->Item[AddItemCounter].Selection.DynamicId = PlayerId;
+			Container->Item[AddItemCounter].Ui.ItemText = (char*)get_player_name(PlayerId);
 			Container->Item[AddItemCounter].Execute = Callback;
-			//Container->Item[AddItemCounter].Selection.Type = MST_Player;
+			Container->Item[AddItemCounter].Selection.Type = MST_Player;
 			AddItemCounter++;
 		}
 	}
@@ -626,22 +673,7 @@ void AddItemPlayer(int PlayerId, void(*Callback)(), char* netTestName)
 
 	Container->TotalItemCount++;
 }
-void AddItemVehicle(int VehicleHash, void(*Callback)())
-{
-	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
-	{
-		ResetCurrentItem();
-		Container->Item[AddItemCounter].Selection.Type = MST_Param;
-		Container->Item[AddItemCounter].Selection.Value.Int = VehicleHash;
-		Container->Item[AddItemCounter].Ui.ItemText = (char*)get_display_name_from_vehicle_model(VehicleHash);
-		Container->Item[AddItemCounter].Execute = Callback;
-		Container->Item[AddItemCounter].Selection.Type = MST_Menu;
-		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
-		AddItemCounter++;
-	}
-
-	Container->TotalItemCount++;
-}
+#pragma endregion
 
 //TODO: add bool group that sets all other bools on menu to 0 (enum expansion)
 //TODO: add left right scroll bar with dds in timerbars.xtd
@@ -665,21 +697,19 @@ DynamicIdArray DumpDynamicIds()
 	DynamicDumping.IsDumpingDynamicIds = false;
 	return Return;
 }
-
-void InitMenuExecution()
-{
-	Container = GetMenuContainer();
-	if (Container == nullptr)
-		Throw("Container Was Null");
-}
 inline int GetCurrentItemCount()
 {
 	return Container->TotalItemCount;
 }
-inline void SetCurrentMenuInvalid(bool value)
+inline void SetCurrentMenuInvalid(bool value, const char* Reason)
 {
 	if (value)
+	{
+		if (!bit_test(Container->BitSet, PB_IsCurrentMenuInvalid) && (Reason != nullptr || Reason != nullstr))
+			Notify(Reason);
+
 		bit_set(&Container->BitSet, PB_IsCurrentMenuInvalid);
+	}
 	else
 		bit_reset(&Container->BitSet, PB_IsCurrentMenuInvalid);
 }
@@ -809,13 +839,19 @@ void StartAsynchronousFunction(bool(*AsynchronousFunction)(uint CurrentFrame, ..
 		Notify("Menu is loading. Please wait.");
 }
 
-//[Do not use] This is for menu ui testing
 inline Page* DEBUG__GetContainer()
 {
 	return Container;
 }
 #pragma endregion
 
+#pragma region InternalMenuCommands
+void InitMenuExecution()
+{
+	Container = GetMenuContainer();
+	if (Container == nullptr)
+		Throw("Container Was Null");
+}
 unsafe void AsynchronousLoop()
 {
 	int CurrentFrames = Container->Loading.FramesToLoad;
@@ -874,7 +910,6 @@ inline void EssentialScriptLoopSettings()
 		#endif
 	}
 }
-
 void LoopedExecutionEntry()
 {
 	LoopedOptions();
@@ -884,4 +919,5 @@ void ExecutionEntry()
 {
 	MainMenu();
 }
+#pragma endregion
 

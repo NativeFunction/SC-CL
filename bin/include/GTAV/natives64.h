@@ -4493,7 +4493,7 @@ extern _native64(0x19D8DA0E5A68045A) bool network_player_is_badsport();
 extern _native64(0x46FB3ED415C7641C) bool unk_0x46FB3ED415C7641C(any p0, any p1, any p2);
 extern _native64(0xEC5E3AF5289DCA81) bool bad_sport_player_left_detected(any* p0, any p1, any p2);
 extern _native64(0xE66C690248F11150) void unk_0xE66C690248F11150(any p0, any p1);
-extern _native64(0x1CA59E306ECB80A5) void network_set_this_script_is_network_script(any p0, bool p1, any p2);
+extern _native64(0x1CA59E306ECB80A5) void network_set_this_script_is_network_script(int lobbySize, bool p1, int p2);
 extern _native64(0xD1110739EEADB592) bool unk_0xD1110739EEADB592(any p0, bool p1, any p2);
 extern _native64(0x2910669969E9535E) bool network_get_this_script_is_network_script();
 extern _native64(0xA6C90FBC38E395EE) int _network_get_num_participants_host();
