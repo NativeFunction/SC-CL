@@ -2516,7 +2516,7 @@ extern _native64(0xDFB2B516207D3534) bool is_cam_active(Cam cam);
 extern _native64(0x02EC0AF5C5A49B7A) bool is_cam_rendering(Cam cam);
 extern _native64(0x5234F9F10919EABA) Cam get_rendering_cam();
 extern _native64(0xBAC038F7459AE5AE) vector3 get_cam_coord(Cam cam);
-extern _native64(0x7D304C1C955E3E12) vector3 get_cam_rot(Cam cam, any p1);
+extern _native64(0x7D304C1C955E3E12) vector3 get_cam_rot(Cam cam, int rotOrder);
 extern _native64(0xC3330A45CCCDB26A) float get_cam_fov(Cam cam);
 extern _native64(0xC520A34DAFBF24B1) float get_cam_near_clip(Cam cam);
 extern _native64(0xB60A9CFEB21CA6AA) float get_cam_far_clip(Cam cam);

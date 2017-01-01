@@ -1592,6 +1592,7 @@ public:
 					parseExpression(argArray[0], false, true);
 					parseExpression(argArray[1], false, true);
 					AddInstruction(FMod);
+					return true;
 				}
 			} break;
 			case JoaatCasedConst("bit_test"): {
