@@ -2494,9 +2494,9 @@ public:
 			if (conditional) {
 				AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
 
-				parseJumpFalse(conditional, to_string(body->getLocEnd().getRawEncoding()));
+				parseJumpFalse(conditional, to_string(forStmt->getLocEnd().getRawEncoding()));
 			}
-			AddJumpInlineCheck(Label, body->getLocStart().getRawEncoding());
+			AddJumpInlineCheck(Label, forStmt->getRParenLoc().getRawEncoding());
 
 			parseStatement(
 				body,
@@ -2513,14 +2513,14 @@ public:
 
 			if (conditional)
 			{
-				parseJumpTrue(conditional, to_string(body->getLocStart().getRawEncoding()));
+				parseJumpTrue(conditional, to_string(forStmt->getRParenLoc().getRawEncoding()));
 			}
 			else
 			{
 				AddJumpInlineCheckComment(Jump, "forstmt jmp", body->getLocStart().getRawEncoding());
 			}
 
-			AddJumpInlineCheckComment(Label, "forend lbl", body->getLocEnd().getRawEncoding());
+			AddJumpInlineCheckComment(Label, "forend lbl", forStmt->getLocEnd().getRawEncoding());
 			LocalVariables.removeLevel();
 
 
