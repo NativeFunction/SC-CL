@@ -70,54 +70,54 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 	{
 		case OK_Null:		return;
 		case OK_Nop:		AddPadding(DATA->getUShort(0)); return;
-		case OK_Add:		AddOpcode(Add); return;
-		case OK_Sub:		AddOpcode(Sub); return;
-		case OK_Mult:		AddOpcode(Mult); return;
-		case OK_Div:		AddOpcode(Div); return;
-		case OK_Mod:		AddOpcode(Mod); return;
-		case OK_Not:		AddOpcode(Not); return;
-		case OK_Neg:		AddOpcode(Neg); return;
-		case OK_CmpEq:		AddOpcode(CmpEq); return;
-		case OK_CmpNe:		AddOpcode(CmpNe); return;
-		case OK_CmpGt:		AddOpcode(CmpGt); return;
-		case OK_CmpGe:		AddOpcode(CmpGe); return;
-		case OK_CmpLt:		AddOpcode(CmpLt); return;
-		case OK_CmpLe:		AddOpcode(CmpLe); return;
-		case OK_FAdd:		AddOpcode(fAdd); return;
-		case OK_FSub:		AddOpcode(fSub); return;
-		case OK_FMult:		AddOpcode(fMult); return;
-		case OK_FDiv:		AddOpcode(fDiv); return;
-		case OK_FMod:		AddOpcode(fMod); return;
-		case OK_FNeg:		AddOpcode(fNeg); return;
-		case OK_FCmpEq:		AddOpcode(fCmpEq); return;
-		case OK_FCmpNe:		AddOpcode(fCmpNe); return;
-		case OK_FCmpGt:		AddOpcode(fCmpGt); return;
-		case OK_FCmpGe:		AddOpcode(fCmpGe); return;
-		case OK_FCmpLt:		AddOpcode(fCmpLt); return;
-		case OK_FCmpLe:		AddOpcode(fCmpLe); return;
-		case OK_VAdd:		AddOpcode(vAdd); return;
-		case OK_VSub:		AddOpcode(vSub); return;
-		case OK_VMult:		AddOpcode(vMult); return;
-		case OK_VDiv:		AddOpcode(vDiv); return;
-		case OK_VNeg:		AddOpcode(vNeg); return;
-		case OK_And:		AddOpcode(And); return;
-		case OK_Or:			AddOpcode(Or); return;
-		case OK_Xor:		AddOpcode(Xor); return;
-		case OK_FtoI:		AddOpcode(FtoI); return;
-		case OK_ItoF:		AddOpcode(ItoF); return;
-		case OK_FtoV:		AddOpcode(FtoV); return;
+		case OK_Add:		DoesOpcodeHaveRoom(1); AddOpcode(Add); return;
+		case OK_Sub:		DoesOpcodeHaveRoom(1); AddOpcode(Sub); return;
+		case OK_Mult:		DoesOpcodeHaveRoom(1); AddOpcode(Mult); return;
+		case OK_Div:		DoesOpcodeHaveRoom(1); AddOpcode(Div); return;
+		case OK_Mod:		DoesOpcodeHaveRoom(1); AddOpcode(Mod); return;
+		case OK_Not:		DoesOpcodeHaveRoom(1); AddOpcode(Not); return;
+		case OK_Neg:		DoesOpcodeHaveRoom(1); AddOpcode(Neg); return;
+		case OK_CmpEq:		DoesOpcodeHaveRoom(1); AddOpcode(CmpEq); return;
+		case OK_CmpNe:		DoesOpcodeHaveRoom(1); AddOpcode(CmpNe); return;
+		case OK_CmpGt:		DoesOpcodeHaveRoom(1); AddOpcode(CmpGt); return;
+		case OK_CmpGe:		DoesOpcodeHaveRoom(1); AddOpcode(CmpGe); return;
+		case OK_CmpLt:		DoesOpcodeHaveRoom(1); AddOpcode(CmpLt); return;
+		case OK_CmpLe:		DoesOpcodeHaveRoom(1); AddOpcode(CmpLe); return;
+		case OK_FAdd:		DoesOpcodeHaveRoom(1); AddOpcode(fAdd); return;
+		case OK_FSub:		DoesOpcodeHaveRoom(1); AddOpcode(fSub); return;
+		case OK_FMult:		DoesOpcodeHaveRoom(1); AddOpcode(fMult); return;
+		case OK_FDiv:		DoesOpcodeHaveRoom(1); AddOpcode(fDiv); return;
+		case OK_FMod:		DoesOpcodeHaveRoom(1); AddOpcode(fMod); return;
+		case OK_FNeg:		DoesOpcodeHaveRoom(1); AddOpcode(fNeg); return;
+		case OK_FCmpEq:		DoesOpcodeHaveRoom(1); AddOpcode(fCmpEq); return;
+		case OK_FCmpNe:		DoesOpcodeHaveRoom(1); AddOpcode(fCmpNe); return;
+		case OK_FCmpGt:		DoesOpcodeHaveRoom(1); AddOpcode(fCmpGt); return;
+		case OK_FCmpGe:		DoesOpcodeHaveRoom(1); AddOpcode(fCmpGe); return;
+		case OK_FCmpLt:		DoesOpcodeHaveRoom(1); AddOpcode(fCmpLt); return;
+		case OK_FCmpLe:		DoesOpcodeHaveRoom(1); AddOpcode(fCmpLe); return;
+		case OK_VAdd:		DoesOpcodeHaveRoom(1); AddOpcode(vAdd); return;
+		case OK_VSub:		DoesOpcodeHaveRoom(1); AddOpcode(vSub); return;
+		case OK_VMult:		DoesOpcodeHaveRoom(1); AddOpcode(vMult); return;
+		case OK_VDiv:		DoesOpcodeHaveRoom(1); AddOpcode(vDiv); return;
+		case OK_VNeg:		DoesOpcodeHaveRoom(1); AddOpcode(vNeg); return;
+		case OK_And:		DoesOpcodeHaveRoom(1); AddOpcode(And); return;
+		case OK_Or:			DoesOpcodeHaveRoom(1); AddOpcode(Or); return;
+		case OK_Xor:		DoesOpcodeHaveRoom(1); AddOpcode(Xor); return;
+		case OK_FtoI:		DoesOpcodeHaveRoom(1); AddOpcode(FtoI); return;
+		case OK_ItoF:		DoesOpcodeHaveRoom(1); AddOpcode(ItoF); return;
+		case OK_FtoV:		DoesOpcodeHaveRoom(1); AddOpcode(FtoV); return;
 		case OK_PushInt:	PushInt(); return;//gta4 needs to override
 		case OK_PushBytes:	PushBytes(); return;//gta4 needs to override
 		case OK_PushFloat:	PushFloat(); return;//gta4 needs to override
-		case OK_Dup:		AddOpcode(Dup); return;
-		case OK_Drop:		AddOpcode(Drop); return;
+		case OK_Dup:		DoesOpcodeHaveRoom(1); AddOpcode(Dup); return;
+		case OK_Drop:		DoesOpcodeHaveRoom(1); AddOpcode(Drop); return;
 		case OK_Native:		CallNative(); return;//callnative def| gta5 1 byte param/return, 2 byte call loc | rdr 2 byte call loc | gta4: 1 byte param, 1 byte return, 4 byte hash
 		case OK_Return:		Return(); return;//rdr needs to override
-		case OK_PGet:		AddOpcode(pGet); return;
-		case OK_PSet:		AddOpcode(pSet); return;
-		case OK_PeekSet:	AddOpcode(pPeekSet); return;
-		case OK_ToStack:	AddOpcode(ToStack); return;
-		case OK_FromStack:	AddOpcode(FromStack); return;
+		case OK_PGet:		DoesOpcodeHaveRoom(1); AddOpcode(pGet); return;
+		case OK_PSet:		DoesOpcodeHaveRoom(1); AddOpcode(pSet); return;
+		case OK_PeekSet:	DoesOpcodeHaveRoom(1); AddOpcode(pPeekSet); return;
+		case OK_ToStack:	DoesOpcodeHaveRoom(1); AddOpcode(ToStack); return;
+		case OK_FromStack:	DoesOpcodeHaveRoom(1); AddOpcode(FromStack); return;
 
 		case OK_GetArrayP:	GetArrayP(); return;
 		case OK_GetArray:	GetArray(); return;
@@ -158,7 +158,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_ItoS:		ItoS(); return;//gta4 needs to override
 		case OK_StrAdd:		StrAdd(); return;//gta4 needs to override
 		case OK_StrAddI:	StrAddI(); return;//gta4 needs to override
-		case OK_MemCpy:		AddOpcode(MemCopy); return;
+		case OK_MemCpy:		DoesOpcodeHaveRoom(1); AddOpcode(MemCopy); return;
 		case OK_PCall:		pCall(); return;//gta4 needs to override as error
 		case OK_Label:		AddLabel(DATA->getString()); return;
 		case OK_LabelLoc:	AddJump(JumpInstructionType::LabelLoc, DATA->getString()); return;
@@ -421,6 +421,7 @@ void CompileBase::CheckUnsignedJumps()
 void CompileBase::PushInt(const int32_t Literal)
 {
 	if (Literal >= -1 && Literal <= 7) {
+		DoesOpcodeHaveRoom(1);
 		switch (Literal)
 		{
 			case -1:AddOpcode(Push_Neg1); break;
@@ -466,16 +467,16 @@ void CompileBase::PushFloat(const float Literal)
 {
 	switch (Utils::DataConversion::FloatToInt(Literal))
 	{
-		case 0xbf800000: AddOpcode(PushF_Neg1); break;
+		case 0xbf800000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_Neg1); break;
 		case 0x80000000://neg 0
-		case 0x00000000: AddOpcode(PushF_0); break;
-		case 0x3f800000: AddOpcode(PushF_1); break;
-		case 0x40000000: AddOpcode(PushF_2); break;
-		case 0x40400000: AddOpcode(PushF_3); break;
-		case 0x40800000: AddOpcode(PushF_4); break;
-		case 0x40A00000: AddOpcode(PushF_5); break;
-		case 0x40C00000: AddOpcode(PushF_6); break;
-		case 0x40E00000: AddOpcode(PushF_7); break;
+		case 0x00000000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_0); break;
+		case 0x3f800000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_1); break;
+		case 0x40000000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_2); break;
+		case 0x40400000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_3); break;
+		case 0x40800000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_4); break;
+		case 0x40A00000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_5); break;
+		case 0x40C00000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_6); break;
+		case 0x40E00000:DoesOpcodeHaveRoom(1);  AddOpcode(PushF_7); break;
 		default: DoesOpcodeHaveRoom(5); AddOpcode(PushF); AddFloat(Literal);
 	}
 }
@@ -718,12 +719,14 @@ void CompileBase::AddImm(const int32_t Literal)
 	{
 		DoesOpcodeHaveRoom(2);
 		AddOpcode(Add1);
+		DoesOpcodeHaveRoom(1);
 		AddInt8(Literal);
 	}
 	else if (Literal >= -32768 && Literal < 32768)
 	{
 		DoesOpcodeHaveRoom(3);
 		AddOpcode(Add2);
+		DoesOpcodeHaveRoom(1);
 		AddInt16(Literal);
 	}
 	else if (Literal > 0 && Literal < 0x1000000)
@@ -731,6 +734,7 @@ void CompileBase::AddImm(const int32_t Literal)
 		DoesOpcodeHaveRoom(4);
 		AddOpcode(PushI24);
 		AddInt24(Literal);
+		DoesOpcodeHaveRoom(1);
 		AddOpcode(Add);
 	}
 	else
@@ -738,6 +742,7 @@ void CompileBase::AddImm(const int32_t Literal)
 		DoesOpcodeHaveRoom(5);
 		AddOpcode(Push);
 		AddInt32(Literal);
+		DoesOpcodeHaveRoom(1);
 		AddOpcode(Add);
 	}
 
@@ -748,12 +753,14 @@ void CompileBase::MultImm(const int32_t Literal)
 	{
 		DoesOpcodeHaveRoom(2);
 		AddOpcode(Mult1);
+		DoesOpcodeHaveRoom(1);
 		AddInt8(Literal);
 	}
 	else if (Literal >= -32768 && Literal < 32768)
 	{
 		DoesOpcodeHaveRoom(3);
 		AddOpcode(Mult2);
+		DoesOpcodeHaveRoom(1);
 		AddInt16(Literal);
 	}
 	else if (Literal > 0 && Literal < 0x1000000)
@@ -761,6 +768,7 @@ void CompileBase::MultImm(const int32_t Literal)
 		DoesOpcodeHaveRoom(4);
 		AddOpcode(PushI24);
 		AddInt24(Literal);
+		DoesOpcodeHaveRoom(1);
 		AddOpcode(Mult);
 	}
 	else
@@ -768,37 +776,39 @@ void CompileBase::MultImm(const int32_t Literal)
 		DoesOpcodeHaveRoom(5);
 		AddOpcode(Push);
 		AddInt32(Literal);
+		DoesOpcodeHaveRoom(1);
 		AddOpcode(Mult);
 	}
 
 }
 void CompileBase::FAddImm()
 {
-	switch(DATA->getInt())
+	switch (DATA->getInt())
 	{
-		case 0xc0e00000: AddOpcode(PushF_7); AddOpcode(fSub); break;
-		case 0xc0c00000: AddOpcode(PushF_6); AddOpcode(fSub); break;
-		case 0xc0a00000: AddOpcode(PushF_5); AddOpcode(fSub); break;
-		case 0xc0800000: AddOpcode(PushF_4); AddOpcode(fSub); break;
-		case 0xc0400000: AddOpcode(PushF_3); AddOpcode(fSub); break;
-		case 0xc0000000: AddOpcode(PushF_2); AddOpcode(fSub); break;
-		case 0xbf800000: AddOpcode(PushF_1); AddOpcode(fSub); break;
+		case 0xc0e00000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_7); DoesOpcodeHaveRoom(1); AddOpcode(fSub); break;
+		case 0xc0c00000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_6); DoesOpcodeHaveRoom(1); AddOpcode(fSub); break;
+		case 0xc0a00000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_5); DoesOpcodeHaveRoom(1); AddOpcode(fSub); break;
+		case 0xc0800000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_4); DoesOpcodeHaveRoom(1); AddOpcode(fSub); break;
+		case 0xc0400000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_3); DoesOpcodeHaveRoom(1); AddOpcode(fSub); break;
+		case 0xc0000000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_2); DoesOpcodeHaveRoom(1); AddOpcode(fSub); break;
+		case 0xbf800000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_1); DoesOpcodeHaveRoom(1); AddOpcode(fSub); break;
 		case 0x80000000: //neg 0
 		case 0x00000000: break;
-		case 0x3f800000: AddOpcode(PushF_1); AddOpcode(fAdd); break;
-		case 0x40000000: AddOpcode(PushF_2); AddOpcode(fAdd); break;
-		case 0x40400000: AddOpcode(PushF_3); AddOpcode(fAdd); break;
-		case 0x40800000: AddOpcode(PushF_4); AddOpcode(fAdd); break;
-		case 0x40A00000: AddOpcode(PushF_5); AddOpcode(fAdd); break;
-		case 0x40C00000: AddOpcode(PushF_6); AddOpcode(fAdd); break;
-		case 0x40E00000: AddOpcode(PushF_7); AddOpcode(fAdd); break;
-	default: DoesOpcodeHaveRoom(5); AddOpcode(PushF); AddFloat(DATA->getFloat()); AddOpcode(fAdd); break;
+		case 0x3f800000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_1); DoesOpcodeHaveRoom(1); AddOpcode(fAdd); break;
+		case 0x40000000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_2); DoesOpcodeHaveRoom(1); AddOpcode(fAdd); break;
+		case 0x40400000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_3); DoesOpcodeHaveRoom(1); AddOpcode(fAdd); break;
+		case 0x40800000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_4); DoesOpcodeHaveRoom(1); AddOpcode(fAdd); break;
+		case 0x40A00000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_5); DoesOpcodeHaveRoom(1); AddOpcode(fAdd); break;
+		case 0x40C00000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_6); DoesOpcodeHaveRoom(1); AddOpcode(fAdd); break;
+		case 0x40E00000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_7); DoesOpcodeHaveRoom(1); AddOpcode(fAdd); break;
+		default: DoesOpcodeHaveRoom(5); AddOpcode(PushF); AddFloat(DATA->getFloat()); DoesOpcodeHaveRoom(1);  AddOpcode(fAdd); break;
 	}
-	
+
 }
 void CompileBase::FMultImm()
 {
 	PushFloat();
+	DoesOpcodeHaveRoom(1);
 	AddOpcode(fMult);
 }
 #pragma endregion
@@ -1114,6 +1124,7 @@ void CompileRDR::GetImm()
 	else
 	{
 		AddImm(value);
+		DoesOpcodeHaveRoom(1);
 		AddOpcode(pGet);
 	}
 }
@@ -1135,6 +1146,7 @@ void CompileRDR::SetImm()
 	else
 	{
 		AddImm(value);
+		DoesOpcodeHaveRoom(1);
 		AddOpcode(pSet);
 	}
 }
@@ -1145,6 +1157,7 @@ void CompileRDR::GoToStack()
 	AddInt8(0);
 	AddInt16(2);
 	AddInt8(0);
+	DoesOpcodeHaveRoom(1);
 	AddOpcode(ReturnP0R0);
 }
 void CompileRDR::AddJumpTable()
@@ -1607,6 +1620,7 @@ void CompileGTAV::Call()
 void CompileGTAV::PushString()
 {
 	PushInt(StringPageData->AddString(DATA->getString()));
+	DoesOpcodeHaveRoom(1);
 	AddOpcode(PushString);
 }
 void CompileGTAV::GetImmP()
@@ -1673,6 +1687,7 @@ void CompileGTAV::AddJumpTable()
 	auto jumpTable = DATA->getJumpTable();
 	auto pos = StringPageData->AddJumpTable(jumpTable->getItemCount());
 	PushInt(pos);
+	DoesOpcodeHaveRoom(1);
 	AddOpcode(PushString);
 	for (unsigned i = 0; i < jumpTable->getItemCount();i++)
 	{

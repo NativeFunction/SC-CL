@@ -63,7 +63,7 @@ public:
 	//Ensures there is enough space in the current code page for a specific opcode
 	//Returns true if a new page needed to be created to fit the desired amount of bytes
 	bool reserveBytes(size_t byteCount){
-		if (lastPage->size() + byteCount > 0x4000){
+		if (lastPage->size() + byteCount >= 0x4000){
 			AddNewPage();
 			return true;
 		}
@@ -788,7 +788,7 @@ private:
 
 	#pragma region Opcode_Functions
 	void CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount) override;
-	void GetHash() override { AddOpcode(GetHash); };
+	void GetHash() override { DoesOpcodeHaveRoom(1); AddOpcode(GetHash); };
 	void Call() override;
 	void PushString() override;
 	void GetImmP() override;
