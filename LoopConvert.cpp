@@ -2463,18 +2463,19 @@ public:
 
 					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding());
 
-					AddJumpInlineCheck(Jump, conditional->getLocStart().getRawEncoding());
+					//AddJumpInlineCheck(Jump, conditional->getLocStart().getRawEncoding());
 					AddJumpInlineCheck(Label, whileStmt->getLocEnd().getRawEncoding());
 				}
 
 			}
 			else {
-				AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
 				parseJumpFalse(conditional, to_string(whileStmt->getLocEnd().getRawEncoding()));
+				AddJumpInlineCheck(Label, body->getLocStart().getRawEncoding());
 
 				parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding());
 
-				AddJumpInlineCheck(Jump, conditional->getLocStart().getRawEncoding());
+				AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
+				parseJumpTrue(conditional, to_string(body->getLocStart().getRawEncoding()));//run the condition again here to save jumping back to the condition
 				AddJumpInlineCheck(Label, whileStmt->getLocEnd().getRawEncoding());
 			}
 			LocalVariables.removeLevel();
@@ -2495,10 +2496,7 @@ public:
 
 				parseJumpFalse(conditional, to_string(body->getLocEnd().getRawEncoding()));
 			}
-			else
-			{
-				AddJumpInlineCheck(Label, body->getLocStart().getRawEncoding());
-			}
+			AddJumpInlineCheck(Label, body->getLocStart().getRawEncoding());
 
 			parseStatement(
 				body,
@@ -2515,7 +2513,7 @@ public:
 
 			if (conditional)
 			{
-				AddJumpInlineCheckComment(Jump, "forstmt cond jmp", conditional->getLocStart().getRawEncoding());
+				parseJumpTrue(conditional, to_string(body->getLocStart().getRawEncoding()));
 			}
 			else
 			{

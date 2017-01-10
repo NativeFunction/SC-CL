@@ -1,7 +1,7 @@
 #pragma once
 
-#define LobbySize 32
-#define LobbySizeWithSpectators 34
+#define LobbySize 30
+#define LobbySizeWithSpectators 32
 #define item_size 8
 
 typedef enum Input
