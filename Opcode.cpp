@@ -95,6 +95,7 @@ int Opcode::getSizeEstimate() const
 		case OK_ToStack:
 		case OK_MemCpy:
 		case OK_PCall:
+		case OK_GetImmPStack:
 			return 1;
 		case OK_PushInt:
 		{
@@ -457,6 +458,7 @@ string Opcode::toString() const
 		case OK_GetStaticRaw:CheckStaticRaw(GetStatic); break;
 		case OK_SetStatic:CheckStatic(SetStatic); break;
 		case OK_SetStaticRaw:CheckStaticRaw(SetStatic); break;
+		case OK_GetImmPStack:current = "GetImmP"; break;
 		case OK_GetImmP:Check12Op(GetImmP); break;
 		case OK_GetImm:Check12Op(GetImm); break;
 		case OK_SetImm:Check12Op(SetImm); break;

@@ -1779,16 +1779,18 @@ public:
 				if (argCount == 2 && callee->getReturnType()->isPointerType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType())
 				{
 					APSInt index;
-					if (argArray[1]->EvaluateAsInt(index, *context))
+					if (argArray[1]->EvaluateAsInt(index, *context) && index.getSExtValue() >= 0 && index.getSExtValue() <= 0xFFFF)
 					{
-						if (index.getSExtValue() < 0 || index.getSExtValue() > 0xFFFF)
-						{
-							Throw("getArrayP item size expected a value between 0 and 65535, got'" + to_string(index.getSExtValue()) + "'", rewriter, argArray[1]->getSourceRange());
-						}
 						parseExpression(argArray[0], false, true);
 						AddInstruction(GetImmP, index.getSExtValue());
 						return true;
-					} EvalFailed
+					}
+					else{
+						parseExpression(argArray[0], false, true);
+						parseExpression(argArray[1], false, true);
+						AddInstruction(GetImmPStack);
+						return true;
+					}
 				} BadIntrin
 			} break;
 			#pragma endregion

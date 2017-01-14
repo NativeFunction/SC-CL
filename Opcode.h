@@ -76,6 +76,7 @@ enum OpcodeKind{
 	OK_MultImm,
 	OK_FAddImm,//simplify optimising
 	OK_FMultImm,//simplify optimising
+	OK_GetImmPStack,
 	OK_GetImmP,
 	OK_GetImm,
 	OK_SetImm,

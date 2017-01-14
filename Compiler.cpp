@@ -138,6 +138,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_MultImm:	MultImm(); return;
 		case OK_FAddImm:	FAddImm(); return;
 		case OK_FMultImm:	FMultImm(); return;
+		case OK_GetImmPStack:	GetImmPStack(); return;
 		case OK_GetImmP:	GetImmP(); return;
 		case OK_GetImm:		GetImm(); return;
 		case OK_SetImm:		SetImm(); return;
@@ -1106,6 +1107,14 @@ void CompileRDR::Call()
 
 	
 }
+void CompileRDR::GetImmPStack()
+{
+	DoesOpcodeHaveRoom(2);
+	AddOpcode(Mult1);
+	AddInt8(4);
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(Add);
+}
 void CompileRDR::GetImm()
 {
 	const uint32_t value = (uint32_t)DATA->getUShort(0) * 4;
@@ -1622,6 +1631,11 @@ void CompileGTAV::PushString()
 	PushInt(StringPageData->AddString(DATA->getString()));
 	DoesOpcodeHaveRoom(1);
 	AddOpcode(PushString);
+}
+void CompileGTAV::GetImmPStack()
+{
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(GetImmP);
 }
 void CompileGTAV::GetImmP()
 {

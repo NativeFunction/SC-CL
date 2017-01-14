@@ -1482,6 +1482,7 @@ extern _native64(0x99C82F8A139F3E4E) void unk_0x99C82F8A139F3E4E(Vehicle vehicle
 extern _native64(0xE16142B94664DEFD) void unk_0xE16142B94664DEFD(any p0, bool p1);
 extern _native64(0x44CD1F493DB2A0A6) void _set_special_vehicle_weapon_capacity(Vehicle v, int weaponIndex, int capacity);
 extern _native64(0xE00F2AB100B76E89) void _set_rocket_boost_refill_time(Vehicle rocketCar, float refillTime);
+extern _native64(0x28D034A93FE31BF5) void _set_ramp_vehicle_receives_ramp_damage(Vehicle rampCar, bool receivesDamage);
 #pragma endregion //}
 #pragma region OBJECT //{
 extern _native64(0x509D5878EB39E842) Object create_object(Hash modelHash, vector3 vec, bool networkHandle, bool createHandle, bool dynamic);
@@ -3293,7 +3294,7 @@ extern _native64(0xA4DEDE28B1814289) void unk_0xA4DEDE28B1814289();
 extern _native64(0x12782CE0A636E9F0) void reset_reticule_values();
 extern _native64(0x450930E616475D0D) void reset_hud_component_values(int id);
 extern _native64(0xAABB1F56E2A17CED) void set_hud_component_position(int id, float p1, float p2);
-extern _native64(0x223CA69A8C4417FD) int get_hud_component_position(any p0);
+extern _native64(0x223CA69A8C4417FD) vector3 get_hud_component_position(int id);
 extern _native64(0xB57D8DD645CFA2CF) void unk_0xB57D8DD645CFA2CF();
 extern _native64(0xF9904D11F1ACBEC3) any unk_0xF9904D11F1ACBEC3(vector3 vec, any* p3, any* p4);
 extern _native64(0x523A590C1A3CC0D3) void unk_0x523A590C1A3CC0D3();

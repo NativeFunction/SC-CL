@@ -394,6 +394,7 @@ public:
 	void addOpMultImm(int immediate);
 	void addOpFAddImm(float immediate);
 	void addOpFMultImm(float immediate);
+	void addOpGetImmPStack(){ Instructions.push_back(new Opcode(OK_GetImmPStack)); }
 	void addOpGetImmP(uint16_t index);
 	void addOpGetImm(uint16_t index);
 	void addOpSetImm(uint16_t index);

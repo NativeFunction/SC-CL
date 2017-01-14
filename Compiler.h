@@ -493,6 +493,7 @@ protected:
 	void MultImm(){ MultImm(DATA->getInt()); }
 	void FAddImm();
 	void FMultImm();
+	virtual void GetImmPStack() { assert(false && "GetImmPStack has to be overridden"); }
 	virtual void GetImmP() { AddImm((uint32_t)DATA->getUShort(0) * 4); };//Override: GTAV
 	virtual void GetImm() { assert(false && "GetImm has to be overridden"); };//Override: ALL
 	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
@@ -710,6 +711,7 @@ private:
 	void Return() override;
 	void GetHash() override { CallNative(JoaatConst("string_to_hash"), 1, 1); };
 	void Call() override;
+	void GetImmPStack() override;
 	void GetImm() override;
 	void SetImm() override;	
 	void GoToStack() override;
@@ -791,6 +793,7 @@ private:
 	void GetHash() override { DoesOpcodeHaveRoom(1); AddOpcode(GetHash); };
 	void Call() override;
 	void PushString() override;
+	void GetImmPStack() override;
 	void GetImmP() override;
 	void GetImm() override;
 	void SetImm() override;
