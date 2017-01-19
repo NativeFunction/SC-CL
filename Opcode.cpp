@@ -96,6 +96,7 @@ int Opcode::getSizeEstimate() const
 		case OK_MemCpy:
 		case OK_PCall:
 		case OK_GetImmPStack:
+		case OK_PushNullPtr:
 			return 1;
 		case OK_PushInt:
 		{
@@ -300,7 +301,7 @@ int Opcode::getSizeEstimate() const
 			if (isRDR)return 6;
 			else return 8;
 	}
-	assert(false);//trying to figure out which path isnt returning a value
+	//assert(false);//trying to figure out which path isnt returning a value
 	return 0;
 }
 
@@ -641,6 +642,8 @@ string Opcode::toString() const
 		}
 		case OK_GoToStack:
 			current = "Function 0 2\r\nReturn 0 0"; break;
+		case OK_PushNullPtr:
+			current = "Push_0"; break;
 	}
 #ifdef _DEBUG
 	if (hasComment())

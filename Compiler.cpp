@@ -169,7 +169,8 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_GetHash:	GetHash(); return;//gta5 needs to override
 		case OK_GoToStack:	GoToStack(); return;
 		case OK_JumpTable:	AddJumpTable(); return;
-		default: assert(false && "Invalid General Opcode");
+		case OK_PushNullPtr: DoesOpcodeHaveRoom(1); AddOpcode(Push_0);
+		//default: assert(false && "Invalid General Opcode");
 	}
 }
 void CompileBase::CheckLabels()

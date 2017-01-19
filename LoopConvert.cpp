@@ -2767,6 +2767,7 @@ public:
 	/// <returns></returns>
 	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, bool isAssign = false, bool isArrToPtrDecay = false) {
 		Expr::EvalResult result;
+
 		if (!isAddr && e->EvaluateAsRValue(result, *context) && !result.HasSideEffects)
 		{
 			if (result.Val.isInt())
@@ -2780,7 +2781,6 @@ public:
 				}
 				else
 				{
-					
 					int64_t resValue = result.Val.getInt().getSExtValue();
 
 					if (doesInt64FitIntoInt32(resValue))
@@ -3244,7 +3244,12 @@ public:
 				}
 				case clang::CK_NullToPointer:
 				{
-					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					if (isLtoRValue){
+						AddInstruction(PushNullPtr);
+					}
+					else{
+						parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
+					}
 					break;
 				}
 				case clang::CK_FloatingRealToComplex:

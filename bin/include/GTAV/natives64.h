@@ -1481,6 +1481,8 @@ extern _native64(0xC361AA040D6637A8) void unk_0xC361AA040D6637A8(any p0, bool p1
 extern _native64(0x99C82F8A139F3E4E) void unk_0x99C82F8A139F3E4E(Vehicle vehicle, bool p1);
 extern _native64(0xE16142B94664DEFD) void unk_0xE16142B94664DEFD(any p0, bool p1);
 extern _native64(0x44CD1F493DB2A0A6) void _set_special_vehicle_weapon_capacity(Vehicle v, int weaponIndex, int capacity);
+extern _native64(0x36D782F68B309BDA) bool _does_vehicle_have_rocket_boost(Vehicle vehicle);
+extern _native64(0x3D34E80EED4AE3BE) bool _is_vehicle_rocket_boost_active(Vehicle rocketCar);
 extern _native64(0xE00F2AB100B76E89) void _set_rocket_boost_refill_time(Vehicle rocketCar, float refillTime);
 extern _native64(0x28D034A93FE31BF5) void _set_ramp_vehicle_receives_ramp_damage(Vehicle rampCar, bool receivesDamage);
 #pragma endregion //}

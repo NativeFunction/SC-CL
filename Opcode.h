@@ -104,7 +104,8 @@ enum OpcodeKind{
 	OK_ShiftRight,
 	OK_GetHash,
 	OK_GoToStack,
-	OK_JumpTable
+	OK_JumpTable,
+	OK_PushNullPtr
 };
 
 #pragma region Forward Declarations

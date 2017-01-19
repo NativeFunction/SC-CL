@@ -604,6 +604,7 @@ public:
 		}
 
 	}
+	void addOpPushNullPtr(){ Instructions.push_back(new Opcode(OK_PushNullPtr)); }
 
 #pragma endregion
 };
