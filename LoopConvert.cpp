@@ -1388,6 +1388,28 @@ public:
 				else Throw("__varIndex must have signature \"extern __unsafeIntrinsic const uint __varIndex(const char* varName);\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
+			case JoaatCasedConst("__getReturnAddress"): {
+				ChkHashCol("__getReturnAddress");
+
+				if (argCount == 0 && callee->getReturnType()->isIntegerType()){
+					AddInstruction(GetFrame, scriptData.getCurrentFunction()->getParamCount());
+					return true;
+				}
+				else{
+					Throw("__getReturnAddress must have signature \"extern __unsafeIntrinsic int __getReturnAddress();\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("__addressOFReturnAddress"): {
+				ChkHashCol("__addressOFReturnAddress");
+
+				if (argCount == 0 && callee->getReturnType()->isPointerType() && callee->getReturnType()->getPointeeType()->isIntegerType()){
+					AddInstruction(GetFrameP, scriptData.getCurrentFunction()->getParamCount());
+					return true;
+				}
+				else{
+					Throw("__addressOFReturnAddress must have signature \"extern __unsafeIntrinsic int* __addressOFReturnAddress();\"", rewriter, callee->getSourceRange());
+				}
+			} break;
 			#pragma endregion
 			#pragma region Math/Conversions
 			case JoaatCasedConst("reinterpretIntToFloat"): {
@@ -4966,13 +4988,12 @@ public:
 					Warn("Conditional operator always evaluates to " + (bValue ? string("true") : string("false")), rewriter, condition->getSourceRange());
 				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !condition->HasSideEffects(*context, true);
 			}
-			if (ignoreCondition)
-			{
+			if (ignoreCondition){
 				parseExpression(bValue ? cond->getLHS() : cond->getRHS(), isAddr, isLtoRValue);//using a conditionalOperator to parse a conditionalOperator... conditionalCeption
 			}
 			else{
-				parseExpression(cond->getCond(), false, true);
-				AddJumpInlineCheck(JumpFalse, cond->getRHS()->getLocStart().getRawEncoding());
+				parseJumpFalse(cond->getCond(), to_string(cond->getRHS()->getLocStart().getRawEncoding()));
+
 				parseExpression(cond->getLHS(), isAddr, isLtoRValue);
 				AddJumpInlineCheck(Jump, cond->getLHS()->getLocEnd().getRawEncoding());
 
