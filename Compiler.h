@@ -911,7 +911,7 @@ private:
 
 
 	#pragma region Opcode_Functions
-	void CallNative(const uint64_t hash = -1, const uint8_t paramCount = -1, const uint8_t returnCount = -1) override;
+	void CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount) override;
 	void Shift_Left() override { CallNative(0xEDD95A39E5544DE8, 2, 1); }
 	void Shift_Right() override { CallNative(0x97EF1E5BCE9DC075, 2, 1); }
 

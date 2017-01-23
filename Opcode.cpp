@@ -432,10 +432,13 @@ string Opcode::toString() const
 		{
 			char buff[17];
 			sprintf(buff, "%llX", storage.native->getHash());
-			current = "CallNative unk_0x" + string(buff) + " " + to_string(storage.native->getParamCount()) + " " + to_string(storage.native->getReturnCount());
+			
 			if (storage.native->hasName())
 			{
-				current += " //" + storage.native->getName();
+				current = "CallNative " + storage.native->getName() + " " + to_string(storage.native->getParamCount()) + " " + to_string(storage.native->getReturnCount()) + " //" + string(buff);
+			}
+			else{
+				current = "CallNative _0x" + string(buff) + " " + to_string(storage.native->getParamCount()) + " " + to_string(storage.native->getReturnCount());
 			}
 			break;
 		}
