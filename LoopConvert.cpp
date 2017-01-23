@@ -4992,7 +4992,7 @@ public:
 				parseExpression(bValue ? cond->getLHS() : cond->getRHS(), isAddr, isLtoRValue);//using a conditionalOperator to parse a conditionalOperator... conditionalCeption
 			}
 			else{
-				parseJumpFalse(cond->getCond(), to_string(cond->getRHS()->getLocStart().getRawEncoding()));
+				parseJumpFalse(condition, to_string(cond->getRHS()->getLocStart().getRawEncoding()));
 
 				parseExpression(cond->getLHS(), isAddr, isLtoRValue);
 				AddJumpInlineCheck(Jump, cond->getLHS()->getLocEnd().getRawEncoding());

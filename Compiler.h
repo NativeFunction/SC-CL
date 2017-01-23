@@ -336,7 +336,6 @@ protected:
 	void AddString(const std::string& str)//Override: GTAV
 	{
 		CodePageData->AddString(str);
-
 	}
 	void AddPadding(const uint32_t paddingCount)
 	{
@@ -461,7 +460,7 @@ protected:
 	virtual void PushFloat(const float Literal);//Override: GTAIV
 	void PushFloat(){ PushFloat(DATA->getFloat()); }
 	virtual void PushString();//Override: GTAV
-	virtual void CallNative(const uint64_t hash = -1, const uint8_t paramCount = -1, const uint8_t returnCount = -1) { assert(false && "CallNative has to be overridden"); };//Override: ALL
+	virtual void CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount) = 0;
 	virtual void Return() { DoesOpcodeHaveRoom(3); AddOpcode(Return); AddInt8(DATA->getByte(0)); AddInt8(DATA->getByte(1)); };//Override: RDR
 	virtual void GetArrayP();//Override: GTAIV
 	virtual void GetArray();//Override: GTAIV
@@ -483,8 +482,8 @@ protected:
 	virtual void StrAdd() { DoesOpcodeHaveRoom(2); AddOpcode(StrAdd); AddInt8(DATA->getByte(0)); };;//Override: GTAIV
 	virtual void StrAddI() { DoesOpcodeHaveRoom(2); AddOpcode(StrAddi); AddInt8(DATA->getByte(0)); };;//Override: GTAIV
 	virtual void pCall() { AddOpcode(pCall); };//Override: GTAIV
-	virtual void GetHash() { assert(false && "GetHash has to be overridden"); };//Override: ALL
-	virtual void Call() { assert(false && "Call has to be overridden"); };//Override: ALL
+	virtual void GetHash() = 0;
+	virtual void Call() = 0;
 	virtual void AddFuncLoc(const FunctionData* function);
 	void Switch();//for gta4 switches override AddJump
 	virtual void AddImm(const int32_t Literal);//Override: GTAIV
@@ -493,10 +492,10 @@ protected:
 	void MultImm(){ MultImm(DATA->getInt()); }
 	void FAddImm();
 	void FMultImm();
-	virtual void GetImmPStack() { assert(false && "GetImmPStack has to be overridden"); }
+	virtual void GetImmPStack() = 0;
 	virtual void GetImmP() { AddImm((uint32_t)DATA->getUShort(0) * 4); };//Override: GTAV
-	virtual void GetImm() { assert(false && "GetImm has to be overridden"); };//Override: ALL
-	virtual void SetImm() { assert(false && "SetImm has to be overridden"); };//Override: ALL
+	virtual void GetImm() = 0;
+	virtual void SetImm() = 0;
 	virtual void GoToStack() = 0;
 	virtual void AddJumpTable() = 0;
 	virtual void Shift_Left() { CallNative(JoaatConst("shift_left"), 2, 1); }//Override: GTAVPC

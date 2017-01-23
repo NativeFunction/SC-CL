@@ -111,7 +111,7 @@ void CompileBase::ParseGeneral(const OpcodeKind OK)
 		case OK_PushFloat:	PushFloat(); return;//gta4 needs to override
 		case OK_Dup:		DoesOpcodeHaveRoom(1); AddOpcode(Dup); return;
 		case OK_Drop:		DoesOpcodeHaveRoom(1); AddOpcode(Drop); return;
-		case OK_Native:		CallNative(); return;//callnative def| gta5 1 byte param/return, 2 byte call loc | rdr 2 byte call loc | gta4: 1 byte param, 1 byte return, 4 byte hash
+		case OK_Native:		CallNative(DATA->getNative()->getHash(), DATA->getNative()->getParamCount(), DATA->getNative()->getReturnCount()); return;//callnative def| gta5 1 byte param/return, 2 byte call loc | rdr 2 byte call loc | gta4: 1 byte param, 1 byte return, 4 byte hash
 		case OK_Return:		Return(); return;//rdr needs to override
 		case OK_PGet:		DoesOpcodeHaveRoom(1); AddOpcode(pGet); return;
 		case OK_PSet:		DoesOpcodeHaveRoom(1); AddOpcode(pSet); return;
@@ -1038,31 +1038,20 @@ uint32_t CompileRDR::GetFlagFromReadbuffer(uint32_t buffer)
 void CompileRDR::CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount)
 {
 	// rdr 2 byte call loc based on index
+	//PLS Check RDR native has 10 bits index, 5 bits pCount, 1 bit rCount
 	DoesOpcodeHaveRoom(3);
 
 	AddOpcode(CallNative);
-	if (hash == -1)
-	{
-		if(DATA->getNative()->getReturnCount() > 1)
-			Throw("Native Calls Can Only Have One Return");
+	if (returnCount > 1)
+		Throw("Native Calls Can Only Have One Return");
+	if (paramCount > 31)
+		Utils::System::Throw("Native Calls Can Only Have Up To Thirty One Params");
 
-		const uint32_t index = AddNative(DATA->getNative()->getHash());
-		if (index >= 1024)
-			Throw("Native Call Index out of bounds");
+	const uint32_t index = AddNative(hash);
+	if (index >= 1024)
+		Throw("Native Call Index out of bounds");
 
-		AddInt16(SetNewIndex(index, DATA->getNative()->getParamCount(), DATA->getNative()->getReturnCount() == 1));
-	}
-	else
-	{
-		if (returnCount > 1)
-			Throw("Native Calls Can Only Have One Return");
-
-		const uint32_t index = AddNative(hash);
-		if (index >= 1024)
-			Throw("Native Call Index out of bounds");
-
-		AddInt16(SetNewIndex(index, paramCount, returnCount == 1));
-	}
+	AddInt16(SetNewIndex(index, paramCount, returnCount == 1));
 }
 void CompileRDR::Return()
 {
@@ -1594,22 +1583,10 @@ void CompileGTAV::CallNative(const uint64_t hash, const uint8_t paramCount, cons
 	DoesOpcodeHaveRoom(4);
 
 	AddOpcode(CallNative);
-	if (hash == -1)
-	{
-		if (DATA->getNative()->getReturnCount() > 3)
-			Utils::System::Throw("Native Calls Can Only Have Three Returns");
-
-		const uint32_t index = AddNative(DATA->getNative()->getHash());
-		if (index >= 0xFFFF)
-			Utils::System::Throw("Native Call Index out of bounds");
-
-		AddInt8( (DATA->getNative()->getParamCount() << 2) | (DATA->getNative()->getReturnCount() & 0x3));
-		AddInt16(index);
-	}
-	else
-	{
 		if (returnCount > 3)
-			Utils::System::Throw("Native Calls Can Only Have Three Returns");
+			Utils::System::Throw("Native Calls Can Only Have Up To Three Returns");
+		if (paramCount > 63)
+			Utils::System::Throw("Native Calls Can Only Have Up To Sixty Three Params");
 
 		const uint32_t index = AddNative(hash);
 		if (index >= 0xFFFF)
@@ -1617,7 +1594,6 @@ void CompileGTAV::CallNative(const uint64_t hash, const uint8_t paramCount, cons
 
 		AddInt8((paramCount << 2) | (returnCount & 0x3));
 		AddInt16(index);
-	}
 }
 void CompileGTAV::Call()
 {
@@ -1880,31 +1856,17 @@ void CompileGTAVPC::CallNative(const uint64_t hash, const uint8_t paramCount, co
 	DoesOpcodeHaveRoom(4);
 
 	AddOpcode(CallNative);
-	if (hash == -1)
-	{
-		if (DATA->getNative()->getReturnCount() > 3)
-			Throw("Native Calls Can Only Have Three Returns");
+	if (returnCount > 3)
+		Utils::System::Throw("Native Calls Can Only Have Three Returns");
+	if (paramCount > 63)
+		Utils::System::Throw("Native Calls Can Only Have Up To Sixty Three Params");
 
-		const uint32_t index = AddNative(DATA->getNative()->getHash());
-		
-		if (index >= 0xFFFF)
-			Throw("Native Call Index out of bounds");
+	const uint32_t index = AddNative(hash);
+	if (index >= 0xFFFF)
+		Utils::System::Throw("Native Call Index out of bounds");
 
-		AddInt8((DATA->getNative()->getParamCount() << 2) | (DATA->getNative()->getReturnCount() & 0x3));
-		AddInt16(Utils::Bitwise::SwapEndian((uint16_t)index));
-	}
-	else
-	{
-		if (returnCount > 3)
-			Utils::System::Throw("Native Calls Can Only Have Three Returns");
-
-		const uint32_t index = AddNative(hash);
-		if (index >= 0xFFFF)
-			Utils::System::Throw("Native Call Index out of bounds");
-
-		AddInt8((paramCount << 2) | (returnCount & 0x3));
-		AddInt16(Utils::Bitwise::SwapEndian((uint16_t)index));
-	}
+	AddInt8((paramCount << 2) | (returnCount & 0x3));
+	AddInt16(Utils::Bitwise::SwapEndian((uint16_t)index));
 }
 #pragma endregion
 
