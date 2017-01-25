@@ -435,7 +435,7 @@ string Opcode::toString() const
 			
 			if (storage.native->hasName())
 			{
-				current = "CallNative " + storage.native->getName() + " " + to_string(storage.native->getParamCount()) + " " + to_string(storage.native->getReturnCount()) + " //" + string(buff);
+				current = "CallNative " + storage.native->getName() + " " + to_string(storage.native->getParamCount()) + " " + to_string(storage.native->getReturnCount()) + " //0x" + string(buff);
 			}
 			else{
 				current = "CallNative _0x" + string(buff) + " " + to_string(storage.native->getParamCount()) + " " + to_string(storage.native->getReturnCount());

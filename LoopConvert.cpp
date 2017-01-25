@@ -641,7 +641,7 @@ public:
 		bool isStackCpy = size > stackWidth && isLtoRValue && !isAddr;//if greater then 4 bytes then a to stack is in order
 		
 		if (isStackCpy) {
-			AddInstructionComment(PushInt, "Type Size (decl)", getSizeFromBytes(size));
+			AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
 			isAddr = true;
 		}
 
@@ -649,7 +649,7 @@ public:
 		{
 			if (isLtoRValue && !isAddr)
 			{
-				AddInstructionComment(GetFrame, "(pdecl)" + key, index);
+				AddInstructionComment(GetFrame, key, index);
 				if (size == 1 || size == 2)
 				{
 					AddInstruction(GetConv, scriptData, size, declref->getType()->isSignedIntegerType());
@@ -657,7 +657,7 @@ public:
 			}
 			else if (isAddr)
 			{
-				AddInstructionComment(GetFrameP, "(pdecl)&" + key, index);
+				AddInstructionComment(GetFrameP, key, index);
 			}
 			else if (isAssign)
 			{
@@ -665,8 +665,8 @@ public:
 				
 				if (size > stackWidth)//fromStack
 				{
-					AddInstructionComment(PushInt, "Type Size (local decl)", getSizeFromBytes(size));
-					AddInstructionComment(GetFrameP, "(pdecl)&" + key, index);
+					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
+					AddInstructionComment(GetFrameP, key, index);
 					AddInstruction(FromStack);
 				}
 				else
@@ -675,7 +675,7 @@ public:
 					{
 						AddInstruction(SetConv, scriptData, size);
 					}
-					AddInstructionComment(SetFrame, "(pdecl)" + key, index);
+					AddInstructionComment(SetFrame, key, index);
 				}
 
 			}
@@ -684,7 +684,7 @@ public:
 			index = varDecl->getAttr<GlobalVariableAttr>()->getIndex();
 			if (isLtoRValue && !isAddr)
 			{
-				AddInstructionComment(GetGlobal, "Global_" + key, index);
+				AddInstructionComment(GetGlobal, key, index);
 				if (size == 1 || size == 2)
 				{
 					AddInstruction(GetConv, scriptData, size, declref->getType()->isSignedIntegerType());
@@ -692,7 +692,7 @@ public:
 			}
 			else if (isAddr)
 			{
-				AddInstructionComment(GetGlobalP, "Global_" + key, index);
+				AddInstructionComment(GetGlobalP, key, index);
 			}
 			else if (isAssign)
 			{
@@ -700,8 +700,8 @@ public:
 				
 				if (size > stackWidth)//fromStack
 				{
-					AddInstructionComment(PushInt, "Type Size (global decl)", getSizeFromBytes(size));
-					AddInstructionComment(GetGlobalP, "&Global_" + key, index);
+					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
+					AddInstructionComment(GetGlobalP, key, index);
 					AddInstruction(FromStack);
 				}
 				else
@@ -736,8 +736,8 @@ public:
 
 				if (size > stackWidth)//fromStack
 				{
-					AddInstructionComment(PushInt, "Type Size (static decl)", getSizeFromBytes(size));
-					AddInstructionComment(GetStaticP, "&" + key, sData);
+					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
+					AddInstructionComment(GetStaticP, key, sData);
 					AddInstruction(FromStack);
 				}
 				else
@@ -1804,7 +1804,7 @@ public:
 					if (argArray[1]->EvaluateAsInt(index, *context) && index.getSExtValue() >= 0 && index.getSExtValue() <= 0xFFFF)
 					{
 						parseExpression(argArray[0], false, true);
-						AddInstruction(GetImmP, index.getSExtValue());
+						AddInstructionComment(GetImmP, "imm_" + to_string(index.getSExtValue()), index.getSExtValue());
 						return true;
 					}
 					else{
