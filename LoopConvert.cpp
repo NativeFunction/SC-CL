@@ -2320,6 +2320,66 @@ public:
 			AddJumpInlineCheckStr(JumpFalse, jumpFalseLoc);
 		}
 	}
+
+	void parseCondition(const Expr* conditional, const string& trueLoc, const string& falseLoc){
+		const BinaryOperator* binaryOp;
+		if (binaryOp = dyn_cast<BinaryOperator>(conditional->IgnoreParens()))
+		{
+			switch (binaryOp->getOpcode()){
+				case BO_LAnd:
+					parseJumpFalse(binaryOp->getLHS(), falseLoc);
+					//parseJumpFalse(binaryOp->getRHS(), falseLoc);
+					parseCondition(binaryOp->getRHS(), trueLoc, falseLoc);
+					break;
+				case BO_LOr:
+					parseJumpTrue(binaryOp->getLHS(), trueLoc);
+					parseCondition(binaryOp->getRHS(), trueLoc, falseLoc);
+					break;
+				case BO_Comma:
+					parseExpression(binaryOp->getLHS());
+					parseCondition(binaryOp->getRHS(), trueLoc, falseLoc);
+					break;
+				default:
+					parseExpression(conditional, false, true);
+					AddJumpInlineCheckStr(JumpFalse, falseLoc);
+					break;
+
+			}
+		}
+		else{
+			parseExpression(conditional, false, true);
+			AddJumpInlineCheckStr(JumpFalse, falseLoc);
+		}
+	}
+	void parseCondition2(const Expr* conditional, const string& trueLoc, const string& falseLoc){
+		const BinaryOperator* binaryOp;
+		if (binaryOp = dyn_cast<BinaryOperator>(conditional->IgnoreParens()))
+		{
+			switch (binaryOp->getOpcode()){
+				case BO_LAnd:
+					parseJumpFalse(binaryOp->getLHS(), falseLoc);
+					parseCondition2(binaryOp->getRHS(), trueLoc, falseLoc);
+					break;
+				case BO_LOr:
+					parseJumpTrue(binaryOp->getLHS(), trueLoc);
+					parseCondition2(binaryOp->getRHS(), trueLoc, falseLoc);
+					break;
+				case BO_Comma:
+					parseExpression(binaryOp->getLHS());
+					parseCondition2(binaryOp->getRHS(), trueLoc, falseLoc);
+					break;
+				default:
+					parseExpression(conditional, false, true);
+					AddJumpInlineCheckStr(JumpTrue, trueLoc);
+					break;
+
+			}
+		}
+		else{
+			parseExpression(conditional, false, true);
+			AddJumpInlineCheckStr(JumpTrue, trueLoc);
+		}
+	}
 	void parseJumpTrue(const Expr* conditional, const string& jumpTrueLoc){
 		const BinaryOperator* binaryOp;
 		if ((binaryOp = dyn_cast<BinaryOperator>(conditional->IgnoreParens())) && binaryOp->getOpcode() == BO_LOr){
@@ -2331,7 +2391,7 @@ public:
 			AddJumpInlineCheckStr(JumpTrue, jumpTrueLoc);
 		}
 	}
-	bool parseStatement(Stmt *s, uint64_t breakLoc = -1, uint64_t continueLoc = -1) {
+	bool parseStatement(Stmt *s, const string& breakLoc, const string& continueLoc) {
 		if (isa<CompoundStmt>(s)) {
 			CompoundStmt *cSt = cast<CompoundStmt>(s);
 			LocalVariables.addLevel();
@@ -2345,16 +2405,18 @@ public:
 			handleDecl(decl);
 		}
 		else if (isa<IfStmt>(s)) {
+			static int ifCounter = 0;
+			const string currentCounter = to_string(ifCounter++);//prevents issues with nested if statements
 			IfStmt *IfStatement = cast<IfStmt>(s);
 			Expr *conditional = IfStatement->getCond();
 			Stmt *Then = IfStatement->getThen();
 			Stmt *Else = IfStatement->getElse();
-			if (Else && isa<CompoundStmt>(Else) && cast<CompoundStmt>(Else)->size() == 0)
+			if (Else && (isa<NullStmt>(Else) || (isa<CompoundStmt>(Else) && cast<CompoundStmt>(Else)->size() == 0)))
 			{
 				Else = NULL;
 			}
 
-			string IfLocEnd = to_string(Then->getLocEnd().getRawEncoding());
+			string IfLocEnd = "__if_end_" + currentCounter;
 
 			Expr::EvalResult eResult;
 			bool bValue = false, ignoreCondition = false;
@@ -2392,7 +2454,7 @@ public:
 					{
 						if (Else)
 						{
-							AddJumpInlineCheckStr(Jump, to_string(Else->getLocStart().getRawEncoding()));
+							AddJumpInlineCheckStr(Jump, "__if_else_" + currentCounter);
 							LocalVariables.addLevel();
 							parseStatement(Then, breakLoc, continueLoc);
 							LocalVariables.removeLevel();
@@ -2403,7 +2465,7 @@ public:
 							{
 								AddJumpInlineCheckConditionallyStr(!ifEndRet, Jump, IfLocEnd);
 
-								AddJumpInlineCheck(Label, Else->getLocStart().getRawEncoding());
+								AddJumpInlineCheckStr(Label, "__if_else_" + currentCounter);
 								LocalVariables.addLevel();
 								parseStatement(Else, breakLoc, continueLoc);
 								LocalVariables.removeLevel();
@@ -2434,8 +2496,8 @@ public:
 			}
 			else
 			{
-				
-				parseJumpFalse(conditional, Else ? to_string(Else->getLocStart().getRawEncoding()) : IfLocEnd);
+				parseCondition(conditional, "__if_then_" + currentCounter, Else ? "__if_else_" + currentCounter : IfLocEnd);
+				AddJumpInlineCheckStr(Label, "__if_then_" + currentCounter);
 				LocalVariables.addLevel();
 				parseStatement(Then, breakLoc, continueLoc);
 				LocalVariables.removeLevel();
@@ -2443,7 +2505,7 @@ public:
 				AddJumpInlineCheckConditionallyStr(!ifEndRet && Else, Jump, IfLocEnd);//if the last instruction is a return, no point adding a jump
 
 				if (Else) {
-					AddJumpInlineCheck(Label, Else->getLocStart().getRawEncoding());
+					AddJumpInlineCheckStr(Label, "__if_else_" + currentCounter);
 					LocalVariables.addLevel();
 					parseStatement(Else, breakLoc, continueLoc);
 					LocalVariables.removeLevel();
@@ -2454,6 +2516,8 @@ public:
 			}
 		}
 		else if (isa<WhileStmt>(s)) {
+			static int whileCounter = 0;
+			const string currentCounter = to_string(whileCounter++);
 			WhileStmt *whileStmt = cast<WhileStmt>(s);
 			Expr *conditional = whileStmt->getCond();
 
@@ -2473,38 +2537,41 @@ public:
 			{
 				if (bValue)
 				{
-					AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
-					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding());
+					AddJumpInlineCheckStr(Label, "__while_body_" + currentCounter);
 
-					AddJumpInlineCheck(Jump, conditional->getLocStart().getRawEncoding());
-					AddJumpInlineCheck(Label, whileStmt->getLocEnd().getRawEncoding());
+					parseStatement(body, "__while_end_" + currentCounter, "__while_body_" + currentCounter);
+
+					AddJumpInlineCheckStr(Jump, "__while_body_" + currentCounter);
+					AddJumpInlineCheckStr(Label, "__while_end_" + currentCounter);
 				}
 				else
 				{
+					AddJumpInlineCheckStr(Label, "__while_body_" + currentCounter);
+					AddJumpInlineCheckStr(Jump, "__while_end_" + currentCounter);
 
-					AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
-					AddJumpInlineCheck(Jump, whileStmt->getLocEnd().getRawEncoding());
+					parseStatement(body, "__while_end_" + currentCounter, "__while_body_" + currentCounter);
 
-					parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding());
-
-					//AddJumpInlineCheck(Jump, conditional->getLocStart().getRawEncoding());
-					AddJumpInlineCheck(Label, whileStmt->getLocEnd().getRawEncoding());
+					AddJumpInlineCheckStr(Label, "__while_end_" + currentCounter);
 				}
 
 			}
 			else {
-				parseJumpFalse(conditional, to_string(whileStmt->getLocEnd().getRawEncoding()));
-				AddJumpInlineCheck(Label, body->getLocStart().getRawEncoding());
+				parseCondition(conditional, "__while_body_" + currentCounter, "__while_end_" + currentCounter);
+				AddJumpInlineCheckStr(Label, "__while_body_" + currentCounter);
 
-				parseStatement(body, whileStmt->getLocEnd().getRawEncoding(), conditional->getLocStart().getRawEncoding());
+				parseStatement(body, "__while_end_" + currentCounter, "__while_cond_" + currentCounter);
 
-				AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
-				parseJumpTrue(conditional, to_string(body->getLocStart().getRawEncoding()));//run the condition again here to save jumping back to the condition
-				AddJumpInlineCheck(Label, whileStmt->getLocEnd().getRawEncoding());
+				AddJumpInlineCheckStr(Label, "__while_cond_" + currentCounter);
+
+				parseCondition2(conditional, "__while_body_" + currentCounter, "__while_end_" + currentCounter);
+
+				AddJumpInlineCheckStr(Label, "__while_end_" + currentCounter);
 			}
 			LocalVariables.removeLevel();
 		}
 		else if (isa<ForStmt>(s)) {
+			static int forCounter = 0;
+			const string currentCounter = to_string(forCounter++);
 			ForStmt *forStmt = cast<ForStmt>(s);
 			Stmt *decl = forStmt->getInit();
 			Expr *conditional = forStmt->getCond();
@@ -2512,24 +2579,21 @@ public:
 			Stmt *body = forStmt->getBody();
 			LocalVariables.addLevel();
 			if (decl) {
-				parseStatement(decl, -1, -1);
+				parseStatement(decl, "", "");
 			}
 
 			if (conditional) {
-				AddJumpInlineCheck(Label, conditional->getLocStart().getRawEncoding());
-
-				parseJumpFalse(conditional, to_string(forStmt->getLocEnd().getRawEncoding()));
+				parseCondition(conditional, "__for_body_" + currentCounter, "__for_end_" + currentCounter);
 			}
-			AddJumpInlineCheck(Label, forStmt->getRParenLoc().getRawEncoding());
+			AddJumpInlineCheckStr(Label, "__for_body_" + currentCounter);
 
 			parseStatement(
 				body,
-				forStmt->getLocEnd().getRawEncoding(),
-				increment ? increment->getLocStart().getRawEncoding() : conditional ? conditional->getLocStart().getRawEncoding() : body->getLocStart().getRawEncoding());
+				"__for_end_" + currentCounter,
+				(increment || conditional ? "__for_continue_" :"__for_body_") + currentCounter);
 
-			if (increment)
-			{
-				AddJumpInlineCheckComment(Label, "forstmt inc lbl", increment->getLocStart().getRawEncoding());
+			if (increment || conditional){
+				AddJumpInlineCheckStr(Label, "__for_continue_" + currentCounter);
 			}
 
 			if (increment)
@@ -2537,14 +2601,14 @@ public:
 
 			if (conditional)
 			{
-				parseJumpTrue(conditional, to_string(forStmt->getRParenLoc().getRawEncoding()));
+				parseCondition2(conditional, "__for_body_" + currentCounter, "__for_end_" + currentCounter);
 			}
 			else
 			{
-				AddJumpInlineCheckComment(Jump, "forstmt jmp", body->getLocStart().getRawEncoding());
+				AddJumpInlineCheckStr(Jump, "__for_body_" + currentCounter);
 			}
 
-			AddJumpInlineCheckComment(Label, "forend lbl", forStmt->getLocEnd().getRawEncoding());
+			AddJumpInlineCheckStr(Label, "__for_end_" + currentCounter);
 			LocalVariables.removeLevel();
 
 
@@ -2553,16 +2617,18 @@ public:
 			parseExpression(cast<const Expr>(s));
 		}
 		else if (isa<DoStmt>(s)) {
+			static int doCounter = 0;
+			const string  currentCounter = to_string(doCounter++);
 			DoStmt *doStmt = cast<DoStmt>(s);
 			Expr *conditional = doStmt->getCond();
 
 			Stmt *body = doStmt->getBody();
 			LocalVariables.addLevel();
 
-			AddJumpInlineCheck(Label, body->getLocStart().getRawEncoding());
-			parseStatement(body, doStmt->getLocEnd().getRawEncoding(), body->getLocEnd().getRawEncoding());
+			AddJumpInlineCheckStr(Label, "__do_body_" + currentCounter);
+			parseStatement(body, "__do_end_" + currentCounter, "__do_cond_" + currentCounter);
 
-			AddJumpInlineCheck(Label, body->getLocEnd().getRawEncoding());
+			AddJumpInlineCheckStr(Label, "__do_cond_" + currentCounter);
 
 			Expr::EvalResult eResult;
 			bool bValue = false, ignoreCondition = false;
@@ -2575,15 +2641,15 @@ public:
 			}
 			if (ignoreCondition)
 			{
-				AddJumpInlineCheckConditionally(bValue, Jump, body->getLocStart().getRawEncoding());
+				AddJumpInlineCheckConditionallyStr(bValue, Jump, "__do_body_" + currentCounter);
 				//no need for else, just jump right out
 			}
 			else
 			{
-				parseJumpTrue(conditional, to_string(body->getLocStart().getRawEncoding()));
+				parseCondition2(conditional, "__do_body_" + currentCounter, "__do_end_" + currentCounter);
 			}
 
-			AddJumpInlineCheck(Label, doStmt->getLocEnd().getRawEncoding());
+			AddJumpInlineCheckStr(Label, "__do_end_" + currentCounter);
 			LocalVariables.removeLevel();
 
 		}
@@ -2617,12 +2683,12 @@ public:
 			parseExpression(cast<const Expr>(s));
 		}
 		else if (isa<BreakStmt>(s)) {
-			AddJumpInlineCheckStrComment(Jump, "brkstmt jmp", to_string(breakLoc));
+			AddJumpInlineCheckStrComment(Jump, "brkstmt jmp", breakLoc);
 		}
 		else if (isa<NullStmt>(s)) {
 		}
 		else if (isa<ContinueStmt>(s)) {
-			AddJumpInlineCheckStrComment(Jump, "contstmt jmp", to_string(continueLoc));
+			AddJumpInlineCheckStrComment(Jump, "contstmt jmp", continueLoc);
 		}
 		else if (isa<DefaultStmt>(s)) {
 			DefaultStmt *caseD = cast<DefaultStmt>(s);
@@ -2743,7 +2809,7 @@ public:
 			}
 
 			//parse all
-			parseStatement(switchStmt->getBody(), switchStmt->getLocEnd().getRawEncoding(), continueLoc);
+			parseStatement(switchStmt->getBody(), to_string(switchStmt->getLocEnd().getRawEncoding()), continueLoc);
 			AddJumpInlineCheck(Label, switchStmt->getLocEnd().getRawEncoding());
 		}
 		else if (isa<GotoStmt>(s))
@@ -3047,7 +3113,7 @@ public:
 											}
 											else
 											{
-												parseStatement(body, -1, -1);
+												parseStatement(body, "", "");
 												if (scriptData.getCurrentFunction()->endsWithInlineReturn(scriptData.getInlineJumpLabelAppend()))
 												{
 													scriptData.getCurrentFunction()->RemoveLast();
@@ -4977,6 +5043,8 @@ public:
 		}
 		else if (isa<ConditionalOperator>(e))
 		{
+			static int condCounter = 0;
+			const string currentCounter = to_string(condCounter++);
 			const ConditionalOperator *cond = cast<const ConditionalOperator>(e);
 			auto condition = cond->getCond();
 			Expr::EvalResult eResult;
@@ -4989,17 +5057,18 @@ public:
 				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !condition->HasSideEffects(*context, true);
 			}
 			if (ignoreCondition){
-				parseExpression(bValue ? cond->getLHS() : cond->getRHS(), isAddr, isLtoRValue);//using a conditionalOperator to parse a conditionalOperator... conditionalCeption
+				parseExpression(bValue ? cond->getLHS() : cond->getRHS(), isAddr, isLtoRValue);
 			}
 			else{
-				parseJumpFalse(condition, to_string(cond->getRHS()->getLocStart().getRawEncoding()));
+				parseCondition(condition, "__cond_true_" + currentCounter, "__cond_false_" + currentCounter);
+				AddJumpInlineCheckStr(Label, "__cond_true_" + currentCounter);
 
 				parseExpression(cond->getLHS(), isAddr, isLtoRValue);
-				AddJumpInlineCheck(Jump, cond->getLHS()->getLocEnd().getRawEncoding());
+				AddJumpInlineCheckStr(Jump, "__cond_end_" + currentCounter);
 
-				AddJumpInlineCheck(Label, cond->getRHS()->getLocStart().getRawEncoding());
+				AddJumpInlineCheckStr(Label, "__cond_false_" + currentCounter);
 				parseExpression(cond->getRHS(), isAddr, isLtoRValue);
-				AddJumpInlineCheck(Label, cond->getLHS()->getLocEnd().getRawEncoding());
+				AddJumpInlineCheckStr(Label, "__cond_end_" + currentCounter);
 			}
 		}
 		else if (isa<ImaginaryLiteral>(e))
@@ -5025,22 +5094,24 @@ public:
 		}
 		else if (isa<BinaryConditionalOperator>(e))
 		{
+			static int binCondCounter = 0;
+			const string currentCounter = to_string(binCondCounter++);
 			const BinaryConditionalOperator *bco = cast<BinaryConditionalOperator>(e);
 
 			//out << "COND:" << endl;
 			parseExpression(bco->getCond(), false, true);
 			AddInstruction(Dup);
-			AddJumpInlineCheck(JumpFalse, bco->getFalseExpr()->getExprLoc().getRawEncoding());
+			AddJumpInlineCheckStr(JumpFalse, "__bin_false_" + currentCounter);
 			if (!isLtoRValue)
 			{
 				AddInstruction(Drop);//drop the value if not LtoR
 			}
-			AddJumpInlineCheck(Jump, bco->getLocStart().getRawEncoding());
+			AddJumpInlineCheckStr(Jump, "__bin_end_" + currentCounter);
 
-			AddJumpInlineCheck(Label, bco->getFalseExpr()->getExprLoc().getRawEncoding());
+			AddJumpInlineCheckStr(Label, "__bin_false_" + currentCounter);
 			AddInstruction(Drop);
 			parseExpression(bco->getFalseExpr(), false, isLtoRValue);//LtoR should handle the drop
-			AddJumpInlineCheck(Label, bco->getLocStart().getRawEncoding());
+			AddJumpInlineCheckStr(Label, "__bin_end_" + currentCounter);
 		}
 		else if (isa<OpaqueValueExpr>(e))
 		{
@@ -5283,7 +5354,7 @@ public:
 				handleParmVarDecl(f->getParamDecl(i));
 
 			LocalVariables.addDecl("", 2);//base pointer and return address
-			parseStatement(FuncBody);
+			parseStatement(FuncBody, "", "");
 
 			if (f->getReturnType().getTypePtr()->isVoidType() && !func->endsWithReturn()) {
 					AddInstruction(Return);
@@ -5576,7 +5647,7 @@ public:
 			}
 
 
-			parseStatement(CS->getBody());
+			parseStatement(CS->getBody(), "", "");
 
 			if (!scriptData.getCurrentFunction()->endsWithReturn())
 			{

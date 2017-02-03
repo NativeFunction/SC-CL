@@ -657,6 +657,8 @@ string Opcode::toString() const
 	return current;
 #undef Check12Op
 #undef Check23Op
+#undef CheckStatic
+#undef CheckStaticRaw
 #undef PrintJump
 }
 

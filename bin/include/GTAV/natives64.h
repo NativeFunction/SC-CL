@@ -173,7 +173,7 @@ extern _native64(0x2F395D61F3A1F877) float get_player_current_stealth_noise(Play
 extern _native64(0x5DB660B38DD98A31) void set_player_health_recharge_multiplier(Player player, float regenRate);
 extern _native64(0xCE07B9F7817AADA3) void set_player_weapon_damage_modifier(Player player, float damageAmount);
 extern _native64(0x2D83BC011CA14A3C) void set_player_weapon_defense_modifier(Player player, float modifier);
-extern _native64(0x4A3DC7ECCC321032) void set_player_melee_weapon_damage_modifier(Player player, float modifier);
+extern _native64(0x4A3DC7ECCC321032) void set_player_melee_weapon_damage_modifier(Player player, float modifier, int p2);
 extern _native64(0xAE540335B4ABC4E2) void set_player_melee_weapon_defense_modifier(Player player, float modifier);
 extern _native64(0xA50E117CDDF82F0C) void set_player_vehicle_damage_modifier(Player player, float damageAmount);
 extern _native64(0x4C60E6EFDAFF2462) void set_player_vehicle_defense_modifier(Player player, float modifier);
@@ -1483,6 +1483,7 @@ extern _native64(0xE16142B94664DEFD) void unk_0xE16142B94664DEFD(any p0, bool p1
 extern _native64(0x44CD1F493DB2A0A6) void _set_special_vehicle_weapon_capacity(Vehicle v, int weaponIndex, int capacity);
 extern _native64(0x36D782F68B309BDA) bool _does_vehicle_have_rocket_boost(Vehicle vehicle);
 extern _native64(0x3D34E80EED4AE3BE) bool _is_vehicle_rocket_boost_active(Vehicle rocketCar);
+extern _native64(0x81E1552E35DC3839) void _set_vehicle_rocket_boost_active(Vehicle rocketCar, bool toggle);
 extern _native64(0xE00F2AB100B76E89) void _set_rocket_boost_refill_time(Vehicle rocketCar, float refillTime);
 extern _native64(0x28D034A93FE31BF5) void _set_ramp_vehicle_receives_ramp_damage(Vehicle rampCar, bool receivesDamage);
 #pragma endregion //}
