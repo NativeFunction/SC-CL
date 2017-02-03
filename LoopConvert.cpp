@@ -1513,6 +1513,22 @@ public:
 				Throw("vector3Neg must have signature \"extern __intrinsic vector3 vector3Neg(vector3 vector)\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
+			case JoaatCasedConst("vector3Dot"): {
+				ChkHashCol("vector3Dot");
+
+				if (argCount == 2 && callee->getReturnType()->isRealFloatingType() && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 3)
+				{
+
+					parseExpression(argArray[0], false, true);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(VMult);
+					AddInstruction(FAdd);
+					AddInstruction(FAdd);
+					return true;
+				}
+				Throw("vector3Dot must have signature \"extern __intrinsic float vector3Dot(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
 			case JoaatCasedConst("toVector2"): {
 				ChkHashCol("toVector2");
 
@@ -1607,6 +1623,24 @@ public:
 				Throw("vector2Neg must have signature \"extern __intrinsic vector2 vector2Neg(vector2 vector)\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
+			case JoaatCasedConst("vector2Dot"): {
+				ChkHashCol("vector2Dot");
+
+				if (argCount == 2 && callee->getReturnType()->isRealFloatingType() && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 2)
+				{
+
+					parseExpression(argArray[0], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					AddInstruction(VMult);
+					AddInstruction(Drop);
+					AddInstruction(FAdd);
+					return true;
+				}
+				Throw("vector2Dot must have signature \"extern __intrinsic float vector2Dot(vector2 left, vector2 right)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
 			case JoaatCasedConst("fMod"): {
 				ChkHashCol("fMod");
 				if (argCount == 2 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isRealFloatingType() && argArray[1]->getType()->isRealFloatingType())
@@ -1693,6 +1727,45 @@ public:
 				}
 				Throw("bit_flip must have signature \"extern __intrinsic bool bit_flip(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
 			} break;
+			case JoaatCasedConst("vector3ToVector2"): {
+					ChkHashCol("vector3ToVector2");
+
+					if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+					{
+
+						parseExpression(argArray[0], false, true);
+						AddInstruction(Drop);
+						return true;
+					}
+					Throw("vector3ToVector2 must have signature \"extern __intrinsic vector2 vector3ToVector2(vector3 vector)\"", rewriter, callee->getSourceRange());
+					return false;
+				} break;
+			case JoaatCasedConst("vector2ToVector3"): {
+					ChkHashCol("vector2ToVector3");
+
+					if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 2)
+					{
+
+						parseExpression(argArray[0], false, true);
+						AddInstruction(PushFloat, 0.0f);
+						return true;
+					}
+					Throw("vector2ToVector3 must have signature \"extern __intrinsic vector3 vector2ToVector3(vector2 vector)\"", rewriter, callee->getSourceRange());
+					return false;
+				} break;
+				case JoaatCasedConst("vector3Flatten"): {
+						ChkHashCol("vector3Flatten");
+
+						if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+						{
+							parseExpression(argArray[0], false, true);
+							AddInstruction(Drop);
+							AddInstruction(PushFloat, 0.0f);
+							return true;
+						}
+						Throw("vector3Flatten must have signature \"extern __intrinsic vector3 vector3Flatten(vector3 vector)\"", rewriter, callee->getSourceRange());
+						return false;
+					} break;
 			#pragma endregion
 			#pragma region Variables 
 			case JoaatCasedConst("setStaticAtIndex"): {

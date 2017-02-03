@@ -1557,6 +1557,10 @@ void FunctionData::addOpFMultImm(float immediate)
 		{
 			//do nothing
 		}
+		else if (immediate == 2.0f){
+			addOpDup();
+			addOpFAdd();
+		}
 		else
 		{
 			Instructions.push_back(Opcode::makeFloatOpcode(OK_FMultImm, immediate));
