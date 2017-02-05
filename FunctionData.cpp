@@ -632,7 +632,7 @@ void FunctionData::jumpThreading()
 				case OK_Jump:
 				{
 					bool nulled = false;
-					for (int j = i + 1; i < instructionCount; j++){
+					for (int j = i + 1; j < instructionCount; j++){
 						switch (Instructions[j]->getKind()){
 							case OK_Null:
 								continue;
@@ -672,7 +672,7 @@ void FunctionData::jumpThreading()
 					//JumpLocs[opcode->getString()].push_back(i);
 					{
 						bool nulled = false;
-						for (int j = i + 1; i < instructionCount; j++){
+						for (int j = i + 1; j < instructionCount; j++){
 							switch (Instructions[j]->getKind()){
 								case OK_Null:
 									continue;
@@ -702,7 +702,7 @@ void FunctionData::jumpThreading()
 				case OK_JumpLE:
 				{
 					bool nulled = false;
-					for (int j = i + 1; i < instructionCount; j++){
+					for (int j = i + 1; j < instructionCount; j++){
 						switch (Instructions[j]->getKind()){
 							case OK_Null:
 								continue;
@@ -736,7 +736,7 @@ void FunctionData::jumpThreading()
 					}
 					if (switchStorage->hasDefaultJumpLoc()){
 						bool nulled = false;
-						for (int j = i + 1; i < instructionCount; j++){
+						for (int j = i + 1; j < instructionCount; j++){
 							switch (Instructions[j]->getKind()){
 								case OK_Null:
 									continue;
