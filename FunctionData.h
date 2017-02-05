@@ -49,6 +49,8 @@ class FunctionData
 	OptimisationLevel _optLevel = OptimisationLevel::OL_None;
 	void optimisePushBytes();
 	void jumpThreading();
+	void insertDrop(size_t index);
+	void makeDrop(size_t index);
 public:
 	
 	FunctionData(std::string name, uint8_t pcount, uint8_t rcount) : name(name), hash(Utils::Hashing::JoaatCased((char*)name.c_str())), pcount(pcount), rcount(rcount)

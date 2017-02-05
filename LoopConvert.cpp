@@ -2484,11 +2484,24 @@ public:
 			Expr *conditional = IfStatement->getCond();
 			Stmt *Then = IfStatement->getThen();
 			Stmt *Else = IfStatement->getElse();
+			bool rev = false;
 			if (Else && (isa<NullStmt>(Else) || (isa<CompoundStmt>(Else) && cast<CompoundStmt>(Else)->size() == 0)))
 			{
 				Else = NULL;
 			}
-
+			if (isa<NullStmt>(Then) || (isa <CompoundStmt>(Then) && cast<CompoundStmt>(Then)->size() == 0)){
+				if (Else){
+					rev = true;
+					Then = Else;
+					Else = NULL;
+				}
+				else{
+					if (conditional->HasSideEffects(*context, true)){
+						parseExpression(conditional);//parse then drop
+					}
+					return true;
+				}
+			}
 			string IfLocEnd = "__if_end_" + currentCounter;
 
 			Expr::EvalResult eResult;
@@ -2502,7 +2515,7 @@ public:
 			}
 			if (ignoreCondition)
 			{
-				if (bValue)
+				if (bValue ^ rev)
 				{
 					LocalVariables.addLevel();
 					parseStatement(Then, breakLoc, continueLoc);
@@ -2569,8 +2582,14 @@ public:
 			}
 			else
 			{
-				parseCondition(conditional, "__if_then_" + currentCounter, Else ? "__if_else_" + currentCounter : IfLocEnd);
-				AddJumpInlineCheckStr(Label, "__if_then_" + currentCounter);
+				if (rev){
+					parseCondition2(conditional, IfLocEnd, "__if_else_" + currentCounter);
+					AddJumpInlineCheckStr(Label, "__if_else_" + currentCounter);
+				}
+				else{
+					parseCondition(conditional, "__if_then_" + currentCounter, Else ? "__if_else_" + currentCounter : IfLocEnd);
+					AddJumpInlineCheckStr(Label, "__if_then_" + currentCounter);
+				}
 				LocalVariables.addLevel();
 				parseStatement(Then, breakLoc, continueLoc);
 				LocalVariables.removeLevel();

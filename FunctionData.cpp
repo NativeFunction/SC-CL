@@ -630,7 +630,31 @@ void FunctionData::jumpThreading()
 			auto opcode = Instructions[i];
 			switch (opcode->getKind()){
 				case OK_Jump:
-					JumpLocs[opcode->getString()].push_back(i);
+				{
+					bool nulled = false;
+					for (int j = i + 1; i < instructionCount; j++){
+						switch (Instructions[j]->getKind()){
+							case OK_Null:
+								continue;
+							case OK_Label:
+								if (opcode->getString() == Instructions[j]->getString()){
+									opcode->makeNull();
+									nulled = true;
+									break;
+								}
+								continue;
+							default:
+								break;
+						}
+						break;
+					}
+					if (nulled){
+						break;
+					}
+					else{
+						JumpLocs[opcode->getString()].push_back(i);
+					}
+				}
 				case OK_Return:
 					//Remove any code after a unconditional jump/return until a label is reached, the code will never get executed
 					for (i++; i < instructionCount; i++){
@@ -645,12 +669,62 @@ void FunctionData::jumpThreading()
 					}
 					break;
 				case OK_JumpFalse:
+					//JumpLocs[opcode->getString()].push_back(i);
+					{
+						bool nulled = false;
+						for (int j = i + 1; i < instructionCount; j++){
+							switch (Instructions[j]->getKind()){
+								case OK_Null:
+									continue;
+								case OK_Label:
+									if (opcode->getString() == Instructions[j]->getString()){
+										opcode->makeNull();
+										makeDrop(i);
+										nulled = true;
+										break;
+									}
+									continue;
+								default:
+									break;
+							}
+							break;
+						}
+						if (!nulled){
+							JumpLocs[opcode->getString()].push_back(i);
+						}
+					}
+					break;
 				case OK_JumpEQ:
 				case OK_JumpNE:
 				case OK_JumpGT:
 				case OK_JumpGE:
 				case OK_JumpLT:
 				case OK_JumpLE:
+				{
+					bool nulled = false;
+					for (int j = i + 1; i < instructionCount; j++){
+						switch (Instructions[j]->getKind()){
+							case OK_Null:
+								continue;
+							case OK_Label:
+								if (opcode->getString() == Instructions[j]->getString()){
+									opcode->makeNull();
+									makeDrop(i);
+									makeDrop(i - 1);
+									nulled = true;
+									break;
+								}
+								continue;
+							default:
+								break;
+						}
+						break;
+					}
+					if (!nulled){
+						JumpLocs[opcode->getString()].push_back(i);
+					}
+				}
+					break;
 				case OK_LabelLoc:
 					JumpLocs[opcode->getString()].push_back(i);
 					break;
@@ -661,15 +735,34 @@ void FunctionData::jumpThreading()
 						switchCaseLocs[switchCase->getCaseLocation()].push_back(switchCase);
 					}
 					if (switchStorage->hasDefaultJumpLoc()){
-						switchDefaultLocs[switchStorage->getDefaultJumpLoc()->toString()].push_back(switchStorage);
-						for (i++; i < instructionCount; i++){
-							auto next = Instructions[i];
-							if (next->getKind() != OK_Label){
-								next->makeNull();
+						bool nulled = false;
+						for (int j = i + 1; i < instructionCount; j++){
+							switch (Instructions[j]->getKind()){
+								case OK_Null:
+									continue;
+								case OK_Label:
+									if (Instructions[j]->getString() == switchStorage->getDefaultJumpLoc()->toString()){
+										switchStorage->clearDefaultJumpLoc();
+										nulled = true;
+										break;
+									}
+									continue;
+								default:
+									break;
 							}
-							else{
-								i--;
-								break;
+							break;
+						}
+						if (!nulled){
+							switchDefaultLocs[switchStorage->getDefaultJumpLoc()->toString()].push_back(switchStorage);
+							for (i++; i < instructionCount; i++){
+								auto next = Instructions[i];
+								if (next->getKind() != OK_Label){
+									next->makeNull();
+								}
+								else{
+									i--;
+									break;
+								}
 							}
 						}
 					}
@@ -765,6 +858,149 @@ void FunctionData::jumpThreading()
 				Instructions[it->second]->makeNull();
 			}
 		}
+	}
+}
+void FunctionData::insertDrop(size_t index){
+	if (Instructions[index]->getKind() == OK_Null){
+		Instructions[index]->setKind(OK_Drop);
+	}
+	else{
+		Instructions.insert(Instructions.begin() + index, new Opcode(OK_Drop));
+	}
+}
+void FunctionData::makeDrop(size_t index)
+{
+	start:
+	switch (Instructions[index]->getKind())
+	{
+		case OK_Null:
+			index--;
+			goto start;
+		case OK_PushInt:
+		case OK_PushFloat:
+		case OK_PushString:
+		case OK_GetFrameP:
+		case OK_GetFrame:
+		case OK_GetStaticP:
+		case OK_GetStatic:
+		case OK_GetGlobalP:
+		case OK_GetGlobal:
+		case OK_Dup:
+		case OK_LabelLoc:
+			Instructions[index]->makeNull();
+			break;
+		case OK_FtoV:
+			//this case would only ever come up if you have
+			// toVector3(1.0f); and dont use the result, in which case it would recursively get cancelled down 
+			Instructions.back()->setKind(OK_Dup);//replace fToV(dup2) with dup
+			break;
+		case OK_AddImm:
+		case OK_MultImm:
+		case OK_PGet:
+		case OK_ItoF:
+		case OK_FtoI:
+		case OK_GetArrayP:
+		case OK_GetArray:
+		case OK_GetImmP:
+		case OK_GetImm:
+		case OK_Neg:
+		case OK_FNeg:
+		case OK_Not:
+			//replace instructions that just replace item at top of the stack with a drop
+			Instructions[index]->makeNull();
+			makeDrop(index - 1);
+			break;
+		case OK_ShiftLeft:
+		case OK_ShiftRight:
+		case OK_Add:
+		case OK_Sub:
+		case OK_Mult:
+		case OK_Div:
+		case OK_Mod:
+		case OK_CmpEq:
+		case OK_CmpNe:
+		case OK_CmpGt:
+		case OK_CmpGe:
+		case OK_CmpLt:
+		case OK_CmpLe:
+		case OK_FAdd:
+		case OK_FSub:
+		case OK_FMult:
+		case OK_FDiv:
+		case OK_FMod:
+		case OK_FCmpEq:
+		case OK_FCmpNe:
+		case OK_FCmpGt:
+		case OK_FCmpGe:
+		case OK_FCmpLt:
+		case OK_FCmpLe:
+		case OK_And:
+		case OK_Or:
+		case OK_Xor:
+			Instructions[index]->makeNull();
+			makeDrop(index - 1);
+			makeDrop(index - 2);
+			break;
+		case OK_ToStack:
+		{
+			auto& ptr = Instructions[index - 1];
+			switch (ptr->getKind()){
+				case OK_GetFrame:
+				case OK_GetFrameP:
+				case OK_GetStatic:
+				case OK_GetStaticP:
+				case OK_GetStaticRaw:
+				case OK_GetStaticPRaw:
+				case OK_GetGlobal:
+				case OK_GetGlobalP:
+				{
+					auto& typeSize = Instructions[index - 2];
+					if (typeSize->getKind() == OK_PushInt){
+						if (typeSize->getInt() > 2){
+							typeSize->setInt(typeSize->getInt() - 1);
+						}
+						else if (typeSize->getInt() == 2){
+							
+							typeSize->makeNull();
+							switch (ptr->getKind()){
+								case OK_GetFrameP:
+									ptr->setKind(OK_GetFrame);
+									break;
+								case OK_GetStaticP:
+									ptr->setKind(OK_GetStatic);
+									break;
+								case OK_GetStaticPRaw:
+									ptr->setKind(OK_GetStaticRaw);
+									break;
+								case OK_GetGlobalP:
+									ptr->setKind(OK_GetGlobal);
+									break;
+								default:
+									typeSize->setKind(OK_PGet);
+									break;
+							}
+							swap(typeSize, ptr);
+							Instructions[index]->makeNull();
+						}
+						else{
+							insertDrop(index + 1);
+						}
+					}
+					else{
+						insertDrop(index + 1);
+					}
+				}
+				break;
+				default:
+					insertDrop(index + 1);
+					break;
+
+			}
+		}
+		break;
+		default:
+			insertDrop(index + 1);
+			break;
 	}
 }
 
@@ -1205,6 +1441,48 @@ void FunctionData::addOpDrop()
 				addOpDrop();
 				addOpDrop();
 				break;
+			case OK_ToStack:
+			{
+				auto& ptr = Instructions.at(Instructions.size() - 2);
+				switch (ptr->getKind()){
+					case OK_GetFrame:
+					case OK_GetFrameP:
+					case OK_GetStatic:
+					case OK_GetStaticP:
+					case OK_GetStaticRaw:
+					case OK_GetStaticPRaw:
+					case OK_GetGlobal:
+					case OK_GetGlobalP:
+					{
+						auto& typeSize = Instructions.at(Instructions.size() - 3);
+						if (typeSize->getKind() == OK_PushInt){
+							if (typeSize->getInt() > 2){
+								typeSize->setInt(typeSize->getInt() - 1);
+							}
+							else if (typeSize->getInt() == 2){
+								//remove toStack
+								delete typeSize;
+								typeSize = ptr;
+								delete Instructions.back();//toStack
+								Instructions._Pop_back_n(2);
+								addOpPGet();
+							}
+							else{
+								Instructions.push_back(new Opcode(OK_Drop));
+							}
+						}
+						else{
+							Instructions.push_back(new Opcode(OK_Drop));
+						}
+					}
+					break;
+					default:
+						Instructions.push_back(new Opcode(OK_Drop));
+						break;
+
+				}
+			}
+			break;
 			default:
 				Instructions.push_back(new Opcode(OK_Drop));
 				break;

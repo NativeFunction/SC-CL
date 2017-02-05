@@ -246,6 +246,12 @@ public:
 	}
 	bool hasDefaultJumpLoc()const{ return _defaultJumpLoc; }//only would occur when you have a switch statement with > 255 cases
 	const StringStorage* getDefaultJumpLoc()const{ return _defaultJumpLoc; }
+	void clearDefaultJumpLoc(){
+		if (_defaultJumpLoc){
+			delete _defaultJumpLoc;
+			_defaultJumpLoc = NULL;
+		}
+	}
 
 };
 
