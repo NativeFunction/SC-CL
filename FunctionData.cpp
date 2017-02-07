@@ -393,7 +393,7 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 		int pcFrameIndex = 0;
 		if (scriptData.getBuildType() == BT_GTAV && scriptData.getBuildPlatform() == P_PC)
 		{
-			pcFrameIndex = getStackSize() - getParamCount();
+			pcFrameIndex = getStackSize();
 			stackSize++;
 		}
 		vector<string> jumpTableLocations;
@@ -409,8 +409,12 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 		if (pcFrameIndex)
 		{
 			jTableBlock.push_back(Opcode::makeUShortOpcode(OK_GetFrame, pcFrameIndex));
+			//jTableBlock.push_back(new Opcode(OK_GetImmPStack));
+			jTableBlock.push_back(new Opcode(OK_Add));
 		}
-		jTableBlock.push_back(new Opcode(OK_Add));
+		else{
+			jTableBlock.push_back(new Opcode(OK_Add));
+		}
 		jTableBlock.push_back(new Opcode(OK_PGet));
 		jTableBlock.push_back(new Opcode(OK_GoToStack));
 		InstructionBuilder.push_back(jTableBlock);
@@ -469,7 +473,12 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 				{
 					found = true;
 					JumpTable->addJumpLoc(jumpTableLocations[j]);
-					InstructionBuilder[j+1].push_back(Opcode::makeIntOpcode(OK_PushInt, i * 4));
+					//if (pcFrameIndex){
+					//	InstructionBuilder[j + 1].push_back(Opcode::makeIntOpcode(OK_PushInt, i));
+					//}
+					//else{
+						InstructionBuilder[j + 1].push_back(Opcode::makeIntOpcode(OK_PushInt, i * 4));
+					//}
 					InstructionBuilder[j+1].push_back(Opcode::makeStringOpcode(OK_Jump, "__builtin__jumpTable"));
 					break;
 				}
@@ -478,7 +487,12 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 		}
 		Instructions.clear();
 		if (isFirstNop)Instructions.push_back(first);
-		addOpPushInt(JumpTable->getItemCount() * 4);
+		//if (pcFrameIndex){
+		//	addOpPushInt(JumpTable->getItemCount());
+		//}
+		//else{
+			addOpPushInt(JumpTable->getItemCount() * 4);
+		//}
 		addOpJump("__builtin__jumpTable");
 
 		JumpTable->addJumpLoc((string)"__builtin__controlFlowObsJumpTable_0");
@@ -625,7 +639,7 @@ void FunctionData::jumpThreading()
 		unordered_map<string, vector<pair<JumpTableStorage*, size_t>>> jumpTableLocs;
 		vector<pair<string, size_t>> LabelLocs;
 		vector<pair<string, string>> JumpReplace;
-		const size_t instructionCount = Instructions.size();
+		size_t instructionCount = Instructions.size();
 		for (size_t i = 0; i < instructionCount; i++){
 			auto opcode = Instructions[i];
 			switch (opcode->getKind()){
@@ -680,6 +694,7 @@ void FunctionData::jumpThreading()
 									if (opcode->getString() == Instructions[j]->getString()){
 										opcode->makeNull();
 										makeDrop(i);
+										instructionCount = Instructions.size();
 										nulled = true;
 										break;
 									}
@@ -711,6 +726,7 @@ void FunctionData::jumpThreading()
 									opcode->makeNull();
 									makeDrop(i);
 									makeDrop(i - 1);
+									instructionCount = Instructions.size();
 									nulled = true;
 									break;
 								}
@@ -857,6 +873,93 @@ void FunctionData::jumpThreading()
 				jumpTableLocs.find(it->first) == jumpTableLocs.end()){
 				Instructions[it->second]->makeNull();
 			}
+		}
+	}
+	for (size_t i = 1, instructionCount = Instructions.size(); i < instructionCount; i++){
+		auto ins = Instructions[i];
+		switch (ins->getKind()){
+			case OK_JumpFalse:
+			{
+				auto prev = Instructions[i - 1];
+				for (i++; i < instructionCount; i++){
+					auto jumpIns = Instructions[i];
+					if (jumpIns->getKind() == OK_Null)
+						continue;
+					if (jumpIns->getKind() == OK_Jump){
+						for (i++; i < instructionCount; i++){
+							if (Instructions[i]->getKind() == OK_Null)
+								continue;
+							if (Instructions[i]->getKind() == OK_Label){
+								if (Instructions[i]->getString() == ins->getString()){
+									ins->makeNull();
+									if (prev->getKind() == OK_Not){
+										prev->makeNull();
+									}
+									else{
+										ins->setKind(OK_Not);
+									}
+									jumpIns->setKind(OK_JumpFalse);
+									break;
+								}
+							}
+							i--;
+							break;
+						}
+					}
+					else{
+						i--;
+					}
+					break;
+
+				}
+			}
+			break;
+			case OK_JumpEQ:
+			case OK_JumpNE:
+			case OK_JumpGE:
+			case OK_JumpGT:
+			case OK_JumpLE:
+			case OK_JumpLT:
+			{
+				for (i++; i < instructionCount; i++){
+					auto jumpIns = Instructions[i];
+					if (jumpIns->getKind() == OK_Null)
+						continue;
+					if (jumpIns->getKind() == OK_Jump){
+						for (i++; i < instructionCount; i++){
+							if (Instructions[i]->getKind() == OK_Null)
+								continue;
+							if (Instructions[i]->getKind() == OK_Label){
+								if (Instructions[i]->getString() == ins->getString()){
+									switch (ins->getKind()){
+										case OK_JumpEQ: ins->setKind(OK_JumpNE); break;
+										case OK_JumpNE: ins->setKind(OK_JumpEQ); break;
+										case OK_JumpGE: ins->setKind(OK_JumpLT); break;
+										case OK_JumpGT: ins->setKind(OK_JumpLE); break;
+										case OK_JumpLE: ins->setKind(OK_JumpGT); break;
+										case OK_JumpLT: ins->setKind(OK_JumpGE); break;
+										default: assert(false);
+									}
+									ins->setString(jumpIns->getString());
+									jumpIns->makeNull();
+									break;
+								}
+							}
+							i--;
+							break;
+						}
+					}
+					else{
+						i--;
+					}
+					break;
+
+				}
+			}
+			break;
+		default:
+			break;
+
 		}
 	}
 }

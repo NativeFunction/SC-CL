@@ -5319,18 +5319,35 @@ public:
 				int iRes = evalIndex.getSExtValue();
 				if (iRes != 0)
 				{
-					AddInstruction(AddImm, iRes * getSizeOfType(type));
+					int size = getSizeOfType(type);
+					if (size % scriptData.getStackWidth() == 0){
+						int multVal = size / scriptData.getStackWidth();
+						int addval = iRes * multVal;
+						if (addval > 0 && addval <= 0xFFFF){
+							AddInstruction(GetImmP, addval);
+						}
+						else{
+							AddInstruction(PushInt, addval);
+							AddInstruction(GetImmPStack);
+						}
+					}
+					else{
+						AddInstruction(AddImm, iRes * size);
+					}
 				}
 			}
 			else
 			{
 				parseExpression(index, false, true);
 				int size = getSizeOfType(type);
-				if (size > 1)
-				{
-					AddInstruction(MultImm, size);
+				if (size % scriptData.getStackWidth() == 0){
+					AddInstructionConditionally(size > 1, MultImm, size / scriptData.getStackWidth())
+					AddInstructionConditionally(size > 1, GetImmPStack);
 				}
-				AddInstruction(Add);
+				else{
+					AddInstructionConditionally(size > 1, MultImm, size);
+					AddInstruction(Add);
+				}
 			}
 			if (getSizeFromBytes(getSizeOfType(type)) > 1 && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 			{
@@ -5363,14 +5380,34 @@ public:
 				int iRes = evalIndex.getSExtValue();
 				if (iRes != 0)
 				{
-					AddInstruction(AddImm, iRes * size);
+					if (size % scriptData.getStackWidth() == 0){
+						int multVal = size / scriptData.getStackWidth();
+						int addval = iRes * multVal;
+						if (addval > 0 && addval <= 0xFFFF){
+							AddInstruction(GetImmP, addval);
+						}
+						else{
+							AddInstruction(PushInt, addval);
+							AddInstruction(GetImmPStack);
+						}
+					}
+					else{
+						AddInstruction(AddImm, iRes * size);
+					}
 				}
 			}
 			else
 			{
 				parseExpression(index, false, true);
-				AddInstructionConditionally(size > 1, MultImm, size);
-				AddInstructionComment(Add, "GetArrayP2");
+				int size = getSizeOfType(type);
+				if (size % scriptData.getStackWidth() == 0){
+					AddInstructionConditionally(size > 1, MultImm, size / scriptData.getStackWidth())
+					AddInstructionConditionally(size > 1, GetImmPStack);
+				}
+				else{
+					AddInstructionConditionally(size > 1, MultImm, size);
+					AddInstruction(Add);
+				}
 			}
 		}
 		else
@@ -5380,15 +5417,37 @@ public:
 				int iRes = evalIndex.getSExtValue();
 				if (iRes != 0)
 				{
-					AddInstruction(AddImm, iRes * getSizeOfType(type));
+					int size = getSizeOfType(type);
+					if (size % scriptData.getStackWidth() == 0){
+						int multVal = size / scriptData.getStackWidth();
+						int addval = iRes * multVal;
+						if (addval > 0 && addval <= 0xFFFF){
+							AddInstruction(GetImmP, addval);
+						}
+						else{
+							AddInstruction(PushInt, addval);
+							AddInstruction(GetImmPStack);
+						}
+					}
+					else{
+						AddInstruction(AddImm, iRes * size);
+					}
+					
 				}
 			}
 			else
 			{
 				parseExpression(index, false, true);
 				int size = getSizeOfType(type);
-				AddInstructionConditionally(size > 1, MultImm, size);
-				AddInstruction(Add);
+				if (size % scriptData.getStackWidth() == 0){
+					AddInstructionConditionally(size > 1, MultImm, size / scriptData.getStackWidth())
+					AddInstructionConditionally(size > 1, GetImmPStack);
+				}
+				else{
+					AddInstructionConditionally(size > 1, MultImm, size);
+					AddInstruction(Add);
+				}
+				
 			}
 			AddInstructionComment(PSet, "SetArray2");
 		}

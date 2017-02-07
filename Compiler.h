@@ -189,10 +189,12 @@ public:
 	}
 	virtual void ChangeInt32(const uint32_t newValue, const size_t position) = 0;
 	size_t AddJumpTable(const uint32_t itemCount){
+		lastPage->resize(lastPage->size() + 3 & ~3, 0);
 		reserveBytes(itemCount * 4);
-		size_t startIndex = lastPage->size();
-		lastPage->resize(startIndex + itemCount * 4);
-		return startIndex;
+		size_t pageStartIndex = lastPage->size();
+		size_t tableIndex = getTotalSize();
+		lastPage->resize(pageStartIndex + itemCount * 4, 0);
+		return tableIndex;
 	}
 };
 class StringPageCollectionBig : public StringPageCollection{
@@ -914,7 +916,7 @@ private:
 	void CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount) override;
 	void Shift_Left() override { CallNative(0xEDD95A39E5544DE8, 2, 1); }
 	void Shift_Right() override { CallNative(0x97EF1E5BCE9DC075, 2, 1); }
-
+	void AddJumpTable() override;
 	#pragma endregion
 
 	#pragma region Write_Functions

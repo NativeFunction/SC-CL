@@ -1566,7 +1566,11 @@ void CompileGTAV::fixFunctionJumps()
 		{
 			Throw("Jump table label '" + jTableItem.labelName + "' not found");
 		}
-		StringPageData->ChangeInt32(it->second.LabelLocation, jTableItem.tableOffset);
+		auto loc = it->second.LabelLocation;
+		if (loc == 0){
+			int i = 1;
+		}
+		StringPageData->ChangeInt32(loc, jTableItem.tableOffset);
 	}
 	jumpTableLocs.clear();
 	JumpLocations.clear();
@@ -1789,6 +1793,10 @@ void CompileGTAV::WriteFinalStringPage()
 {
 	if (StringPageData->getPageCountIgnoreEmpty())
 	{
+		auto size = StringPageData->getLastPageSizeIgnoreEmpty();
+		if (GetSpaceLeft(16384) < size){
+			FillPageDynamic(16384);
+		}
 		SavedOffsets.StringPagePointers[StringPageData->getPageCountIgnoreEmpty() - 1] = BuildBuffer.size();
 		BuildBuffer.resize(BuildBuffer.size() + StringPageData->getLastPageSizeIgnoreEmpty());
 		memcpy(BuildBuffer.data() + BuildBuffer.size() - StringPageData->getLastPageSizeIgnoreEmpty(), StringPageData->getPageAddress(StringPageData->getPageCountIgnoreEmpty()-1), StringPageData->getLastPageSizeIgnoreEmpty());
@@ -1867,6 +1875,19 @@ void CompileGTAVPC::CallNative(const uint64_t hash, const uint8_t paramCount, co
 
 	AddInt8((paramCount << 2) | (returnCount & 0x3));
 	AddInt16(Utils::Bitwise::SwapEndian((uint16_t)index));
+}
+void CompileGTAVPC::AddJumpTable()
+{
+	auto jumpTable = DATA->getJumpTable();
+	auto pos = StringPageData->AddJumpTable(jumpTable->getItemCount());
+	PushInt(pos);
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(PushString);
+	for (unsigned i = 0; i < jumpTable->getItemCount(); i++)
+	{
+		jumpTableLocs.push_back({ pos, jumpTable->getJumpLocAsString(i) });
+		pos += 4;
+	}
 }
 #pragma endregion
 
