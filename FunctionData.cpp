@@ -382,7 +382,6 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 		return;//jumps may be screwed messed up if past 32768 size limit
 	}
 	auto randomEngine = default_random_engine(chrono::system_clock::now().time_since_epoch().count());
-	srand(time(NULL));
 	vector<vector<Opcode*>> InstructionBuilder;
 	int labelCounter = 0;
 	
@@ -396,9 +395,12 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 			pcFrameIndex = getStackSize();
 			stackSize++;
 		}
+		int xorValue = randomEngine();
+		
 		vector<string> jumpTableLocations;
 		vector<size_t> jumpTableRandomisation;
 		auto JumpTable = new JumpTableStorage();
+		JumpTable->setXORValue(xorValue);
 		vector<Opcode*> jTableBlock;
 		jTableBlock.push_back(Opcode::makeStringOpcode(OK_Label, "__builtin__jumpTable"));
 		if (pcFrameIndex)
@@ -416,6 +418,10 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 			jTableBlock.push_back(new Opcode(OK_Add));
 		}
 		jTableBlock.push_back(new Opcode(OK_PGet));
+		if (xorValue){
+			jTableBlock.push_back(Opcode::makeIntOpcode(OK_PushInt, xorValue));
+			jTableBlock.push_back(new Opcode(OK_Xor));
+		}
 		jTableBlock.push_back(new Opcode(OK_GoToStack));
 		InstructionBuilder.push_back(jTableBlock);
 
@@ -423,7 +429,7 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 		{
 			vector<Opcode*> block;
 			block.push_back(Opcode::makeStringOpcode(OK_Label, "__builtin__controlFlowObsJumpTable_" + to_string(labelCounter++)));
-			int bSize = (rand() % randMod) + minBlockSize;
+			int bSize = (randomEngine() % randMod) + minBlockSize;
 			for (int j = 0; j < bSize;j++)
 			{
 				if (i + j >= maxSize)
@@ -525,7 +531,7 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 		{
 			vector<Opcode*> block;
 			block.push_back(Opcode::makeStringOpcode(OK_Label, "__builtin__controlFlowObs_" + to_string(labelCounter++)));
-			int bSize = (rand() % randMod) + minBlockSize;
+			int bSize = (randomEngine() % randMod) + minBlockSize;
 			if (i + bSize >= maxSize)
 			{
 				if (i + bSize > maxSize)

@@ -196,25 +196,25 @@ public:
 			case OK_GetFrameP:
 				back->setKind(OK_GetFrame);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
-				Instructions.push_back(new Opcode(OK_Or));
+				addOpOr();
 				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetFrame, back->getUShort(0)));
 				break;
 			case OK_GetStaticPRaw:
 				back->setKind(OK_GetStaticRaw);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
-				Instructions.push_back(new Opcode(OK_Or));
+				addOpOr();
 				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetStaticRaw, back->getUShort(0)));
 				break;
 			case OK_GetStaticP:
 				back->setKind(OK_GetStatic);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
-				Instructions.push_back(new Opcode(OK_Or));
+				addOpOr();
 				Instructions.push_back(Opcode::makeStaticOpcode(OK_SetStatic, new OpStaticStorage(*back->getStaticData())));
 				break;
 			case OK_GetGlobalP:
 				back->setKind(OK_GetGlobal);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
-				Instructions.push_back(new Opcode(OK_Or));
+				addOpOr();
 				Instructions.push_back(Opcode::makeIntOpcode(OK_SetGlobal, back->getInt()));
 				break;
 			default:
@@ -237,25 +237,25 @@ public:
 			case OK_GetFrameP:
 				back->setKind(OK_GetFrame);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, ~(int)(1 << bitIndex)));
-				Instructions.push_back(new Opcode(OK_And));
+				addOpAnd();
 				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetFrame, back->getUShort(0)));
 				break;
 			case OK_GetStaticPRaw:
 				back->setKind(OK_GetStaticRaw);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, ~(int)(1 << bitIndex)));
-				Instructions.push_back(new Opcode(OK_And));
+				addOpAnd();
 				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetStaticRaw, back->getUShort(0)));
 				break;
 			case OK_GetStaticP:
 				back->setKind(OK_GetStatic);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, ~(int)(1 << bitIndex)));
-				Instructions.push_back(new Opcode(OK_And));
+				addOpAnd();
 				Instructions.push_back(Opcode::makeStaticOpcode(OK_SetStatic, new OpStaticStorage(*back->getStaticData())));
 				break;
 			case OK_GetGlobalP:
 				back->setKind(OK_GetGlobal);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, ~(int)(1 << bitIndex)));
-				Instructions.push_back(new Opcode(OK_And));
+				addOpAnd();
 				Instructions.push_back(Opcode::makeIntOpcode(OK_SetGlobal, back->getInt()));
 				break;
 			default:
@@ -278,25 +278,25 @@ public:
 			case OK_GetFrameP:
 				back->setKind(OK_GetFrame);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
-				Instructions.push_back(new Opcode(OK_Xor));
+				addOpXor();
 				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetFrame, back->getUShort(0)));
 				break;
 			case OK_GetStaticPRaw:
 				back->setKind(OK_GetStaticRaw);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
-				Instructions.push_back(new Opcode(OK_Xor));
+				addOpXor();
 				Instructions.push_back(Opcode::makeUShortOpcode(OK_SetStaticRaw, back->getUShort(0)));
 				break;
 			case OK_GetStaticP:
 				back->setKind(OK_GetStatic);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
-				Instructions.push_back(new Opcode(OK_Xor));
+				addOpXor();
 				Instructions.push_back(Opcode::makeStaticOpcode(OK_SetStatic, new OpStaticStorage(*back->getStaticData())));
 				break;
 			case OK_GetGlobalP:
 				back->setKind(OK_GetGlobal);
 				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
-				Instructions.push_back(new Opcode(OK_Xor));
+				addOpXor();
 				Instructions.push_back(Opcode::makeIntOpcode(OK_SetGlobal, back->getInt()));
 				break;
 			default:

@@ -299,6 +299,7 @@ struct JumpTableStorage
 {
 private:
 	std::vector<std::unique_ptr<StringStorage>> jumpLocs;
+	uint32_t _XORvalue = 0;
 public:
 	JumpTableStorage(){}
 	uint32_t getByteSize()const{ return jumpLocs.size() << 2; }
@@ -318,6 +319,8 @@ public:
 	void setJumpLoc(unsigned index, const std::string& newJumpLoc){
 		jumpLocs[index] = std::make_unique<StringStorage>(newJumpLoc);
 	}
+	void setXORValue(uint32_t val){ _XORvalue = val; }
+	uint32_t getXORValue()const{ return _XORvalue; }
 };
 
 struct OpStaticStorage

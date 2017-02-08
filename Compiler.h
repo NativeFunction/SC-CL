@@ -267,6 +267,7 @@ protected:
 	{
 		uint32_t tableOffset;
 		std::string labelName;
+		uint32_t xorVal;
 	} JumpTableData;//these can be set at the end of compiling a function
 	#pragma endregion
 
@@ -916,7 +917,6 @@ private:
 	void CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount) override;
 	void Shift_Left() override { CallNative(0xEDD95A39E5544DE8, 2, 1); }
 	void Shift_Right() override { CallNative(0x97EF1E5BCE9DC075, 2, 1); }
-	void AddJumpTable() override;
 	#pragma endregion
 
 	#pragma region Write_Functions

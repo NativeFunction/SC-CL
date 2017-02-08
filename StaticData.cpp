@@ -58,9 +58,7 @@ void StaticData::addOpSetThisStatic(Script & scriptBase)
 
 	assert(!(_initialisation.size() % scriptBase.getStackWidth()) && "invalid initialisation size");
 
-	Opcode * op = new Opcode(OK_SetStatic);
-	op->storage.staticData = new OpStaticStorage(this, _initialisation.size() / scriptBase.getStackWidth());
-	_dynamicInitialisation.push_back(op);
+	_dynamicInitialisation.push_back(Opcode::makeStaticOpcode(OK_SetStatic, new OpStaticStorage(this, _initialisation.size() / scriptBase.getStackWidth())));
 	_initialisation.resize(_initialisation.size() + scriptBase.getStackWidth());
 }
 
@@ -74,25 +72,47 @@ void StaticData::addOpSetThisStaticMult(Script & scriptBase, int32_t value, int3
 
 		for (uint32_t i = 0; i < currentCount; i++)
 		{
-			Opcode * opPush = new Opcode(OK_PushInt);
-			opPush->setInt(value);
-			_dynamicInitialisation.push_back(opPush);
+			_dynamicInitialisation.push_back(Opcode::makeIntOpcode(OK_PushInt, value));
 		}
 		
 
-		Opcode * opPush = new Opcode(OK_PushInt);
-		opPush->setInt(currentCount);
-		Opcode * opPTR = new Opcode(OK_GetStaticP);
-		opPTR->storage.staticData = new OpStaticStorage(this, _initialisation.size() / scriptBase.getStackWidth());
-		Opcode * opFS = new Opcode(OK_FromStack);
-		_dynamicInitialisation.push_back(opPush);
-		_dynamicInitialisation.push_back(opPTR);
-		_dynamicInitialisation.push_back(opFS);
+		_dynamicInitialisation.push_back(Opcode::makeIntOpcode(OK_PushInt, currentCount));
+		_dynamicInitialisation.push_back(Opcode::makeStaticOpcode(OK_GetStaticP, new OpStaticStorage(this, _initialisation.size() / scriptBase.getStackWidth())));
+		_dynamicInitialisation.push_back(new Opcode(OK_FromStack));
 		_initialisation.resize(_initialisation.size() + scriptBase.getStackWidth() * currentCount);
 
 		count -= 50;
 	}
 	
+}
+
+void StaticData::addOpDynamicNullThisStatic(Script & scriptBase)
+{
+	assert(!(_initialisation.size() % scriptBase.getStackWidth()) && "invalid initialisation size");
+	int count = getSize() - (_initialisation.size() / scriptBase.getStackWidth());
+	if (count == 1){
+		_dynamicInitialisation.push_back(new Opcode(OK_PushNullPtr));
+		_dynamicInitialisation.push_back(Opcode::makeStaticOpcode(OK_SetStatic, new OpStaticStorage(this, _initialisation.size() / scriptBase.getStackWidth())));
+		_initialisation.resize(_initialisation.size() + scriptBase.getStackWidth());
+	}
+	else{
+		while (count > 0)
+		{
+			uint32_t currentCount = count > 50 ? 50 : count;
+
+			for (uint32_t i = 0; i < currentCount; i++)
+			{
+				_dynamicInitialisation.push_back(new Opcode(OK_PushNullPtr));
+			}
+			_dynamicInitialisation.push_back(Opcode::makeIntOpcode(OK_PushInt, currentCount));
+			_dynamicInitialisation.push_back(Opcode::makeStaticOpcode(OK_GetStaticP, new OpStaticStorage(this, _initialisation.size() / scriptBase.getStackWidth())));
+			_dynamicInitialisation.push_back(new Opcode(OK_FromStack));
+			_initialisation.resize(_initialisation.size() + scriptBase.getStackWidth() * currentCount);
+
+			count -= 50;
+		}
+	}
+	setDynamic();
 }
 
 void StaticData::addOpFuncLoc(FunctionData * functionData)

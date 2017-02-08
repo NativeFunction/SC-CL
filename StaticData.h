@@ -131,6 +131,9 @@ public:
 		assert(_initialisation.size() <= (getSize() * stackWidth) && "table exceeded value");
 		_initialisation.resize(getSize() * stackWidth, 0);
 	}
+	void addOpPushNullPtr(){
+		_dynamicInitialisation.push_back(new Opcode(OK_PushNullPtr));
+	}
 	void addOpPushInt(int value)
 	{
 		Opcode* op = new Opcode(OK_PushInt);
@@ -145,6 +148,7 @@ public:
 	}
 	void addOpSetThisStatic(Script& scriptBase);//will only ever called on this static data so no point passing params
 	void addOpSetThisStaticMult(Script & scriptBase, int32_t value, int32_t count);
+	void addOpDynamicNullThisStatic(Script& scriptBase);
 	void addOpGetStaticP(StaticData* staticData)
 	{
 		addReferencedStatic(staticData);

@@ -986,7 +986,7 @@ void CompileRDR::fixFunctionJumps()
 		{
 			Throw("Jump table label '" + jTableItem.labelName + "' not found");
 		}
-		ChangeInt32InCodePage(it->second.LabelLocation, jTableItem.tableOffset);
+		ChangeInt32InCodePage(it->second.LabelLocation ^ jTableItem.xorVal, jTableItem.tableOffset);
 	}
 	jumpTableLocs.clear();
 	JumpLocations.clear();
@@ -1170,7 +1170,7 @@ void CompileRDR::AddJumpTable()
 		AddInt8(len);
 		for (unsigned i = 0; i < jumpTable->getItemCount();i++)
 		{
-			jumpTableLocs.push_back({ CodePageData->getTotalSize(), jumpTable->getJumpLocAsString(i) });
+			jumpTableLocs.push_back({ CodePageData->getTotalSize(), jumpTable->getJumpLocAsString(i), jumpTable->getXORValue() });
 			AddInt32(0);//place holder
 		}
 	}
@@ -1181,7 +1181,7 @@ void CompileRDR::AddJumpTable()
 		AddInt32(len);
 		for (unsigned i = 0; i < jumpTable->getItemCount(); i++)
 		{
-			jumpTableLocs.push_back({ CodePageData->getTotalSize(), jumpTable->getJumpLocAsString(i) });
+			jumpTableLocs.push_back({ CodePageData->getTotalSize(), jumpTable->getJumpLocAsString(i), jumpTable->getXORValue() });
 			AddInt32(0);//place holder
 		}
 		AddImm(4);//Skip past the size of the array
@@ -1566,11 +1566,7 @@ void CompileGTAV::fixFunctionJumps()
 		{
 			Throw("Jump table label '" + jTableItem.labelName + "' not found");
 		}
-		auto loc = it->second.LabelLocation;
-		if (loc == 0){
-			int i = 1;
-		}
-		StringPageData->ChangeInt32(loc, jTableItem.tableOffset);
+		StringPageData->ChangeInt32(it->second.LabelLocation ^ jTableItem.xorVal, jTableItem.tableOffset);
 	}
 	jumpTableLocs.clear();
 	JumpLocations.clear();
@@ -1686,7 +1682,7 @@ void CompileGTAV::AddJumpTable()
 	AddOpcode(PushString);
 	for (unsigned i = 0; i < jumpTable->getItemCount();i++)
 	{
-		jumpTableLocs.push_back({ pos, jumpTable->getJumpLocAsString(i) });
+		jumpTableLocs.push_back({ pos, jumpTable->getJumpLocAsString(i), jumpTable->getXORValue() });
 		pos += 4;
 	}
 	
@@ -1875,19 +1871,6 @@ void CompileGTAVPC::CallNative(const uint64_t hash, const uint8_t paramCount, co
 
 	AddInt8((paramCount << 2) | (returnCount & 0x3));
 	AddInt16(Utils::Bitwise::SwapEndian((uint16_t)index));
-}
-void CompileGTAVPC::AddJumpTable()
-{
-	auto jumpTable = DATA->getJumpTable();
-	auto pos = StringPageData->AddJumpTable(jumpTable->getItemCount());
-	PushInt(pos);
-	DoesOpcodeHaveRoom(1);
-	AddOpcode(PushString);
-	for (unsigned i = 0; i < jumpTable->getItemCount(); i++)
-	{
-		jumpTableLocs.push_back({ pos, jumpTable->getJumpLocAsString(i) });
-		pos += 4;
-	}
 }
 #pragma endregion
 

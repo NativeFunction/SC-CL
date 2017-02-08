@@ -100,10 +100,11 @@ static cl::opt<std::string> Option_OutputFileName(
 
 typedef enum ObfLevel { 
 	obf_none,
-	obf_low = 1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = false, bool makeJumpTable = false
-	obf_default = 2, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
-	obf_high = 3, //high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
-	obf_veryhigh = 4, //very high: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_low = 1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = true, bool makeJumpTable = false
+	obf_default = 2, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = false
+	obf_high = 3, //high: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_veryhigh = 4, //very high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_max = 5, //max: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
 } ObfLevel;
 
 static cl::opt<ObfLevel> Option_ObfuscationLevel(
@@ -114,6 +115,7 @@ static cl::opt<ObfLevel> Option_ObfuscationLevel(
 	clEnumValN(obf_default, "F2", "Enable default obfuscations"),
 	clEnumValN(obf_high, "F3", "Enable high obfuscations"),
 	clEnumValN(obf_veryhigh, "F4", "Enable very high obfuscations"),
+	clEnumValN(obf_max, "F5", "Enable max obfuscations"),
 	clEnumValEnd
 ));
 
@@ -5527,18 +5529,20 @@ public:
 			}
 			func->setProcessed();
 
-			//F1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = false, bool makeJumpTable = false
-			//	F2, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
-			//	F3, //high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
-			//	F4 //very high: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
+			//	F1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = true, bool makeJumpTable = false
+			//	F2, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = false
+			//	F3, //high:  int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
+			//	F4, //very high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
+			//  F5, //max: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
 
 			switch (Option_ObfuscationLevel)
 			{
 				case obf_none: break;
-				case obf_low: func->codeLayoutRandomisation(scriptData, 50, 30, false, false); break;
+				case obf_low: func->codeLayoutRandomisation(scriptData, 50, 30, true, false); break;
 				case obf_default: func->codeLayoutRandomisation(scriptData, 30, 15, false, false); break;
-				case obf_high: func->codeLayoutRandomisation(scriptData, 15, 5, false, true); break;
-				case obf_veryhigh: func->codeLayoutRandomisation(scriptData, 5, 1, false, true); break;
+				case obf_high:func->codeLayoutRandomisation(scriptData, 30, 15, false, true); break;
+				case obf_veryhigh: func->codeLayoutRandomisation(scriptData, 15, 5, false, true); break;
+				case obf_max: func->codeLayoutRandomisation(scriptData, 5, 1, false, true); break;
 				default: Throw("Unknown Obfuscation Level: " + Option_ObfuscationLevel);
 			}
 				
@@ -6500,7 +6504,7 @@ public:
 								return true;//this is prototyped
 							break;
 							case SC_Static:
-							scriptData.addStaticNewDecl(varName, getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())), true);
+							scriptData.addStaticNewDecl(varName, getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())), !globalVarDecl->isStaticLocal());
 							break;
 							default:
 							Throw("Unhandled Storage Class", rewriter, globalVarDecl->getSourceRange());
@@ -6529,6 +6533,9 @@ public:
 						}
 						else
 						{
+							if (Option_EntryFunctionPadding){
+								scriptData.getCurrentStatic()->addOpDynamicNullThisStatic(scriptData);
+							}
 							scriptData.getCurrentStatic()->fillCapacity(scriptData.getStackWidth());
 						}
 
