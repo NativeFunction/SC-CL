@@ -119,6 +119,7 @@ void Script::initializeEntryFunction()
 }
 void Script::finaliseEntryFunction()
 {
+	lockReservedStaticBlock();
 	if (mainFunction)
 	{
 		entryFunction->addUsedFunc(mainFunction);

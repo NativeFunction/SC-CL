@@ -6,6 +6,11 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+
+struct StaticsIgnoreBlock{
+	size_t startIndex;
+	size_t size;
+};
 class Script
 {
 	FunctionData *entryFunction;
@@ -34,6 +39,8 @@ class Script
 	const bool _isSingleton = false;
 	const bool EntryFunctionPadding = false;
 	const OptimisationLevel _optLevel = OptimisationLevel::OL_None;
+	std::vector<StaticsIgnoreBlock> IgnoredBlocks;
+	bool isStaticsLocked = false;
 public:
 	Script(std::string scriptName, BuildType buildType, Platform platform, bool isSingleton, bool isEntryFunctionPadding, OptimisationLevel optLevel);
 
@@ -47,7 +54,15 @@ public:
 	const FunctionData *getFunctionFromIndex(unsigned index)const{ assert(index < getFunctionCount() && index >= 0 && "Function index out of range"); return functions[index].get(); }
 
 	unsigned getInlineCount() const{ return inlineStack.size(); }
-
+	void resgisterReservedStaticBlock(size_t startIndex, size_t dataCount){
+		if (!isStaticsLocked)
+			IgnoredBlocks.push_back({ startIndex, dataCount });
+	}
+	void lockReservedStaticBlock(){
+		if (!isStaticsLocked)
+			std::sort(IgnoredBlocks.begin(), IgnoredBlocks.end(), [](StaticsIgnoreBlock& a, StaticsIgnoreBlock&b){return a.startIndex > b.startIndex; });
+			isStaticsLocked = true;
+	}
 	std::string getInlineJumpLabelAppend() const
 	{
 		if (inlineStack.size())
@@ -136,6 +151,19 @@ public:
 
 	std::string getASMFileName()const{
 		return getScriptName() + "." + getBuildTypeExt();
+	}
+
+	size_t allocateStatic(size_t sizeOf){
+		while (IgnoredBlocks.size()){
+			auto& block = IgnoredBlocks.back();
+			if (newStaticCount + sizeOf >= block.startIndex){
+				newStaticCount = block.startIndex + block.size;
+				IgnoredBlocks.pop_back();
+				continue;
+			}
+			break;
+		}
+		return newStaticCount;
 	}
 
 	size_t getStaticCount()const

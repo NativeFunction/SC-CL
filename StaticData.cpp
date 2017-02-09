@@ -28,7 +28,7 @@ void StaticData::setUsed(Script & scriptBase)
 {
 	if (!isUsed())
 	{
-		_index = scriptBase.getStaticCount();
+		_index = scriptBase.allocateStatic(getSize());
 		scriptBase.incStaticCount(shared_from_this());
 		if (_isDynamic)
 		{

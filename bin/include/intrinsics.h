@@ -74,6 +74,15 @@ extern __intrinsic void* getPtrFromArrayIndex(const void* array, int index, cons
 extern __intrinsic void* getPtrImmIndex(const void* pointer, const int immIndex);
 #pragma endregion //}
 
+#ifdef __YSC__
+#pragma region YSC_Specific //{
+extern __intrinsic void setLoDWord(void* addr, int value);
+extern __intrinsic void setHiDWord(void* addr, int value);
+extern __intrinsic int getLoDWord(void* addr);
+extern __intrinsic int getHiDWord(void* addr);
+#pragma endregion //}
+#endif
+
 #pragma region Custom_ASM //{
 // These perform the operation on the item(or vector) on top of the stack
 // This can lead to dangerous behaviour if you arent sure what is currently on the stack

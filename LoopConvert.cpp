@@ -124,6 +124,27 @@ static cl::opt<uint32_t> Option_PCVerison(
 	cl::ValueRequired,
 	cl::cat(CompilerOptions)
 );
+
+static cl::opt <uint32_t> Option_HostVarIndex(
+	"hvi", cl::desc("Sets the starting index for host variables to ignore"),
+	cl::ValueRequired,
+	cl::cat(CompilerOptions)
+);
+static cl::opt <uint32_t> Option_HostVarSize(
+	"hvs", cl::desc("Sets the amount of host variables to ignore"),
+	cl::ValueRequired,
+	cl::cat(CompilerOptions)
+);
+static cl::opt <uint32_t> Option_PlayerVarIndex(
+	"pvi", cl::desc("Sets the starting index for player variables to ignore"),
+	cl::ValueRequired,
+	cl::cat(CompilerOptions)
+);
+static cl::opt <uint32_t> Option_PlayerVarSize(
+	"pvs", cl::desc("Sets the amount of player variables to ignore"),
+	cl::ValueRequired,
+	cl::cat(CompilerOptions)
+);
 static cl::opt<OptimisationLevel> Option_OptimizationLevel(
 	cl::desc("Choose optimization level:"),
 	cl::cat(CompilerOptions),
@@ -1755,7 +1776,7 @@ public:
 					Throw("vector2ToVector3 must have signature \"extern __intrinsic vector3 vector2ToVector3(vector2 vector)\"", rewriter, callee->getSourceRange());
 					return false;
 				} break;
-				case JoaatCasedConst("vector3Flatten"): {
+			case JoaatCasedConst("vector3Flatten"): {
 						ChkHashCol("vector3Flatten");
 
 						if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
@@ -1768,6 +1789,94 @@ public:
 						Throw("vector3Flatten must have signature \"extern __intrinsic vector3 vector3Flatten(vector3 vector)\"", rewriter, callee->getSourceRange());
 						return false;
 					} break;
+			case JoaatCasedConst("setLoDWord"): {
+				ChkHashCol("setLoDWord");
+
+				if (scriptData.getStackWidth() == 8){
+					if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1){
+						parseExpression(argArray[0], false, true);
+						AddInstruction(Dup);
+						AddInstruction(PGet);
+						AddInstruction(PushInt, 0);
+						AddInstructionComment(And, "clear lower bits");
+						parseExpression(argArray[1], false, true);
+						AddInstruction(Or);
+						AddInstruction(PeekSet);
+						AddInstruction(Drop);
+						return true;
+					}
+					else{
+						Throw("setLoDWord must have signature \"extern __intrinsic void setLoDWord(void* addr, int value)\"", rewriter, callee->getSourceRange());
+					}
+				}
+				else{
+					Throw("setHiDWord intrinsic is only available on 64 bit builds");
+				}
+			} break;
+			case JoaatCasedConst("setHiDWord"): {
+				ChkHashCol("setHiDWord");
+
+				if (scriptData.getStackWidth() == 8){
+					if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1){
+						parseExpression(argArray[0], false, true);
+						AddInstruction(AddImm, 4);
+						AddInstruction(Dup);
+						AddInstruction(PGet);
+						AddInstruction(PushInt, 0);
+						AddInstructionComment(And, "clear lower bits");
+						parseExpression(argArray[1], false, true);
+						AddInstruction(Or);
+						AddInstruction(PeekSet);
+						AddInstruction(Drop);
+						return true;
+					}
+					else{
+						Throw("setHiDWord must have signature \"extern __intrinsic void setHiDWord(void* addr, int value)\"", rewriter, callee->getSourceRange());
+					}
+				}
+				else{
+					Throw("setHiDWord intrinsic is only available on 64 bit builds");
+				}
+			} break;
+			case JoaatCasedConst("getLoDWord"): {
+				ChkHashCol("getLoDWord");
+
+				if (scriptData.getStackWidth() == 8){
+					if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1 && argArray[0]->getType()->isPointerType()){
+						AddInstruction(PushNullPtr);
+						parseExpression(argArray[0], false, true);
+						AddInstruction(PGet);
+						AddInstruction(Or);
+						return true;
+					}
+					else{
+						Throw("getLoDWord must have signature \"extern __intrinsic int getLoDWord(void* addr)\"", rewriter, callee->getSourceRange());
+					}
+				}
+				else{
+					Throw("getLoDWord intrinsic is only available on 64 bit builds");
+				}
+			} break;
+			case JoaatCasedConst("getHiDWord"): {
+				ChkHashCol("getHiDWord");
+
+				if (scriptData.getStackWidth() == 8){
+					if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1 && argArray[0]->getType()->isPointerType()){
+						AddInstruction(PushNullPtr);
+						parseExpression(argArray[0], false, true);
+						AddInstruction(AddImm, 4);
+						AddInstruction(PGet);
+						AddInstruction(Or);
+						return true;
+					}
+					else{
+						Throw("getHiDWord must have signature \"extern __intrinsic int getHiDWord(void* addr)\"", rewriter, callee->getSourceRange());
+					}
+				}
+				else{
+					Throw("getHiDWord intrinsic is only available on 64 bit builds");
+				}
+			} break;
 			#pragma endregion
 			#pragma region Variables 
 			case JoaatCasedConst("setStaticAtIndex"): {
@@ -6851,6 +6960,12 @@ int ProcessFiles(ClangTool &Tool)
 		if (!ProcessingFailed)
 		{
 			//ProcessingSuccess
+			if (Option_HostVarSize){
+				scriptData->resgisterReservedStaticBlock(Option_HostVarIndex, Option_HostVarSize);
+			}
+			if (Option_PlayerVarSize){
+				scriptData->resgisterReservedStaticBlock(Option_PlayerVarIndex, Option_PlayerVarSize);
+			}
 			scriptData->finaliseEntryFunction();
 
 			WriteAsmFile(outDir);

@@ -645,6 +645,7 @@ void FunctionData::jumpThreading()
 		unordered_map<string, vector<pair<JumpTableStorage*, size_t>>> jumpTableLocs;
 		vector<pair<string, size_t>> LabelLocs;
 		vector<pair<string, string>> JumpReplace;
+		vector<string> JumpReturns;
 		size_t instructionCount = Instructions.size();
 		for (size_t i = 0; i < instructionCount; i++){
 			auto opcode = Instructions[i];
@@ -652,7 +653,7 @@ void FunctionData::jumpThreading()
 				case OK_Jump:
 				{
 					bool nulled = false;
-					for (int j = i + 1; j < instructionCount; j++){
+					for (size_t j = i + 1; j < instructionCount; j++){
 						switch (Instructions[j]->getKind()){
 							case OK_Null:
 								continue;
@@ -692,7 +693,7 @@ void FunctionData::jumpThreading()
 					//JumpLocs[opcode->getString()].push_back(i);
 					{
 						bool nulled = false;
-						for (int j = i + 1; j < instructionCount; j++){
+						for (size_t j = i + 1; j < instructionCount; j++){
 							switch (Instructions[j]->getKind()){
 								case OK_Null:
 									continue;
@@ -723,7 +724,7 @@ void FunctionData::jumpThreading()
 				case OK_JumpLE:
 				{
 					bool nulled = false;
-					for (int j = i + 1; j < instructionCount; j++){
+					for (size_t j = i + 1; j < instructionCount; j++){
 						switch (Instructions[j]->getKind()){
 							case OK_Null:
 								continue;
@@ -758,7 +759,7 @@ void FunctionData::jumpThreading()
 					}
 					if (switchStorage->hasDefaultJumpLoc()){
 						bool nulled = false;
-						for (int j = i + 1; j < instructionCount; j++){
+						for (size_t j = i + 1; j < instructionCount; j++){
 							switch (Instructions[j]->getKind()){
 								case OK_Null:
 									continue;
@@ -811,6 +812,9 @@ void FunctionData::jumpThreading()
 							if (orig != repl){//would only be the same in an infinite loop
 								JumpReplace.push_back(make_pair(orig, repl));
 							}
+						}
+						else if (next->getKind() == OK_Return){
+							JumpReturns.push_back(orig);
 						}
 						i--;
 						break;
@@ -878,6 +882,19 @@ void FunctionData::jumpThreading()
 				switchDefaultLocs.find(it->first) == switchDefaultLocs.end() &&
 				jumpTableLocs.find(it->first) == jumpTableLocs.end()){
 				Instructions[it->second]->makeNull();
+			}
+		}
+		for (auto item : JumpReturns){
+			auto locs = JumpLocs.find(item);
+			if (locs != JumpLocs.end()){
+				for (auto index : locs->second){
+					if (Instructions[index]->getKind() == OK_Jump){
+						Instructions[index]->makeNull();
+						Instructions[index]->setKind(OK_Return);
+						Instructions[index]->setByte(pcount, 0);
+						Instructions[index]->setByte(rcount, 1);
+					}
+				}
 			}
 		}
 	}

@@ -630,15 +630,15 @@ string Opcode::toString() const
 		case OK_LabelLoc: current = "Push GetLoc(\"" + getString() + "\")"; break;
 		case OK_FuncLoc: current = "Push GetFuncLoc(\"" + getFunctionData()->getName() + "\")"; break;
 		case OK_JumpTable:{
-			current = "PushLabelLocArray {\r\n";
+			current = "PushLabelLocArrayPtr {\r\n";
 			if (storage.jTable->getItemCount() == 0)
 			{
 				current += "}"; break;
 			}
-			current += "GetLoc(\"" + storage.jTable->getJumpLocAsString(0) + "\")";
+			current += "\"" + storage.jTable->getJumpLocAsString(0) + "\"";
 			for (unsigned i = 1; i < storage.jTable->getItemCount(); i++)
 			{
-				current += ", \r\nGetLoc(\"" + storage.jTable->getJumpLocAsString(i) + "\")";
+				current += ", \r\n\"" + storage.jTable->getJumpLocAsString(i) + "\"";
 			}
 			current += "\r\n}";
 			break;
