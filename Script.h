@@ -20,6 +20,8 @@ class Script
 	std::unordered_multimap<uint32_t, std::shared_ptr<StaticData>> staticMapExtern;//Joaat of Name, StaticData
 	std::unordered_multimap<uint32_t, std::shared_ptr<StaticData>> staticMapStatic;//Joaat of Name, StaticData
 
+	std::unordered_multimap<unsigned,std::shared_ptr<StaticData>> staticLocals;
+
 	std::vector<std::shared_ptr<StaticData>> UsedStatics;
 	size_t newStaticCount = 0;
 	FunctionData *currentFunc = NULL;
@@ -185,6 +187,16 @@ public:
 			currentStatic = staticMapStatic.insert({ NameHash , std::make_shared<StaticData>(name, size) })->second.get();
 		else
 			currentStatic = staticMapExtern.insert({ NameHash , std::make_shared<StaticData>(name, size) })->second.get();
+	}
+	void addStaticLocalNewDecl(const std::string& name, int size, unsigned sourceLoc){
+		currentStatic = staticLocals.insert({ sourceLoc, std::make_shared<StaticData>(name, size) })->second.get();
+	}
+	StaticData* findLocalStatic(unsigned sourceLoc){
+		auto it = staticLocals.find(sourceLoc);
+		if (it != staticLocals.end()){
+			return it->second.get();
+		}
+		return nullptr;
 	}
 	StaticData* getCurrentStatic()const{ return currentStatic; }
 	std::vector<uint8_t>& getStaticTable(){ return staticTable; }

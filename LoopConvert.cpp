@@ -192,19 +192,29 @@ uint8_t stackWidth = 4;
 
 struct local_scope
 {
-	vector<vector<string>> scopeLocals;
+	struct frameVar{
+		string name;
+		uint32_t hash;
+		frameVar(const string& name) : hash(JoaatCased(name)), name(name){}
+	};
+	struct staticVar{
+		uint32_t hash;
+		StaticData* value;
+		staticVar(StaticData* value) : hash(JoaatCased(value->getName())), value(value){}
+	};
+	vector<pair<vector<frameVar>, vector<staticVar>>> newScope;
 	uint32_t maxIndex = 0;
 	int scopeLevel = 0;
 	void reset()//call this on function decl
 	{
 		scopeLevel = 0;
-		scopeLocals.clear();
-		scopeLocals.push_back(vector<string>());
+		newScope.clear();
+		newScope.push_back(pair<vector<frameVar>, vector<staticVar>>());
 		maxIndex = 0;
 	}
 	void addLevel()
 	{
-		scopeLocals.push_back(vector<string>());
+		newScope.push_back(pair<vector<frameVar>, vector<staticVar>>());
 		scopeLevel++;
 	}
 	void removeLevel()
@@ -212,46 +222,78 @@ struct local_scope
 		if (scopeLevel > 0)
 		{
 			scopeLevel--;
-			scopeLocals.pop_back();
+			newScope.pop_back();
 		}
 	}
 	bool find(const string& key, uint32_t* outIndex)
 	{
+		uint32_t hash = JoaatCased(key);
 		for (int i = scopeLevel; i >= 0; i--)
 		{
-			vector<string>& locals = scopeLocals[i];
-			for (int j = 0, max = locals.size(); j < max; j++) {
-				if (locals[j] == key)
+			auto& Level = newScope[i];
+			auto& frameVars = Level.first;
+			auto& staticVars = Level.second;
+			for (int j = 0, max = frameVars.size(); j < max; j++) {
+				if (frameVars[j].hash == hash && frameVars[j].name == key)
 				{
 					int count = j;
 					for (int k = 0; k < i; k++)
 					{
-						count += scopeLocals[k].size();
+						count += newScope[k].first.size();
 					}
 					*outIndex = count;
 					return true;
 				}
 			}
+			for (int j = 0, max = staticVars.size(); j < max; j++){
+				if (staticVars[j].hash == hash && staticVars[j].value->getName() == key)
+				{
+					return false;
+				}
+			}
 		}
 		return false;
 	}
-	uint32_t getCurrentSize()
-	{
+	bool findNewStatic(const string& key, StaticData** outPtr){
+		uint32_t hash = JoaatCased(key);
+		for (int i = scopeLevel; i >= 0; i--)
+		{
+			auto& Level = newScope[i];
+			auto& frameVars = Level.first;
+			auto& staticVars = Level.second;
+			for (int j = 0, max = staticVars.size(); j < max; j++){
+				if (staticVars[j].hash == hash && staticVars[j].value->getName() == key)
+				{
+					*outPtr = staticVars[j].value;
+					return true;
+				}
+			}
+			for (int j = 0, max = frameVars.size(); j < max; j++) {
+				if (frameVars[j].hash == hash && frameVars[j].name == key)
+				{
+					return false;
+				}
+			}
+			
+		}
+		return false;
+	}
+
+	uint32_t getCurrentSize(){
 		uint32_t cursize = 0;
 		for (int i = 0; i <= scopeLevel; i++)
 		{
-			cursize += scopeLocals[i].size();
+			cursize += newScope[i].first.size();
 		}
 		return cursize;
 	}
-	int addDecl(const string& key, int size)//size being number of 4 byte variables it takes up
-	{
+	size_t addDecl(const string& key, int size){
 		assert(size > 0);
 		int prevSize = getCurrentSize();
-		scopeLocals[scopeLevel].push_back(key);
+		newScope[scopeLevel].first.push_back(frameVar(key));
 		for (int i = 1; i < size; i++)
 		{
-			scopeLocals[scopeLevel].push_back("");//use a null string for padding
+			newScope[scopeLevel].first.push_back(frameVar(""));
 		}
 
 		uint32_t cursize = prevSize + size;
@@ -260,6 +302,14 @@ struct local_scope
 			maxIndex = cursize;
 		}
 		return prevSize;
+	}
+
+	StaticData* addLocalStaticDecl(const VarDecl* decl){
+		auto var = scriptData->findLocalStatic(decl->getLocation().getRawEncoding());
+		if (var){
+			newScope[scopeLevel].second.push_back(staticVar(var));
+		}
+		return var;
 	}
 
 }LocalVariables;
@@ -658,6 +708,7 @@ public:
 	//handleParamVarDecl
 	void printDeclWithKey(const string& key, bool isAddr, bool isLtoRValue, bool isAssign, const DeclRefExpr* declref) {
 		uint32_t index = -1;
+		StaticData* sData = nullptr;
 		const Type* type = declref->getType().getTypePtr();
 		const VarDecl *varDecl = dyn_cast<VarDecl>(declref->getDecl());
 		size_t size = getSizeOfType(type);
@@ -701,6 +752,41 @@ public:
 					AddInstructionComment(SetFrame, key, index);
 				}
 
+			}
+		}
+		else if (LocalVariables.findNewStatic(key, &sData)){
+			scriptData.getCurrentFunction()->addUsedStatic(sData);
+			if (isLtoRValue && !isAddr)
+			{
+				AddInstructionComment(GetStatic, key, sData);
+				if (size == 1 || size == 2)
+				{
+					AddInstruction(GetConv, scriptData, size, declref->getType()->isSignedIntegerType());
+				}
+			}
+			else if (isAddr)
+			{
+				AddInstructionComment(GetStaticP, key, sData);
+			}
+			else if (isAssign)
+			{
+				//this for single var setting (and or) for data preservation is not needed
+
+
+				if (size > stackWidth)//fromStack
+				{
+					AddInstructionComment(PushInt, "Type Size", getSizeFromBytes(size));
+					AddInstructionComment(GetStaticP, key, sData);
+					AddInstruction(FromStack);
+				}
+				else
+				{
+					if (size == 1 || size == 2)
+					{
+						AddInstruction(SetConv, scriptData, size);
+					}
+					AddInstructionComment(SetStatic, key, sData);
+				}
 			}
 		}
 		else if (varDecl && varDecl->hasAttr<GlobalVariableAttr>()) {
@@ -895,7 +981,9 @@ public:
 					}
 					LocalVariables.addDecl(var->getName().str(), getSizeFromBytes(size));
 				}
-
+				else{
+					LocalVariables.addLocalStaticDecl(var);
+				}
 			}
 		}
 		return true;
@@ -6593,11 +6681,12 @@ public:
 				}
 				else
 				{
+					bool isLocal = globalVarDecl->isStaticLocal();
 					//TODO: this will have to catch exturning vars
-					if (scriptData.findStatic(dumpName(cast<NamedDecl>(D))) == NULL)
+					if ((!isLocal && scriptData.findStatic(dumpName(cast<NamedDecl>(D))) == NULL) || (isLocal && scriptData.findLocalStatic(globalVarDecl->getLocation().getRawEncoding()) == NULL))
 					{
 						string varName = dumpName(cast<NamedDecl>(D));
-						uint32_t size = getSizeOfType(globalVarDecl->getType().getTypePtr());
+
 						const Expr *initializer = globalVarDecl->getAnyInitializer();
 
 
@@ -6613,8 +6702,13 @@ public:
 								return true;//this is prototyped
 							break;
 							case SC_Static:
-							scriptData.addStaticNewDecl(varName, getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())), !globalVarDecl->isStaticLocal());
-							break;
+								if (globalVarDecl->isStaticLocal()){
+									scriptData.addStaticLocalNewDecl(varName, getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())), globalVarDecl->getLocation().getRawEncoding());
+								}
+								else{
+									scriptData.addStaticNewDecl(varName, getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())), true);
+								}
+								break;
 							default:
 							Throw("Unhandled Storage Class", rewriter, globalVarDecl->getSourceRange());
 						}
@@ -6625,14 +6719,9 @@ public:
 						isCurrentExprEvaluable = true;
 						doesCurrentValueNeedSet = false;
 
-						staticInc += getSizeFromBytes(size);
-
 						if (initializer) {
 
 							ParseLiteral(initializer, false, true);
-
-							//if (scriptData.getStaticSize() > staticInc)//undefined length arrays (should check if it is an undefined length array)
-							//	staticInc = scriptData.getStaticSize();
 
 							if (doesCurrentValueNeedSet)
 							{
