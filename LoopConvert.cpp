@@ -185,37 +185,27 @@ static Rewriter rewriter;
 #pragma region Global_Var_and_Scope_Decls
 unique_ptr<Script> scriptData = nullptr;
 uint32_t CurrentFileId = 0;
-static int globalInc = 0;
-static uint32_t staticInc = 0;
 
 uint8_t stackWidth = 4;
 
-struct local_scope
+class local_scope
 {
-	struct frameVar{
-		string name;
-		uint32_t hash;
-		frameVar(const string& name) : hash(JoaatCased(name)), name(name){}
-	};
-	struct staticVar{
-		uint32_t hash;
-		StaticData* value;
-		staticVar(StaticData* value) : hash(JoaatCased(value->getName())), value(value){}
-	};
-	vector<pair<vector<frameVar>, vector<staticVar>>> newScope;
+	vector<pair<pair<std::unordered_map<string, uint32_t>, uint32_t>, std::unordered_map<string, StaticData*>>> newScope;
 	uint32_t maxIndex = 0;
 	int scopeLevel = 0;
+public:
 	void reset()//call this on function decl
 	{
 		scopeLevel = 0;
 		newScope.clear();
-		newScope.push_back(pair<vector<frameVar>, vector<staticVar>>());
+		newScope.emplace_back();
 		maxIndex = 0;
 	}
 	void addLevel()
 	{
-		newScope.push_back(pair<vector<frameVar>, vector<staticVar>>());
+		newScope.emplace_back();
 		scopeLevel++;
+		newScope[scopeLevel].first.second = newScope[scopeLevel - 1].first.second;
 	}
 	void removeLevel()
 	{
@@ -225,89 +215,68 @@ struct local_scope
 			newScope.pop_back();
 		}
 	}
-	bool find(const string& key, uint32_t* outIndex)
+	bool find(const string& key, uint32_t& outIndex)
 	{
-		uint32_t hash = JoaatCased(key);
 		for (int i = scopeLevel; i >= 0; i--)
 		{
 			auto& Level = newScope[i];
-			auto& frameVars = Level.first;
+			auto& frameVars = Level.first.first;
 			auto& staticVars = Level.second;
-			for (int j = 0, max = frameVars.size(); j < max; j++) {
-				if (frameVars[j].hash == hash && frameVars[j].name == key)
-				{
-					int count = j;
-					for (int k = 0; k < i; k++)
-					{
-						count += newScope[k].first.size();
-					}
-					*outIndex = count;
-					return true;
-				}
+			auto it = frameVars.find(key);
+			if (it != frameVars.end()){
+				outIndex = it->second;
+				return true;
 			}
-			for (int j = 0, max = staticVars.size(); j < max; j++){
-				if (staticVars[j].hash == hash && staticVars[j].value->getName() == key)
-				{
-					return false;
-				}
+			if (staticVars.find(key) != staticVars.end()){
+				return false;//a static with this name has been found in the current level,
 			}
 		}
 		return false;
 	}
-	bool findNewStatic(const string& key, StaticData** outPtr){
-		uint32_t hash = JoaatCased(key);
+	bool findNewStatic(const string& key, StaticData*& outPtr){
 		for (int i = scopeLevel; i >= 0; i--)
 		{
 			auto& Level = newScope[i];
-			auto& frameVars = Level.first;
+			auto& frameVars = Level.first.first;
 			auto& staticVars = Level.second;
-			for (int j = 0, max = staticVars.size(); j < max; j++){
-				if (staticVars[j].hash == hash && staticVars[j].value->getName() == key)
-				{
-					*outPtr = staticVars[j].value;
-					return true;
-				}
+			auto it = staticVars.find(key);
+			if (it != staticVars.end()){
+				outPtr = it->second;
+				return true;
 			}
-			for (int j = 0, max = frameVars.size(); j < max; j++) {
-				if (frameVars[j].hash == hash && frameVars[j].name == key)
-				{
-					return false;
-				}
+			if (frameVars.find(key) != frameVars.end()){
+				return false;
 			}
-			
+
 		}
 		return false;
 	}
 
-	uint32_t getCurrentSize(){
-		uint32_t cursize = 0;
-		for (int i = 0; i <= scopeLevel; i++)
-		{
-			cursize += newScope[i].first.size();
-		}
-		return cursize;
+	uint32_t getCurrentSize()const{
+		return newScope[scopeLevel].first.second;
 	}
-	size_t addDecl(const string& key, int size){
+	uint32_t getMaxIndex()const{
+		return maxIndex;
+	}
+
+	size_t addDecl(const string& key, uint32_t size){
 		assert(size > 0);
-		int prevSize = getCurrentSize();
-		newScope[scopeLevel].first.push_back(frameVar(key));
-		for (int i = 1; i < size; i++)
-		{
-			newScope[scopeLevel].first.push_back(frameVar(""));
-		}
+		auto lvlSize = newScope[scopeLevel].first.second;
 
-		uint32_t cursize = prevSize + size;
-		if (cursize > maxIndex)
+		newScope[scopeLevel].first.first.insert({ key, lvlSize });
+		newScope[scopeLevel].first.second += size;
+
+		if (newScope[scopeLevel].first.second > maxIndex)
 		{
-			maxIndex = cursize;
+			maxIndex = newScope[scopeLevel].first.second;
 		}
-		return prevSize;
+		return lvlSize;
 	}
 
 	StaticData* addLocalStaticDecl(const VarDecl* decl){
 		auto var = scriptData->findLocalStatic(decl->getLocation().getRawEncoding());
 		if (var){
-			newScope[scopeLevel].second.push_back(staticVar(var));
+			newScope[scopeLevel].second.insert({ var->getName(), var });
 		}
 		return var;
 	}
@@ -719,7 +688,7 @@ public:
 			isAddr = true;
 		}
 
-		if (LocalVariables.find(key, &index))
+		if (LocalVariables.find(key, index))
 		{
 			if (isLtoRValue && !isAddr)
 			{
@@ -754,7 +723,7 @@ public:
 
 			}
 		}
-		else if (LocalVariables.findNewStatic(key, &sData)){
+		else if (LocalVariables.findNewStatic(key, sData)){
 			scriptData.getCurrentFunction()->addUsedStatic(sData);
 			if (isLtoRValue && !isAddr)
 			{
@@ -1089,7 +1058,7 @@ public:
 				if (EvaluateAsString(argArray[0], str))
 				{
 					uint32_t index = 0;
-					if (LocalVariables.find(str, &index))
+					if (LocalVariables.find(str, index))
 					{
 						(scriptData.getCurrentFunction()->*func)(index);
 						scriptData.getCurrentFunction()->pushComment("(ASM Named Local) " + str);
@@ -1482,7 +1451,7 @@ public:
 					{
 						uint32_t index = 0;
 						StaticData* sData = NULL;
-						if (LocalVariables.find(str, &index))
+						if (LocalVariables.find(str, index))
 						{
 							AddInstruction(PushInt, index);
 							return true;
@@ -2554,7 +2523,32 @@ public:
 			case JoaatCasedConst("__strAddI"):		AddAsmIntrinsic8("__strAddI", GetInsPtr(StrAddI)); break;
 			case JoaatCasedConst("__memCopy"):		AddAsmIntrinsic("__memCopy", GetInsPtr(MemCopy)); break;
 			case JoaatCasedConst("__pCall"):		AddAsmIntrinsic("__pCall", GetInsPtr(PCall)); break;
+			case JoaatCasedConst("__ptrToStack"): {
+				ChkHashCol("__ptrToStack");
 
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType()){
+					parseExpression(argArray[1], false, true);
+					parseExpression(argArray[0], false, true);
+					AddInstruction(ToStack);
+					return true;
+				}
+				else{
+					Throw("__ptrToStack must have signature \"extern __unsafeIntrinsic void __ptrToStack(const void* address, int count);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("__ptrFromStack"): {
+				ChkHashCol("__ptrFromStack");
+
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType()){
+					parseExpression(argArray[1], false, true);
+					parseExpression(argArray[0], false, true);
+					AddInstruction(FromStack);
+					return true;
+				}
+				else{
+					Throw("__ptrFromStack must have signature \"extern __unsafeIntrinsic void __ptrFromStack(const void* address, int count);\"", rewriter, callee->getSourceRange());
+				}
+			} break;
 
 			#pragma endregion 
 
@@ -5718,11 +5712,11 @@ public:
 			//Throw(f->getNameAsString() + ": not all control paths return a value", rewriter, f->getLocEnd());
 			//uint32_t FunctionStackCount = LocalVariables.maxIndex - (isa<CXXMethodDecl>(f) ? 1 : 0) - paramSize;
 
-			if (LocalVariables.maxIndex > 65536)
-				Throw("Function \"" + f->getNameAsString() + "\" has a stack size of " + to_string(LocalVariables.maxIndex) + " when the max is 65536", rewriter, f->getLocStart());
+			if (LocalVariables.getMaxIndex() > 65536)
+				Throw("Function \"" + f->getNameAsString() + "\" has a stack size of " + to_string(LocalVariables.getMaxIndex()) + " when the max is 65536", rewriter, f->getLocStart());
 			else
 			{
-				func->setStackSize(LocalVariables.maxIndex);
+				func->setStackSize(LocalVariables.getMaxIndex());
 			}
 			func->setProcessed();
 
