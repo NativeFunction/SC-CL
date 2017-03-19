@@ -39,13 +39,16 @@ class FunctionData
 	uint8_t pcount;
 	uint8_t rcount;
 	uint16_t stackSize = 2;
-	bool used = false;
-	bool _processed = false;
-	bool _isBuiltIn = false;
+	struct{
+		bool used : 1;
+		bool processed : 1;
+		bool isBuiltin : 1;
+		bool allowUnsafe : 1;
+		bool dontObf : 1;
+	}bitSet = { false, false, false, false, false };
 	std::vector<Opcode *> Instructions;
 	std::vector<FunctionData *> usedFuncs;
 	std::vector<StaticData*> _usedStatics;
-	bool allowUnsafe = false;
 	OptimisationLevel _optLevel = OptimisationLevel::OL_None;
 	void optimisePushBytes();
 	void jumpThreading();
@@ -71,7 +74,7 @@ public:
 	uint32_t getHash()const{ return hash; }
 	const std::string& getName()const{ return name; }
 	void setUsed(Script& scriptBase);
-	bool IsUsed()const{ return used; }
+	bool IsUsed()const{ return bitSet.used; }
 	friend std::ostream& operator << (std::ostream& stream, const FunctionData& fdata);
 	std::string toString() const;
 	void addSwitchCase(int caseVal, const std::string& jumpLoc);
@@ -86,23 +89,26 @@ public:
 	size_t getInstructionCount() const{
 		return Instructions.size();
 	}
-	bool isProcessed()const{ return _processed; }
+	bool isProcessed()const{ return bitSet.processed; }
 	void setProcessed()
 	{
-		_processed = true;
+		bitSet.processed = true;
 		optimisePushBytes();
 		jumpThreading();
 	}
-	bool isBuiltIn()const{ return _isBuiltIn; }
-	void setBuiltIn(){ _isBuiltIn = true; }
+	bool isBuiltIn()const{ return bitSet.isBuiltin; }
+	void setBuiltIn(){ bitSet.isBuiltin = true; }
+
+	bool getDontObfuscate()const{ return bitSet.dontObf; }
+	void setDontObfuscate(){ bitSet.dontObf = true; }
 
 	OptimisationLevel getOptLevel()const{ return _optLevel; }
 	void setOptLevel(OptimisationLevel optLevel){ _optLevel = optLevel; }
 
 	void codeLayoutRandomisation(const Script& scriptData, uint32_t maxBlockSize = 10, uint32_t minBlockSize = 2, bool keepEndReturn = true, bool makeJumpTable = false);
 
-	void setUnsafe(){ allowUnsafe = true; }
-	bool isUnsafe()const{ return allowUnsafe; }
+	void setUnsafe(){ bitSet.allowUnsafe = true; }
+	bool isUnsafe()const{ return bitSet.allowUnsafe; }
 	void moveInto(std::vector<Opcode*>& source);
 #pragma region CreateOpcodes
 	void addOpNop(uint16_t nopCount)
@@ -607,6 +613,9 @@ public:
 
 	}
 	void addOpPushNullPtr(){ Instructions.push_back(new Opcode(OK_PushNullPtr)); }
+
+	void addOpPushConstArrayPtr(const Script& base, const std::vector<int>& values);
+	void addOpPushConstArrayPtr(const Script& base, const std::vector<float>& values);
 
 #pragma endregion
 };

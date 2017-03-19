@@ -1,5 +1,7 @@
 #include "Compiler.h"
 #include "StaticData.h"
+#include <random>
+#include <chrono>
 
 using namespace std;
 using namespace Utils::System;
@@ -1850,11 +1852,449 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 }
 #pragma endregion
 
+#pragma region StringEnc
+void CompileGTAV::BuildTablesCheckEnc()
+{
+	if (isStringEncrypted){
+		auto randomEngine = default_random_engine(chrono::system_clock::now().time_since_epoch().count());
+		__int64 stringTableXOR = ((__int64)randomEngine() << 32) | randomEngine();
+		StringPageData->AddPadding(8);
+		FunctionCount = 0;
+		InstructionCount = 0;
+		AddFunction(HLData->getFunctionFromIndex(FunctionCount), DisableFunctionNames);
+		if (HLData->getFunctionFromIndex(FunctionCount)->getInstruction(0)->getKind() == OK_Nop){
+			ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(0)->getKind());
+			InstructionCount = 1;
+
+		}
+		CodePageData->reserveBytes(4);
+		AddOpcode(Call);
+		size_t entryCallLoc = CodePageData->getTotalSize();
+		AddInt24(0);
+		for (; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
+		{
+			ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
+			CheckSignedJumps();
+			CheckUnsignedJumps();
+		}
+		CheckLabels();
+		fixFunctionJumps();
+
+		for (FunctionCount = 1; FunctionCount < HLData->getFunctionCount(); FunctionCount++)
+		{
+			if (HLData->getFunctionFromIndex(FunctionCount)->IsUsed())
+			{
+				AddFunction(HLData->getFunctionFromIndex(FunctionCount), DisableFunctionNames);
+				for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
+				{
+					ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
+					CheckSignedJumps();
+					CheckUnsignedJumps();
+				}
+				CheckLabels();
+				fixFunctionJumps();
+			}
+		}
+		fixFunctionCalls();
+		StringPageData->padAlign(8);
+		addDecryptionFunction(stringTableXOR, entryCallLoc);
+
+		for (size_t i = 0; i < StringPageData->getPageCount(); i++){
+			size_t pageSize = (i == StringPageData->getPageCount() - 1) ? StringPageData->getLastPageSize() : 0x4000;
+			__int64* ptr = (__int64*)StringPageData->getPageAddress(i);
+			__int64* end = (__int64*)(StringPageData->getPageAddress(i) + pageSize);
+			while (ptr < end){
+				*ptr++ ^= stringTableXOR;
+			}
+		}
+	}
+	else{
+		BuildTables();
+	}
+}
+void CompileGTAV::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
+{
+	CodePageData->reserveBytes(5);
+	ChangeInt24InCodePage(CodePageData->getTotalSize(), entryCallLoc);
+	AddOpcode(Function);
+	AddInt8(0);
+	AddInt16(7);
+	AddInt8(0);//unused function name
+
+	PushInt(0);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(PushString);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(pGet);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Not);
+
+	AddJump(CompileBase::JumpInstructionType::JumpFalse, "__decrypted_not_done");
+
+	CodePageData->reserveBytes(3);
+	AddOpcode(Return);
+	AddInt16(0);
+
+	AddLabel("__decrypted_not_done");
+
+	PushInt(StringPageData->getTotalSize());
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Dup);
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(2);
+
+	AddImm(16383);
+	PushInt(16384);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Div);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(3);
+
+	PushInt(0);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(4);
+
+	AddLabel("__decryptedForBody");
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(4);
+
+	MultImm(16384);
+	CodePageData->reserveBytes(1);
+	AddOpcode(PushString);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Dup);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(5);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(4);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(3);
+
+	AddImm(-1);
+	AddJump(CompileBase::JumpInstructionType::JumpNE, "__decryptedCondFalse");
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(2);
+
+	PushInt(16383);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(And);
+	AddJump(CompileBase::JumpInstructionType::Jump, "__decryptedCondEnd");
+
+	AddLabel("__decryptedCondFalse");
+	PushInt(16384);
+	AddLabel("__decryptedCondEnd");
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Add);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(6);
+
+	AddLabel("__decryptedWhileBody");
+
+	//decrypt lower 32 bits
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(5);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(pGet);
+
+	PushInt(xorValue & 0xFFFFFFFF);
+	CodePageData->reserveBytes(1);
+	AddOpcode(Xor);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(5);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(pSet);
+	//decrypt higher 32 bits
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(5);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetImm1);
+	AddInt8(1);
+
+	PushInt(xorValue >> 32);
+	CodePageData->reserveBytes(1);
+	AddOpcode(Xor);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(5);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetImm1);
+	AddInt8(1);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(5);
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetImmP1);
+	AddInt8(2);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Dup);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(5);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(6);
+
+	AddJump(CompileBase::JumpInstructionType::JumpLT, "__decryptedWhileBody");
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(4);
+	AddImm(1);
+	CodePageData->reserveBytes(1);
+	AddOpcode(Dup);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(4);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(3);
+
+	AddJump(CompileBase::JumpInstructionType::JumpLT, "__decryptedForBody");
+
+	CodePageData->reserveBytes(3);
+	AddOpcode(Return);
+	AddInt16(0);
+
+	CheckSignedJumps();
+	CheckUnsignedJumps();
+	CheckLabels();
+	fixFunctionJumps();
+}
+#pragma endregion
+
 #pragma endregion
 
 #pragma region GTAVPC
 
 #pragma region Opcode_Functions
+void CompileGTAVPC::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
+{
+	CodePageData->reserveBytes(5);
+	ChangeInt24InCodePage(CodePageData->getTotalSize(), entryCallLoc);
+	AddOpcode(Function);
+	AddInt8(0);
+	AddInt16(7);
+	AddInt8(0);//unused function name
+
+	PushInt(0);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(PushString);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(pGet);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Not);
+
+	AddJump(CompileBase::JumpInstructionType::JumpFalse, "__decrypted_not_done");
+
+	CodePageData->reserveBytes(3);
+	AddOpcode(Return);
+	AddInt16(0);
+
+	AddLabel("__decrypted_not_done");
+
+	PushInt(StringPageData->getTotalSize());
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Dup);
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(2);
+
+	AddImm(16383);
+	PushInt(16384);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Div);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(3);
+
+	PushInt(0);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(4);
+
+	AddLabel("__decryptedForBody");
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(4);
+
+	MultImm(16384);
+	CodePageData->reserveBytes(1);
+	AddOpcode(PushString);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Dup);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(5);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(4);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(3);
+
+	AddImm(-1);
+	AddJump(CompileBase::JumpInstructionType::JumpNE, "__decryptedCondFalse");
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(2);
+
+	PushInt(16383);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(And);
+	AddJump(CompileBase::JumpInstructionType::Jump, "__decryptedCondEnd");
+
+	AddLabel("__decryptedCondFalse");
+	PushInt(16384);
+	AddLabel("__decryptedCondEnd");
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Add);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(6);
+
+	AddLabel("__decryptedWhileBody");
+
+	//decrypt lower 32 bits
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(5);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(pGet);
+
+	PushInt(xorValue & 0xFFFFFFFF);
+	CodePageData->reserveBytes(1);
+	AddOpcode(Xor);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(5);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(pSet);
+	//decrypt higher 32 bits
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(5);
+	AddImm(4);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(pGet);
+
+	PushInt(xorValue >> 32);
+	CodePageData->reserveBytes(1);
+	AddOpcode(Xor);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(5);
+	AddImm(4);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(pSet);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(5);
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetImmP1);
+	AddInt8(1);
+
+	CodePageData->reserveBytes(1);
+	AddOpcode(Dup);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(5);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(6);
+
+	AddJump(CompileBase::JumpInstructionType::JumpLT, "__decryptedWhileBody");
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(4);
+	AddImm(1);
+	CodePageData->reserveBytes(1);
+	AddOpcode(Dup);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(SetFrame1);
+	AddInt8(4);
+
+	CodePageData->reserveBytes(2);
+	AddOpcode(GetFrame1);
+	AddInt8(3);
+
+	AddJump(CompileBase::JumpInstructionType::JumpLT, "__decryptedForBody");
+
+	CodePageData->reserveBytes(3);
+	AddOpcode(Return);
+	AddInt16(0);
+
+	CheckSignedJumps();
+	CheckUnsignedJumps();
+	CheckLabels();
+	fixFunctionJumps();
+}
 void CompileGTAVPC::CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount)
 {
 	DoesOpcodeHaveRoom(4);
@@ -2008,7 +2448,7 @@ void CompileGTAVPC::WriteStatics()
 	}
 
 }
-void CompileGTAVPC::XSCWrite(const char* path, bool AddRsc7Header)
+void CompileGTAVPC::YSCWrite(const char* path, bool AddRsc7Header)
 {
 	FilePadding = 0;
 	ClearWriteVars();

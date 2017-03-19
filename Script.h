@@ -37,7 +37,7 @@ class Script
 	Endian _endian;
 	uint8_t _stackWidth;
 	std::string _scriptName;
-	std::unique_ptr<StaticData> scriptParams;
+	std::shared_ptr<StaticData> scriptParams;
 	const bool _isSingleton = false;
 	const bool EntryFunctionPadding = false;
 	const OptimisationLevel _optLevel = OptimisationLevel::OL_None;
@@ -160,6 +160,7 @@ public:
 			auto& block = IgnoredBlocks.back();
 			if (newStaticCount + sizeOf >= block.startIndex){
 				newStaticCount = block.startIndex + block.size;
+				getStaticTable().resize(newStaticCount * 8);
 				IgnoredBlocks.pop_back();
 				continue;
 			}

@@ -100,17 +100,19 @@ static cl::opt<std::string> Option_OutputFileName(
 
 typedef enum ObfLevel { 
 	obf_none,
-	obf_low = 1, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = true, bool makeJumpTable = false
-	obf_default = 2, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = false
-	obf_high = 3, //high: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
-	obf_veryhigh = 4, //very high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
-	obf_max = 5, //max: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_string, //just xor string table
+	obf_low, //low: int maxBlockSize = 50, int minBlockSize = 30, bool keepEndReturn = true, bool makeJumpTable = false
+	obf_default, //default: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = false
+	obf_high, //high: int maxBlockSize = 30, int minBlockSize = 15, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_veryhigh, //very high: int maxBlockSize = 15, int minBlockSize = 5, bool keepEndReturn = false, bool makeJumpTable = true
+	obf_max, //max: int maxBlockSize = 5, int minBlockSize = 1, bool keepEndReturn = false, bool makeJumpTable = true
 } ObfLevel;
 
 static cl::opt<ObfLevel> Option_ObfuscationLevel(
 	cl::desc("Choose obfuscation level:"),
 	cl::cat(CompilerOptions),
 	cl::values(
+	clEnumValN(obf_string, "Fs", "Obfuscate string table - GTA V Only"),
 	clEnumValN(obf_low, "F1", "Enable low obfuscations"),
 	clEnumValN(obf_default, "F2", "Enable default obfuscations"),
 	clEnumValN(obf_high, "F3", "Enable high obfuscations"),
@@ -836,7 +838,7 @@ public:
 				{
 					if (auto func = scriptData.getFunctionFromName(getNameForFunc(funcDecl)))
 					{
-						AddInstructionComment(FuncLoc, string("DeclRefExpr, nothing else, so func it ") + string(type->getTypeClassName()) + " " + to_string(size), func);
+						AddInstruction(FuncLoc, func);
 					}
 					else
 						Throw("Function pointer \"" + key + "\" not found");
@@ -1124,7 +1126,7 @@ public:
 
 		switch (JoaatCased(const_cast<char*>(funcName.c_str())))
 		{
-			#pragma region String
+#pragma region String
 
 			//isAddr is false on memory functions because we dont want to force addressof
 			case JoaatCasedConst("memcpy"):{
@@ -1138,19 +1140,46 @@ public:
 						int itemCount = iCount / stackWidth;
 						if (itemCount == 1)
 						{
-							
+
 							parseExpression(argArray[1], false, true);
 							AddInstruction(PGet);
 							parseExpression(argArray[0], false, true);
 							AddInstruction(PSet);
 						}
-						else {
+						else if (itemCount <= 50){
 							AddInstruction(PushInt, itemCount);
 							parseExpression(argArray[1], false, true);
 							AddInstruction(ToStack);
 							AddInstruction(PushInt, itemCount);
 							parseExpression(argArray[0], false, true);
 							AddInstruction(FromStack);
+						}
+						else {
+							const int maxCopyAmount = 100;
+							LocalVariables.addLevel();
+							int destIndex = LocalVariables.addDecl("dest", 1);
+							int srcIndex = LocalVariables.addDecl("src", 1);
+							parseExpression(argArray[1], false, true);
+							AddInstruction(SetFrame, srcIndex);
+							parseExpression(argArray[0], false, true);
+							AddInstruction(SetFrame, destIndex);
+							for (int remaining = itemCount; remaining > 0; remaining -= maxCopyAmount){
+								int count = min(remaining, maxCopyAmount);
+								AddInstruction(PushInt, count);
+								AddInstruction(GetFrame, srcIndex);
+								AddInstruction(ToStack);
+								AddInstruction(PushInt, count);
+								AddInstruction(GetFrame, destIndex);
+								AddInstruction(FromStack);
+								if (remaining > maxCopyAmount){
+									AddInstruction(GetFrame, srcIndex);
+									AddInstruction(GetImmP, maxCopyAmount);
+									AddInstruction(SetFrame, srcIndex);
+									AddInstruction(GetFrame, destIndex);
+									AddInstruction(GetImmP, maxCopyAmount);
+									AddInstruction(SetFrame, destIndex);
+								}
+							}
 						}
 					}
 					else
@@ -1221,43 +1250,68 @@ public:
 					llvm::APSInt sResult, vResult;
 					if (argArray[2]->EvaluateAsInt(sResult, *context) && sResult.getSExtValue() % scriptData.getBuildPlatformSize() == 0 && argArray[1]->EvaluateAsInt(vResult, *context))
 					{
+
 						if (sResult.getSExtValue() <= 0)
 							Throw("memset size must greater then 0", rewriter, callee->getSourceRange());
 						if ((uint32_t)vResult.getExtValue() > 255)
 							Throw("memset value must be a byte", rewriter, callee->getSourceRange());
-						
-						LocalVariables.addLevel();
-						int destIndex = LocalVariables.addDecl("__memset-loop-dest", 1);
-						int incIndex = LocalVariables.addDecl("__memset-loop-inc", 1);
+						int value = vResult.getSExtValue() & 0xFF;
+						value = value << 24 | value << 16 | value << 8 | value;
+						int itemCount = sResult.getSExtValue() / scriptData.getBuildPlatformSize();
+						if (itemCount < 50){
+							if (value == 0){
+								for (int i = 0; i < itemCount; i++){
+									AddInstruction(PushNullPtr);
+								}
+							}
+							else{
+								for (int i = 0; i < itemCount; i++){
+									AddInstruction(PushInt, value);//value to set
+								}
+							}
+							AddInstruction(PushInt, itemCount);
+							parseExpression(argArray[0], false, true);
+							AddInstruction(FromStack);
+						}
+						else{
+							LocalVariables.addLevel();
+							int destIndex = LocalVariables.addDecl("__memset-loop-dest", 1);
+							int incIndex = LocalVariables.addDecl("__memset-loop-inc", 1);
 
-						parseExpression(argArray[0], false, true);//dest
-						AddInstruction(SetFrame, destIndex);
-						AddInstruction(PushInt, 0);
-						AddInstruction(SetFrame, incIndex);
+							parseExpression(argArray[0], false, true);//dest
+							AddInstruction(SetFrame, destIndex);
+							AddInstruction(PushInt, 0);
+							AddInstruction(SetFrame, incIndex);
 
-						AddInstruction(Label, "__memset-loop-" + to_string(loopLblCount));
-						AddInstruction(GetFrame, incIndex);
-						AddInstruction(PushInt, sResult.getExtValue());
-						AddInstruction(JumpGE, "__memset-loopend-" + to_string(loopLblCount));
+							AddInstruction(Label, "__memset-loop-" + to_string(loopLblCount));
+							AddInstruction(GetFrame, incIndex);
+							AddInstruction(PushInt, sResult.getExtValue());
+							AddInstruction(JumpGE, "__memset-loopend-" + to_string(loopLblCount));
 
-						AddInstruction(PushInt, (uint8_t)vResult.getSExtValue());//value to set
-						AddInstruction(GetFrame, destIndex);
-						AddInstruction(GetFrame, incIndex);
-						AddInstruction(Add);
-						AddInstruction(PSet);
+							if (value == 0){
+								AddInstruction(PushNullPtr);
+							}
+							else{
+								AddInstruction(PushInt, value);//value to set
+							}
+							AddInstruction(GetFrame, destIndex);
+							AddInstruction(GetFrame, incIndex);
+							AddInstruction(Add);
+							AddInstruction(PSet);
 
-						AddInstruction(GetFrame, incIndex);
-						AddInstruction(AddImm, scriptData.getBuildPlatformSize());
-						AddInstruction(SetFrame, incIndex);
-						AddInstruction(Jump, "__memset-loop-" + to_string(loopLblCount));
-						AddInstruction(Label, "__memset-loopend-" + to_string(loopLblCount));
-						LocalVariables.removeLevel();
+							AddInstruction(GetFrame, incIndex);
+							AddInstruction(GetImmP, 1);
+							AddInstruction(SetFrame, incIndex);
+							AddInstruction(Jump, "__memset-loop-" + to_string(loopLblCount));
+							AddInstruction(Label, "__memset-loopend-" + to_string(loopLblCount));
+							LocalVariables.removeLevel();
+						}
 					}
 					else
 					{
 
 						//TODO: fix for pc
-						
+
 						LocalVariables.addLevel();
 
 						int destIndex = LocalVariables.addDecl("__memset-loop-dest", 1);
@@ -1439,8 +1493,8 @@ public:
 				Throw("getHashKey must have signature \"extern __intrinsic int getHashKey(char *string);\"", rewriter, callee->getSourceRange());
 				return false;
 			} break;
-			#pragma endregion
-			#pragma region Misc_Opcodes
+#pragma endregion
+#pragma region Misc_Opcodes
 			case JoaatCasedConst("__varIndex"): {
 				ChkHashCol("__varIndex");
 
@@ -1456,7 +1510,7 @@ public:
 							AddInstruction(PushInt, index);
 							return true;
 						}
-						else if((sData = scriptData.findStatic(str)))
+						else if ((sData = scriptData.findStatic(str)))
 						{
 							AddInstruction(PushInt, sData->getIndex());
 							return true;
@@ -1490,8 +1544,8 @@ public:
 					Throw("__addressOFReturnAddress must have signature \"extern __unsafeIntrinsic int* __addressOFReturnAddress();\"", rewriter, callee->getSourceRange());
 				}
 			} break;
-			#pragma endregion
-			#pragma region Math/Conversions
+#pragma endregion
+#pragma region Math/Conversions
 			case JoaatCasedConst("reinterpretIntToFloat"): {
 				ChkHashCol("reinterpretIntToFloat");
 				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isIntegerType())
@@ -1808,44 +1862,44 @@ public:
 				Throw("bit_flip must have signature \"extern __intrinsic bool bit_flip(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
 			} break;
 			case JoaatCasedConst("vector3ToVector2"): {
-					ChkHashCol("vector3ToVector2");
+				ChkHashCol("vector3ToVector2");
 
-					if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-					{
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 2 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+				{
 
-						parseExpression(argArray[0], false, true);
-						AddInstruction(Drop);
-						return true;
-					}
-					Throw("vector3ToVector2 must have signature \"extern __intrinsic vector2 vector3ToVector2(vector3 vector)\"", rewriter, callee->getSourceRange());
-					return false;
-				} break;
+					parseExpression(argArray[0], false, true);
+					AddInstruction(Drop);
+					return true;
+				}
+				Throw("vector3ToVector2 must have signature \"extern __intrinsic vector2 vector3ToVector2(vector3 vector)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
 			case JoaatCasedConst("vector2ToVector3"): {
-					ChkHashCol("vector2ToVector3");
+				ChkHashCol("vector2ToVector3");
 
-					if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 2)
-					{
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 2)
+				{
 
-						parseExpression(argArray[0], false, true);
-						AddInstruction(PushFloat, 0.0f);
-						return true;
-					}
-					Throw("vector2ToVector3 must have signature \"extern __intrinsic vector3 vector2ToVector3(vector2 vector)\"", rewriter, callee->getSourceRange());
-					return false;
-				} break;
+					parseExpression(argArray[0], false, true);
+					AddInstruction(PushFloat, 0.0f);
+					return true;
+				}
+				Throw("vector2ToVector3 must have signature \"extern __intrinsic vector3 vector2ToVector3(vector2 vector)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
 			case JoaatCasedConst("vector3Flatten"): {
-						ChkHashCol("vector3Flatten");
+				ChkHashCol("vector3Flatten");
 
-						if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
-						{
-							parseExpression(argArray[0], false, true);
-							AddInstruction(Drop);
-							AddInstruction(PushFloat, 0.0f);
-							return true;
-						}
-						Throw("vector3Flatten must have signature \"extern __intrinsic vector3 vector3Flatten(vector3 vector)\"", rewriter, callee->getSourceRange());
-						return false;
-					} break;
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
+				{
+					parseExpression(argArray[0], false, true);
+					AddInstruction(Drop);
+					AddInstruction(PushFloat, 0.0f);
+					return true;
+				}
+				Throw("vector3Flatten must have signature \"extern __intrinsic vector3 vector3Flatten(vector3 vector)\"", rewriter, callee->getSourceRange());
+				return false;
+			} break;
 			case JoaatCasedConst("setLoDWord"): {
 				ChkHashCol("setLoDWord");
 
@@ -1900,10 +1954,10 @@ public:
 
 				if (scriptData.getStackWidth() == 8){
 					if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1 && argArray[0]->getType()->isPointerType()){
-						AddInstruction(PushNullPtr);
+						//AddInstruction(PushNullPtr);
 						parseExpression(argArray[0], false, true);
 						AddInstruction(PGet);
-						AddInstruction(Or);
+						//AddInstruction(Or);
 						return true;
 					}
 					else{
@@ -1919,11 +1973,11 @@ public:
 
 				if (scriptData.getStackWidth() == 8){
 					if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1 && argArray[0]->getType()->isPointerType()){
-						AddInstruction(PushNullPtr);
+						//AddInstruction(PushNullPtr);
 						parseExpression(argArray[0], false, true);
 						AddInstruction(AddImm, 4);
 						AddInstruction(PGet);
-						AddInstruction(Or);
+						//AddInstruction(Or);
 						return true;
 					}
 					else{
@@ -1932,6 +1986,56 @@ public:
 				}
 				else{
 					Throw("getHiDWord intrinsic is only available on 64 bit builds");
+				}
+			} break;
+			case JoaatCasedConst("getByte"): {
+				ChkHashCol("getByte");
+				if (scriptData.getBuildType() == BT_GTAV){
+					if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1 && argArray[0]->getType()->isPointerType()){
+						//AddInstruction(PushNullPtr);
+						parseExpression(argArray[0], false, true);
+						AddInstruction(PGet);
+						AddInstruction(PushInt, 255);
+						AddInstruction(And);
+						//AddInstruction(Or);
+						return true;
+					}
+					else{
+						Throw("getByte must have signature \"extern __intrinsic unsigned char getByte(void* addr)\"", rewriter, callee->getSourceRange());
+					}
+				}
+				else{
+					Throw("getByte intrinsic is only available for GTA V", rewriter, callee->getSourceRange());
+				}
+			} break;
+			case JoaatCasedConst("setByte"): {
+				ChkHashCol("setByte");
+				if (scriptData.getBuildType() == BT_GTAV){
+					if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1){
+						parseExpression(argArray[0], false, true);
+						AddInstruction(PushInt, 0);
+						AddInstruction(PushInt, 7);
+						llvm::APSInt result;
+						if (argArray[1]->EvaluateAsInt(result, *context)){
+							if (result.getExtValue() > 0xFF){
+								Warn("Result does not fit into a byte", rewriter, argArray[1]->getSourceRange());
+							}
+							AddInstruction(PushInt, result.getExtValue() & 0xFF);
+						}
+						else{
+							parseExpression(argArray[1], false, true);
+							AddInstruction(PushInt, 0xFF);
+							AddInstruction(And);
+						}
+						AddInstruction(Native, "set_bits_in_range", (scriptData.getBuildPlatform() == P_PC ? 0x8EF07E15701D61ED : JoaatConst("set_bits_in_range")), 4, 0);
+						return true;
+					}
+					else{
+						Throw("setByte must have signature \"extern __intrinsic void setByte(void* addr, unsigned char value)\"", rewriter, callee->getSourceRange());
+					}
+				}
+				else{
+					Throw("setByte intrinsic is only available for GTA V", rewriter, callee->getSourceRange());
 				}
 			} break;
 			#pragma endregion
@@ -2021,10 +2125,11 @@ public:
 							Throw("getPtrFromArrayIndex item size expected a value between 1 and 65535, got'" + to_string(itemSize.getSExtValue()) + "'", rewriter, argArray[2]->getSourceRange());
 						
 						llvm::APSInt index;
-						if (Option_OptimizationLevel > OptimisationLevel::OL_Trivial && argArray[1]->EvaluateAsInt(index ,*context))
+						if (Option_OptimizationLevel > OptimisationLevel::OL_Trivial && argArray[1]->EvaluateAsInt(index ,*context) &&  ((itemSize.getSExtValue() * index.getSExtValue()) < 0xFFFF))
 						{
 							parseExpression(argArray[0], false, true);
 							AddInstruction(GetImmP, 1 + itemSize.getSExtValue() * index.getSExtValue());
+							return true;
 						}
 						else
 						{
@@ -2527,9 +2632,16 @@ public:
 				ChkHashCol("__ptrToStack");
 
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType()){
-					parseExpression(argArray[1], false, true);
-					parseExpression(argArray[0], false, true);
-					AddInstruction(ToStack);
+					llvm::APSInt result;
+					if (argArray[1]->EvaluateAsInt(result, *context) && result == 1){
+						parseExpression(argArray[0], false, true);
+						AddInstruction(PGet);
+					}
+					else{
+						parseExpression(argArray[1], false, true);
+						parseExpression(argArray[0], false, true);
+						AddInstruction(ToStack);
+					}
 					return true;
 				}
 				else{
@@ -2540,9 +2652,16 @@ public:
 				ChkHashCol("__ptrFromStack");
 
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType()){
-					parseExpression(argArray[1], false, true);
-					parseExpression(argArray[0], false, true);
-					AddInstruction(FromStack);
+					llvm::APSInt result;
+					if (argArray[1]->EvaluateAsInt(result, *context) && result == 1){
+						parseExpression(argArray[0], false, true);
+						AddInstruction(PSet);
+					}
+					else{
+						parseExpression(argArray[1], false, true);
+						parseExpression(argArray[0], false, true);
+						AddInstruction(FromStack);
+					}
 					return true;
 				}
 				else{
@@ -2589,60 +2708,108 @@ public:
 
 	void parseCondition(const Expr* conditional, const string& trueLoc, const string& falseLoc){
 		const BinaryOperator* binaryOp;
+		static int counter = 0;
+		string label = "__pcf_" + to_string(counter++);
 		if (binaryOp = dyn_cast<BinaryOperator>(conditional->IgnoreParens()))
 		{
 			switch (binaryOp->getOpcode()){
 				case BO_LAnd:
-					parseJumpFalse(binaryOp->getLHS(), falseLoc);
+					//parseJumpFalse(binaryOp->getLHS(), falseLoc);
 					//parseJumpFalse(binaryOp->getRHS(), falseLoc);
+					parseCondition(binaryOp->getLHS(), label, falseLoc);
+					AddJumpInlineCheckStr(Label, label);
 					parseCondition(binaryOp->getRHS(), trueLoc, falseLoc);
-					break;
+					return;
 				case BO_LOr:
-					parseJumpTrue(binaryOp->getLHS(), trueLoc);
+					//parseJumpTrue(binaryOp->getLHS(), trueLoc);
+					parseCondition2(binaryOp->getLHS(), trueLoc, label);
+					AddJumpInlineCheckStr(Label, label);
 					parseCondition(binaryOp->getRHS(), trueLoc, falseLoc);
-					break;
+					return;
 				case BO_Comma:
 					parseExpression(binaryOp->getLHS());
 					parseCondition(binaryOp->getRHS(), trueLoc, falseLoc);
-					break;
+					return;
 				default:
 					parseExpression(conditional, false, true);
+					if (conditional->getType()->isAnyComplexType())
+					{
+						ComplexToBoolean(conditional->getType()->isComplexType());
+					}
+					else if (conditional->getType()->isRealFloatingType())
+					{
+						AddInstruction(PushFloat, 0.0);
+						AddInstruction(FCmpNe);
+					}
 					AddJumpInlineCheckStr(JumpFalse, falseLoc);
-					break;
+					return;
 
 			}
 		}
 		else{
 			parseExpression(conditional, false, true);
+			if (conditional->getType()->isAnyComplexType())
+			{
+				ComplexToBoolean(conditional->getType()->isComplexType());
+			}
+			else if (conditional->getType()->isRealFloatingType())
+			{
+				AddInstruction(PushFloat, 0.0);
+				AddInstruction(FCmpNe);
+			}
 			AddJumpInlineCheckStr(JumpFalse, falseLoc);
 		}
 	}
 	void parseCondition2(const Expr* conditional, const string& trueLoc, const string& falseLoc){
 		const BinaryOperator* binaryOp;
+		static int counter = 0;
+		string label = "__pct_" + to_string(counter++);
 		if (binaryOp = dyn_cast<BinaryOperator>(conditional->IgnoreParens()))
 		{
 			switch (binaryOp->getOpcode()){
 				case BO_LAnd:
-					parseJumpFalse(binaryOp->getLHS(), falseLoc);
+					//parseJumpFalse(binaryOp->getLHS(), falseLoc);
+					parseCondition(binaryOp->getLHS(), label, falseLoc);
+					AddJumpInlineCheckStr(Label, label);
 					parseCondition2(binaryOp->getRHS(), trueLoc, falseLoc);
-					break;
+					return;
 				case BO_LOr:
-					parseJumpTrue(binaryOp->getLHS(), trueLoc);
+					//parseJumpTrue(binaryOp->getLHS(), trueLoc);
+					parseCondition2(binaryOp->getLHS(), trueLoc, label);
+					AddJumpInlineCheckStr(Label, label);
 					parseCondition2(binaryOp->getRHS(), trueLoc, falseLoc);
-					break;
+					return;
 				case BO_Comma:
 					parseExpression(binaryOp->getLHS());
 					parseCondition2(binaryOp->getRHS(), trueLoc, falseLoc);
-					break;
+					return;
 				default:
 					parseExpression(conditional, false, true);
+					if (conditional->getType()->isAnyComplexType())
+					{
+						ComplexToBoolean(conditional->getType()->isComplexType());
+					}
+					else if (conditional->getType()->isRealFloatingType())
+					{
+						AddInstruction(PushFloat, 0.0);
+						AddInstruction(FCmpNe);
+					}
 					AddJumpInlineCheckStr(JumpTrue, trueLoc);
-					break;
+					return;
 
 			}
 		}
 		else{
 			parseExpression(conditional, false, true);
+			if (conditional->getType()->isAnyComplexType())
+			{
+				ComplexToBoolean(conditional->getType()->isComplexType());
+			}
+			else if (conditional->getType()->isRealFloatingType())
+			{
+				AddInstruction(PushFloat, 0.0);
+				AddInstruction(FCmpNe);
+			}
 			AddJumpInlineCheckStr(JumpTrue, trueLoc);
 		}
 	}
@@ -2875,7 +3042,7 @@ public:
 			parseStatement(
 				body,
 				"__for_end_" + currentCounter,
-				(increment || conditional ? "__for_continue_" :"__for_body_") + currentCounter);
+				(increment || conditional ? "__for_continue_" : "__for_body_") + currentCounter);
 
 			if (increment || conditional){
 				AddJumpInlineCheckStr(Label, "__for_continue_" + currentCounter);
@@ -2976,16 +3143,18 @@ public:
 			AddJumpInlineCheckStrComment(Jump, "contstmt jmp", continueLoc);
 		}
 		else if (isa<DefaultStmt>(s)) {
-			DefaultStmt *caseD = cast<DefaultStmt>(s);
+			Throw("Default case should be handled");
+			/*DefaultStmt *caseD = cast<DefaultStmt>(s);
 			AddInstruction(Label, to_string(caseD->getLocStart().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
 			LocalVariables.addLevel();
 
 			if (caseD->getSubStmt())
 				parseStatement(caseD->getSubStmt(), breakLoc, continueLoc);
-			LocalVariables.removeLevel();
+			LocalVariables.removeLevel();*/
 		}
 		else if (isa<CaseStmt>(s)) {
-			CaseStmt *caseS = cast<CaseStmt>(s);
+			Throw("Case Statement should be handled");
+			/*CaseStmt *caseS = cast<CaseStmt>(s);
 			AddInstruction(Label, to_string(caseS->getLocStart().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
 
 			LocalVariables.addLevel();
@@ -2994,57 +3163,89 @@ public:
 
 			if (caseS->getSubStmt())
 				parseStatement(caseS->getSubStmt(), breakLoc, continueLoc);
-			LocalVariables.removeLevel();
+			LocalVariables.removeLevel();*/
 		}
 		else if (isa<SwitchStmt>(s)) {
+			static int counter = 0;
+			string label = "__sw_" + to_string(counter++) + "_";
+			string endLabel = label + "end";
 			SwitchStmt *switchStmt = cast<SwitchStmt>(s);
 			parseExpression(switchStmt->getCond(), false, true);
 
-			//Build case switch list first
-			SwitchCase *switchCaseList = switchStmt->getSwitchCaseList();
-			DefaultStmt *defaultCase = NULL;
-			struct switchCase { int val; string loc; };
-			stack<switchCase> caseLabels;
-			while (switchCaseList != NULL)
-			{
-				if (isa<CaseStmt>(switchCaseList))
+			struct switchCaseLocPair {
+				int val;
+				string loc; 
+			};
+			vector<switchCaseLocPair> caseLabels;
+			int labelCount = 0;
+			unordered_map<SwitchCase*, pair<string, SwitchCase*>> caseMap;
+			
+			string defaultLoc = "";
+
+			auto addLabel = [&](SwitchCase* sCase, const string& loc){
+				if (isa<CaseStmt>(sCase))
 				{
-					CaseStmt *caseS = cast<CaseStmt>(switchCaseList);
-					Expr::EvalResult result;
-					if (caseS->getLHS()->EvaluateAsRValue(result, *context)) {
-						if (result.Val.isInt())
+					CaseStmt *caseS = cast<CaseStmt>(sCase);
+
+					llvm::APSInt result;
+					if (caseS->getLHS()->EvaluateAsInt(result, *context)) {
+						int val;
+						if (!CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
 						{
-							int val;
-							if (CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
-							{
-								caseLabels.push({ val, to_string(caseS->getLocStart().getRawEncoding()) + scriptData.getInlineJumpLabelAppend() });
-							}
-							else
-							{
-								caseLabels.push({ (int)result.Val.getInt().getSExtValue(), to_string(caseS->getLocStart().getRawEncoding()) + scriptData.getInlineJumpLabelAppend() });
+							val = result.getSExtValue();
+						}
+						if (caseS->getRHS()){
+							if (caseS->getRHS()->EvaluateAsInt(result, *context)) {
+								int valR;
+								if (!CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &valR))
+								{
+									valR = result.getSExtValue();
+								}
+								if (val > valR){
+									Throw("GNU switch range min value is greater than max value", rewriter, SourceRange(caseS->getLHS()->getLocStart(), caseS->getRHS()->getLocEnd()));
+								}
+								for (int i = val; i <= valR; i++){
+									caseLabels.push_back({ i, loc });
+								}
 							}
 						}
-						else if (result.Val.isFloat())
-						{
-							float f = result.Val.getFloat().convertToFloat();
-							caseLabels.push({ *(int*)&f, to_string(caseS->getLocStart().getRawEncoding()) });
+						else{
+							caseLabels.push_back({ val, loc });
 						}
-						else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getSourceRange());
 					}
 					else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getSourceRange());
 
 				}
-				else if (isa<DefaultStmt>(switchCaseList))
+				else if (isa<DefaultStmt>(sCase))
 				{
-					if (defaultCase) {
-						Throw("Multiple default statements found in switch", rewriter, defaultCase->getLocStart(), switchCaseList->getLocEnd());
+					if (defaultLoc.size() != 0) {
+						Throw("Multiple default statements found in switch", rewriter, sCase->getSourceRange());
 					}
-					defaultCase = cast<DefaultStmt>(switchCaseList);
+					defaultLoc = loc;
 				}
-				else
-					llvm::errs() << "Unexpected Statement: " << switchCaseList->getStmtClassName();
-				switchCaseList = switchCaseList->getNextSwitchCase();
+				return;
+			};
+			for (auto stmt : switchStmt->getBody()->children()){
+				if (stmt && isa<SwitchCase>(stmt)){
+					string caseLoc = label + (isa<DefaultStmt>(stmt) ? "def" : to_string(labelCount++)) + scriptData.getInlineJumpLabelAppend();
+					auto sCase = cast<SwitchCase>(stmt);
+					SwitchCase *caseCode = sCase;
+					addLabel(sCase, caseLoc);
+					while (isa<SwitchCase>(caseCode->getSubStmt())){
+						caseCode = cast<SwitchCase>(caseCode->getSubStmt());
+						addLabel(caseCode, caseLoc);
+					}
+					auto it = caseMap.find(sCase);
+					if (it == caseMap.end()){
+						caseMap.insert({ sCase, {caseLoc, caseCode } });
+					}
+					else{
+						Throw("Error");
+					}
+
+				}
 			}
+
 			int sSize = caseLabels.size();
 			if (!sSize)
 			{
@@ -3057,45 +3258,62 @@ public:
 				LocalVariables.addLevel();
 				int index = LocalVariables.addDecl("Switch Temp", 1);
 				AddInstruction(Dup);
-				AddInstructionComment(SetFrame, "Switch temporary variable",index);
+				AddInstructionComment(SetFrame, "Switch temporary variable", index);
 				AddInstruction(Switch);
 				int i = 0;
-				while (caseLabels.size())
-				{
+				for (auto sCase : caseLabels){
 					if (i++ == 255)
 					{
 						i = 1;
 						AddInstructionComment(GetFrame, "Switch temporary variable", index);
 						AddInstruction(Switch);
 					}
-					scriptData.getCurrentFunction()->addSwitchCase(caseLabels.top().val, caseLabels.top().loc);
-					caseLabels.pop();
+					scriptData.getCurrentFunction()->addSwitchCase(sCase.val, sCase.loc);
 				}
 				LocalVariables.removeLevel();
 			}
 			else
 			{
 				AddInstruction(Switch);
-				while (caseLabels.size())
-				{
-					scriptData.getCurrentFunction()->addSwitchCase(caseLabels.top().val, caseLabels.top().loc);
-					caseLabels.pop();
+				for (auto sCase : caseLabels){
+					scriptData.getCurrentFunction()->addSwitchCase(sCase.val, sCase.loc);
 				}
 			}
-			
 
-			if (defaultCase)
+
+			if (defaultLoc.size())
 			{
-				scriptData.getCurrentFunction()->setSwitchDefaultCaseLoc(to_string(defaultCase->getLocStart().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
+				scriptData.getCurrentFunction()->setSwitchDefaultCaseLoc(defaultLoc);
 			}
 			else
 			{
-				scriptData.getCurrentFunction()->setSwitchDefaultCaseLoc(to_string(switchStmt->getLocEnd().getRawEncoding()) + scriptData.getInlineJumpLabelAppend());
+				scriptData.getCurrentFunction()->setSwitchDefaultCaseLoc(endLabel + scriptData.getInlineJumpLabelAppend());
 			}
+			LocalVariables.addLevel();
+			for (auto stmt : switchStmt->getBody()->children()){
+				if (stmt)
+				{
+					if (isa<SwitchCase>(stmt)){
+						auto sCase = cast<SwitchCase>(stmt);
+						auto it = caseMap.find(sCase);
+						if (it != caseMap.end()){
+							AddInstruction(Label, it->second.first);
+							parseStatement(it->second.second->getSubStmt(), endLabel, continueLoc);
+						}
+						else{
+							Throw("Error");
+						}
 
-			//parse all
-			parseStatement(switchStmt->getBody(), to_string(switchStmt->getLocEnd().getRawEncoding()), continueLoc);
-			AddJumpInlineCheck(Label, switchStmt->getLocEnd().getRawEncoding());
+
+					}
+					else{
+						parseStatement(stmt, endLabel, continueLoc);
+					}
+				}
+			}
+			LocalVariables.removeLevel();
+			
+			AddJumpInlineCheckStr(Label, endLabel);
 		}
 		else if (isa<GotoStmt>(s))
 		{
@@ -3587,7 +3805,8 @@ public:
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);
 					if (isLtoRValue) 
 					{
-						if (!icast->getSubExpr()->isEvaluatable(*context, Expr::SE_NoSideEffects))
+						const BinaryOperator* bOp;
+						if (!icast->getSubExpr()->isEvaluatable(*context, Expr::SE_NoSideEffects) && !((bOp = dyn_cast<BinaryOperator>(icast->getSubExpr())) && (bOp->getOpcode() == BO_LOr || bOp->getOpcode() == BO_LAnd)))
 						{
 							AddInstruction(IsNotZero);
 						}
@@ -3832,7 +4051,6 @@ public:
 				if (isa<IntegerLiteral>(subE)) {
 					const IntegerLiteral *literal = cast<const IntegerLiteral>(subE);
 					AddInstructionConditionally(isLtoRValue, PushInt, ~(int)literal->getValue().getSExtValue());
-					
 				}
 				else if (isa<Expr>(subE))
 				{
@@ -3850,8 +4068,8 @@ public:
 						}
 						else
 						{
-							AddInstruction(AddImm, 1);
-							AddInstruction(Neg);
+							AddInstruction(PushInt, -1);
+							AddInstruction(Xor);
 						}
 					}
 				}
@@ -4385,7 +4603,17 @@ public:
 			{
 				if (isLtoRValue)
 				{
-					parseExpression(bOp->getLHS(), false, true);
+					static int counter = 0;
+					string label = "__and_" + to_string(counter++);
+					parseCondition(bOp, label + "_true", label + "_false");
+					AddJumpInlineCheckStr(Label, label + "_true");
+					AddInstruction(PushInt, 1);
+					AddJumpInlineCheckStr(Jump, label + "_end");
+					AddJumpInlineCheckStr(Label, label + "_false");
+					AddInstruction(PushNullPtr);
+					AddJumpInlineCheckStr(Label, label + "_end");
+
+					/*parseExpression(bOp->getLHS(), false, true);
 					if (bOp->getLHS()->getType()->isAnyComplexType())
 					{
 						ComplexToBoolean(bOp->getLHS()->getType()->isComplexType());
@@ -4396,7 +4624,7 @@ public:
 						AddInstruction(FCmpNe);
 					}
 					AddInstruction(Dup);
-					AddJumpInlineCheck(JumpFalse, bOp->getRHS()->getLocEnd().getRawEncoding());
+					AddJumpInlineCheckStr(JumpFalse, label);
 					AddInstruction(Drop);
 					parseExpression(bOp->getRHS(), false, true);
 					if (bOp->getRHS()->getType()->isAnyComplexType())
@@ -4408,7 +4636,8 @@ public:
 						AddInstruction(PushFloat, 0.0);
 						AddInstruction(FCmpNe);
 					}
-					AddJumpInlineCheck(Label, bOp->getRHS()->getLocEnd().getRawEncoding());
+					AddJumpInlineCheckStr(Label, label);*/
+
 				}
 				else
 				{
@@ -4422,9 +4651,16 @@ public:
 			{
 				if (isLtoRValue)
 				{
-
-
-					parseExpression(bOp->getLHS(), false, true);
+					static int counter = 0;
+					string label = "__or_" + to_string(counter++);
+					parseCondition(bOp, label + "_true", label + "_false");
+					AddJumpInlineCheckStr(Label, label + "_true");
+					AddInstruction(PushInt, 1);
+					AddJumpInlineCheckStr(Jump, label + "_end");
+					AddJumpInlineCheckStr(Label, label + "_false");
+					AddInstruction(PushNullPtr);
+					AddJumpInlineCheckStr(Label, label + "_end");
+					/*parseExpression(bOp->getLHS(), false, true);
 					if (bOp->getLHS()->getType()->isAnyComplexType())
 					{
 						ComplexToBoolean(bOp->getLHS()->getType()->isComplexType());
@@ -4435,7 +4671,7 @@ public:
 						AddInstruction(FCmpNe);
 					}
 					AddInstruction(Dup);
-					AddJumpInlineCheck(JumpTrue, bOp->getRHS()->getLocEnd().getRawEncoding());
+					AddJumpInlineCheckStr(JumpTrue, label);
 					AddInstruction(Drop);
 					parseExpression(bOp->getRHS(), false, true);
 					if (bOp->getRHS()->getType()->isAnyComplexType())
@@ -4447,7 +4683,7 @@ public:
 						AddInstruction(PushFloat, 0.0);
 						AddInstruction(FCmpNe);
 					}
-					AddJumpInlineCheck(Label, bOp->getRHS()->getLocEnd().getRawEncoding());
+					AddJumpInlineCheckStr(Label, label);*/
 				}
 				else
 				{
@@ -4920,6 +5156,7 @@ public:
 								const Type* pTypePtr = bOp->getRHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
 								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 								int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
+
 								AddInstructionConditionally(pSize > 1, MultImm, pSize);
 							}
 
@@ -5544,7 +5781,7 @@ public:
 			}
 			if (getSizeFromBytes(getSizeOfType(type)) > 1 && (type->isStructureType() || type->isUnionType() || type->isAnyComplexType()))
 			{
-				AddInstructionComment(ToStack, "GetArray2");
+				AddInstructionComment(ToStack, "GetArray");
 			}
 			else
 			{
@@ -5595,11 +5832,11 @@ public:
 				int size = getSizeOfType(type);
 				if (size % scriptData.getStackWidth() == 0){
 					AddInstructionConditionally(size > 1, MultImm, size / scriptData.getStackWidth())
-					AddInstructionConditionally(size > 1, GetImmPStack);
+					AddInstructionConditionallyComment(size > 1, GetImmPStack, "GetArrayP");
 				}
 				else{
 					AddInstructionConditionally(size > 1, MultImm, size);
-					AddInstruction(Add);
+					AddInstructionComment(Add, "GetArrayP");
 				}
 			}
 		}
@@ -5642,7 +5879,7 @@ public:
 				}
 				
 			}
-			AddInstructionComment(PSet, "SetArray2");
+			AddInstructionComment(PSet, "SetArray");
 		}
 
 
@@ -5679,6 +5916,9 @@ public:
 			
 
 			FunctionData* func = scriptData.createFunction(getNameForFunc(f), paramSize, getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), true);
+			if (f->hasAttr<MinSizeAttr>()){
+				func->setDontObfuscate();
+			}
 			auto identifier = f->getIdentifier();
 			if (identifier && identifier->isStr("main"))//cant use f->isMain as its now freestanding exe
 			{
@@ -5728,7 +5968,8 @@ public:
 
 			switch (Option_ObfuscationLevel)
 			{
-				case obf_none: break;
+				case obf_none:
+				case obf_string: break;
 				case obf_low: func->codeLayoutRandomisation(scriptData, 50, 30, true, false); break;
 				case obf_default: func->codeLayoutRandomisation(scriptData, 30, 15, false, false); break;
 				case obf_high:func->codeLayoutRandomisation(scriptData, 30, 15, false, true); break;
@@ -6983,12 +7224,18 @@ void WriteScriptFile(const string& outDir)
 				case P_PS3:
 				{
 					CompileGTAV c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
+					if (Option_ObfuscationLevel > obf_none){
+						c.setEncryptStrings();
+					}
 					c.Compile(outDir);
 				}
 				break;
 				case P_PC:
 				{
 					CompileGTAVPC c(*scriptData, Option_PCVerison, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
+					if (Option_ObfuscationLevel > obf_none){
+						c.setEncryptStrings();
+					}
 					c.Compile(outDir);
 				}
 				break;

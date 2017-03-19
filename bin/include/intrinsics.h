@@ -83,6 +83,11 @@ extern __intrinsic int getHiDWord(void* addr);
 #pragma endregion //}
 #endif
 
+#ifdef __GTAV__
+extern __intrinsic unsigned char getByte(void* addr);
+extern __intrinsic void setByte(void* addr, unsigned char value);
+#endif
+
 #pragma region Custom_ASM //{
 // These perform the operation on the item(or vector) on top of the stack
 // This can lead to dangerous behaviour if you arent sure what is currently on the stack

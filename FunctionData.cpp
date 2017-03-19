@@ -17,33 +17,178 @@ extern uint8_t stackWidth;
 bool FunctionData::tryPop2Ints(int & i1, int & i2)
 {
 	int size = Instructions.size();
-	if (size > 2)
+	if (size >= 2)
 	{
-		Opcode *last = Instructions[size - 1], *prev = Instructions[size - 2];
-		if (last->getKind() == OK_PushInt && prev->getKind() == OK_PushInt)
-		{
-			i1 = prev->getInt();
-			delete prev;
-			i2 = last->getInt();
-			delete prev;
-			Instructions._Pop_back_n(2);
-			return true;
+		auto last = Instructions.back();
+		if (last->getKind() == OK_PushInt){
+			auto prev = Instructions[size - 2];
+			switch (prev->getKind()){
+				case OK_PushInt:
+					i1 = prev->getInt();
+					delete prev;
+					i2 = last->getInt();
+					delete prev;
+					Instructions._Pop_back_n(2);
+					return true;
+				case OK_GetFrame:
+				{
+					if (size >= 4){
+						auto prev2 = Instructions[size - 3];
+						if (prev2->getKind() == OK_SetFrame && prev2->getUShort(0) == prev->getUShort(0)){
+							auto prev3 = Instructions[size - 4];
+							if (prev3->getKind() == OK_PushInt){
+								i2 = last->getInt();
+								delete last;
+								i1 = prev3->getInt();
+								delete prev;
+								Instructions._Pop_back_n(2);
+								return true;
+							}
+						}
+					}
+				}
+				break;
+				case OK_GetStatic:
+				{
+					if (size >= 4){
+						auto prev2 = Instructions[size - 3];
+						if (prev2->getKind() == OK_SetStatic && prev->getStaticData()->isEqual(*(prev2->getStaticData()))){
+							auto prev3 = Instructions[size - 4];
+							if (prev3->getKind() == OK_PushInt){
+								i2 = last->getInt();
+								delete last;
+								i1 = prev3->getInt();
+								delete prev;
+								Instructions._Pop_back_n(2);
+								return true;
+							}
+						}
+					}
+				}
+				break;
+				case OK_GetStaticRaw:
+				{
+					if (size >= 4){
+						auto prev2 = Instructions[size - 3];
+						if (prev2->getKind() == OK_SetStaticRaw && prev2->getUShort(0) == prev->getUShort(0)){
+							auto prev3 = Instructions[size - 4];
+							if (prev3->getKind() == OK_PushInt){
+								i2 = last->getInt();
+								delete last;
+								i1 = prev3->getInt();
+								delete prev;
+								Instructions._Pop_back_n(2);
+								return true;
+							}
+						}
+					}
+				}
+				break;
+				case OK_GetGlobal:
+				{
+					if (size >= 4){
+						auto prev2 = Instructions[size - 3];
+						if (prev2->getKind() == OK_SetGlobal && prev2->getInt() == prev->getInt()){
+							auto prev3 = Instructions[size - 4];
+							if (prev3->getKind() == OK_PushInt){
+								i2 = last->getInt();
+								delete last;
+								i1 = prev3->getInt();
+								delete prev;
+								Instructions._Pop_back_n(2);
+								return true;
+							}
+						}
+					}
+				}
+				break;
+				default:
+					return false;
+			}
 		}
 	}
 	return false;
+
 }
 
 bool FunctionData::tryPopInt(int& result)
 {
-	if (Instructions.size())
+	int size = Instructions.size();
+	if (size)
 	{
-		Opcode* back = Instructions.back();
-		if (back->getKind() == OK_PushInt)
-		{
-				result = back->getInt();
+		auto last = Instructions.back();
+		switch (last->getKind()){
+			case OK_PushInt:
+				result = last->getInt();
+				delete last;
 				Instructions.pop_back();
-				delete back;
 				return true;
+			case OK_GetFrame:
+			{
+				if (size > 3){
+					auto prev = Instructions[size - 2];
+					if (prev->getKind() == OK_SetFrame && prev->getUShort(0) == last->getUShort(0)){
+						auto prev2 = Instructions[size - 3];
+						if (prev2->getKind() == OK_PushInt){
+							result = prev2->getInt();
+							delete last;
+							Instructions.pop_back();
+							return true;
+						}
+					}
+				}
+			}
+			break;
+			case OK_GetStatic:
+			{
+				if (size > 3){
+					auto prev = Instructions[size - 2];
+					if (prev->getKind() == OK_SetStatic && last->getStaticData()->getStatic() == prev->getStaticData()->getStatic() && last->getStaticData()->getImmIndex() == prev->getStaticData()->getImmIndex()){
+						auto prev2 = Instructions[size - 3];
+						if (prev2->getKind() == OK_PushInt){
+							result = prev2->getInt();
+							delete last;
+							Instructions.pop_back();
+							return true;
+						}
+					}
+				}
+			}
+			break;
+			case OK_GetStaticRaw:
+			{
+				if (size > 3){
+					auto prev = Instructions[size - 2];
+					if (prev->getKind() == OK_SetStaticRaw && prev->getUShort(0) == last->getUShort(0)){
+						auto prev2 = Instructions[size - 3];
+						if (prev2->getKind() == OK_PushInt){
+							result = prev2->getInt();
+							delete last;
+							Instructions.pop_back();
+							return true;
+						}
+					}
+				}
+			}
+			break;
+			case OK_GetGlobal:
+			{
+				if (size > 3){
+					auto prev = Instructions[size - 2];
+					if (prev->getKind() == OK_SetGlobal && prev->getInt() == last->getInt()){
+						auto prev2 = Instructions[size - 3];
+						if (prev2->getKind() == OK_PushInt){
+							result = prev2->getInt();
+							delete last;
+							Instructions.pop_back();
+							return true;
+						}
+					}
+				}
+			}
+			break;
+			default:
+				return false;
 		}
 	}
 	return false;
@@ -280,9 +425,9 @@ bool FunctionData::endsWithInlineReturn(const string& position) const
 
 void FunctionData::setUsed(Script& scriptBase)
 {
-	if (!used)
+	if (!bitSet.used)
 	{
-		used = true;
+		bitSet.used = true;
 		for(auto fdata : usedFuncs)
 		{
 			fdata->setUsed(scriptBase);
@@ -369,6 +514,9 @@ int FunctionData::getSizeEstimate(int incDecl) const
 
 void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t maxBlockSize, uint32_t minBlockSize, bool keepEndReturn, bool makeJumpTable)
 {
+	if (getDontObfuscate()){
+		return;
+	}
 	int maxSize = Instructions.size();
 	if (!maxSize)
 		return;//sanity check
@@ -1145,19 +1293,12 @@ void FunctionData::addOpAdd()
 {
 
 	assert(Instructions.size() && "Instruction stack empty, cant add Add Instruction");
-	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushInt)
+	int result;
+	if (getOptLevel() > OptimisationLevel::OL_None && tryPopInt(result))
 	{
-		if (Instructions.back()->getInt() == 0)
+		if (result != 0)
 		{
-			delete Instructions.back();
-			Instructions.pop_back();
-		}
-		else
-		{
-			int val = Instructions.back()->getInt();
-			delete Instructions.back();
-			Instructions.pop_back();
-			addOpAddImm(val);
+			addOpAddImm(result);
 		}
 	}
 	else
@@ -1169,20 +1310,12 @@ void FunctionData::addOpAdd()
 void FunctionData::addOpSub()
 {
 	assert(Instructions.size() && "Instruction stack empty, cant add Sub Instruction");
-	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushInt)
+	int result;
+	if (getOptLevel() > OptimisationLevel::OL_None && tryPopInt(result))
 	{
-		int i = Instructions.back()->getInt();
-		if (i == 0)
+		if (result != 0)
 		{
-			delete Instructions.back();
-			Instructions.pop_back();
-		}
-		else
-		{
-			int val = Instructions.back()->getInt();
-			delete Instructions.back();
-			Instructions.pop_back();
-			addOpAddImm(-val);
+			addOpAddImm(-result);
 		}
 	}
 	else
@@ -1194,25 +1327,17 @@ void FunctionData::addOpSub()
 void FunctionData::addOpMult()
 {
 	assert(Instructions.size() && "Instruction stack empty, cant add Mult Instruction");
-	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushInt)
+	int result;
+	if (getOptLevel() > OptimisationLevel::OL_None && tryPopInt(result))
 	{
-		int i = Instructions.back()->getInt();
-		if (i == 0)
+		if (result == 0)
 		{
-			Instructions.back()->setKind(OK_Drop);//replace push 0 with a drop
-			Instructions.push_back(new Opcode(OK_PushInt));//no need to set int to 0 as its the default
+			addOpDrop();
+			addOpPushInt(0);
 		}
-		else if (i == 1)
+		else if (result != 1)
 		{
-			delete Instructions.back();//remove the push 1, mult by 1 does nothing
-			Instructions.pop_back();
-		}
-		else 
-		{
-			int val = Instructions.back()->getInt();
-			delete Instructions.back();
-			Instructions.pop_back();
-			addOpMultImm(val);
+			addOpMultImm(result);
 		}
 	}
 	else
@@ -1229,31 +1354,36 @@ void FunctionData::addOpDiv(bool *isZeroDivDetected)
 	{
 		*isZeroDivDetected = false;
 	}
-	if (getOptLevel() > OptimisationLevel::OL_None && Instructions.back()->getKind() == OK_PushInt)
+	int result;
+	if (getOptLevel() > OptimisationLevel::OL_None && tryPopInt(result))
 	{
-		int i = Instructions.back()->getInt();
-		if (i == 0)
+		if (result == 0)
 		{
 			if (isZeroDivDetected)
 			{
 				*isZeroDivDetected = true;
 			}
 			//game treats division by zero as just putting 0 on top of stack
-			Instructions.back()->setKind(OK_Drop);
-			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 0));
+			addOpDrop();
+			addOpPushInt(0);
 		}
-		else if (i == 1)
-		{
-			delete Instructions.back();//remove the push 1, div by 1 does nothing
-			Instructions.pop_back();
+		else if (result == -1){
+			addOpNeg();
 		}
-		else if (i == -1)
+		else if (result != 1)
 		{
-			Instructions.back()->setKind(OK_Neg);//negate
-		}
-		else
-		{
-			Instructions.push_back(new Opcode(OK_Div));
+			int r2;
+			if (tryPopInt(r2)){
+				addOpPushInt(r2 / result);
+			}
+			else if (Instructions.back()->getKind() == OK_MultImm && Instructions.back()->getInt() % result == 0){
+				Instructions.back()->setInt(Instructions.back()->getInt() / result);
+			}
+			else{
+				addOpPushInt(result);
+				Instructions.push_back(new Opcode(OK_Div));
+			}
+			
 		}
 	}
 	else
@@ -1305,17 +1435,23 @@ void FunctionData::addOpNot()
 			case OK_FCmpLt:
 				back->setKind(OK_FCmpGe);
 				return;
-			case OK_PushInt:
-				back->setInt(Instructions.back()->getInt() == 0);
-				return;
 			case OK_Not:
 				delete Instructions.back();
 				Instructions.pop_back();
 				addOpIsNotZero();
 				return;
 			default:
-				Instructions.push_back(new Opcode(OK_Not));
+			{
+				int result;
+				if (tryPopInt(result)){
+					addOpPushInt(result == 0);
+				}
+				else{
+					Instructions.push_back(new Opcode(OK_Not));
+				}
 				return;
+			}
+
 		}
 	}
 	else{
@@ -1717,6 +1853,12 @@ void FunctionData::addOpGetFrame(uint16_t index)
 					}
 				}
 			}
+		/*	else if (back->getKind() == OK_SetFrame && back->getUShort(0) == index){
+				Instructions.pop_back();
+				addOpDup();
+				Instructions.push_back(back);
+				return;
+			}*/
 		}
 	}
 	Instructions.push_back(Opcode::makeUShortOpcode(OK_GetFrame, index));
@@ -1802,9 +1944,6 @@ start:
 		}
 		switch (last->getKind())
 		{
-			case OK_PushInt:
-				last->setInt(last->getInt() + immediate);
-				return;
 			case OK_AddImm:
 			{
 				int val = last->getInt() + immediate;
@@ -1855,8 +1994,15 @@ start:
 			}
 			goto setAsAddImm;
 			default:
-				setAsAddImm:
+			{
+				int result;
+				if (tryPopInt(result)){
+					addOpPushInt(result + immediate);
+					return;
+				}
+			setAsAddImm:
 				Instructions.push_back(Opcode::makeIntOpcode(OK_AddImm, immediate));
+			}
 
 		}
 
@@ -1871,9 +2017,10 @@ void FunctionData::addOpMultImm(int immediate)
 	if (getOptLevel() > OptimisationLevel::OL_Trivial){
 		assert(Instructions.size() && "Cannot add MultImm to empty instruction stack");
 		Opcode *last = Instructions.back();
-		if (last->getKind() == OK_PushInt)
+		int result;
+		if (tryPopInt(result))
 		{
-			last->setInt(last->getInt() * immediate);
+			addOpPushInt(result * immediate);
 		}
 		else if (last->getKind() == OK_MultImm)
 		{
@@ -2162,6 +2309,26 @@ void FunctionData::addOpGetHash()
 	{
 		Instructions.push_back(new Opcode(OK_GetHash));
 	}
+}
+
+void FunctionData::addOpPushConstArrayPtr(const Script& base, const std::vector<int>& values)
+{
+	string strValue;
+	strValue.resize(values.size() * base.getStackWidth());
+	for (size_t i = 0; i < values.size(); i++){
+		*(float*)(&strValue.data()[i * base.getStackWidth()]) = (base.getEndian() == Endian::END_BIG ? Utils::Bitwise::SwapEndian(values[i]) : values[i]);
+	}
+	addOpPushString(strValue);
+}
+
+void FunctionData::addOpPushConstArrayPtr(const Script& base, const std::vector<float>& values)
+{
+	string strValue;
+	strValue.resize(values.size() * base.getStackWidth());
+	for (size_t i = 0; i < values.size(); i++){
+		*(float*)(&strValue.data()[i * base.getStackWidth()]) = (base.getEndian() == Endian::END_BIG ? Utils::Bitwise::SwapEndian(values[i]) : values[i]);
+	}
+	addOpPushString(strValue);
 }
 
 ostream & operator<<(ostream & stream, const FunctionData & fdata)

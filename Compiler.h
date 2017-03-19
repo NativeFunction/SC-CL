@@ -189,12 +189,15 @@ public:
 	}
 	virtual void ChangeInt32(const uint32_t newValue, const size_t position) = 0;
 	size_t AddJumpTable(const uint32_t itemCount){
-		lastPage->resize(lastPage->size() + 3 & ~3, 0);
+		//lastPage->resize(lastPage->size() + 3 & ~3, 0);
 		reserveBytes(itemCount * 4);
 		size_t pageStartIndex = lastPage->size();
 		size_t tableIndex = getTotalSize();
 		lastPage->resize(pageStartIndex + itemCount * 4, 0);
 		return tableIndex;
+	}
+	void padAlign(const uint32_t alignment){
+		lastPage->resize((lastPage->size() + alignment - 1) & ~(alignment - 1), 0);
 	}
 };
 class StringPageCollectionBig : public StringPageCollection{
@@ -751,7 +754,7 @@ public:
 
 	virtual void Compile(const std::string& outDirectory) override
 	{
-		BuildTables();
+		BuildTablesCheckEnc();
 		switch (HLData->getBuildType())
 		{
 			case BT_GTAV:
@@ -810,9 +813,19 @@ private:
 	void WriteFinalStringPage();
 	virtual void XSCWrite(const char* path, bool CompressAndEncrypt = true);
 	#pragma endregion
+
+	#pragma region StringEnc
+	bool isStringEncrypted = false;
+	virtual void addDecryptionFunction(__int64 xorValue, size_t entryCallLoc);
+	void BuildTablesCheckEnc();
+public:
+	void setEncryptStrings(bool bValue = true){
+		isStringEncrypted = true;
+	}
+	#pragma endregion
 };
 
-class CompileGTAVPC : CompileGTAV
+class CompileGTAVPC : public CompileGTAV
 {
 	class NativeTranslation
 	{
@@ -827,7 +840,9 @@ class CompileGTAVPC : CompileGTAV
 				auto translated = it->second;
 				if (translated == 0)
 				{
-					Utils::System::Throw("Couldn't translate native '0x" + Utils::DataConversion::IntToHex(nat) + "' for game version '" + gameVersionStr + "'");
+					char buff[128];
+					snprintf(buff, sizeof(buff), "Couldn't translate native '0x%016llX' for game version '%s'", nat, gameVersionStr.c_str());
+					Utils::System::Warn(buff);
 				}
 				return translated;
 			}
@@ -889,8 +904,8 @@ public:
 
 	void Compile(const std::string& outDirectory) override
 	{
-		BuildTables();
-		XSCWrite((outDirectory + HLData->getBuildFileName()).data());
+		BuildTablesCheckEnc();
+		YSCWrite((outDirectory + HLData->getBuildFileName()).data());
 	}
 private:
 
@@ -924,7 +939,11 @@ private:
 	void WritePointers() override;
 	void WriteNatives() override;
 	void WriteStatics() override;
-	void XSCWrite(const char* path, bool AddRsc7Header = false) override;
+	void YSCWrite(const char* path, bool AddRsc7Header = false);
 	#pragma endregion
+
+#pragma region StringEnc
+	virtual void addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)override;
+#pragma endregion
 
 };

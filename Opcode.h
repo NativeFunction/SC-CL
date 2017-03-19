@@ -335,6 +335,9 @@ public:
 	const StaticData* getStatic()const{ return _staticData; }
 	uint16_t getImmIndex()const{ return _immIndex; }
 	void setImmIndex(uint16_t newValue){ _immIndex = newValue; }
+	bool isEqual(const OpStaticStorage& other)const{
+		return _staticData == other._staticData && _immIndex == other._immIndex;
+	}
 };
 #pragma endregion
 

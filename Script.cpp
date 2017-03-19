@@ -98,8 +98,7 @@ void Script::initializeEntryFunction()
 		switch (getBuildType())
 		{
 			case BT_GTAV:
-			entryFunction->addOpNative("get_this_script_name", (getBuildPlatform() == P_PC ? 0x442E0A7EDE4A738A : JoaatConst("get_this_script_name")), 0, 1);
-			entryFunction->addOpGetHash();
+			entryFunction->addOpNative("get_hash_of_this_script_name", (getBuildPlatform() == P_PC ? 0x8A1C8B1738FFE87E : JoaatConst("get_hash_of_this_script_name")), 0, 1);
 			entryFunction->addOpNative("_get_number_of_instances_of_streamed_script", (getBuildPlatform() == P_PC ? 0x2C83A9DA6BFFC4F9 : 0x029D3841), 1, 1);
 			entryFunction->addOpPushInt(1);
 			entryFunction->addOpJumpGT("__builtin__singleton__");
@@ -125,7 +124,7 @@ void Script::finaliseEntryFunction()
 		entryFunction->addUsedFunc(mainFunction);
 		if (scriptParams)
 		{
-			if (getBuildType() != BT_RDR_XSC && getBuildType() != BT_RDR_SCO)
+			if (getBuildType() == BT_RDR_XSC || getBuildType() == BT_RDR_SCO)
 			{
 				scriptParams->setUsed(*this);
 				entryFunction->setUsed(*this);
