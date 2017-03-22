@@ -86,7 +86,9 @@ static cl::opt<BuildType> Option_BuildType(
 	cl::ValueRequired,
 	cl::cat(CompilerOptions),
 	cl::values(
-	//clEnumValN(BuildType::BT_GTAIV, "XBOX", "Grand Theft Auto IV (sco output)"),
+	clEnumValN(BuildType::BT_GTAIV, "GTAIV", "Grand Theft Auto IV (sco output)"),
+	clEnumValN(BuildType::BT_GTAIV_TLAD, "GTAIV_TLAD", "Grand Theft Auto IV The Lost and Damned (sco output)"),
+	clEnumValN(BuildType::BT_GTAIV_TBOGT, "GTAIV_TBOGT", "Grand Theft Auto IV The Ballad of Gay Tony (sco output)"),
 	clEnumValN(BuildType::BT_GTAV, "GTAV", "Grand Theft Auto V (#sc output)"),
 	clEnumValN(BuildType::BT_RDR_SCO, "RDR_SCO", "Red Dead Redemption (sco output)"),
 	clEnumValN(BuildType::BT_RDR_XSC, "RDR_XSC", "Red Dead Redemption (#sc output)"),
@@ -1126,7 +1128,7 @@ public:
 
 		switch (JoaatCased(const_cast<char*>(funcName.c_str())))
 		{
-#pragma region String
+			#pragma region String
 
 			//isAddr is false on memory functions because we dont want to force addressof
 			case JoaatCasedConst("memcpy"):{
@@ -1494,7 +1496,7 @@ public:
 				return false;
 			} break;
 #pragma endregion
-#pragma region Misc_Opcodes
+			#pragma region Misc_Opcodes
 			case JoaatCasedConst("__varIndex"): {
 				ChkHashCol("__varIndex");
 
@@ -1545,7 +1547,7 @@ public:
 				}
 			} break;
 #pragma endregion
-#pragma region Math/Conversions
+			#pragma region Math/Conversions
 			case JoaatCasedConst("reinterpretIntToFloat"): {
 				ChkHashCol("reinterpretIntToFloat");
 				if (argCount == 1 && callee->getReturnType()->isRealFloatingType() && argArray[0]->getType()->isIntegerType())
@@ -2134,8 +2136,14 @@ public:
 						else
 						{
 							//get_arrayp
-							parseExpression(argArray[1], false, true);
-							parseExpression(argArray[0], false, true);
+							parseExpression(argArray[1], false, true);//index
+
+							const int BT = scriptData.getBuildType();
+							if (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT)
+							{
+								AddInstruction(PushInt, (int32_t)itemSize.getSExtValue());
+							}
+							parseExpression(argArray[0], false, true);//pointer
 							AddInstruction(GetArrayP, itemSize.getSExtValue());
 							return true;
 						}
@@ -3715,6 +3723,11 @@ public:
 						int offset = getSizeOfCXXDecl(base, false, false, icast->getType()->getAsCXXRecordDecl());
 						if (offset != 0) {
 							AddInstructionComment(PushInt, "Base+" + to_string(offset), offset / stackWidth);
+							const int BT = scriptData.getBuildType();
+							if (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT)
+							{
+								AddInstruction(PushInt, 1);
+							}
 							parseExpression(declRef, true);
 							AddInstructionComment(GetArrayP, "Cast : " + base->getDeclName().getAsString() + " to " + icast->getType()->getAsCXXRecordDecl()->getDeclName().getAsString(), 1);
 						}
@@ -3730,9 +3743,19 @@ public:
 						CXXRecordDecl *base = pointer->getPointeeType()->getAsCXXRecordDecl();
 						int offset = getSizeOfCXXDecl(base, false, false, castPointer->getPointeeCXXRecordDecl());
 						if (offset != 0) {
+							const int BT = scriptData.getBuildType();
+							if (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT)
+							{
+								AddInstruction(PushInt, 1);
+							}
 							AddInstructionComment(PushInt, "Base+" + to_string(offset), offset / stackWidth);
+							if (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT)
+							{
+								AddInstruction(PushInt, 1);
+							}
 							parseExpression(expr, true);
 							AddInstruction(GetArrayP, 1);
+
 							if (icast->getType()->getAsCXXRecordDecl())
 								out << "GetArrayP2 1  " << " //Cast : " << base->getDeclName().getAsString() << " to " << icast->getType()->getAsCXXRecordDecl()->getDeclName().getAsString() << endl;
 							else
@@ -7102,9 +7125,29 @@ public:
 	void AddDefines(Preprocessor &PP)
 	{
 		string preDefines = PP.getPredefines();
+
+		switch (scriptData->getBuildPlatform())
+		{
+			case P_XBOX:
+			preDefines += "\n#define __XBOX__";
+			break;
+			case P_PS3:
+			preDefines += "\n#define __PS3__";
+			break;
+			case P_PC:
+			preDefines += "\n#define __PC__";
+			break;
+		}
 		switch (scriptData->getBuildType())
 		{
-			case BT_GTAIV://it would be cool to support gta 4 at some point but its not a priority
+			case BT_GTAIV_TLAD:
+				preDefines += "\n#define __TLAD__";
+				preDefines += "\n#define __GTAIV__";
+				preDefines += "\n#define __SCO__";
+				break;
+			case BT_GTAIV_TBOGT:
+				preDefines += "\n#define __TBOGT__";
+			case BT_GTAIV:
 				preDefines += "\n#define __GTAIV__";
 				preDefines += "\n#define __SCO__";
 				break;
@@ -7199,6 +7242,25 @@ void WriteScriptFile(const string& outDir)
 {
 	switch (scriptData->getBuildType())
 	{
+		case BT_GTAIV_TLAD:
+		case BT_GTAIV_TBOGT:
+		case BT_GTAIV:
+		{
+			switch (scriptData->getBuildPlatform())
+			{
+				case P_XBOX:
+				case P_PS3:
+				case P_PC:
+				{
+					CompileGTAIV c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
+					c.Compile(outDir);
+				}
+				break;
+				default:
+				Throw("Grand Theft Aut IV is only supported on Xbox360, PS3 and PC");
+			}
+		}
+		break;
 		case BT_RDR_XSC:
 		case BT_RDR_SCO:
 		{
@@ -7212,7 +7274,7 @@ void WriteScriptFile(const string& outDir)
 				}
 				break;
 				default:
-				Throw("Red dead redemption only supported on Xbox360 and PS3");
+				Throw("Red Dead Redemption is only supported on Xbox360 and PS3");
 			}
 		}
 		break;

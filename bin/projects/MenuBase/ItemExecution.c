@@ -13,7 +13,7 @@
 static float SavedTestCoordPrecision = 0;
 static bool SavedBoolTest = false;
 static int SavedMenuParam[3] = { 0 };
-
+static int SelectedPlayerId = 0;
 enum MenuBits
 {
 	MB_FlyMod,
@@ -209,12 +209,16 @@ bool Async_SpawnVehicle(uint CurrentFrame, Hash Model)
 				if (does_entity_exist(MyVehicle))
 				{
 					decor_set_int(MyVehicle, "MPBitset", 0);
+					
 					Vehicle CurrentVehicle = GetCurrentVehicle();
 					float CurrentSpeed = 0.0f;
+					int Station = -1;
 					if (CurrentVehicle)
 					{
-						CurrentSpeed = get_entity_speed(CurrentVehicle);
+						Station = get_player_radio_station_index();
+						set_veh_radio_station(MyVehicle, get_radio_station_name(Station));
 
+						CurrentSpeed = get_entity_speed(CurrentVehicle);
 						set_entity_as_mission_entity(CurrentVehicle, false, true);
 						delete_vehicle(&CurrentVehicle);
 					}
@@ -225,6 +229,11 @@ bool Async_SpawnVehicle(uint CurrentFrame, Hash Model)
 						set_vehicle_engine_on(MyVehicle, true, true, false);//last param not on console remove if issues arise
 						if (is_this_model_a_plane(Model) || is_this_model_a_heli(Model))
 							set_heli_blades_full_speed(MyVehicle);
+
+						if (Station != -1 && Station != 255)
+						{
+							set_radio_to_station_index(Station);
+						}
 
 						set_vehicle_forward_speed(MyVehicle, CurrentSpeed);
 					}
@@ -288,10 +297,12 @@ void Option_BoolTest()
 	//*Add64P(GetVehicleMetaAddress(VEHICLE_DUMP), VMI_VehicleType) = VEHICLE_TYPE_AMPHIBIOUS_QUADBIKE;
 	//*Add64P(GetVehicleMetaAddress(VEHICLE_DUMP), VMI_HandlingId) = 398;//blazer aqua
 
-	int t = (int)Push64P(0xFFFFFFFF, 0xFFFFFFFF);
-	t = (int)Add64P((int*)t, 1, 0);
-	Break(itosGlobal(t));
-	Break(itosGlobal(*(int*)((char*)&t + 4)));
+	//int t = (int)Push64P(0xFFFFFFFF, 0xFFFFFFFF);
+	//t = (int)Add64P((int*)t, 1, 0);
+	//Break(itosGlobal(t));
+	//Break(itosGlobal(*(int*)((char*)&t + 4)));
+
+	Break(itosGlobal(SwapEndian32(0xDEADBAB4)));
 
 	//int data = 0xDEADBAB4;
 	//short* ptr = (short*)&data;
@@ -426,14 +437,60 @@ void Option_SetVehicleType()
 #pragma endregion
 
 #pragma region Menus
-
+void Menu__LargeSubmenuTest();
 void Menu__PlayerList_Options()
 {
-	SetHeaderAdvanced("Player list", false, false);
+	if (WasLastMenuDirectionForward())
+	{
+		SelectedPlayerId = GetLastDynamicId();
+	}
+	SetHeaderForwarded();
+	AddItemMenu("Player Options", Menu__LargeSubmenuTest);
+	AddItemMenu("Weapon Options", Menu__LargeSubmenuTest);
+	AddItemMenu("Vehicle Options", Menu__LargeSubmenuTest);
+	AddItemMenu("Teleport Options", Menu__LargeSubmenuTest);
+	AddItemMenu("Attachable Options", Menu__LargeSubmenuTest);
 }
 bool DynamicChecker__PlayerList(int Id)
 {
-	return IsPlayerInGame(Id);
+	//return IsPlayerInGame(Id);
+	if (timera() < 10000)
+	{
+		return true;
+	}
+	else if (timera() < 20000)
+	{
+		switch (Id)
+		{
+			case 0:
+			case 4:
+			case 14:
+			case 25:
+			case 31:
+			return false;
+		}
+		return true;
+	}
+	else if (timera() < 30000)
+	{
+		switch (Id)
+		{
+			case 0:
+			case 1:
+			case 2:
+			case 4:
+			case 5:
+			case 6:
+			case 14:
+			case 16:
+			case 20:
+			case 25:
+			case 31:
+			return false;
+		}
+		return true;
+	}
+	return true;
 }
 void Menu__PlayerList()
 {
@@ -441,7 +498,7 @@ void Menu__PlayerList()
 	//savedstartindex = range
 	//DynamicChecker[MaxMenuLevels]
 	
-	SetHeaderAdvanced("Player list", false, DynamicChecker__PlayerList);
+	SetHeaderAdvanced("Player List", false, DynamicChecker__PlayerList);
 	//for (int i = 0; i < LobbySizeWithSpectators; i++)
 	//{
 	//	if (DynamicChecker__PlayerList(i))
@@ -458,108 +515,108 @@ void Menu__PlayerList()
 	}
 	if (timera() < 10000)
 	{
-		AddItemDynamic("player0", 0, Option_Blank);
-		AddItemDynamic("player1", 1, Option_Blank);
-		AddItemDynamic("player2", 2, Option_Blank);
-		AddItemDynamic("player3", 3, Option_Blank);
-		AddItemDynamic("player4", 4, Option_Blank);
-		AddItemDynamic("player5", 5, Option_Blank);
-		AddItemDynamic("player6", 6, Option_Blank);
-		AddItemDynamic("player7", 7, Option_Blank);
-		AddItemDynamic("player8", 8, Option_Blank);
-		AddItemDynamic("player9", 9, Option_Blank);
-		AddItemDynamic("player10", 10, Option_Blank);
-		AddItemDynamic("player11", 11, Option_Blank);
-		AddItemDynamic("player12", 12, Option_Blank);
-		AddItemDynamic("player13", 13, Option_Blank);
-		AddItemDynamic("player14", 14, Option_Blank);
-		AddItemDynamic("player15", 15, Option_Blank);
-		AddItemDynamic("player16", 16, Option_Blank);
-		AddItemDynamic("player17", 17, Option_Blank);
-		AddItemDynamic("player18", 18, Option_Blank);
-		AddItemDynamic("player19", 19, Option_Blank);
-		AddItemDynamic("player20", 20, Option_Blank);
-		AddItemDynamic("player21", 21, Option_Blank);
-		AddItemDynamic("player22", 22, Option_Blank);
-		AddItemDynamic("player23", 23, Option_Blank);
-		AddItemDynamic("player24", 24, Option_Blank);
-		AddItemDynamic("player25", 25, Option_Blank);
-		AddItemDynamic("player26", 26, Option_Blank);
-		AddItemDynamic("player27", 27, Option_Blank);
-		AddItemDynamic("player28", 28, Option_Blank);
-		AddItemDynamic("player29", 29, Option_Blank);
-		AddItemDynamic("player30", 30, Option_Blank);
-		AddItemDynamic("player31", 31, Option_Blank);
+		AddItemMenuDynamicAdvanced("player0", false, nullptr, false, false, true, 0, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player1", false, nullptr, false, false, true, 1, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player2", false, nullptr, false, false, true, 2, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player3", false, nullptr, false, false, true, 3, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player4", false, nullptr, false, false, true, 4, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player5", false, nullptr, false, false, true, 5, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player6", false, nullptr, false, false, true, 6, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player7", false, nullptr, false, false, true, 7, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player8", false, nullptr, false, false, true, 8, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player9", false, nullptr, false, false, true, 9, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player10", false, nullptr, false, false, true, 10, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player11", false, nullptr, false, false, true, 11, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player12", false, nullptr, false, false, true, 12, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player13", false, nullptr, false, false, true, 13, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player14", false, nullptr, false, false, true, 14, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player15", false, nullptr, false, false, true, 15, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player16", false, nullptr, false, false, true, 16, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player17", false, nullptr, false, false, true, 17, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player18", false, nullptr, false, false, true, 18, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player19", false, nullptr, false, false, true, 19, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player20", false, nullptr, false, false, true, 20, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player21", false, nullptr, false, false, true, 21, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player22", false, nullptr, false, false, true, 22, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player23", false, nullptr, false, false, true, 23, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player24", false, nullptr, false, false, true, 24, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player25", false, nullptr, false, false, true, 25, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player26", false, nullptr, false, false, true, 26, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player27", false, nullptr, false, false, true, 27, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player28", false, nullptr, false, false, true, 28, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player29", false, nullptr, false, false, true, 29, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player30", false, nullptr, false, false, true, 30, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player31", false, nullptr, false, false, true, 31, Menu__PlayerList_Options);
 	}
 	else if (timera() < 20000)
 	{
-		//AddItemDynamic("player0", 0, Option_Blank);
-		AddItemDynamic("player1", 1, Option_Blank);
-		AddItemDynamic("player2", 2, Option_Blank);
-		AddItemDynamic("player3", 3, Option_Blank);
-		//AddItemDynamic("player4", 4, Option_Blank);
-		AddItemDynamic("player5", 5, Option_Blank);
-		AddItemDynamic("player6", 6, Option_Blank);
-		AddItemDynamic("player7", 7, Option_Blank);
-		AddItemDynamic("player8", 8, Option_Blank);
-		AddItemDynamic("player9", 9, Option_Blank);
-		AddItemDynamic("player10", 10, Option_Blank);
-		AddItemDynamic("player11", 11, Option_Blank);
-		AddItemDynamic("player12", 12, Option_Blank);
-		AddItemDynamic("player13", 13, Option_Blank);
-		//AddItemDynamic("player14", 14, Option_Blank);
-		AddItemDynamic("player15", 15, Option_Blank);
-		AddItemDynamic("player16", 16, Option_Blank);
-		AddItemDynamic("player17", 17, Option_Blank);
-		AddItemDynamic("player18", 18, Option_Blank);
-		AddItemDynamic("player19", 19, Option_Blank);
-		AddItemDynamic("player20", 20, Option_Blank);
-		AddItemDynamic("player21", 21, Option_Blank);
-		AddItemDynamic("player22", 22, Option_Blank);
-		AddItemDynamic("player23", 23, Option_Blank);
-		AddItemDynamic("player24", 24, Option_Blank);
-		//AddItemDynamic("player25", 25, Option_Blank);
-		AddItemDynamic("player26", 26, Option_Blank);
-		AddItemDynamic("player27", 27, Option_Blank);
-		AddItemDynamic("player28", 28, Option_Blank);
-		AddItemDynamic("player29", 29, Option_Blank);
-		AddItemDynamic("player30", 30, Option_Blank);
-		//AddItemDynamic("player31", 31, Option_Blank);
+		//AddItemMenuDynamicAdvanced("player0", false, nullptr, false, false, true, 0, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player1", false, nullptr, false, false, true, 1, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player2", false, nullptr, false, false, true, 2, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player3", false, nullptr, false, false, true, 3, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player4", false, nullptr, false, false, true, 4, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player5", false, nullptr, false, false, true, 5, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player6", false, nullptr, false, false, true, 6, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player7", false, nullptr, false, false, true, 7, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player8", false, nullptr, false, false, true, 8, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player9", false, nullptr, false, false, true, 9, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player10", false, nullptr, false, false, true, 10, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player11", false, nullptr, false, false, true, 11, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player12", false, nullptr, false, false, true, 12, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player13", false, nullptr, false, false, true, 13, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player14", false, nullptr, false, false, true, 14, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player15", false, nullptr, false, false, true, 15, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player16", false, nullptr, false, false, true, 16, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player17", false, nullptr, false, false, true, 17, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player18", false, nullptr, false, false, true, 18, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player19", false, nullptr, false, false, true, 19, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player20", false, nullptr, false, false, true, 20, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player21", false, nullptr, false, false, true, 21, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player22", false, nullptr, false, false, true, 22, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player23", false, nullptr, false, false, true, 23, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player24", false, nullptr, false, false, true, 24, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player25", false, nullptr, false, false, true, 25, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player26", false, nullptr, false, false, true, 26, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player27", false, nullptr, false, false, true, 27, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player28", false, nullptr, false, false, true, 28, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player29", false, nullptr, false, false, true, 29, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player30", false, nullptr, false, false, true, 30, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player31", false, nullptr, false, false, true, 31, Menu__PlayerList_Options);
 	}
 	else if (timera() < 30000)
 	{
-		//AddItemDynamic("player0", 0, Option_Blank);
-		//AddItemDynamic("player1", 1, Option_Blank);
-		//AddItemDynamic("player2", 2, Option_Blank);
-		AddItemDynamic("player3", 3, Option_Blank);
-		//AddItemDynamic("player4", 4, Option_Blank);
-		//AddItemDynamic("player5", 5, Option_Blank);
-		//AddItemDynamic("player6", 6, Option_Blank);
-		AddItemDynamic("player7", 7, Option_Blank);
-		AddItemDynamic("player8", 8, Option_Blank);
-		AddItemDynamic("player9", 9, Option_Blank);
-		AddItemDynamic("player10", 10, Option_Blank);
-		AddItemDynamic("player11", 11, Option_Blank);
-		AddItemDynamic("player12", 12, Option_Blank);
-		AddItemDynamic("player13", 13, Option_Blank);
-		//AddItemDynamic("player14", 14, Option_Blank);
-		AddItemDynamic("player15", 15, Option_Blank);
-		//AddItemDynamic("player16", 16, Option_Blank);
-		AddItemDynamic("player17", 17, Option_Blank);
-		AddItemDynamic("player18", 18, Option_Blank);
-		AddItemDynamic("player19", 19, Option_Blank);
-		//AddItemDynamic("player20", 20, Option_Blank);
-		AddItemDynamic("player21", 21, Option_Blank);
-		AddItemDynamic("player22", 22, Option_Blank);
-		AddItemDynamic("player23", 23, Option_Blank);
-		AddItemDynamic("player24", 24, Option_Blank);
-		//AddItemDynamic("player25", 25, Option_Blank);
-		AddItemDynamic("player26", 26, Option_Blank);
-		AddItemDynamic("player27", 27, Option_Blank);
-		AddItemDynamic("player28", 28, Option_Blank);
-		AddItemDynamic("player29", 29, Option_Blank);
-		AddItemDynamic("player30", 30, Option_Blank);
-		//AddItemDynamic("player31", 31, Option_Blank);
+		//AddItemMenuDynamicAdvanced("player0", false, nullptr, false, false, true, 0, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player1", false, nullptr, false, false, true, 1, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player2", false, nullptr, false, false, true, 2, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player3", false, nullptr, false, false, true, 3, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player4", false, nullptr, false, false, true, 4, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player5", false, nullptr, false, false, true, 5, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player6", false, nullptr, false, false, true, 6, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player7", false, nullptr, false, false, true, 7, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player8", false, nullptr, false, false, true, 8, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player9", false, nullptr, false, false, true, 9, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player10", false, nullptr, false, false, true, 10, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player11", false, nullptr, false, false, true, 11, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player12", false, nullptr, false, false, true, 12, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player13", false, nullptr, false, false, true, 13, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player14", false, nullptr, false, false, true, 14, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player15", false, nullptr, false, false, true, 15, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player16", false, nullptr, false, false, true, 16, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player17", false, nullptr, false, false, true, 17, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player18", false, nullptr, false, false, true, 18, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player19", false, nullptr, false, false, true, 19, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player20", false, nullptr, false, false, true, 20, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player21", false, nullptr, false, false, true, 21, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player22", false, nullptr, false, false, true, 22, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player23", false, nullptr, false, false, true, 23, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player24", false, nullptr, false, false, true, 24, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player25", false, nullptr, false, false, true, 25, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player26", false, nullptr, false, false, true, 26, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player27", false, nullptr, false, false, true, 27, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player28", false, nullptr, false, false, true, 28, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player29", false, nullptr, false, false, true, 29, Menu__PlayerList_Options);
+		AddItemMenuDynamicAdvanced("player30", false, nullptr, false, false, true, 30, Menu__PlayerList_Options);
+		//AddItemMenuDynamicAdvanced("player31", false, nullptr, false, false, true, 31, Menu__PlayerList_Options);
 	}
 	//else if (timera() < 40000)
 	//{
@@ -658,13 +715,9 @@ void Menu__VehicleList_Options_ChangeType()
 void Menu__VehicleList_Options()
 {
 	if (WasLastMenuDirectionForward())
-	{
 		SavedMenuParam[0] = GetCurrentItemFromLastMenu()->Selection.Value.Int;
-		SavedMenuParam[1] = (int)GetCurrentItemFromLastMenu()->Ui.ItemText;
-		SavedMenuParam[2] = (int)GetCurrentItemFromLastMenu()->BitSet;
-	}
 
-	SetHeaderAdvanced((const char*)SavedMenuParam[1], bit_test(SavedMenuParam[2], ICB_IsItemGxt), false);
+	SetHeaderForwarded();
 	AddItemWithParam("Spawn Vehicle", SavedMenuParam[0], Option_SpawnVehicle);
 	AddItemMenu("Change Type", Menu__VehicleList_Options_ChangeType);
 }
@@ -685,7 +738,7 @@ void Menu__VehicleList_Sports()
 	AddItemVehicle(hashof("futo"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("khamelion"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("penumbra"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Rapid GT Cabrio", hashof("rapidgt2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Rapid GT Cabrio", false, nullptr, false, false, true, hashof("rapidgt2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("schwarzer"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("sultan"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("surano"), Menu__VehicleList_Options);
@@ -827,7 +880,7 @@ void Menu__VehicleList_Compacts()
 	SetHeader("Compacts");
 	AddItemVehicle(hashof("blista"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("dilettante"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Dilettante (Merryweather)", hashof("dilettante2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Dilettante (Merryweather)", false, nullptr, false, false, true, hashof("dilettante2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("issi2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("prairie"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("rhapsody"), Menu__VehicleList_Options);
@@ -846,11 +899,11 @@ void Menu__VehicleList_Sedans()
 	SetHeader("Sedans");
 
 	AddItemVehicle(hashof("asea"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Asea (Snowy)", hashof("asea2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Asea (Snowy)", false, nullptr, false, false, true, hashof("asea2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("asterope"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("emperor"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Emperor (Rusty)", hashof("emperor2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Emperor (Snowy)", hashof("emperor3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Emperor (Rusty)", false, nullptr, false, false, true, hashof("emperor2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Emperor (Snowy)", false, nullptr, false, false, true, hashof("emperor3"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("fugitive"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("ingot"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("intruder"), Menu__VehicleList_Options);
@@ -898,16 +951,16 @@ void Menu__VehicleList_SportsClassic()
 	AddItemVehicle(hashof("stinger"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("stingergt"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("tornado"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Tornado Cabrio", hashof("tornado2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Tornado (Rusty)", hashof("tornado3"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Tornado (Guitar)", hashof("tornado4"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Tornado Cabrio", false, nullptr, false, false, true, hashof("tornado2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Tornado (Rusty)", false, nullptr, false, false, true, hashof("tornado3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Tornado (Guitar)", false, nullptr, false, false, true, hashof("tornado4"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("ztype"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("btype"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("pigalle"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("coquette2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("casco"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("feltzer3"), Menu__VehicleList_Options);
-	
+
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpHalloween))
 		AddItemVehicle(VEHICLE_BTYPE2, Menu__VehicleList_Options);
@@ -944,7 +997,7 @@ void Menu__VehicleList_Muscle()
 	AddItemVehicle(hashof("chino"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("coquette3"), Menu__VehicleList_Options);
 
-	
+
 	#ifdef __YSC__
 	if (is_dlc_present(Update_spUpgrade))
 	{
@@ -988,7 +1041,7 @@ void Menu__VehicleList_Muscle()
 	if (is_dlc_present(Update_mpImportExport))
 	{
 		AddItemVehicle(VEHICLE_RUINER2, Menu__VehicleList_Options);
-		AddItemMenuWithParam("Ruiner (Destroyed)", VEHICLE_RUINER3, Menu__VehicleList_Options);
+		AddItemMenuWithParamAdvanced("Ruiner (Destroyed)", false, nullptr, false, false, true, VEHICLE_RUINER3, Menu__VehicleList_Options);
 	}
 	#endif
 }
@@ -996,19 +1049,19 @@ void Menu__VehicleList_Suv()
 {
 	SetHeader("SUVs");
 	AddItemVehicle(hashof("baller2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Baller (Old)", hashof("baller"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Baller (Old)", false, nullptr, false, false, true, hashof("baller"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("bjxl"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("cavalcade2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Cavalcade (Old)", hashof("cavalcade"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Cavalcade (Old)", false, nullptr, false, false, true, hashof("cavalcade"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("gresley"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("dubsta"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Dubsta (Blacked Out)", hashof("dubsta2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Dubsta (Blacked Out)", false, nullptr, false, false, true, hashof("dubsta2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("fq2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("granger"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("habanero"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("landstalker"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("mesa"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Mesa (Snowy)", hashof("mesa2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Mesa (Snowy)", false, nullptr, false, false, true, hashof("mesa2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("patriot"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("radi"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("rocoto"), Menu__VehicleList_Options);
@@ -1039,35 +1092,35 @@ void Menu__VehicleList_Van()
 {
 	SetHeader("Vans");
 	AddItemVehicle(hashof("bison"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Bison (Construction)", hashof("bison2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Bison (Landscapeing)", hashof("bison3"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Boxville (Water&Power)", hashof("boxville"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Boxville (Postal)", hashof("boxville2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Boxville (Humane)", hashof("boxville3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Bison (Construction)", false, nullptr, false, false, true, hashof("bison2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Bison (Landscapeing)", false, nullptr, false, false, true, hashof("bison3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Boxville (Water&Power)", false, nullptr, false, false, true, hashof("boxville"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Boxville (Postal)", false, nullptr, false, false, true, hashof("boxville2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Boxville (Humane)", false, nullptr, false, false, true, hashof("boxville3"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("bobcatxl"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("burrito3"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Burrito (Multi Livery)", hashof("burrito"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Burrito (Bugstars)", hashof("burrito2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Burrito (Construction)", hashof("burrito4"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Burrito (Snowy)", hashof("burrito5"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Burrito (Multi Livery)", false, nullptr, false, false, true, hashof("burrito"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Burrito (Bugstars)", false, nullptr, false, false, true, hashof("burrito2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Burrito (Construction)", false, nullptr, false, false, true, hashof("burrito4"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Burrito (Snowy)", false, nullptr, false, false, true, hashof("burrito5"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("gburrito"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("camper"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("journey"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("minivan"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("pony"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Weed Van", hashof("pony2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Rumpo (Weazel News)", hashof("rumpo"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Rumpo (Deludamol)", hashof("rumpo2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Weed Van", false, nullptr, false, false, true, hashof("pony2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Rumpo (Weazel News)", false, nullptr, false, false, true, hashof("rumpo"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Rumpo (Deludamol)", false, nullptr, false, false, true, hashof("rumpo2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("speedo"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("speedo2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("surfer"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Surfer (Rusty)", hashof("surfer2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Surfer (Rusty)", false, nullptr, false, false, true, hashof("surfer2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("taco"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("youga"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("paradise"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Boxville (Post OP)", hashof("boxville4"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Gang Burrito (No Livery)", hashof("gburrito2"), Menu__VehicleList_Options);
-	
+	AddItemMenuWithParamAdvanced("Boxville (Post OP)", false, nullptr, false, false, true, hashof("boxville4"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Gang Burrito (No Livery)", false, nullptr, false, false, true, hashof("gburrito2"), Menu__VehicleList_Options);
+
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpLowrider2))
 	{
@@ -1096,11 +1149,11 @@ void Menu__VehicleList_Offroad()
 	AddItemVehicle(hashof("dune"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("dune2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("dloader"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Mesa (Merryweather)", hashof("mesa3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Mesa (Merryweather)", false, nullptr, false, false, true, hashof("mesa3"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("rancherxl"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Rancher XL (Snowy)", hashof("rancherxl2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Rancher XL (Snowy)", false, nullptr, false, false, true, hashof("rancherxl2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("rebel2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Rebel (Rusty)", hashof("rebel"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Rebel (Rusty)", false, nullptr, false, false, true, hashof("rebel"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("sandking"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("sandking2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("bifta"), Menu__VehicleList_Options);
@@ -1108,11 +1161,11 @@ void Menu__VehicleList_Offroad()
 	AddItemVehicle(hashof("dubsta3"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("monster"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("insurgent"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Insurgent Transport", hashof("insurgent2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Insurgent Transport", false, nullptr, false, false, true, hashof("insurgent2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("technical"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("brawler"), Menu__VehicleList_Options);
 
-	
+
 	#ifdef __YSC__
 	if (is_dlc_present(Update_spUpgrade))
 	{
@@ -1130,7 +1183,7 @@ void Menu__VehicleList_Offroad()
 	if (is_dlc_present(Update_mpImportExport))
 	{
 		AddItemVehicle(VEHICLE_BLAZER5, Menu__VehicleList_Options);
-		AddItemMenuWithParam("Ramp Buggy Custom", VEHICLE_DUNE4, Menu__VehicleList_Options);
+		AddItemMenuWithParamAdvanced("Ramp Buggy Custom", false, nullptr, false, false, true, VEHICLE_DUNE4, Menu__VehicleList_Options);
 		AddItemVehicle(VEHICLE_DUNE5, Menu__VehicleList_Options);
 		AddItemVehicle(VEHICLE_TECHNICAL2, Menu__VehicleList_Options);
 	}
@@ -1143,13 +1196,13 @@ void Menu__VehicleList_Commercial()
 	AddItemVehicle(hashof("biff"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("hauler"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("mule"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Mule (Drop Down Trunk)", hashof("mule2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Mule (Drop Down Trunk)", false, nullptr, false, false, true, hashof("mule2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("packer"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("phantom"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("pounder"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("stockade"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Stockade (Snowy)", hashof("stockade3"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Mule (No Livery)", hashof("mule3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Stockade (Snowy)", false, nullptr, false, false, true, hashof("stockade3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Mule (No Livery)", false, nullptr, false, false, true, hashof("mule3"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpImportExport))
 	{
@@ -1167,7 +1220,7 @@ void Menu__VehicleList_Service()
 	AddItemVehicle(hashof("taxi"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("trash"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("tourbus"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Trashmaster (Rusty)", hashof("trash2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Trashmaster (Rusty)", false, nullptr, false, false, true, hashof("trash2"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpExecutive))
 	{
@@ -1188,22 +1241,22 @@ void Menu__VehicleList_Utility()
 	SetHeader("Utility");
 	AddItemVehicle(hashof("airtug"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("caddy"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Caddy (Old)", hashof("caddy2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Caddy (Old)", false, nullptr, false, false, true, hashof("caddy2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("docktug"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("forklift"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("mower"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("ripley"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("sadler"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Sadler (Snowy)", hashof("sadler2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Sadler (Snowy)", false, nullptr, false, false, true, hashof("sadler2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("scrap"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("tractor2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Tractor (Rusty)", hashof("tractor"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Tractor (Snowy)", hashof("tractor3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Tractor (Rusty)", false, nullptr, false, false, true, hashof("tractor"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Tractor (Snowy)", false, nullptr, false, false, true, hashof("tractor3"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("towtruck"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Towtruck (Small)", hashof("towtruck2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Basket Truck", hashof("utillitruck"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Towtruck (Small)", false, nullptr, false, false, true, hashof("towtruck2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Basket Truck", false, nullptr, false, false, true, hashof("utillitruck"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("utillitruck2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Utility Pick-up Truck", hashof("utillitruck3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Utility Pick-up Truck", false, nullptr, false, false, true, hashof("utillitruck3"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
 	#endif
@@ -1218,9 +1271,9 @@ void Menu__VehicleList_Industrial()
 	AddItemVehicle(hashof("flatbed"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("handler"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("mixer"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Mixer (Wheels On Back)", hashof("mixer2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Tipper (6-Wheeler)", hashof("tiptruck"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Tipper (10-Wheeler)", hashof("tiptruck2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Mixer (Wheels On Back)", false, nullptr, false, false, true, hashof("mixer2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Tipper (6-Wheeler)", false, nullptr, false, false, true, hashof("tiptruck"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Tipper (10-Wheeler)", false, nullptr, false, false, true, hashof("tiptruck2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("guardian"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
@@ -1231,14 +1284,14 @@ void Menu__VehicleList_Emergency()
 	SetHeader("Emergency");
 	AddItemVehicle(hashof("ambulance"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("policet"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("FIB Buffalo", hashof("fbi"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("FIB Granger", hashof("fbi2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("FIB Buffalo", false, nullptr, false, false, true, hashof("fbi"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("FIB Granger", false, nullptr, false, false, true, hashof("fbi2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("firetruk"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("lguard"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("pbus"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Police Stanier", hashof("police"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Police Buffalo", hashof("police2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Police Interceptor", hashof("police3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Police Stanier", false, nullptr, false, false, true, hashof("police"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Police Buffalo", false, nullptr, false, false, true, hashof("police2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Police Interceptor", false, nullptr, false, false, true, hashof("police3"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("police4"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("policeold1"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("policeold2"), Menu__VehicleList_Options);
@@ -1258,7 +1311,7 @@ void Menu__VehicleList_Military()
 	AddItemVehicle(hashof("barracks2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("crusader"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("rhino"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Barracks (Dark Camo)", hashof("barracks3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Barracks (Dark Camo)", false, nullptr, false, false, true, hashof("barracks3"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
 	#endif
@@ -1361,7 +1414,7 @@ void Menu__VehicleList_Plane()
 	AddItemVehicle(hashof("hydra"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("luxor2"), Menu__VehicleList_Options);
 
-	
+
 	#ifdef __YSC__
 	if (is_dlc_present(Update_spUpgrade))
 	{
@@ -1381,13 +1434,13 @@ void Menu__VehicleList_Helicopter()
 	AddItemVehicle(hashof("buzzard"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("buzzard2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("cargobob"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Medical Cargobob", hashof("cargobob2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Trevor's Cargobob", hashof("cargobob3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Medical Cargobob", false, nullptr, false, false, true, hashof("cargobob2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Trevor's Cargobob", false, nullptr, false, false, true, hashof("cargobob3"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("skylift"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("polmav"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("maverick"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("frogger"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Trevor's Frogger", hashof("frogger2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Trevor's Frogger", false, nullptr, false, false, true, hashof("frogger2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("swift"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("savage"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("valkyrie"), Menu__VehicleList_Options);
@@ -1395,7 +1448,7 @@ void Menu__VehicleList_Helicopter()
 	#ifdef __YSC__
 	if (is_dlc_present(Update_mpApartment))
 	{
-		AddItemMenuWithParam("Cargobob 2-Seater", VEHICLE_CARGOBOB4, Menu__VehicleList_Options);
+		AddItemMenuWithParamAdvanced("Cargobob 2-Seater", false, nullptr, false, false, true, VEHICLE_CARGOBOB4, Menu__VehicleList_Options);
 		AddItemVehicle(VEHICLE_SUPERVOLITO, Menu__VehicleList_Options);
 		AddItemVehicle(VEHICLE_SUPERVOLITO2, Menu__VehicleList_Options);
 		AddItemVehicle(VEHICLE_VALKYRIE2, Menu__VehicleList_Options);
@@ -1412,19 +1465,19 @@ void Menu__VehicleList_Boat()
 	AddItemVehicle(hashof("squalo"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("marquis"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("dinghy"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Dinghy 2-Seater", hashof("dinghy2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Dinghy 2-Seater", false, nullptr, false, false, true, hashof("dinghy2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("jetmax"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("predator"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("tropic"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("seashark"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Seashark Lifeguard", hashof("seashark2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Seashark Lifeguard", false, nullptr, false, false, true, hashof("seashark2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("submersible"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("suntrap"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("speeder"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Dinghy (Heist)", hashof("dinghy3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Dinghy (Heist)", false, nullptr, false, false, true, hashof("dinghy3"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("toro"), Menu__VehicleList_Options);
 
-	
+
 	#ifdef __YSC__
 	if (is_dlc_present(Update_spUpgrade))
 	{
@@ -1448,27 +1501,27 @@ void Menu__VehicleList_Trailer()
 {
 	SetHeader("Trailers");
 	AddItemVehicle(hashof("boattrailer"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Army Tanker", hashof("armytanker"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Army Flatbed", hashof("armytrailer"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Army Flatbed With Cutter", hashof("armytrailer2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Freight Train Flatbed", hashof("freighttrailer"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Mobile Home", hashof("proptrailer"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Grain Trailer", hashof("graintrailer"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Hay Bale Trailer", hashof("baletrailer"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Shipping Container Trailer", hashof("docktrailer"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Metal/Tarp Covered Trailer", hashof("trailers"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Misc Livery Trailer", hashof("trailers2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Big Goods Trailer", hashof("trailers3"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Fame or Shame Trailer", hashof("tvtrailer"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Farm Cultivator", hashof("raketrailer"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Tanker", hashof("tanker"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Log Trailer", hashof("trailerlogs"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Empty Car Carrier Trailer", hashof("tr2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Marquis Trailer", hashof("tr3"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Super Car Carrier Trailer", hashof("tr4"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Flatbed", hashof("trflat"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Small Construction Trailer", hashof("trailersmall"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Tanker (No Livery)", hashof("tanker2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Army Tanker", false, nullptr, false, false, true, hashof("armytanker"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Army Flatbed", false, nullptr, false, false, true, hashof("armytrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Army Flatbed With Cutter", false, nullptr, false, false, true, hashof("armytrailer2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Freight Train Flatbed", false, nullptr, false, false, true, hashof("freighttrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Mobile Home", false, nullptr, false, false, true, hashof("proptrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Grain Trailer", false, nullptr, false, false, true, hashof("graintrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Hay Bale Trailer", false, nullptr, false, false, true, hashof("baletrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Shipping Container Trailer", false, nullptr, false, false, true, hashof("docktrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Metal/Tarp Covered Trailer", false, nullptr, false, false, true, hashof("trailers"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Misc Livery Trailer", false, nullptr, false, false, true, hashof("trailers2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Big Goods Trailer", false, nullptr, false, false, true, hashof("trailers3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Fame or Shame Trailer", false, nullptr, false, false, true, hashof("tvtrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Farm Cultivator", false, nullptr, false, false, true, hashof("raketrailer"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Tanker", false, nullptr, false, false, true, hashof("tanker"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Log Trailer", false, nullptr, false, false, true, hashof("trailerlogs"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Empty Car Carrier Trailer", false, nullptr, false, false, true, hashof("tr2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Marquis Trailer", false, nullptr, false, false, true, hashof("tr3"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Super Car Carrier Trailer", false, nullptr, false, false, true, hashof("tr4"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Flatbed", false, nullptr, false, false, true, hashof("trflat"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Small Construction Trailer", false, nullptr, false, false, true, hashof("trailersmall"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Tanker (No Livery)", false, nullptr, false, false, true, hashof("tanker2"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
 	#endif
@@ -1477,20 +1530,21 @@ void Menu__VehicleList_Rail()
 {
 	SetHeader("Trains");
 	AddItemVehicle(hashof("cablecar"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Freight Train", hashof("freight"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Train Well Car", hashof("freightcar"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Train Container", hashof("freightcont1"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Train Container (livery)", hashof("freightcont2"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Train Boxcar", hashof("freightgrain"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Train Fuel Tank Car", hashof("tankercar"), Menu__VehicleList_Options);
-	AddItemMenuWithParam("Metro Train", hashof("metrotrain"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Freight Train", false, nullptr, false, false, true, hashof("freight"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Train Well Car", false, nullptr, false, false, true, hashof("freightcar"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Train Container", false, nullptr, false, false, true, hashof("freightcont1"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Train Container (livery)", false, nullptr, false, false, true, hashof("freightcont2"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Train Boxcar", false, nullptr, false, false, true, hashof("freightgrain"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Train Fuel Tank Car", false, nullptr, false, false, true, hashof("tankercar"), Menu__VehicleList_Options);
+	AddItemMenuWithParamAdvanced("Metro Train", false, nullptr, false, false, true, hashof("metrotrain"), Menu__VehicleList_Options);
 	#ifdef __YSC__
 
 	#endif
 }
+
 void Menu__VehicleList()
 {
-	SetHeader("Vehicle Spawner");
+	SetHeader("Vehicle List");
 	AddItemMenu("Sports", Menu__VehicleList_Sports);
 	AddItemMenu("Super", Menu__VehicleList_Super);
 	AddItemMenu("Coupes", Menu__VehicleList_Coupes);
@@ -1514,9 +1568,6 @@ void Menu__VehicleList()
 	AddItemMenu("Boats", Menu__VehicleList_Boat);
 	AddItemMenu("Trailers", Menu__VehicleList_Trailer);
 	AddItemMenu("Trains", Menu__VehicleList_Rail);
-	#ifdef __YSC__
-
-	#endif
 }
 #pragma endregion
 
@@ -1564,7 +1615,7 @@ inline void MainMenu()
 #pragma region LoopedOptions
 void FlyMod(Player CurrentPlayerPed)
 {
-	DisableControl(2, INPUT_VEHICLE_LOOK_BEHIND);
+	DisableControl(2, INPUT_VEH_LOOK_BEHIND);
 	DisableControl(2, INPUT_LOOK_BEHIND);
 	set_input_exclusive(2, INPUT_FRONTEND_X);
 	set_input_exclusive(2, INPUT_FRONTEND_LS);
@@ -1609,7 +1660,7 @@ void FlyModController(Player CurrentPlayerPed)
 {
 	if (is_control_pressed(2, INPUT_FRONTEND_X) && is_control_just_pressed(2, INPUT_FRONTEND_LS))
 	{
-		DisableControl(2, INPUT_VEHICLE_LOOK_BEHIND);
+		DisableControl(2, INPUT_VEH_LOOK_BEHIND);
 		DisableControl(2, INPUT_LOOK_BEHIND);
 		set_input_exclusive(2, INPUT_FRONTEND_X);
 		set_input_exclusive(2, INPUT_FRONTEND_LS);
@@ -1681,6 +1732,34 @@ inline void LoopedOptions()
 		set_player_wanted_level(player_id(), 0, false);
 		set_max_wanted_level(0);
 	}
+	
+
+
+	
+	if (!has_named_ptfx_asset_loaded("core_snow"))
+	{
+		request_named_ptfx_asset("core_snow");
+
+		//request_script_audio_bank("SNOW_FOOTSTEPS", false, -1)
+		request_script_audio_bank("SNOW_FOOTSTEPS", false);
+	}
+	else
+	{
+		//XBOX TU27 Search "XMAS" Addr = IsNetworkGame function call
+		#ifndef __YSC__
+		*(int*)0x8274B3D0 = 0x60000000;
+		*(int*)(0x8274B3D0 + 4) = 0x39200001;
+		
+		*(int*)0x82E910AC = 0x60000000;
+		*(int*)(0x82E910AC + 4) = 0x39200001;
+		#endif
+		set_weather_type_now_persist("XMAS");
+		_set_force_ped_footsteps_tracks(1);
+		_set_force_vehicle_trails(1);
+
+
+	}
+
 	
 
 }

@@ -203,3 +203,20 @@ extern __unsafeIntrinsic void __pCall();
 
 #undef __asm_unsafe
 #undef __intrinsic
+
+
+#define CreateSizedArray(name, sizein)\
+struct\
+{\
+	int size;\
+	any items[sizein];\
+} name = {.size = sizein};
+
+#define ArrayToSizedArray(arr, sizedarr)\
+if(sizeof(arr) == sizeof(sizedarr.items))\
+	memcpy(sizedarr.items, arr, countof(arr));
+
+#define SizedArrayToArray(sizedarr, arr)\
+if(sizeof(arr) == sizeof(sizedarr.items))\
+	memcpy(arr, sizedarr.items, countof(sizedarr.items));
+	

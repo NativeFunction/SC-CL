@@ -358,8 +358,8 @@ enum GTAIV_Opcodes
 	, IVO_GetFrameP6 = 60
 	, IVO_GetFrameP7 = 61
 	, IVO_GetFrameP = 62
-	, IVO_GetGlobalP = 63
-	, IVO_GetStaticP = 64
+	, IVO_GetStaticP = 63
+	, IVO_GetGlobalP = 64
 	, IVO_GetArrayP = 65
 	, IVO_Switch = 66
 	, IVO_PushString = 67
@@ -404,7 +404,7 @@ enum GTAIV_Opcodes
 
 #pragma warning( disable : 4201 )//unnamed struct extention
 typedef union OpCodes {
-	const uint8_t A[164];
+	const uint8_t A[176];
 	struct {
 		const uint8_t
 			Nop

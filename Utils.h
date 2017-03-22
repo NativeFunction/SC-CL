@@ -177,8 +177,8 @@ namespace Utils {
 	}
 	namespace Crypt
 	{
-		bool AES_Decrypt(uint8_t * data, size_t length);
-		bool AES_Encrypt(uint8_t * data, size_t length);
+		bool AES_Decrypt(uint8_t * data, size_t length, const uint8_t key[32]);
+		bool AES_Encrypt(uint8_t * data, size_t length, const uint8_t key[32]);
 	}
 
 }

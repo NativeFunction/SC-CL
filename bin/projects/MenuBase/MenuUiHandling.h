@@ -26,7 +26,8 @@ enum ItemContainerBits
 	ICB_ExecuteOnChange,//Gets whether the item executes on left, right scroll
 	ICB_IsItemDisabled,//Gets whether the item is disabled
 	ICB_BoolNumValue,//Current bool value for BoolNum operations
-	ICB_DoesItemHaveConfirmation,
+	ICB_DoesItemHaveConfirmation,//Gets if the item selection has to be confirmed
+	ICB_DoesItemForwardHeaderText,//Gets if the item forwards header text to the next submenu
 };
 enum PageBits
 {
@@ -106,8 +107,8 @@ typedef struct Page//Menu Page
 	//size: 112
 	struct
 	{
-		char* HeaderText;
-		bool IsHeaderGxt;
+		char* HeaderText[MaxMenuLevels];
+		int IsHeaderGxtBitSet;
 		Font HeaderFont;
 		Font TextFont;
 		vector2 DrawPos;

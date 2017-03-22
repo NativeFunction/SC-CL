@@ -351,7 +351,7 @@ namespace Utils {
 
 	namespace Crypt
 	{
-		bool AES_Decrypt(uint8_t * data, size_t length)
+		bool AES_Decrypt(uint8_t * data, size_t length, const uint8_t key[32])
 		{
 			if (length == 0)
 				return false;
@@ -361,8 +361,7 @@ namespace Utils {
 			{
 
 				aes256_context ctx;
-				uint8_t key[32] = { 0xB7, 0x62, 0xDF, 0xB6, 0xE2, 0xB2, 0xC6, 0xDE, 0xAF, 0x72, 0x2A, 0x32, 0xD2, 0xFB, 0x6F, 0x0C, 0x98, 0xA3, 0x21, 0x74, 0x62, 0xC9, 0xC4, 0xED, 0xAD, 0xAA, 0x2E, 0xD0, 0xDD, 0xF9, 0x2F, 0x10 };
-				aes256_init(&ctx, key);
+				aes256_init(&ctx, const_cast<uint8_t*>(key));
 
 				for (uint32_t i = 0; i < inputCount; i += 16)
 				{
@@ -375,7 +374,7 @@ namespace Utils {
 			}
 			return false;
 		}
-		bool AES_Encrypt(uint8_t * data, size_t length)
+		bool AES_Encrypt(uint8_t * data, size_t length, const uint8_t key[32])
 		{
 			if (length == 0)
 				return false;
@@ -385,8 +384,7 @@ namespace Utils {
 			{
 
 				aes256_context ctx;
-				uint8_t key[32] = { 0xB7, 0x62, 0xDF, 0xB6, 0xE2, 0xB2, 0xC6, 0xDE, 0xAF, 0x72, 0x2A, 0x32, 0xD2, 0xFB, 0x6F, 0x0C, 0x98, 0xA3, 0x21, 0x74, 0x62, 0xC9, 0xC4, 0xED, 0xAD, 0xAA, 0x2E, 0xD0, 0xDD, 0xF9, 0x2F, 0x10 };
-				aes256_init(&ctx, key);
+				aes256_init(&ctx, const_cast<uint8_t*>(key));
 
 				for (uint32_t i = 0; i < inputCount; i += 16)
 				{

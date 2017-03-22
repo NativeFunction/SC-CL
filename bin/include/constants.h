@@ -23,4 +23,7 @@
 	#else
 		#include "GTAV/consts32.h"
 	#endif
+	
+#elif defined(__GTAIV__)
+	#include "GTAIV/consts32.h"
 #endif

@@ -1,5 +1,11 @@
 #pragma once
 
+#define SwapEndian(x) _Generic((x),\
+short int: SwapEndian16(x), unsigned short int: SwapEndian16(x),\
+default: SwapEndian32(x))
+
+#define SwapEndian32Const(value)  ((((value) & 0xff000000) >> 24) | (((value) & 0x00ff0000) >>  8) | (((value) & 0x0000ff00) <<  8) | (((value) & 0x000000ff) << 24))
+
 void print(const char* str, int ms);
 const char* strcatGlobal(const char* str1, const char* str2);
 const char* straddiGlobal(const char* str1, int i);

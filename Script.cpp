@@ -103,6 +103,8 @@ void Script::initializeEntryFunction()
 			entryFunction->addOpPushInt(1);
 			entryFunction->addOpJumpGT("__builtin__singleton__");
 			break;
+			case BT_GTAIV_TLAD:
+			case BT_GTAIV_TBOGT:
 			case BT_GTAIV:
 			entryFunction->addOpPushString(getScriptName());//no native for getting the name of a script at runtime
 			entryFunction->addOpNative("get_number_of_instances_of_streamed_script", 1, 1);// iv native takes a string
@@ -229,22 +231,24 @@ bool Script::isUnsafeContext() const
 }
 string Script::getPlatformAbv() const
 {
+	const int BT = getBuildType();
 	switch (getBuildPlatform())
 	{
 		case P_XBOX: return "x";
 		case P_PS3: return "c";
-		case P_PC: return getBuildType() == BT_GTAIV ? "w" : "y";
+		case P_PC: return (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT) ? "w" : "y";
 	}
 	Utils::System::Throw("No platform selected");
 	return 0;
 }
 string Script::getPlatformAbvUpper() const
 {
+	const int BT = getBuildType();
 	switch (getBuildPlatform())
 	{
 		case P_XBOX: return "X";
 		case P_PS3: return "C";
-		case P_PC: return getBuildType() == BT_GTAIV ? "W" : "Y";
+		case P_PC: return (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT) ? "W" : "Y";
 	}
 	Utils::System::Throw("No platform selected");
 	return 0;
@@ -253,6 +257,8 @@ string Script::getBuildTypeExt() const
 {
 	switch (getBuildType())
 	{
+		case BT_GTAIV_TLAD:
+		case BT_GTAIV_TBOGT:
 		case BT_GTAIV: return "sca";//it would be cool to support gta 4 at some point but its not a priority
 		case BT_RDR_XSC: return getPlatformAbv() + "sa";
 		case BT_RDR_SCO: return "sca2";
@@ -266,6 +272,8 @@ string Script::getCompiledOutputExt() const
 	switch (getBuildType())
 	{
 		case BT_RDR_SCO:
+		case BT_GTAIV_TLAD:
+		case BT_GTAIV_TBOGT:
 		case BT_GTAIV: return "sco";
 		case BT_GTAV:
 		case BT_RDR_XSC: return getPlatformAbv() + "sc";
