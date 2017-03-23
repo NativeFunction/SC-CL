@@ -8,13 +8,10 @@ int fpsgrab = 0;
 int fps = 25;
 int FrameCountPre;
 int FrameCount;
+int Test[1024];
  
 void main(){
-	
-	char dest[16] = "";
-	
-	stradd(&dest, "hello", 16);
-	
+	Test[9] = 1;
 	THIS_SCRIPT_IS_SAFE_FOR_NETWORK_GAME();
 	SETTIMERA(0);
 	while(true){

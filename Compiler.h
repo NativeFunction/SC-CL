@@ -337,7 +337,7 @@ protected:
 			ChangeInt64inBuff = &CompileBase::ChangeInt64inBuffB;
 		}
 	}
-	virtual ~CompileBase(){}
+	virtual ~CompileBase() {};
 
 	virtual void Compile(const std::string& outDirectory) = 0;
 
@@ -654,7 +654,7 @@ public:
 			case BT_GTAIV_TLAD:
 			case BT_GTAIV_TBOGT:
 			case BT_GTAIV:
-			SCOWrite((outDirectory + HLData->getBuildFileName()).data(), false);
+			SCOWrite((outDirectory + HLData->getBuildFileName()).data(), SCRFlags::CompressedEncrypted);
 			break;
 			default:
 			assert(false && "Incompatible build type for GTAIV");
@@ -668,9 +668,8 @@ private:
 	#pragma region Type_Defines
 	enum class SCRFlags
 	{
-		UncompressedUnencrypted = 0x5343520D
-		, UncompressedEncrypted = 0x7363720E
-		, CompressedUnencrypted = 0x5363720D
+		  Standard = 0x5343520D
+		, Encrypted = 0x7363720E
 		, CompressedEncrypted = 0x5363720E
 	};
 	enum class SignatureTypes
@@ -769,7 +768,7 @@ private:
 	virtual void WriteStaticsNoPadding() override;
 	virtual void WriteHeader() override {};
 	virtual void WritePointers() override {};
-	void SCOWrite(const char* path, bool CompressAndEncrypt = true);
+	void SCOWrite(const char* path, SCRFlags flag);
 	#pragma endregion
 	
 };

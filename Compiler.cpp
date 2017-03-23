@@ -1413,17 +1413,23 @@ CompileGTAIV::SignatureTypes CompileGTAIV::GetSignature()
 		break;
 	}
 }
-void CompileGTAIV::SCOWrite(const char* path, bool CompressAndEncrypt)
+void CompileGTAIV::SCOWrite(const char* path, CompileGTAIV::SCRFlags EncryptionCompressionLevel)
 {
 	const uint8_t GTAIVEncryptionKey[32] = { 0x1A,0xB5,0x6F,0xED,0x7E,0xC3,0xFF,0x01,0x22,0x7B,0x69,0x15,0x33,0x97,0x5D,0xCE,0x47,0xD7,0x69,0x65,0x3F,0xF7,0x75,0x42,0x6A,0x96,0xCD,0x6D,0x53,0x07,0x56,0x5D };
 
 	FilePadding = 0x00;
 	ClearWriteVars();
 
-	const uint32_t HeaderSize = 24;
-	const vector<uint32_t> SCR_Header = //size: 6
+	enum HeaderIndexes
 	{
-		Utils::Bitwise::SwapEndian(CompressAndEncrypt ? (uint32_t)SCRFlags::CompressedEncrypted : (uint32_t)SCRFlags::UncompressedUnencrypted)//SCR.
+		CodeSize = 1,
+		StaticsCount = 2,
+		GlobalsCount = 3,
+	};
+
+	const uint32_t HeaderSize = 24;
+	const vector<uint32_t> SCR_Header = {
+		Utils::Bitwise::SwapEndian((uint32_t)EncryptionCompressionLevel)//SCR.
 		, CodePageData->getTotalSize()//code size
 		, HLData->getStaticCount()//statics count
 		, 0u//Globals Alloc Count
@@ -1431,50 +1437,63 @@ void CompileGTAIV::SCOWrite(const char* path, bool CompressAndEncrypt)
 		, Utils::Bitwise::SwapEndian((uint32_t)GetSignature())//Signature
 	};
 	
-
 	WriteCodePagesNoPadding();
 	WriteStaticsNoPadding();
 	//Globals should be written here if we decide to use them
 
 	#pragma region Write_File
-	if (CompressAndEncrypt)
+
+	switch (EncryptionCompressionLevel)
 	{
-		if (!Utils::Crypt::AES_Encrypt(BuildBuffer.data(), BuildBuffer.size(), GTAIVEncryptionKey))
-			Utils::System::Throw("SCO Encryption Failed");
-		
-		uint32_t CompressedSize = BuildBuffer.size();
-		vector<uint8_t> CompressedData(BuildBuffer.size(), 0);
+		case SCRFlags::CompressedEncrypted:{
+			uint32_t CompressedSize = BuildBuffer.size();
+			vector<uint8_t> CompressedData(CompressedSize * 2, 0);
+			Utils::Compression::ZLIB_CompressChecksum(BuildBuffer.data(), BuildBuffer.size(), CompressedData.data(), CompressedSize);
 
-		Utils::Compression::ZLIB_Compress(BuildBuffer.data(), BuildBuffer.size(), CompressedData.data(), CompressedSize);
-		//fix length of compressed data
+			if (CompressedSize <= 0)
+				Utils::System::Throw("SCO Code Page Compressed Size Invalid");
 
-		if (CompressedSize = 0)
-			Utils::System::Throw("SCO Compressed Size Invalid");
+			if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize, GTAIVEncryptionKey))
+				Utils::System::Throw("SCO Code Page Encryption Failed");
 
-		
-
-		FILE* file = fopen(path, "wb");
-		if (file != NULL)
-		{
-			fwrite(SCR_Header.data(), 1, HeaderSize, file);//header
-			fwrite(CompressedData.data(), 1, CompressedSize, file);//opcode data
-			fclose(file);
+			FILE* file = fopen(path, "wb");
+			if (Utils::IO::CheckFopenFile(path, file))
+			{
+				std::fwrite(SCR_Header.data(), 1, HeaderSize, file);//header
+				std::fwrite(&CompressedSize, 1, 4, file);//compressed size
+				std::fwrite(CompressedData.data(), 1, CompressedSize, file);//opcode data
+				std::fclose(file);
+			}
 		}
-		else
-			Utils::System::Throw("Could Not Open Output File");
-	}
-	else
-	{
-		FILE* file = fopen(path, "wb");
-
-		if (file != NULL)
-		{
-			fwrite(SCR_Header.data(), 1, HeaderSize, file);//header
-			fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
-			fclose(file);
+		break;
+		case SCRFlags::Encrypted:{
+			if (SCR_Header[CodeSize] > 0)
+			{
+				if (!Utils::Crypt::AES_Encrypt(BuildBuffer.data(), SCR_Header[CodeSize], GTAIVEncryptionKey))
+					Utils::System::Throw("SCO Code Page Encryption Failed");
+			}
+			if (SCR_Header[StaticsCount] > 0)
+			{
+				if (!Utils::Crypt::AES_Encrypt(BuildBuffer.data() + SCR_Header[CodeSize], SCR_Header[StaticsCount] * 4, GTAIVEncryptionKey))
+					Utils::System::Throw("SCO Statics Page Encryption Failed");
+			}
+			if (SCR_Header[GlobalsCount] > 0)
+			{
+				if (!Utils::Crypt::AES_Encrypt(BuildBuffer.data() + SCR_Header[CodeSize] + SCR_Header[StaticsCount] * 4, SCR_Header[GlobalsCount] * 4, GTAIVEncryptionKey))
+					Utils::System::Throw("SCO Globals Page Encryption Failed");
+			}
 		}
-		else
-			Utils::System::Throw("Could Not Open Output File");
+		//intentional no break
+		case SCRFlags::Standard:{
+			FILE* file = fopen(path, "wb");
+			if (Utils::IO::CheckFopenFile(path, file))
+			{
+				std::fwrite(SCR_Header.data(), 1, HeaderSize, file);//header
+				std::fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
+				std::fclose(file);
+			}
+		}
+		break;
 	}
 
 	#pragma endregion

@@ -55,7 +55,7 @@ using namespace llvm;
 
 #pragma region Global_Decls
 string globalDirectory;
-const string Version = "0.0.0";
+const string Version = "0.9.3";
 #pragma endregion
 
 #pragma region Global_Misc_Clang_Decls
@@ -7257,7 +7257,7 @@ void WriteScriptFile(const string& outDir)
 				}
 				break;
 				default:
-				Throw("Grand Theft Aut IV is only supported on Xbox360, PS3 and PC");
+				Throw("Grand Theft Auto IV is only supported on Xbox360, PS3 and PC");
 			}
 		}
 		break;
