@@ -120,8 +120,8 @@ extern _native char *GET_ANIM_GROUP_FROM_CHAR(Ped ped);
 extern _native float GET_CHAR_MAX_MOVE_BLEND_RATIO(Ped ped);
 extern _native int GET_CHAR_GRAVITY(Ped ped);
 extern _native ScriptAny GET_CHAR_LAST_DAMAGE_BONE(Ped ped, unsigned int *pBone);
-extern _native ScriptAny SET_CHAR_DUCKING(Ped ped, bool set);	//original scripts have ret for this
-extern _native ScriptAny TOGGLE_CHAR_DUCKING(Ped ped);	//doesnt has result ,  but orig scripts though that shud
+extern _native ScriptAny SET_CHAR_DUCKING(Ped ped, bool set);	
+extern _native ScriptAny TOGGLE_CHAR_DUCKING(Ped ped);	
 extern _native unsigned int GET_CHAR_DRAWABLE_VARIATION(Ped ped, unsigned int component);
 extern _native unsigned int GET_CHAR_MONEY(Ped ped);
 extern _native unsigned int GET_CHAR_TEXTURE_VARIATION(Ped ped, unsigned int component);
@@ -159,7 +159,7 @@ extern _native void CREATE_RANDOM_FEMALE_CHAR(float x, float y, float z, Ped *pP
 extern _native void CREATE_RANDOM_MALE_CHAR(float x, float y, float z, Ped *pPed);
 extern _native void DAMAGE_CHAR(Ped ped, unsigned int hitPoints, bool unknown);
 extern _native void DELETE_CHAR(Ped *pPed);
-extern _native void DONT_REMOVE_CHAR(Ped ped);	//mission cleanup related
+extern _native void DONT_REMOVE_CHAR(Ped ped);	
 extern _native void END_CHAR_SEARCH_CRITERIA(void);
 extern _native void EXPLODE_CHAR_HEAD(Ped ped);
 extern _native void EXTINGUISH_CHAR_FIRE(Ped ped);
@@ -562,7 +562,7 @@ extern _native void SET_MONEY_CARRIED_BY_PED_WITH_MODEL(unsigned int model, int 
 extern _native void SET_NM_ANIM_POSE(Ped ped, char *AnimName0, char *AnimName1, float pose);
 extern _native void SET_NM_MESSAGE_BOOL(int id, bool value);
 extern _native void SET_NM_MESSAGE_FLOAT(int id, float value);
-extern _native void SET_NM_MESSAGE_INSTANCE_INDEX(int id, Ped ped, Vehicle car, Object obj);	//index can be ped or car or object only
+extern _native void SET_NM_MESSAGE_INSTANCE_INDEX(int id, Ped ped, Vehicle car, Object obj);	
 extern _native void SET_NM_MESSAGE_INT(int id, int value);
 extern _native void SET_NM_MESSAGE_STRING(int id, char *string);
 extern _native void SET_NM_MESSAGE_VEC3(int id, float x, float y, float z);
@@ -669,7 +669,6 @@ extern _native bool IS_CAR_WAITING_FOR_WORLD_COLLISION(Vehicle vehicle);
 extern _native bool IS_CHAR_IN_CAR(Ped ped, Vehicle vehicle);
 extern _native bool IS_CHAR_IN_MODEL(Ped ped, unsigned int model);
 extern _native bool IS_CHAR_TOUCHING_VEHICLE(Ped ped, Vehicle vehicle);
-extern _native void FUCK_THA_HOLE(Ped ped, bool set);
 extern _native bool IS_EMERGENCY_SERVICES_VEHICLE(Vehicle veh);
 extern _native bool IS_HELI_PART_BROKEN(Vehicle heli, bool flag0, bool flag1, bool flag2);
 extern _native bool IS_NEXT_STATION_ALLOWED(Vehicle veh);
@@ -708,7 +707,7 @@ extern _native int GET_CURRENT_PLAYBACK_NUMBER_FOR_CAR(Vehicle car);
 extern _native int GET_NUMBER_OF_STICKY_BOMBS_STUCK_TO_VEHICLE(Vehicle veh);
 extern _native int GET_VEHICLE_GEAR(Vehicle veh);
 extern _native int GET_VEHICLE_TYPE_OF_MODEL(unsigned int model);
-extern _native int SET_HELI_FORCE_ENGINE_ON(Vehicle heli, bool set);	//doesnt return anything but in scripts it is requesting result
+extern _native int SET_HELI_FORCE_ENGINE_ON(Vehicle heli, bool set);	
 extern _native ScriptAny SET_CAR_ON_GROUND_PROPERLY(Vehicle vehicle);
 extern _native unsigned int GET_CURRENT_STATION_FOR_TRAIN(Train train);
 extern _native unsigned int GET_VEHICLE_MODEL_FROM_INDEX(int index);
@@ -740,7 +739,7 @@ extern _native void CREATE_CAR_GENERATOR(float x, float y, float z, float yaw, f
 extern _native void CREATE_MISSION_TRAIN(unsigned int unknown1, float x, float y, float z, bool unknown2, Train *pTrain);
 extern _native void CREATE_RANDOM_CAR_FOR_CAR_PARK(float x, float y, float z, float radius);
 extern _native void CREATE_RANDOM_CHAR_AS_DRIVER(Vehicle vehicle, Ped *pPed);
-extern _native void DAMAGE_CAR(Vehicle car, float x, float y, float z, float unkforce0, float unkforce1, bool flag);	//unkforce1 ~ 1000.0
+extern _native void DAMAGE_CAR(Vehicle car, float x, float y, float z, float unkforce0, float unkforce1, bool flag);	
 extern _native void DELETE_ALL_TRAINS(void);
 extern _native void DELETE_CAR(Vehicle *pVehicle);
 extern _native void DELETE_CAR_GENERATOR(int handle);
@@ -840,7 +839,7 @@ extern _native void SET_CAR_COLLISION(Vehicle car, bool set);
 extern _native void SET_CAR_COLOUR_COMBINATION(Vehicle car, int combination);
 extern _native void SET_CAR_COORDINATES(Vehicle vehicle, float pX, float pY, float pZ);
 extern _native void SET_CAR_COORDINATES_NO_OFFSET(Vehicle car, float x, float y, float z);
-extern _native void SET_CAR_DENSITY_MULTIPLIER(float density);	//random car + parked car
+extern _native void SET_CAR_DENSITY_MULTIPLIER(float density);	
 extern _native void SET_CAR_DISTANCE_AHEAD_MULTIPLIER(Vehicle car, float multiplier);
 extern _native void SET_CAR_DOOR_LATCHED(Vehicle car, int door, bool flag0, bool flag1);
 extern _native void SET_CAR_ENGINE_ON(Vehicle car, bool flag0, bool flag1);
@@ -888,13 +887,13 @@ extern _native void SET_LOAD_COLLISION_FOR_CAR_FLAG(Vehicle car, bool set);
 extern _native void SET_MISSION_TRAIN_COORDINATES(Vehicle train, float x, float y, float z);
 extern _native void SET_NEEDS_TO_BE_HOTWIRED(Vehicle veh, bool set);
 extern _native void SET_NO_RESPRAYS(bool set);
-extern _native void SET_PARKED_CAR_DENSITY_MULTIPLIER(float multiplier);	//parked cars
+extern _native void SET_PARKED_CAR_DENSITY_MULTIPLIER(float multiplier);	
 extern _native void SET_PETROL_TANK_HEALTH(Vehicle vehicle, float value);
 extern _native void SET_PETROL_TANK_WEAKPOINT(Vehicle car, bool set);
 extern _native void SET_PLANE_THROTTLE(Vehicle plane, float throttle);
 extern _native void SET_PLANE_UNDERCARRIAGE_UP(Vehicle plain, bool set);
 extern _native void SET_PLAYBACK_SPEED(Vehicle car, float speed);
-extern _native void SET_RANDOM_CAR_DENSITY_MULTIPLIER(float density);	//random car		
+extern _native void SET_RANDOM_CAR_DENSITY_MULTIPLIER(float density);	
 extern _native void SET_RECORDING_TO_POINT_NEAREST_TO_COORS(Vehicle cat, float x, float y, float z);
 extern _native void SET_REDUCE_VEHICLE_MODEL_BUDGET(bool set);
 extern _native void SET_RENDER_TRAIN_AS_DERAILED(Vehicle train, bool set);
@@ -944,7 +943,7 @@ extern _native void STOP_PLAYBACK_RECORDED_CAR(Vehicle car);
 extern _native void STOP_VEHICLE_ALWAYS_RENDER(Vehicle veh);
 extern _native void STORE_CAR_CHAR_IS_IN_NO_SAVE(Ped ped, Vehicle *car);
 extern _native void SUPPRESS_CAR_MODEL(unsigned int model);
-extern _native void SWITCH_CAR_GENERATOR(int handle, int type);	//type can be 0 - off, 101 - on
+extern _native void SWITCH_CAR_GENERATOR(int handle, int type);	
 extern _native void SWITCH_CAR_SIREN(Vehicle car, bool siren);
 extern _native void TRAIN_LEAVE_STATION(Vehicle train);
 extern _native void TRIGGER_VEH_ALARM(Vehicle car);
@@ -1754,7 +1753,7 @@ extern _native void GET_SCRIPT_CAM(int *cam);
 extern _native void GET_SCRIPT_DRAW_CAM(int *cam);
 extern _native void GET_VIEWPORT_POS_AND_SIZE(int viewportid, float *x, float *y, float *xsize, float *ysize);
 extern _native void HINT_CAM(float x, float y, float z, int, int, int, int);
-extern _native void M(int cam, int heading);	//set cam follow heading , "m" is a corect name
+extern _native void M(int cam, int heading);	
 extern _native void POINT_CAM_AT_CAM(int cam, int camnext);
 extern _native void POINT_CAM_AT_COORD(int cam, float x, float y, float z);
 extern _native void POINT_CAM_AT_OBJECT(int cam, Object obj);
@@ -1970,13 +1969,13 @@ extern _native char * GET_STRING_FROM_HASH_KEY(unsigned int hash);
 extern _native float GET_STRING_WIDTH_WITH_STRING(char *gxtName, char *literalString);
 extern _native int GET_BLIP_INFO_ID_ROTATION(int blip);
 extern _native int GET_LENGTH_OF_STRING_WITH_THIS_HASH_KEY(unsigned int gxtkey);
-extern _native int GET_LENGTH_OF_STRING_WITH_THIS_TEXT_LABEL_INS_NUM(ScriptAny, ScriptAny, ScriptAny);	//cellphone realted
+extern _native int GET_LENGTH_OF_STRING_WITH_THIS_TEXT_LABEL_INS_NUM(ScriptAny, ScriptAny, ScriptAny);	
 extern _native int GET_SIMPLE_BLIP_ID(void);
 extern _native int GET_STRING_WIDTH(char *gxtName);
 extern _native int GET_STRING_WIDTH_WITH_NUMBER(char *gxtName, int number);
 extern _native int GET_STRING_WIDTH_WITH_TEXT_AND_INT(char *gxtname, char *gxtnamenext, int val);
 extern _native int GET_WIDTH_OF_LITERAL_STRING(char *str);
-extern _native int GET_WIDTH_OF_SUBSTRING_GIVEN_TEXT_LABEL(char *gxtname, bool, ScriptAny, ScriptAny, ScriptAny);	//cellphone realted
+extern _native int GET_WIDTH_OF_SUBSTRING_GIVEN_TEXT_LABEL(char *gxtname, bool, ScriptAny, ScriptAny, ScriptAny);	
 extern _native Object GET_BLIP_INFO_ID_OBJECT_INDEX(Blip blip);
 extern _native Ped GET_BLIP_INFO_ID_PED_INDEX(Blip blip);
 extern _native Pickup GET_BLIP_INFO_ID_PICKUP_INDEX(Blip blip);
@@ -2005,7 +2004,7 @@ extern _native void ADD_SIMPLE_BLIP_FOR_PICKUP(Pickup pickup);
 extern _native void ADD_STRING_TO_HTML_SCRIPT_OBJECT(int htmlobj, char *str);
 extern _native void ADD_STRING_TO_NEWS_SCROLLBAR(char *str);
 extern _native void ADD_STRING_WITH_THIS_TEXT_LABEL_TO_PREVIOUS_BRIEF(char *gxtname);
-extern _native void ADD_TICKER_TO_PREVIOUS_BRIEF_WITH_UNDERSCORE(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);	//used for japanese text correcting
+extern _native void ADD_TICKER_TO_PREVIOUS_BRIEF_WITH_UNDERSCORE(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);	
 extern _native void ADD_TO_PREVIOUS_BRIEF(char *gxtentry);
 extern _native void ADD_TO_PREVIOUS_BRIEF_WITH_UNDERSCORE(char *gxtentry);
 extern _native void CHANGE_BLIP_ALPHA(Blip blip, int alpha);
@@ -2056,13 +2055,13 @@ extern _native void DISPLAY_ONSCREEN_TIMER_WITH_STRING(int timerid, bool, char *
 extern _native void DISPLAY_RADAR(bool display);
 extern _native void DISPLAY_SNIPER_SCOPE_THIS_FRAME(void);
 extern _native void DISPLAY_TEXT(float x, float y, char *gxtName);
-extern _native void DISPLAY_TEXT_SUBSTRING(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);	//cellphone realted
+extern _native void DISPLAY_TEXT_SUBSTRING(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);	
 extern _native void DISPLAY_TEXT_WITH_2_NUMBERS(float x, float y, char *gxtName, int number1, int number2);
 extern _native void DISPLAY_TEXT_WITH_3_NUMBERS(float x, float y, char *gxtentry, int, int, int);
 extern _native void DISPLAY_TEXT_WITH_BLIP_NAME(float x, float y, char *str, int blip);
 extern _native void DISPLAY_TEXT_WITH_FLOAT(float x, float y, char *gxtName, float value, unsigned int unknown);
 extern _native void DISPLAY_TEXT_WITH_LITERAL_STRING(float x, float y, char *gxtName, char *literalStr);
-extern _native void DISPLAY_TEXT_WITH_LITERAL_SUBSTRING(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);	//cellphone realted
+extern _native void DISPLAY_TEXT_WITH_LITERAL_SUBSTRING(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);	
 extern _native void DISPLAY_TEXT_WITH_NUMBER(float x, float y, char *gxtName, int value);
 extern _native void DISPLAY_TEXT_WITH_STRING(float x, float y, char *gxtName, char *gxtStringName);
 extern _native void DISPLAY_TEXT_WITH_STRING_AND_INT(float x, float y, char *gxtname, char *gxtnamenext, int val);
@@ -2194,7 +2193,7 @@ extern _native void DRAW_CURVED_WINDOW(float, float, float, float, unsigned int 
 extern _native void DRAW_CURVED_WINDOW_NOTEXT(float, float, float, float, int);
 extern _native void DRAW_CURVED_WINDOW_TEXT(float, float, float, int, int, char *, char *, int);
 extern _native void DRAW_FRONTEND_HELPER_TEXT(char *, char *, bool);
-extern _native void DRAW_LIGHT_WITH_RANGE(float x, float y, float z, int r, int g, int b, float width, float height); //DRAW_LIGHT_WITH_RANGE(float* XCoord, float* YCoord, float* ZCoord, int Red, int Green, int Blue, float Width, float Height)
+extern _native void DRAW_LIGHT_WITH_RANGE(float x, float y, float z, int r, int g, int b, float width, float height);
 extern _native void DRAW_MOVIE(float, float, float, float, float, int r, int g, int b, int a);
 extern _native void DRAW_RECT(float x1, float y1, float x2, float y2, unsigned int r, unsigned int g, unsigned int b, unsigned int a);
 extern _native void DRAW_SPHERE(float x, float y, float z, float radius);
@@ -2493,7 +2492,7 @@ extern _native void DEACTIVATE_SCRIPT_POPULATION_ZONE(void);
 extern _native void FIND_PRIMARY_POPULATION_ZONE_GROUP(int *groupparam0, int *groupparam1);
 extern _native void SET_ZONE_POPULATION_TYPE(char *zone, int poptype);
 extern _native void SET_ZONE_SCUMMINESS(char *zone, int scumminess);
-extern _native void SPECIFY_SCRIPT_POPULATION_ZONE_AREA(int, int, int, int, int, int);	//all params are WORDs
+extern _native void SPECIFY_SCRIPT_POPULATION_ZONE_AREA(int, int, int, int, int, int);
 extern _native void SPECIFY_SCRIPT_POPULATION_ZONE_GROUPS(int, int, int, int, int);
 extern _native void SPECIFY_SCRIPT_POPULATION_ZONE_NUM_CARS(int num);
 extern _native void SPECIFY_SCRIPT_POPULATION_ZONE_NUM_PARKED_CARS(int num);
@@ -2554,7 +2553,7 @@ extern _native bool NETWORK_AM_I_MUTED_BY_PLAYER(Player playerIndex);
 extern _native bool NETWORK_CHANGE_GAME_MODE_PENDING(void);
 extern _native bool NETWORK_CHANGE_GAME_MODE_SUCCEEDED(void);
 extern _native bool NETWORK_CHECK_INVITE_ARRIVAL(void);
-extern _native bool NETWORK_DID_INVITE_FRIEND(char *FRIENDNAME);//NETWORK_GET_FRIEND_NAME(I)
+extern _native bool NETWORK_DID_INVITE_FRIEND(char *FRIENDNAME);
 extern _native bool NETWORK_END_SESSION_PENDING(void);
 extern _native bool NETWORK_FIND_GAME_PENDING(void);
 extern _native bool NETWORK_GET_LAN_SESSION(void);
@@ -2606,7 +2605,7 @@ extern _native bool NETWORK_STRING_VERIFY_SUCCEEDED(void);
 extern _native bool PLAYER_WANTS_TO_JOIN_NETWORK_GAME(int);
 extern _native bool REQUEST_CONTROL_OF_NETWORK_ID(int netid);
 extern _native char * NETWORK_GET_HOST_SERVER_NAME(int host);
-extern _native char *NETWORK_GET_FRIEND_NAME(int id);//for (I < NETWORK_GET_FRIEND_COUNT()) if (NETWORK_IS_FRIEND_ONLINE(NETWORK_GET_FRIEND_NAME(I))
+extern _native char *NETWORK_GET_FRIEND_NAME(int id);
 extern _native char *NETWORK_GET_NEXT_TEXT_CHAT(void);
 extern _native char *NETWORK_GET_UNACCEPTED_INVITER_NAME(int);
 extern _native float GET_ONLINE_SCORE(int);	//147, 148, or 149
@@ -2614,7 +2613,7 @@ extern _native int FIND_NETWORK_KILLER_OF_PLAYER(Player playerIndex);
 extern _native int GET_DESTROYER_OF_NETWORK_ID(Player playerIndex, int id);
 extern _native int GET_GAMER_NETWORK_SCORE(Player playerIndex, int, int);
 extern _native int GET_NO_OF_PLAYERS_IN_TEAM(int team);
-extern _native int GET_ONLINE_LAN(void);//idk what is returned
+extern _native int GET_ONLINE_LAN(void);
 extern _native int GET_PLAYER_RANK_LEVEL_DURING_MP(Player playerIndex);
 extern _native int GET_PLAYER_TEAM(int Player);
 extern _native int HOW_LONG_HAS_NETWORK_PLAYER_BEEN_DEAD_FOR(Player playerIndex);
@@ -2623,7 +2622,7 @@ extern _native int MP_GET_AMOUNT_OF_VARIATION_COMPONENT(Ped ped, int componentid
 extern _native int MP_GET_PREFERENCE_VALUE(int prefid);
 extern _native int MP_GET_PROP_SETUP(Ped ped, int ukn0, int ukn1, int ukn2, int ukn3);
 extern _native int MP_GET_VARIATION_SETUP(Ped ped, int, int, int, int);
-extern _native int NETWORK_ACCEPT_INVITE(Player playerIndex);//if (COMPARE_STRING( NETWORK_GET_FRIEND_NAME( uParam0 ), NETWORK_GET_UNACCEPTED_INVITER_NAME( Result ) )) return result;
+extern _native int NETWORK_ACCEPT_INVITE(Player playerIndex);
 extern _native int NETWORK_GET_FRIEND_COUNT(void);
 extern _native int NETWORK_GET_GAME_MODE(void);
 extern _native int NETWORK_GET_HOST_AVERAGE_RANK(int host);
@@ -2738,7 +2737,7 @@ extern _native void SET_NETWORK_ID_CAN_MIGRATE(int netid, bool value);
 extern _native void SET_NETWORK_ID_EXISTS_ON_ALL_MACHINES(int netID, bool set);
 extern _native void SET_NETWORK_ID_STOP_CLONING(int id, bool);
 extern _native void SET_NETWORK_JOIN_FAIL(bool ukn0);
-extern _native void SET_NETWORK_PLAYER_AS_VIP(Player playerIndex, bool);//Gamemode
+extern _native void SET_NETWORK_PLAYER_AS_VIP(Player playerIndex, bool);
 extern _native void SET_NETWORK_VEHICLE_RESPOT_TIMER(int id, int ukn4000);
 extern _native void SET_OBJECT_EXISTS_ON_ALL_MACHINES(Object obj, bool exists);
 extern _native void SET_ONLINE_LAN(bool);
@@ -2789,7 +2788,7 @@ extern _native ScriptAny IS_SPHERE_VISIBLE_TO_ANOTHER_MACHINE(ScriptAny, ScriptA
 extern _native ScriptAny NETWORK_CHANGE_GAME_MODE(ScriptAny, ScriptAny, ScriptAny, ScriptAny);
 extern _native ScriptAny NETWORK_GET_MET_PLAYER_NAME(ScriptAny);
 extern _native ScriptAny NETWORK_GET_UNACCEPTED_INVITE_GAME_MODE(ScriptAny);
-extern _native ScriptAny NETWORK_JOIN_GAME(ScriptAny);	//server id?
+extern _native ScriptAny NETWORK_JOIN_GAME(ScriptAny);	
 extern _native ScriptAny NETWORK_RESTORE_GAME_CONFIG(ScriptAny);
 extern _native ScriptAny NETWORK_SEND_TEXT_CHAT(Player playerIndex, ScriptAny);
 extern _native ScriptAny NETWORK_STORE_SINGLE_PLAYER_GAME(void);
@@ -2799,7 +2798,7 @@ extern _native void GET_CAMERA_FROM_NETWORK_ID(int ned_id, int *cam);
 #pragma region DLC1//{
 extern _native void FLUSH_ALL_PLAYER_RESPAWN_COORDS(void);
 extern _native void SEND_CLIENT_BROADCAST_VARIABLES_NOW(void);
-extern _native void SET_PLAYER_AS_DAMAGED_PLAYER(Player playerIndex, int, bool);//SET_PLAYER_AS_DAMAGED_PLAYER( I, GET_PLAYER_ID(), 1 );
+extern _native void SET_PLAYER_AS_DAMAGED_PLAYER(Player playerIndex, int, bool);
 #pragma endregion//}
 #pragma region DLC2//{
 extern _native bool IS_LCPD_DATA_VALID(void);
@@ -2896,7 +2895,7 @@ extern _native void SWITCH_ARROW_ABOVE_BLIPPED_PICKUPS(bool on);
 #pragma endregion//}
 #pragma region WIDGET//{
 extern _native char* ADD_TEXT_WIDGET(ScriptAny);
-extern _native int GET_CONTENTS_OF_TEXT_WIDGET(ScriptAny);//GET_HASH_KEY( GET_CONTENTS_OF_TEXT_WIDGET( l_U0 ) );
+extern _native int GET_CONTENTS_OF_TEXT_WIDGET(ScriptAny);
 extern _native void ADD_TO_WIDGET_COMBO(ScriptAny);
 extern _native void ADD_WIDGET_FLOAT_READ_ONLY(ScriptAny, ScriptAny);
 extern _native void ADD_WIDGET_FLOAT_SLIDER(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);

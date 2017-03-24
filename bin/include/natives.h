@@ -22,4 +22,6 @@
 		#include "GTAIV/natives32Old.h"//1.0.4.0
 	#endif
 	
+	#undef _NewNatives
+	
 #endif

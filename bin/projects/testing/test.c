@@ -3,11 +3,11 @@
 #include "intrinsics.h"
 #include "natives.h"
 
-int fpsbool = 11;
-int fpsgrab = 14;
+bool fpsbool = false;
+int fpsgrab = 0;
 int fps = 25;
-int FrameCountPre = 26;
-int FrameCount = 27;
+int FrameCountPre;
+int FrameCount;
 int Test[1024];
  
 void main(){

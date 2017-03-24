@@ -654,7 +654,7 @@ public:
 			case BT_GTAIV_TLAD:
 			case BT_GTAIV_TBOGT:
 			case BT_GTAIV:
-			SCOWrite((outDirectory + HLData->getBuildFileName()).data(), SCRFlags::CompressedEncrypted);
+			SCOWrite((outDirectory + HLData->getBuildFileName()).data(), SCRFlags::Encrypted);
 			break;
 			default:
 			assert(false && "Incompatible build type for GTAIV");

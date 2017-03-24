@@ -120,8 +120,8 @@ extern _native32(0x55EB748F) char* GET_ANIM_GROUP_FROM_CHAR(Ped ped);
 extern _native32(0x54AE4F4B) float GET_CHAR_MAX_MOVE_BLEND_RATIO(Ped ped);
 extern _native32(0x746E7171) int GET_CHAR_GRAVITY(Ped ped);
 extern _native32(0x767E5013) ScriptAny GET_CHAR_LAST_DAMAGE_BONE(Ped ped, uint *pBone);
-extern _native32(0x64302F16) ScriptAny SET_CHAR_DUCKING(Ped ped, bool set);	//original scripts have ret for this
-extern _native32(0x265544F9) ScriptAny TOGGLE_CHAR_DUCKING(Ped ped);	//doesnt has result ,  but orig scripts though that shud
+extern _native32(0x64302F16) ScriptAny SET_CHAR_DUCKING(Ped ped, bool set);	
+extern _native32(0x265544F9) ScriptAny TOGGLE_CHAR_DUCKING(Ped ped);	
 extern _native32(0x1A1A6D83) uint GET_CHAR_DRAWABLE_VARIATION(Ped ped, uint component);
 extern _native32(0x7D675993) uint GET_CHAR_MONEY(Ped ped);
 extern _native32(0x3A7B78C5) uint GET_CHAR_TEXTURE_VARIATION(Ped ped, uint component);
@@ -159,7 +159,7 @@ extern _native32(0x1A920C02) void CREATE_RANDOM_FEMALE_CHAR(float x, float y, fl
 extern _native32(0x2FC728BB) void CREATE_RANDOM_MALE_CHAR(float x, float y, float z, Ped *pPed);
 extern _native32(0x6045426E) void DAMAGE_CHAR(Ped ped, uint hitPoints, bool unknown);
 extern _native32(0x0E3B49BF) void DELETE_CHAR(Ped *pPed);
-extern _native32(0x3659084A) void DONT_REMOVE_CHAR(Ped ped);	//mission cleanup related
+extern _native32(0x3659084A) void DONT_REMOVE_CHAR(Ped ped);	
 extern _native32(0x5ECF404A) void END_CHAR_SEARCH_CRITERIA(void);
 extern _native32(0x4A802E89) void EXPLODE_CHAR_HEAD(Ped ped);
 extern _native32(0x5D786EEE) void EXTINGUISH_CHAR_FIRE(Ped ped);
@@ -562,7 +562,7 @@ extern _native32(0x047D3BD6) void SET_MONEY_CARRIED_BY_PED_WITH_MODEL(uint model
 extern _native32(0x50311928) void SET_NM_ANIM_POSE(Ped ped, char* AnimName0, char* AnimName1, float pose);
 extern _native32(0x202F384E) void SET_NM_MESSAGE_BOOL(int id, bool value);
 extern _native32(0x6CE00370) void SET_NM_MESSAGE_FLOAT(int id, float value);
-extern _native32(0x48543AED) void SET_NM_MESSAGE_INSTANCE_INDEX(int id, Ped ped, Vehicle car, Object obj);	//index can be ped or car or object only
+extern _native32(0x48543AED) void SET_NM_MESSAGE_INSTANCE_INDEX(int id, Ped ped, Vehicle car, Object obj);	
 extern _native32(0x49105005) void SET_NM_MESSAGE_INT(int id, int value);
 extern _native32(0x3F296F78) void SET_NM_MESSAGE_STRING(int id, char* string);
 extern _native32(0x6E8F7FA4) void SET_NM_MESSAGE_VEC3(int id, float x, float y, float z);
@@ -707,7 +707,7 @@ extern _native32(0x678813A4) int GET_CURRENT_PLAYBACK_NUMBER_FOR_CAR(Vehicle car
 extern _native32(0x285D1184) int GET_NUMBER_OF_STICKY_BOMBS_STUCK_TO_VEHICLE(Vehicle veh);
 extern _native32(0x2D2F452D) int GET_VEHICLE_GEAR(Vehicle veh);
 extern _native32(0x60F720F6) int GET_VEHICLE_TYPE_OF_MODEL(uint model);
-extern _native32(0x3B8F5E20) int SET_HELI_FORCE_ENGINE_ON(Vehicle heli, bool set);	//doesnt return anything but in scripts it is requesting result
+extern _native32(0x3B8F5E20) int SET_HELI_FORCE_ENGINE_ON(Vehicle heli, bool set);	
 extern _native32(0x0E717E98) ScriptAny SET_CAR_ON_GROUND_PROPERLY(Vehicle vehicle);
 extern _native32(0x10FE0FE9) uint GET_CURRENT_STATION_FOR_TRAIN(Train train);
 extern _native32(0x7E5C70BF) uint GET_VEHICLE_MODEL_FROM_INDEX(int index);
@@ -739,7 +739,7 @@ extern _native32(0x0F132F7E) void CREATE_CAR_GENERATOR(float x, float y, float z
 extern _native32(0x0DDD70AE) void CREATE_MISSION_TRAIN(uint unknown1, float x, float y, float z, bool unknown2, Train *pTrain);
 extern _native32(0x36DA42AF) void CREATE_RANDOM_CAR_FOR_CAR_PARK(float x, float y, float z, float radius);
 extern _native32(0x31CD5F18) void CREATE_RANDOM_CHAR_AS_DRIVER(Vehicle vehicle, Ped *pPed);
-extern _native32(0x2D2B208A) void DAMAGE_CAR(Vehicle car, float x, float y, float z, float unkforce0, float unkforce1, bool flag);	//unkforce1 ~ 1000.0
+extern _native32(0x2D2B208A) void DAMAGE_CAR(Vehicle car, float x, float y, float z, float unkforce0, float unkforce1, bool flag);	
 extern _native32(0x552B2224) void DELETE_ALL_TRAINS(void);
 extern _native32(0x7F71342D) void DELETE_CAR(Vehicle *pVehicle);
 extern _native32(0x76E738A3) void DELETE_CAR_GENERATOR(int handle);
@@ -839,7 +839,7 @@ extern _native32(0x6A9033B3) void SET_CAR_COLLISION(Vehicle car, bool set);
 extern _native32(0x0B823C8D) void SET_CAR_COLOUR_COMBINATION(Vehicle car, int combination);
 extern _native32(0x567B6C56) void SET_CAR_COORDINATES(Vehicle vehicle, float pX, float pY, float pZ);
 extern _native32(0x12D64378) void SET_CAR_COORDINATES_NO_OFFSET(Vehicle car, float x, float y, float z);
-extern _native32(0x0AA73A12) void SET_CAR_DENSITY_MULTIPLIER(float density);	//random car + parked car
+extern _native32(0x0AA73A12) void SET_CAR_DENSITY_MULTIPLIER(float density);	
 extern _native32(0x071B6690) void SET_CAR_DISTANCE_AHEAD_MULTIPLIER(Vehicle car, float multiplier);
 extern _native32(0x0EAD6CFB) void SET_CAR_DOOR_LATCHED(Vehicle car, int door, bool flag0, bool flag1);
 extern _native32(0x0CAA42D0) void SET_CAR_ENGINE_ON(Vehicle car, bool flag0, bool flag1);
@@ -887,13 +887,13 @@ extern _native32(0x1E5C50B5) void SET_LOAD_COLLISION_FOR_CAR_FLAG(Vehicle car, b
 extern _native32(0x2A3F654A) void SET_MISSION_TRAIN_COORDINATES(Vehicle train, float x, float y, float z);
 extern _native32(0x40A708A6) void SET_NEEDS_TO_BE_HOTWIRED(Vehicle veh, bool set);
 extern _native32(0x418D0889) void SET_NO_RESPRAYS(bool set);
-extern _native32(0x010C7044) void SET_PARKED_CAR_DENSITY_MULTIPLIER(float multiplier);	//parked cars
+extern _native32(0x010C7044) void SET_PARKED_CAR_DENSITY_MULTIPLIER(float multiplier);	
 extern _native32(0x17E2319C) void SET_PETROL_TANK_HEALTH(Vehicle vehicle, float value);
 extern _native32(0x667517AB) void SET_PETROL_TANK_WEAKPOINT(Vehicle car, bool set);
 extern _native32(0x05B2442A) void SET_PLANE_THROTTLE(Vehicle plane, float throttle);
 extern _native32(0x7953702C) void SET_PLANE_UNDERCARRIAGE_UP(Vehicle plain, bool set);
 extern _native32(0x0EAF6A68) void SET_PLAYBACK_SPEED(Vehicle car, float speed);
-extern _native32(0x073505E0) void SET_RANDOM_CAR_DENSITY_MULTIPLIER(float density);	//random car		
+extern _native32(0x073505E0) void SET_RANDOM_CAR_DENSITY_MULTIPLIER(float density);	
 extern _native32(0x7B732460) void SET_RECORDING_TO_POINT_NEAREST_TO_COORS(Vehicle cat, float x, float y, float z);
 extern _native32(0x71F965B4) void SET_REDUCE_VEHICLE_MODEL_BUDGET(bool set);
 extern _native32(0x08240FB7) void SET_RENDER_TRAIN_AS_DERAILED(Vehicle train, bool set);
@@ -943,7 +943,7 @@ extern _native32(0x71C91921) void STOP_PLAYBACK_RECORDED_CAR(Vehicle car);
 extern _native32(0x7CDD7B0E) void STOP_VEHICLE_ALWAYS_RENDER(Vehicle veh);
 extern _native32(0x21CC647F) void STORE_CAR_CHAR_IS_IN_NO_SAVE(Ped ped, Vehicle *car);
 extern _native32(0x768F640F) void SUPPRESS_CAR_MODEL(uint model);
-extern _native32(0x7CE83A30) void SWITCH_CAR_GENERATOR(int handle, int type);	//type can be 0 - off, 101 - on
+extern _native32(0x7CE83A30) void SWITCH_CAR_GENERATOR(int handle, int type);	
 extern _native32(0x7781290F) void SWITCH_CAR_SIREN(Vehicle car, bool siren);
 extern _native32(0x37890B14) void TRAIN_LEAVE_STATION(Vehicle train);
 extern _native32(0x5E5047AC) void TRIGGER_VEH_ALARM(Vehicle car);
@@ -1969,13 +1969,13 @@ extern _native32(0x16E14EA4) char* GET_STRING_FROM_HASH_KEY(uint hash);
 extern _native32(0x48850E66) float GET_STRING_WIDTH_WITH_STRING(char* gxtName, char* literalString);
 extern _native32(0x6FBA4274) int GET_BLIP_INFO_ID_ROTATION(int blip);
 extern _native32(0x6C013A17) int GET_LENGTH_OF_STRING_WITH_THIS_HASH_KEY(uint gxtkey);
-extern _native32(0x5F02084D) int GET_LENGTH_OF_STRING_WITH_THIS_TEXT_LABEL_INS_NUM(ScriptAny, ScriptAny, ScriptAny);	//cellphone realted
+extern _native32(0x5F02084D) int GET_LENGTH_OF_STRING_WITH_THIS_TEXT_LABEL_INS_NUM(ScriptAny, ScriptAny, ScriptAny);
 extern _native32(0x047B0898) int GET_SIMPLE_BLIP_ID(void);
 extern _native32(0x64660709) int GET_STRING_WIDTH(char* gxtName);
 extern _native32(0x33E0601D) int GET_STRING_WIDTH_WITH_NUMBER(char* gxtName, int number);
 extern _native32(0x05267B97) int GET_STRING_WIDTH_WITH_TEXT_AND_INT(char* gxtname, char* gxtnamenext, int val);
 extern _native32(0x164B7363) int GET_WIDTH_OF_LITERAL_STRING(char* str);
-extern _native32(0x64E51535) int GET_WIDTH_OF_SUBSTRING_GIVEN_TEXT_LABEL(char* gxtname, bool, ScriptAny, ScriptAny, ScriptAny);	//cellphone realted
+extern _native32(0x64E51535) int GET_WIDTH_OF_SUBSTRING_GIVEN_TEXT_LABEL(char* gxtname, bool, ScriptAny, ScriptAny, ScriptAny);
 extern _native32(0x7B05072C) Object GET_BLIP_INFO_ID_OBJECT_INDEX(Blip blip);
 extern _native32(0x5FD47B45) Ped GET_BLIP_INFO_ID_PED_INDEX(Blip blip);
 extern _native32(0x059E3BEB) Pickup GET_BLIP_INFO_ID_PICKUP_INDEX(Blip blip);
@@ -2055,13 +2055,13 @@ extern _native32(0x384F104F) void DISPLAY_ONSCREEN_TIMER_WITH_STRING(int timerid
 extern _native32(0x17920FA7) void DISPLAY_RADAR(bool display);
 extern _native32(0x5BF23AD5) void DISPLAY_SNIPER_SCOPE_THIS_FRAME(void);
 extern _native32(0x0F002557) void DISPLAY_TEXT(float x, float y, char* gxtName);
-extern _native32(0x0DA61310) void DISPLAY_TEXT_SUBSTRING(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);	//cellphone realted
+extern _native32(0x0DA61310) void DISPLAY_TEXT_SUBSTRING(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);
 extern _native32(0x337957AF) void DISPLAY_TEXT_WITH_2_NUMBERS(float x, float y, char* gxtName, int number1, int number2);
 extern _native32(0x746C06E8) void DISPLAY_TEXT_WITH_3_NUMBERS(float x, float y, char* gxtentry, int, int, int);
 extern _native32(0x7E8D1DCE) void DISPLAY_TEXT_WITH_BLIP_NAME(float x, float y, char* str, int blip);
 extern _native32(0x311F4FE9) void DISPLAY_TEXT_WITH_FLOAT(float x, float y, char* gxtName, float value, uint unknown);
 extern _native32(0x661B239A) void DISPLAY_TEXT_WITH_LITERAL_STRING(float x, float y, char* gxtName, char* literalStr);
-extern _native32(0x1FCB5241) void DISPLAY_TEXT_WITH_LITERAL_SUBSTRING(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);	//cellphone realted
+extern _native32(0x1FCB5241) void DISPLAY_TEXT_WITH_LITERAL_SUBSTRING(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);
 extern _native32(0x5A495ABE) void DISPLAY_TEXT_WITH_NUMBER(float x, float y, char* gxtName, int value);
 extern _native32(0x10A75905) void DISPLAY_TEXT_WITH_STRING(float x, float y, char* gxtName, char* gxtStringName);
 extern _native32(0x369A4540) void DISPLAY_TEXT_WITH_STRING_AND_INT(float x, float y, char* gxtname, char* gxtnamenext, int val);
@@ -2193,7 +2193,7 @@ extern _native32(0x4B684D0B) void DRAW_CURVED_WINDOW(float, float, float, float,
 extern _native32(0x12B9197E) void DRAW_CURVED_WINDOW_NOTEXT(float, float, float, float, int);
 extern _native32(0x7DD67E15) void DRAW_CURVED_WINDOW_TEXT(float, float, float, int, int, char* , char* , int);
 extern _native32(0x44E14770) void DRAW_FRONTEND_HELPER_TEXT(char* , char* , bool);
-extern _native32(0x30D27EB1) void DRAW_LIGHT_WITH_RANGE(float x, float y, float z, int r, int g, int b, float width, float height); //DRAW_LIGHT_WITH_RANGE(float* XCoord, float* YCoord, float* ZCoord, int Red, int Green, int Blue, float Width, float Height)
+extern _native32(0x30D27EB1) void DRAW_LIGHT_WITH_RANGE(float x, float y, float z, int r, int g, int b, float width, float height); 
 extern _native32(0x26274628) void DRAW_MOVIE(float, float, float, float, float, int r, int g, int b, int a);
 extern _native32(0x3B2526E3) void DRAW_RECT(float x1, float y1, float x2, float y2, uint r, uint g, uint b, uint a);
 extern _native32(0x769F6E66) void DRAW_SPHERE(float x, float y, float z, float radius);
@@ -2492,7 +2492,7 @@ extern _native32(0x66BB737D) void DEACTIVATE_SCRIPT_POPULATION_ZONE(void);
 extern _native32(0x36601178) void FIND_PRIMARY_POPULATION_ZONE_GROUP(int *groupparam0, int *groupparam1);
 extern _native32(0x70582D53) void SET_ZONE_POPULATION_TYPE(char* zone, int poptype);
 extern _native32(0x5E5E4252) void SET_ZONE_SCUMMINESS(char* zone, int scumminess);
-extern _native32(0x5A07394A) void SPECIFY_SCRIPT_POPULATION_ZONE_AREA(int, int, int, int, int, int);	//all params are WORDs
+extern _native32(0x5A07394A) void SPECIFY_SCRIPT_POPULATION_ZONE_AREA(int, int, int, int, int, int);	
 extern _native32(0x70F0538F) void SPECIFY_SCRIPT_POPULATION_ZONE_GROUPS(int, int, int, int, int);
 extern _native32(0x1B886584) void SPECIFY_SCRIPT_POPULATION_ZONE_NUM_CARS(int num);
 extern _native32(0x2EB751CC) void SPECIFY_SCRIPT_POPULATION_ZONE_NUM_PARKED_CARS(int num);
@@ -2553,7 +2553,7 @@ extern _native32(0x448F486A) bool NETWORK_AM_I_MUTED_BY_PLAYER(Player playerInde
 extern _native32(0x379930F3) bool NETWORK_CHANGE_GAME_MODE_PENDING(void);
 extern _native32(0x6D302DA9) bool NETWORK_CHANGE_GAME_MODE_SUCCEEDED(void);
 extern _native32(0x308E3719) bool NETWORK_CHECK_INVITE_ARRIVAL(void);
-extern _native32(0x3CAA1340) bool NETWORK_DID_INVITE_FRIEND(char* FRIENDNAME);//NETWORK_GET_FRIEND_NAME(I)
+extern _native32(0x3CAA1340) bool NETWORK_DID_INVITE_FRIEND(char* FRIENDNAME);
 extern _native32(0x489B0BB9) bool NETWORK_END_SESSION_PENDING(void);
 extern _native32(0x23D60810) bool NETWORK_FIND_GAME_PENDING(void);
 extern _native32(0x48A723C1) bool NETWORK_GET_LAN_SESSION(void);
@@ -2605,7 +2605,7 @@ extern _native32(0x3F1D4677) bool NETWORK_STRING_VERIFY_SUCCEEDED(void);
 extern _native32(0x7D99343C) bool PLAYER_WANTS_TO_JOIN_NETWORK_GAME(int);
 extern _native32(0x29926B20) bool REQUEST_CONTROL_OF_NETWORK_ID(int netid);
 extern _native32(0x031D740F) char* NETWORK_GET_HOST_SERVER_NAME(int host);
-extern _native32(0x17FD0934) char* NETWORK_GET_FRIEND_NAME(int id);//for (I < NETWORK_GET_FRIEND_COUNT()) if (NETWORK_IS_FRIEND_ONLINE(NETWORK_GET_FRIEND_NAME(I))
+extern _native32(0x17FD0934) char* NETWORK_GET_FRIEND_NAME(int id);
 extern _native32(0x314E106A) char* NETWORK_GET_NEXT_TEXT_CHAT(void);
 extern _native32(0x1A7B3125) char* NETWORK_GET_UNACCEPTED_INVITER_NAME(int);
 extern _native32(0x6CFD3E5F) float GET_ONLINE_SCORE(int);	//147, 148, or 149
@@ -2613,7 +2613,7 @@ extern _native32(0x766E78A3) int FIND_NETWORK_KILLER_OF_PLAYER(Player playerInde
 extern _native32(0x11E80442) int GET_DESTROYER_OF_NETWORK_ID(Player playerIndex, int id);
 extern _native32(0x6C507EAC) int GET_GAMER_NETWORK_SCORE(Player playerIndex, int, int);
 extern _native32(0x1CFD32E5) int GET_NO_OF_PLAYERS_IN_TEAM(int team);
-extern _native32(0x6B032A0B) int GET_ONLINE_LAN(void);//idk what is returned
+extern _native32(0x6B032A0B) int GET_ONLINE_LAN(void);
 extern _native32(0x7B31633E) int GET_PLAYER_RANK_LEVEL_DURING_MP(Player playerIndex);
 extern _native32(0x4C2879AD) int GET_PLAYER_TEAM(int Player);
 extern _native32(0x4E6120A9) int HOW_LONG_HAS_NETWORK_PLAYER_BEEN_DEAD_FOR(Player playerIndex);
@@ -2622,7 +2622,7 @@ extern _native32(0x54DD6ACF) int MP_GET_AMOUNT_OF_VARIATION_COMPONENT(Ped ped, i
 extern _native32(0x54F61C99) int MP_GET_PREFERENCE_VALUE(int prefid);
 extern _native32(0x1C00658B) int MP_GET_PROP_SETUP(Ped ped, int ukn0, int ukn1, int ukn2, int ukn3);
 extern _native32(0x3775138E) int MP_GET_VARIATION_SETUP(Ped ped, int, int, int, int);
-extern _native32(0x4FDD00CE) int NETWORK_ACCEPT_INVITE(Player playerIndex);//if (COMPARE_STRING( NETWORK_GET_FRIEND_NAME( uParam0 ), NETWORK_GET_UNACCEPTED_INVITER_NAME( Result ) )) return result;
+extern _native32(0x4FDD00CE) int NETWORK_ACCEPT_INVITE(Player playerIndex);
 extern _native32(0x5EEA3F25) int NETWORK_GET_FRIEND_COUNT(void);
 extern _native32(0x29A75D1F) int NETWORK_GET_GAME_MODE(void);
 extern _native32(0x04261E4C) int NETWORK_GET_HOST_AVERAGE_RANK(int host);
@@ -2737,7 +2737,7 @@ extern _native32(0x2FA5601D) void SET_NETWORK_ID_CAN_MIGRATE(int netid, bool val
 extern _native32(0x4E2C764D) void SET_NETWORK_ID_EXISTS_ON_ALL_MACHINES(int netID, bool set);
 extern _native32(0x086452E7) void SET_NETWORK_ID_STOP_CLONING(int id, bool);
 extern _native32(0x5849311B) void SET_NETWORK_JOIN_FAIL(bool ukn0);
-extern _native32(0x28251E62) void SET_NETWORK_PLAYER_AS_VIP(Player playerIndex, bool);//Gamemode
+extern _native32(0x28251E62) void SET_NETWORK_PLAYER_AS_VIP(Player playerIndex, bool);
 extern _native32(0x266F327C) void SET_NETWORK_VEHICLE_RESPOT_TIMER(int id, int ukn4000);
 extern _native32(0x672139F0) void SET_OBJECT_EXISTS_ON_ALL_MACHINES(Object obj, bool exists);
 extern _native32(0x7E113020) void SET_ONLINE_LAN(bool);
@@ -2788,7 +2788,7 @@ extern _native32(0x11EE28D5) ScriptAny IS_SPHERE_VISIBLE_TO_ANOTHER_MACHINE(Scri
 extern _native32(0x3F054F44) ScriptAny NETWORK_CHANGE_GAME_MODE(ScriptAny, ScriptAny, ScriptAny, ScriptAny);
 extern _native32(0x01F35F5C) ScriptAny NETWORK_GET_MET_PLAYER_NAME(ScriptAny);
 extern _native32(0x5E44065D) ScriptAny NETWORK_GET_UNACCEPTED_INVITE_GAME_MODE(ScriptAny);
-extern _native32(0x60806A0C) ScriptAny NETWORK_JOIN_GAME(ScriptAny);	//server id?
+extern _native32(0x60806A0C) ScriptAny NETWORK_JOIN_GAME(ScriptAny);	
 extern _native32(0x1E1B5C26) ScriptAny NETWORK_RESTORE_GAME_CONFIG(ScriptAny);
 extern _native32(0x18C67E6D) ScriptAny NETWORK_SEND_TEXT_CHAT(Player playerIndex, ScriptAny);
 extern _native32(0x08181609) ScriptAny NETWORK_STORE_SINGLE_PLAYER_GAME(void);
@@ -2798,7 +2798,7 @@ extern _native32(0x7E656E50) void GET_CAMERA_FROM_NETWORK_ID(int ned_id, int *ca
 #pragma region DLC1//{
 extern _native32(0x187B3202) void FLUSH_ALL_PLAYER_RESPAWN_COORDS(void);
 extern _native32(0x36B40989) void SEND_CLIENT_BROADCAST_VARIABLES_NOW(void);
-extern _native32(0x633A012B) void SET_PLAYER_AS_DAMAGED_PLAYER(Player playerIndex, int, bool);//SET_PLAYER_AS_DAMAGED_PLAYER( I, GET_PLAYER_ID(), 1 );
+extern _native32(0x633A012B) void SET_PLAYER_AS_DAMAGED_PLAYER(Player playerIndex, int, bool);
 #pragma endregion//}
 #pragma region DLC2//{
 extern _native32(0x611D69BC) bool IS_LCPD_DATA_VALID(void);
@@ -2895,7 +2895,7 @@ extern _native32(0x3A323C67) void SWITCH_ARROW_ABOVE_BLIPPED_PICKUPS(bool on);
 #pragma endregion//}
 #pragma region WIDGET//{
 extern _native32(0x7537050D) char* ADD_TEXT_WIDGET(ScriptAny);
-extern _native32(0x742E3376) int GET_CONTENTS_OF_TEXT_WIDGET(ScriptAny);//GET_HASH_KEY( GET_CONTENTS_OF_TEXT_WIDGET( l_U0 ) );
+extern _native32(0x742E3376) int GET_CONTENTS_OF_TEXT_WIDGET(ScriptAny);
 extern _native32(0x4F0D4AC7) void ADD_TO_WIDGET_COMBO(ScriptAny);
 extern _native32(0x4C8A7614) void ADD_WIDGET_FLOAT_READ_ONLY(ScriptAny, ScriptAny);
 extern _native32(0x6F9256DF) void ADD_WIDGET_FLOAT_SLIDER(ScriptAny, ScriptAny, ScriptAny, ScriptAny, ScriptAny);

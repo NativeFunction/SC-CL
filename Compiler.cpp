@@ -1428,7 +1428,7 @@ void CompileGTAIV::SCOWrite(const char* path, CompileGTAIV::SCRFlags EncryptionC
 	};
 
 	const uint32_t HeaderSize = 24;
-	vector<uint32_t> SCR_Header = {
+	const vector<uint32_t> SCR_Header = {
 		Utils::Bitwise::SwapEndian((uint32_t)EncryptionCompressionLevel)//SCR.
 		, CodePageData->getTotalSize()//code size
 		, HLData->getStaticCount()//statics count
