@@ -1428,7 +1428,7 @@ void CompileGTAIV::SCOWrite(const char* path, CompileGTAIV::SCRFlags EncryptionC
 	};
 
 	const uint32_t HeaderSize = 24;
-	const vector<uint32_t> SCR_Header = {
+	vector<uint32_t> SCR_Header = {
 		Utils::Bitwise::SwapEndian((uint32_t)EncryptionCompressionLevel)//SCR.
 		, CodePageData->getTotalSize()//code size
 		, HLData->getStaticCount()//statics count
@@ -1451,10 +1451,10 @@ void CompileGTAIV::SCOWrite(const char* path, CompileGTAIV::SCRFlags EncryptionC
 			Utils::Compression::ZLIB_CompressChecksum(BuildBuffer.data(), BuildBuffer.size(), CompressedData.data(), CompressedSize);
 
 			if (CompressedSize <= 0)
-				Utils::System::Throw("SCO Code Page Compressed Size Invalid");
+				Utils::System::Throw("SCO Compressed Size Invalid");
 
 			if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize, GTAIVEncryptionKey))
-				Utils::System::Throw("SCO Code Page Encryption Failed");
+				Utils::System::Throw("SCO Encryption Failed");
 
 			FILE* file = fopen(path, "wb");
 			if (Utils::IO::CheckFopenFile(path, file))

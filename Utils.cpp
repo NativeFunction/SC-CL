@@ -261,7 +261,7 @@ namespace Utils {
 			return hr;
 		}
 
-		void ZLIB_Decompress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t outSize)
+		void ZLIB_Decompress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize)
 		{
 			z_stream infstream;
 			infstream.zalloc = Z_NULL;
@@ -296,6 +296,8 @@ namespace Utils {
 				cout << "Error: " << zError(res) << '\n';
 				Throw("ZLIB InflateEnd Failed");
 			}
+
+			outSize = infstream.next_out - out;
 
 
 		}
