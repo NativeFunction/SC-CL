@@ -5,9 +5,9 @@
 #define noinline __attribute((noinline))
 #define unsafe __attribute((unsafe))
 #else
-#define global(index) 
-#define noinline 
-#define unsafe 
+#define global(index)
+#define noinline
+#define unsafe
 #endif
 
 #ifdef __YSC__

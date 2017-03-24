@@ -85,15 +85,15 @@ typedef enum eKey
 	KEY_NUMPAD_3 = 81,
 	KEY_NUMPAD_0 = 82,
 	KEY_NUMPAD_PERIOD = 83,
-	
+
 	KEY_F11 = 87,
 	KEY_F12 = 88,
 	KEY_F13 = 100,//			(NEC PC98)
 	KEY_F14 = 101,//			(NEC PC98)
 	KEY_F15 = 102,//			(NEC PC98)
-	
+
 	KEY_PAUSE = 119,//			Might Be Wrong Pause and Break acts as different keys
-	
+
 	KEY_KANA = 112,//			(Japanese keyboard)
 	KEY_CONVERT = 121,//		(Japanese keyboard)
 	KEY_NOCONVERT = 123,//		(Japanese keyboard)
@@ -126,7 +126,7 @@ typedef enum eKey
 	KEY_LEFT_WINDOWS = 219,//	Left Windows key
 	KEY_RIGHT_WINDOWS = 220,//	Right Windows key
 	KEY_APPMENU = 221,//		AppMenu key
-	
+
 	//Other Key Definitions
 	KEY_NUMPAD_HOME = 71,
 	KEY_NUMPAD_UP = 72,
@@ -153,19 +153,19 @@ typedef enum eButton
 	DPAD_RIGHT = 11,
 	BUTTON_START = 12,
 	BUTTON_BACK = 13,
-	
+
 	#ifdef __XBOX__
 		BUTTON_X = 14,
 	#elif defined(__PS3__)
 		BUTTON_X = 16,
 	#endif
-	
+
 	BUTTON_Y = 15,
 	BUTTON_A = 16,
 	BUTTON_B = 17,
 	STICK_LEFT = 18,
 	STICK_RIGHT = 19,
-	
+
 	BUTTON_L1 = 4,
 	BUTTON_L2 = 5,
 	BUTTON_R1 = 6,
@@ -174,7 +174,7 @@ typedef enum eButton
 	BUTTON_Square = 14,
 	BUTTON_Triangle = 15,
 	BUTTON_O = 17,
-	
+
 } eButton;
 
 typedef enum eWeapon
@@ -695,7 +695,7 @@ typedef enum ePed
 	PED_M_Y_STREETPUNK_05 = 0x51E946D0,
 	PED_M_Y_TOUGH_05 = 0xBC0DDE62,
 	PED_M_Y_TOURIST_02 = 0x303963D0,
-	
+
 	// Peds TLAD
 	PED_IG_ASHLEYA = 0xD49C2B16,
 	PED_IG_CLAY = 0x6CCFE08A,
@@ -1090,7 +1090,7 @@ typedef enum eVehicle
     VEHICLE_CABLECAR = 0xC6C3242D,
     VEHICLE_SUBWAY_LO = 0x2FBC4D30,
     VEHICLE_SUBWAY_HI = 0x8B887FDB,
-    
+
 	// TBoGT
 	// Cars
 	VEHICLE_SLAMVAN = 0x2B7F9DE3,
@@ -1129,7 +1129,7 @@ typedef enum eVehicle
 	VEHICLE_SMUGGLER = 0x38527DEC,
 	VEHICLE_FLOATER = 0x98CC6F33,
 	VEHICLE_BLADE = 0xB820ED5E,
-	
+
 	// TLAD (commented out hash means its already declared in TBoGT const.)
 	// Cars
 	VEHICLE_GBURRITO = 0x97FA4F36,
@@ -2975,7 +2975,7 @@ typedef enum eVehicleDoorLock
     VEHICLE_DOOR_LOCKED_BOTH_SIDES,
 } eVehicleDoorLock;
 
-typedef enum eBlipSprite 
+typedef enum eBlipSprite
 {
     BLIP_DESTINATION,
     BLIP_DESTINATION_1,
@@ -3054,7 +3054,7 @@ typedef enum eBlipSprite
     BLIP_MICHELLE,
     BLIP_PAY_N_SPRAY,
     BLIP_ASSASSIN,
-    BLIP_REVENGE,   
+    BLIP_REVENGE,
     BLIP_DEAL,
     BLIP_GARAGE,
     BLIP_LAWYER,
@@ -3097,8 +3097,8 @@ typedef enum eWeather
     WEATHER_DRIZZLE,
     WEATHER_FOGGY,
     WEATHER_LIGHTNING,
-    WEATHER_EXTRA_SUNNY_2, 
-    WEATHER_SUNNY_WINDY_2,  
+    WEATHER_EXTRA_SUNNY_2,
+    WEATHER_SUNNY_WINDY_2,
 } eWeather;
 
 typedef enum eLanguage
@@ -3353,7 +3353,7 @@ typedef enum eDrivingStyle // check
     DRIVING_STYLE_IGNORE_LIGHTS
 } eDrivingStyle;
 
-typedef enum eExplosionType 
+typedef enum eExplosionType
 {
     EXPLOSION_TYPE_DEFAULT,
     EXPLOSION_TYPE_MOLOTOV,
@@ -3425,7 +3425,7 @@ typedef enum eGameMode
     GAME_MODE_BOMB_DA_BASE_II = 15,
     GAME_MODE_FREE_MODE = 16,
  } eGameMode;
- 
+
 typedef enum eTeamIndex
 {
 	TEAM_INDEX_ORANGE = 0,
