@@ -14,7 +14,7 @@
 
 #elif defined(__GTAIV__)
 
-	#define _NewNatives 1
+	#define _NewNatives 0
 
 	#if _NewNatives == 1
 		#include "GTAIV/natives32.h"//1.0.7.0

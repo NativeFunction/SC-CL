@@ -654,7 +654,7 @@ public:
 			case BT_GTAIV_TLAD:
 			case BT_GTAIV_TBOGT:
 			case BT_GTAIV:
-			SCOWrite((outDirectory + HLData->getBuildFileName()).data(), SCRFlags::Encrypted);
+			SCOWrite((outDirectory + HLData->getBuildFileName()).data(), SCRFlags::CompressedEncrypted);
 			break;
 			default:
 			assert(false && "Incompatible build type for GTAIV");
@@ -736,6 +736,7 @@ private:
 	virtual void GetGlobalP() override;
 	virtual void GetGlobal() override;
 	virtual void SetGlobal() override;
+	virtual void AddFuncLoc(const FunctionData* function) override;
 
 	//Do these opcodes use code buffer???
 	//virtual void StrCopy() override { DoesOpcodeHaveRoom(2); AddOpcode(StrCopy); AddInt8(DATA->getByte(0)); };//Override: GTAIV

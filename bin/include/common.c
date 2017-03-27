@@ -16,6 +16,9 @@ void print(const char* str, int ms)
 	#elif defined(__RDR__)
 		_clear_prints();
 		_print_subtitle(str, ms != 0 ? (float)ms / 1000.0f : 0, true, 2, 1, 0, 0, 0);
+	#elif defined(__GTAIV__)
+		CLEAR_PRINTS();
+		PRINT_STRING_WITH_LITERAL_STRING_NOW(str, ms);
 	#endif
 }
 

@@ -1,5 +1,8 @@
 #pragma once
 
+#define AMMO_MAX 30000
+#define INVALID_HANDLE 0
+
 typedef enum eKey
 {
 	KEY_ESC = 1,

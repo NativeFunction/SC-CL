@@ -2107,7 +2107,7 @@ extern _native void PRINT_NOW(char *gxtName, unsigned int timeMS, bool enable);
 extern _native void PRINT_STRING_IN_STRING(char *gxtName, char *gxtText, unsigned int timeMS, bool enable);
 extern _native void PRINT_STRING_IN_STRING_NOW(char *gxtName, char *gxtText, unsigned int timeMS, bool enable);
 extern _native void PRINT_STRING_WITH_LITERAL_STRING(char *gxtentry, char *string, int time, int flag);
-extern _native void PRINT_STRING_WITH_LITERAL_STRING_NOW(char *gxtName, void *text, unsigned int timeMS, bool enable);
+extern _native void PRINT_STRING_WITH_LITERAL_STRING_NOW(char *gxtName, char *text, unsigned int timeMS, bool enable);
 extern _native void PRINT_STRING_WITH_SUBSTRING_GIVEN_HASH_KEY_NOW(char *gxtkey0, unsigned int gxtkey1, int time, int style);
 extern _native void PRINT_STRING_WITH_TWO_LITERAL_STRINGS(char *gxtentry, char *string1, char *string2, int time, int flag);
 extern _native void PRINT_STRING_WITH_TWO_LITERAL_STRINGS_NOW(char *gxtentry, char *string1, char *string2, int time, int flag);

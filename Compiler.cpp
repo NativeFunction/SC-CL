@@ -1190,15 +1190,21 @@ void CompileGTAIV::SetGlobal()
 	DoesOpcodeHaveRoom(1);
 	AddOpcode(pSet);
 }
-
+void CompileGTAIV::AddFuncLoc(const FunctionData* function)
+{
+	DoesOpcodeHaveRoom(5);
+	AddOpcode(Push);
+	CallLocations.push_back({ CodePageData->getTotalSize(), CallInstructionType::FuncLoc, function });
+	AddInt32(0);
+}
 
 void CompileGTAIV::pCall()
 {
 	DoesOpcodeHaveRoom(15);
 	AddOpcode(PushString);
-	AddInt8(0);//length
-	AddInt8(0);//null termination needed?
-	PushInt(5);
+	AddInt8(1);//length
+	AddInt8(83);
+	AddOpcode(Push_5);
 	AddOpcode(Add);
 	AddOpcode(pSet);
 	AddOpcode(Call);
@@ -1342,6 +1348,8 @@ void CompileGTAIV::fixFunctionCalls()
 		switch (CallInfo.InstructionType)
 		{
 			case CallInstructionType::FuncLoc:
+			ChangeInt32InCodePage(pos, CallInfo.CallLocation);
+			break;
 			case CallInstructionType::Call:
 			ChangeInt32InCodePage(pos, CallInfo.CallLocation);
 			break;
