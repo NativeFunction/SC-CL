@@ -5,9 +5,9 @@
 #define noinline __attribute((noinline))
 #define unsafe __attribute((unsafe))
 #else
-#define global(index) 
-#define noinline 
-#define unsafe 
+#define global(index)
+#define noinline
+#define unsafe
 #endif
 
 #ifdef __YSC__
@@ -53,7 +53,9 @@ typedef int TaskSequence;
 typedef int ColourIndex;
 typedef int Sphere;
 typedef int ScrHandle;
-
+typedef int DecisionMaker;
+typedef int ScriptAny;
+typedef int UnkInt;
 
 typedef union vector2
 {
@@ -153,6 +155,8 @@ typedef union flint
 	float Float;
 } flint;
 
+
+
 typedef union any
 {
 	int Int;
@@ -170,7 +174,6 @@ typedef union any
 	short ShortArray[2];
 } any;
 
-
 //poor mans constructors
 #define Any(x) (any) {x}
 #define RGBA(R,G,B,A) (RGBA){R,G,B,A}
@@ -182,22 +185,4 @@ typedef union any
 
 
 typedef void* sizedarrayp;
-
-#include "intrinsics.h"
-
-#define CreateSizedArray(name, sizein)\
-struct\
-{\
-	int size;\
-	any items[sizein];\
-} name = {.size = sizein};
-
-#define ArrayToSizedArray(arr, sizedarr)\
-if(sizeof(arr) == sizeof(sizedarr.items))\
-	memcpy(sizedarr.items, arr, countof(arr));
-
-#define SizedArrayToArray(sizedarr, arr)\
-if(sizeof(arr) == sizeof(sizedarr.items))\
-	memcpy(arr, sizedarr.items, countof(sizedarr.items));
-	
 

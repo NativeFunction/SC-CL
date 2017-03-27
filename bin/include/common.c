@@ -3,11 +3,6 @@
 #include "types.h"
 #include "constants.h"
 
-#define SwapEndian(x) _Generic((x),\
-short int: SwapEndian16(x), unsigned short int: SwapEndian16(x),\
-default: SwapEndian32(x))
-
-
 #define GlobalCharBufferD "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
 
 char* GlobalCharBuffer = GlobalCharBufferD;
@@ -21,6 +16,9 @@ void print(const char* str, int ms)
 	#elif defined(__RDR__)
 		_clear_prints();
 		_print_subtitle(str, ms != 0 ? (float)ms / 1000.0f : 0, true, 2, 1, 0, 0, 0);
+	#elif defined(__GTAIV__)
+		CLEAR_PRINTS();
+		PRINT_STRING_WITH_LITERAL_STRING_NOW(str, ms);
 	#endif
 }
 
@@ -78,12 +76,12 @@ short SwapEndian16(short value)
 {
 	return (((value) & 0xff000000) >> 24) | (((value) & 0x00ff0000) >>  8);
 }
-int CeilDivInt(uint a, uint b) 
-{ 
-	return a == 0 || b == 0 ? 0 : 1 + ((a - 1) / b); 
+int CeilDivInt(uint a, uint b)
+{
+	return a == 0 || b == 0 ? 0 : 1 + ((a - 1) / b);
 }
 int DivInt(int a, int b)
-{ 
+{
 	return a == 0 || b == 0 ? 0 : a / b;
 }
 float DivFloat(float a, float b)
@@ -157,14 +155,14 @@ quaternion EulerToQuaternion(vector3 euler)
 {
 	float cosYawOver2 = cos(euler.x * 0.5),
 	sinYawOver2 = sin(euler.x * 0.5),
-	
+
 	cosPitchOver2 = cos(euler.y * 0.5),
 	sinPitchOver2 = sin(euler.y * 0.5),
-	
+
 	cosRollOver2 = cos(euler.z * 0.5),
 	sinRollOver2 = sin(euler.z * 0.5);
-	
-	quaternion out = 
+
+	quaternion out =
 	{
 		(cosYawOver2 * cosPitchOver2 * cosRollOver2) + (sinYawOver2 * sinPitchOver2 * sinRollOver2),
 		(cosYawOver2 * cosPitchOver2 * sinRollOver2) - (sinYawOver2 * sinPitchOver2 * cosRollOver2),
@@ -175,7 +173,7 @@ quaternion EulerToQuaternion(vector3 euler)
 }
 vector3 RotationLookAtPoint(vector3 pos, vector3 endpos)
 {
-	vector3 out = 
+	vector3 out =
 	{
 		atan2(pos.y, pos.z),
 		atan2(pos.x * cos(endpos.x), pos.z),
@@ -196,7 +194,7 @@ float acos(float number)
 	if (reinterpretFloatToInt(number) < 0)
 	{
 		number = -number;
-		return 
+		return
 		-(((((((
 		-0.0187293f * number)
 		+ 0.0742610f)
@@ -204,11 +202,11 @@ float acos(float number)
 		- 0.2121144f)
 		* number)
 		+ 1.5707288f)
-		* sqrt(1.0 - number)) 
+		* sqrt(1.0 - number))
 		+ PI;
 	}
-	
-	return 
+
+	return
 	((((((
 	-0.0187293f * number)
 	+ 0.0742610f)
@@ -230,7 +228,7 @@ float asin(float number)
 	if (reinterpretFloatToInt(number) < 0)
 	{
 		number = -number;
-		return 
+		return
 		(((((((
 		-0.0187293f * number)
 		+ 0.0742610f)
@@ -261,13 +259,13 @@ float StringToFloat(const char* str)
 	bool point_seen = false;
 	str -= 3;
 	int d = 0, read_char = *str & 0xFF;
-	
+
 	if(read_char == '-')
 	{
 		fact = -1;
 		read_char = *++str & 0xFF;
 	}
-	
+
 	while(read_char)
 	{
 		if(read_char == '.')
@@ -276,9 +274,9 @@ float StringToFloat(const char* str)
 		    read_char = *++str & 0xFF;
 			continue;
 		}
-		
+
 		d = read_char - '0';
-		
+
 		if(d >= 0 && d <= 9)
 		{
 			if(point_seen)
@@ -349,7 +347,6 @@ int* Sub64P(int* x, int yLeft, int yRight)
 		out[1]--;
 	#endif
 	return (int*)out[0];
-
 }
 int* Add64P(int* x, int yLeft, int yRight)
 {

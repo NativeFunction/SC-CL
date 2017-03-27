@@ -85,15 +85,15 @@ typedef enum eKey
 	KEY_NUMPAD_3 = 81,
 	KEY_NUMPAD_0 = 82,
 	KEY_NUMPAD_PERIOD = 83,
-	
+
 	KEY_F11 = 87,
 	KEY_F12 = 88,
 	KEY_F13 = 100,//			(NEC PC98)
 	KEY_F14 = 101,//			(NEC PC98)
 	KEY_F15 = 102,//			(NEC PC98)
-	
+
 	KEY_PAUSE = 119,//			Might Be Wrong Pause and Break acts as different keys
-	
+
 	KEY_KANA = 112,//			(Japanese keyboard)
 	KEY_CONVERT = 121,//		(Japanese keyboard)
 	KEY_NOCONVERT = 123,//		(Japanese keyboard)
@@ -126,7 +126,7 @@ typedef enum eKey
 	KEY_LEFT_WINDOWS = 219,//	Left Windows key
 	KEY_RIGHT_WINDOWS = 220,//	Right Windows key
 	KEY_APPMENU = 221,//		AppMenu key
-	
+
 	//Other Key Definitions
 	KEY_NUMPAD_HOME = 71,
 	KEY_NUMPAD_UP = 72,
@@ -166,7 +166,6 @@ typedef enum eButton
 #ifdef __CSC__
 typedef enum eButton
 {
-	
 	BUTTON_L2,
 	BUTTON_R2,
 	BUTTON_L1,

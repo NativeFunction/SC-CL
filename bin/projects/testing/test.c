@@ -1,32 +1,28 @@
 #include "types.h"
 #include "constants.h"
 #include "intrinsics.h"
-#include "common.c"
-#include "funcs.c"
-#include "inc.h"
+#include "natives.h"
 
-static void test()
+void print(const char* str, int ms)
 {
-	1+1*3;
-	mani("");
+	CLEAR_PRINTS();
+	PRINT_STRING_WITH_LITERAL_STRING_NOW("STRING", str, ms, true);
 }
-void main(int* data, int size)
+
+
+int func(int var)
 {
-	float klh;
-	
-	__switch(0, "testLBL1", 1, "testLBL2", 2, "testLBL3");
-	
-	testLBL1:
-	klh = acos(1.0f);
-	testLBL2:
-	klh = acos(2.0f);
-	testLBL3:
-	klh = acos(3.0f);
-	short *t, *s;
-	while((*t++ = *s++)) ;
-	mani("");
-	JumpOver30000();
-	SwitchJumpOver65535();
-	test();
-	hello();
+	print("Hello World", var);
+	return 1000;
 }
+
+
+void main(){
+	THIS_SCRIPT_IS_SAFE_FOR_NETWORK_GAME();
+	
+	int(*funcCall)(int) = func;
+	
+	funcCall(3000);
+	
+}
+	

@@ -153,6 +153,14 @@ Vehicle GetCurrentVehicle()
 	Ped MyPed = player_ped_id();
 	return is_ped_in_any_vehicle(MyPed, false) ? get_vehicle_ped_is_in(MyPed, false) : 0;
 }
+vector3 GetCoordInFrontOfGameplayCam(float Range)
+{
+	vector3 GameplayCamRot = get_gameplay_cam_rot(2);
+	vector3 GameplayCamCoord = get_gameplay_cam_coord();
+	float Tan = Range * cos(GameplayCamRot.x);
+	return Vector3(Tan * sin(-GameplayCamRot.z) + GameplayCamCoord.x, Tan * cos(-GameplayCamRot.z) + GameplayCamCoord.y, Range * sin(GameplayCamRot.x) + GameplayCamCoord.z);
+}
+
 
 void Assert(const char* File, int Line, const char* Expression)
 {

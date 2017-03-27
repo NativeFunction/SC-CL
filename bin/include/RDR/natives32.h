@@ -6,8 +6,8 @@
 #define _native __attribute((native))
 #define _native32(hash) __attribute((native(hash)))
 #else
-#define _native 
-#define _native32(hash) 
+#define _native
+#define _native32(hash)
 #endif
 
 #define sin sin_degree

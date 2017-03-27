@@ -30,6 +30,7 @@
 !MenuBase/
 !RDR/
 !GTAV/
+!GTAIV/
 !compiler/
 !Crypto/
 !Compression/
@@ -40,6 +41,8 @@ compiler/XscCompilerRaw/obj/New Text Document.txt
 bin/Debug/*.exe
 bin/Debug/*.ilk
 bin/projects/*/*.xsc
+bin/projects/*/*.sco
+bin/projects/*/*.newsco
 bin/projects/*/*.xsa*
 bin/projects/*/*.csc
 bin/projects/*/*.ysc

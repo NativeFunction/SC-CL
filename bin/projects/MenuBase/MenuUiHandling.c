@@ -20,8 +20,8 @@ static Page Container =
 	.CurrentMenuLevel = null,
 	.Loading = {null},
 	.Item = {null},
-	.Ui.HeaderText = nullptr,
-	.Ui.IsHeaderGxt = false,
+	.Ui.HeaderText = {nullptr},
+	.Ui.IsHeaderGxtBitSet = false,
 	.Ui.MenuControlSFID = null,
 	.Ui.MenuControlSFID2 = null,
 
@@ -253,11 +253,131 @@ void UpdateMenuControls()
 
 	DrawScaleformMovie(Container.Ui.MenuControlSFID, Container.Ui.UnselectedTextColor);
 }
-void UpdateMenuLevel(bool Direction)
+bool UpdateDynamicCursor(int Id, int Range)
+{
+	bool HasFoundIndex = false;
+	int ClosestIndexBefore = 0;
+	DynamicIdArray Menu = DumpDynamicIds();
+
+	#define BreakDynamicMenu 0
+
+	const int MaxIds = Container.TotalItemCount < MaxDynamicItems ? Container.TotalItemCount : MaxDynamicItems;
+	const int HighestStartIndex = MaxIds - MaxDisplayableItems > 0 ? MaxIds - MaxDisplayableItems : 0;
+
+	for (int i = 0; i < MaxIds; i++)
+	{
+		if (Menu.Items[i] == Id)
+		{
+			Container.CursorIndex = i;
+			/*
+			HighestStartIndex 32 - 25 = 7
+
+			26 - 6
+
+			20 > HighestStartIndex
+
+			*/
+
+			int StartIndexRelativeToCursor = i - Range;
+
+			if (StartIndexRelativeToCursor < 0)
+				Container.ItemStartIndex = 0;
+			else if (StartIndexRelativeToCursor > HighestStartIndex)
+				Container.ItemStartIndex = HighestStartIndex;
+			else
+				Container.ItemStartIndex = StartIndexRelativeToCursor;
+
+			#if BreakDynamicMenu == 1
+			if (Container.CursorIndex != SavedCursorIndex)
+			{
+				char* str = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+				//CError: no strcpy on char* init
+				strcpy(str, "CursorIndex: ", 32);
+				straddi(str, Container.CursorIndex, 32);
+				stradd(str, " StartIndex: ", 32);
+				straddi(str, Container.ItemStartIndex, 32);
+				Break(strcatGlobal("== change~n~", str));
+			}
+			#endif
+
+			HasFoundIndex = true;
+			break;
+		}
+		if (!HasFoundIndex)
+		{
+			if (Menu.Items[i] < Id)
+				ClosestIndexBefore = i;
+			else if (Menu.Items[i] > Id)
+			{
+				Container.CursorIndex = i;
+
+				int StartIndexRelativeToCursor = i - Range;
+
+				if (StartIndexRelativeToCursor < 0)
+					Container.ItemStartIndex = 0;
+				else if (StartIndexRelativeToCursor > HighestStartIndex)
+					Container.ItemStartIndex = HighestStartIndex;
+				else
+					Container.ItemStartIndex = StartIndexRelativeToCursor;
+
+				#if BreakDynamicMenu == 1
+				if (Container.CursorIndex != SavedCursorIndex)
+				{
+					char* str = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+					strcpy(str, "CursorIndex: ", 32);
+					straddi(str, Container.CursorIndex, 32);
+					stradd(str, " StartIndex: ", 32);
+					straddi(str, Container.ItemStartIndex, 32);
+					Break(strcatGlobal("> change~n~", str));
+				}
+				#endif
+
+				HasFoundIndex = true;
+			}
+		}
+	}
+
+	if (!HasFoundIndex)
+	{
+		if (Container.TotalItemCount > 0)
+		{
+			Container.CursorIndex = ClosestIndexBefore;
+
+			int StartIndexRelativeToCursor = ClosestIndexBefore - Range;
+
+			if (StartIndexRelativeToCursor < 0)
+				Container.ItemStartIndex = 0;
+			else if (StartIndexRelativeToCursor > HighestStartIndex)
+				Container.ItemStartIndex = HighestStartIndex;
+			else
+				Container.ItemStartIndex = StartIndexRelativeToCursor;
+
+			#if BreakDynamicMenu == 1
+			if (Container.CursorIndex != SavedCursorIndex)
+			{
+				char* str = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+				strcpy(str, "CursorIndex: ", 32);
+				straddi(str, Container.CursorIndex, 32);
+				stradd(str, " StartIndex: ", 32);
+				straddi(str, Container.ItemStartIndex, 32);
+				Break(strcatGlobal("< change~n~", str));
+			}
+			#endif
+		}
+		else
+		{
+			SetCurrentMenuInvalid(true, "");
+			return false;
+		}
+	}
+	return true;
+}
+void UpdateMenuLevel(int DirectionAndAmount)
 {
 	bit_reset(&Container.BitSet, PB_IsDisplayingConfirmation);
+	bit_reset(&Container.BitSet, PB_IsCurrentMenuInvalid);
 
-	if (Direction)
+	if (DirectionAndAmount > 0 && DirectionAndAmount <= MaxMenuLevels)
 	{
 		bit_set(&Container.BitSet, PB_LastMenuDirection);
 
@@ -272,6 +392,14 @@ void UpdateMenuLevel(bool Direction)
 			Container.Level[Container.CurrentMenuLevel].SavedCursor.ItemStartIndex = Container.ItemStartIndex;
 		}
 
+		char* ForwardedHeaderText = nullptr;
+		bool IsForwardedHeaderTextGxt = null;
+
+		if (bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_DoesItemForwardHeaderText))
+		{
+			ForwardedHeaderText = Container.Item[GetRelativeCursorIndex].Ui.ItemText;
+			IsForwardedHeaderTextGxt = bit_test(Container.Item[GetRelativeCursorIndex].BitSet, ICB_IsItemGxt);
+		}
 
 		Container.CurrentMenuLevel++;
 		if (Container.CurrentMenuLevel < MaxMenuLevels)
@@ -281,6 +409,15 @@ void UpdateMenuLevel(bool Direction)
 			//Update to menu level
 			Container.ItemStartIndex = 0;
 			Container.CursorIndex = 0;
+			if (ForwardedHeaderText)
+			{
+				Container.Ui.HeaderText[Container.CurrentMenuLevel] = ForwardedHeaderText;
+				if(IsForwardedHeaderTextGxt)
+					set_bit(&Container.Ui.IsHeaderGxtBitSet, Container.CurrentMenuLevel);
+				else
+					clear_bit(&Container.Ui.IsHeaderGxtBitSet, Container.CurrentMenuLevel);
+			}
+
 			Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
 		}
 		else
@@ -288,15 +425,16 @@ void UpdateMenuLevel(bool Direction)
 			Warn(straddiGlobal("Menu level out of bounds couldn't advance level. Value: ", Container.CurrentMenuLevel));
 			Container.CurrentMenuLevel--;
 		}
+		UpdateMenuLevel(DirectionAndAmount - 1);
 	}
-	else
+	else if (DirectionAndAmount < 0 && DirectionAndAmount >= -MaxMenuLevels)
 	{
 		bit_reset(&Container.BitSet, PB_LastMenuDirection);
-		bit_reset(&Container.BitSet, PB_IsCurrentMenuInvalid);
 		if (Container.CurrentMenuLevel == 0)
 		{
 			PlayMenuSound("QUIT");
 			ShutDownMenu();
+			return;
 		}
 		else
 		{
@@ -308,7 +446,8 @@ void UpdateMenuLevel(bool Direction)
 
 				if (Container.Level[Container.CurrentMenuLevel].DynamicChecker != nullptr)
 				{
-
+					bit_set(&Container.BitSet, PB_IsCurrentMenuDynamic);
+					UpdateDynamicCursor(Container.Level[Container.CurrentMenuLevel].SavedCursor.DynamicId, Container.Level[Container.CurrentMenuLevel].SavedCursor.DynamicRange);
 				}
 				else
 				{
@@ -321,6 +460,7 @@ void UpdateMenuLevel(bool Direction)
 			else
 				Throw(straddiGlobal("MenuLevel change was null at: ", Container.CurrentMenuLevel++));
 		}
+		UpdateMenuLevel(DirectionAndAmount + 1);
 	}
 }
 #pragma endregion
@@ -520,7 +660,7 @@ void ParseMenuControls()
 					break;
 					case MST_Menu:
 					case MST_MenuParam:
-					UpdateMenuLevel(true);
+					UpdateMenuLevel(1);
 					return;
 					case MST_IntBool:
 					case MST_FloatBool:
@@ -575,7 +715,7 @@ void ParseMenuControls()
 			CurrentItem->Ui.Description = SavedDescription;
 		}
 		else
-			UpdateMenuLevel(false);
+			UpdateMenuLevel(-1);
 	}
 
 }
@@ -663,7 +803,7 @@ void DrawBackgroundAndHeader()
 
 	//Draw header text
 	SetUpDraw(Container.Ui.HeaderFont, 1.0f, 0.62f, true, false, false, false, Container.Ui.HeaderTextColor);
-	DrawText(Container.Ui.HeaderText, Vector2(Container.Ui.DrawPos.x + 0.115f, Container.Ui.DrawPos.y - 0.045f), Container.Ui.IsHeaderGxt);
+	DrawText(Container.Ui.HeaderText[Container.CurrentMenuLevel], Vector2(Container.Ui.DrawPos.x + 0.115f, Container.Ui.DrawPos.y - 0.045f), is_bit_set(Container.Ui.IsHeaderGxtBitSet, Container.CurrentMenuLevel));
 
 	#pragma endregion
 
@@ -1114,131 +1254,6 @@ void DrawMenu()
 }
 #pragma endregion
 
-void DynamicMenuHandling()
-{
-	int SavedCursorIndex = Container.CursorIndex;
-	int SavedStartIndex = Container.ItemStartIndex;
-	const int CursorDistance = SavedCursorIndex - SavedStartIndex;
-
-	int CurrentSelectedId = Container.Item[GetRelativeCursorIndex].Selection.DynamicId;
-	bool HasFoundIndex = false;
-	int ClosestIndexBefore = 0;
-
-
-	DynamicIdArray Menu = DumpDynamicIds();
-
-	#define BreakDynamicMenu 0
-
-	const int MaxIds = Container.TotalItemCount < MaxDynamicItems ? Container.TotalItemCount : MaxDynamicItems;
-	const int HighestStartIndex = MaxIds - MaxDisplayableItems > 0 ? MaxIds - MaxDisplayableItems : 0;
-
-	for (int i = 0; i < MaxIds; i++)
-	{
-		if (Menu.Items[i] == CurrentSelectedId)
-		{
-			Container.CursorIndex = i;
-			/*
-			HighestStartIndex 32 - 25 = 7
-
-			26 - 6
-			
-			20 > HighestStartIndex
-
-			*/
-
-			int StartIndexRelativeToCursor = i - CursorDistance;
-
-			if (StartIndexRelativeToCursor < 0)
-				Container.ItemStartIndex = 0;
-			else if (StartIndexRelativeToCursor > HighestStartIndex)
-				Container.ItemStartIndex = HighestStartIndex;
-			else
-				Container.ItemStartIndex = StartIndexRelativeToCursor;
-
-			#if BreakDynamicMenu == 1
-			if (Container.CursorIndex != SavedCursorIndex)
-			{
-				char* str = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-				//CError: no strcpy on char* init
-				strcpy(str, "CursorIndex: ", 32);
-				straddi(str, Container.CursorIndex, 32);
-				stradd(str, " StartIndex: ", 32);
-				straddi(str, Container.ItemStartIndex, 32);
-				Break(strcatGlobal("== change~n~", str));
-			}
-			#endif
-
-			HasFoundIndex = true;
-			break;
-		}
-		if (!HasFoundIndex)
-		{
-			if (Menu.Items[i] < CurrentSelectedId)
-				ClosestIndexBefore = i;
-			else if (Menu.Items[i] > CurrentSelectedId)
-			{
-				Container.CursorIndex = i;
-
-				int StartIndexRelativeToCursor = i - CursorDistance;
-
-				if (StartIndexRelativeToCursor < 0)
-					Container.ItemStartIndex = 0;
-				else if (StartIndexRelativeToCursor > HighestStartIndex)
-					Container.ItemStartIndex = HighestStartIndex;
-				else
-					Container.ItemStartIndex = StartIndexRelativeToCursor;
-
-				#if BreakDynamicMenu == 1
-				if (Container.CursorIndex != SavedCursorIndex)
-				{
-					char* str = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-					strcpy(str, "CursorIndex: ", 32);
-					straddi(str, Container.CursorIndex, 32);
-					stradd(str, " StartIndex: ", 32);
-					straddi(str, Container.ItemStartIndex, 32);
-					Break(strcatGlobal("> change~n~", str));
-				}
-				#endif
-
-				HasFoundIndex = true;
-			}
-		}
-	}
-		
-	if (!HasFoundIndex)
-	{
-		if (Container.TotalItemCount > 0)
-		{
-			Container.CursorIndex = ClosestIndexBefore;
-
-			int StartIndexRelativeToCursor = ClosestIndexBefore - CursorDistance;
-
-			if (StartIndexRelativeToCursor < 0)
-				Container.ItemStartIndex = 0;
-			else if (StartIndexRelativeToCursor > HighestStartIndex)
-				Container.ItemStartIndex = HighestStartIndex;
-			else
-				Container.ItemStartIndex = StartIndexRelativeToCursor;
-
-			#if BreakDynamicMenu == 1
-			if (Container.CursorIndex != SavedCursorIndex)
-			{
-				char* str = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-				strcpy(str, "CursorIndex: ", 32);
-				straddi(str, Container.CursorIndex, 32);
-				stradd(str, " StartIndex: ", 32);
-				straddi(str, Container.ItemStartIndex, 32);
-				Break(strcatGlobal("< change~n~", str));
-			}
-			#endif
-		}
-		else
-			SetCurrentMenuInvalid(true, "Invalid dynamic menu id");
-	}
-
-	Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
-
-}
 
 void InitMenuDraw()
 {
@@ -1252,7 +1267,8 @@ void InitMenuDraw()
 
 	ExecutionEntry();
 }
-void HandleMenuUi()
+
+inline void DisableControlsOnExit()
 {
 	if (Container.DisableMenuOpenControls > 0)
 	{
@@ -1260,7 +1276,9 @@ void HandleMenuUi()
 		DisableControl(0, INPUT_COVER);
 		Container.DisableMenuOpenControls--;
 	}
-
+}
+inline void OpenMenuControls()
+{
 	if (HasPlayerOpenedMenu())
 	{
 		if (bit_test(Container.BitSet, PB_IsMenuOpen))
@@ -1268,29 +1286,65 @@ void HandleMenuUi()
 			PlayMenuSound("QUIT");
 			ShutDownMenu();
 		}
-		else 
+		else
 			bit_set(&Container.BitSet, PB_IsMenuOpen);
 	}
+}
+inline void CheckResources()
+{
+	CheckTextureDictionary("CommonMenu");
+	CheckTextureDictionary("mpleaderboard");
+	CheckScaleformMovie("instructional_buttons", &Container.Ui.MenuControlSFID);
+	CheckScaleformMovie("busy_spinner", &Container.Ui.MenuControlSFID2);
+}
+inline void DynamicMenuHandling()
+{
+	if (UpdateDynamicCursor(Container.Item[GetRelativeCursorIndex].Selection.DynamicId, Container.CursorIndex - Container.ItemStartIndex))
+		Container.Level[Container.CurrentMenuLevel].UpdateToMenuLevel();
+}
+inline void PreviousDynamicMenuChecker()
+{
+	for (int i = 0; i < Container.CurrentMenuLevel; i++)
+	{
+		if (Container.Level[i].DynamicChecker == nullptr)
+			continue;
+		else
+		{
+			if (Container.Level[i].DynamicChecker(Container.Level[i].SavedCursor.DynamicId))
+				continue;
+			else
+			{
+				UpdateMenuLevel(i - Container.CurrentMenuLevel);
+			}
+		}
+	}
+}
+void HandleMenuUi()
+{
+	DisableControlsOnExit();
+	OpenMenuControls();
 
 	if (bit_test(Container.BitSet, PB_IsMenuOpen))
 	{
-		CheckTextureDictionary("CommonMenu");
-		CheckTextureDictionary("mpleaderboard");
-		CheckScaleformMovie("instructional_buttons", &Container.Ui.MenuControlSFID);
-		CheckScaleformMovie("busy_spinner", &Container.Ui.MenuControlSFID2);
+		CheckResources();
 
 		if (is_pause_menu_active())
 			ShutDownMenu();
 
+		PreviousDynamicMenuChecker();
+
 		if (bit_test(Container.BitSet, PB_IsCurrentMenuDynamic))
 			DynamicMenuHandling();
+
+		while (bit_test(Container.BitSet, PB_IsCurrentMenuInvalid))
+			UpdateMenuLevel(-1);
 
 		DisableUnusedInputs();
 		ParseMenuControls();
 
 		//this is not perfect
 		while (bit_test(Container.BitSet, PB_IsCurrentMenuInvalid))
-			UpdateMenuLevel(false);
+			UpdateMenuLevel(-1);
 
 		DrawMenu();
 	}

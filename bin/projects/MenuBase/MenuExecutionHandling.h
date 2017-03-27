@@ -11,14 +11,16 @@ typedef struct { int Items[MaxDynamicItems]; } DynamicIdArray;
 //For Description and AlternateExecution use nullptr for disabled
 #pragma region AdvancedItems
 //if DynamicChecker is enabled then menu items have to be dynamic items
+void SetHeaderForwardedAdvanced(bool(*DynamicChecker)(int Id));
+//if DynamicChecker is enabled then menu items have to be dynamic items
 void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt, bool(*DynamicChecker)(int Id));
 void AddItemAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, void(*Callback)(), void(*AlternateCallback)());
 void AddItemIntAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, bool HasConformation, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), void(*AlternateCallback)());
 void AddItemFloatAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, bool HasConformation, float MinValue, float MaxValue, float StartIndex, float Precision, void(*Callback)(), void(*AlternateCallback)());
 void AddItemBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, bool StartIndex, void(*Callback)(), void(*AlternateCallback)());
 void AddItemEnumAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool ExecuteOnChange, bool HasConformation, int MinValue, int MaxValue, int StartIndex, int Precision, void(*Callback)(), const char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)());
-void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, void(*Callback)());
-void AddItemMenuWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, int Param, void(*Callback)());
+void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, bool ForwardsHeaderText, void(*Callback)());
+void AddItemMenuWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, bool ForwardsHeaderText, int Param, void(*Callback)());
 void AddItemWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, int Param, void(*Callback)(), void(*AlternateCallback)());
 void AddItemIntBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, int MinValue, int MaxValue, int StartIndex, int Precision, bool BoolStartIndex, void(*Callback)(), void(*AlternateCallback)());
 void AddItemEnumBoolAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, int MinValue, int MaxValue, int StartIndex, int Precision, bool BoolStartIndex, void(*Callback)(), const char*(*EnumParser)(int ItemIndex), void(*AlternateCallback)());
@@ -28,6 +30,7 @@ void AddItemVehicleAdvanced(int VehicleHash, const char* Description, const char
 #pragma endregion
 
 #pragma region NormalItems
+void SetHeaderForwarded();
 void SetHeader(const char* HeaderText);
 void AddItem(const char* ItemText, void(*Callback)());
 void AddItemInt(const char* ItemText, bool ExecuteOnChange, int MinValue, int MaxValue, int StartIndex, void(*Callback)());
@@ -44,6 +47,8 @@ void AddItemVehicle(int VehicleHash, void(*Callback)());
 #pragma endregion
 
 #pragma region DynamicNormalItems
+void AddItemMenuDynamicAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, bool ForwardsHeaderText, int DynamicId, void(*Callback)());
+void AddItemMenuDynamic(const char* ItemText, int DynamicId, void(*Callback)());
 void AddItemDynamic(const char* ItemText, int DynamicId, void(*Callback)());
 void AddItemPlayer(int PlayerId, void(*Callback)());
 #pragma endregion
@@ -56,6 +61,7 @@ bool WasLastMenuDirectionForward();
 ItemContainer* GetCurrentItem();
 //Note: Only works in the forward direction
 ItemContainer* GetCurrentItemFromLastMenu();
+int GetLastDynamicId();
 ItemContainer* GetCurrentItemAtIndex(int Index);
 int FloatToPrecision(float Precision);
 float PrecisionToFloat(int Precision);

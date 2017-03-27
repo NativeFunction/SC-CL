@@ -11,6 +11,7 @@
 #include "fstream"
 extern std::string globalDirectory;
 
+#pragma region Collections
 class PageCollection{
 protected:
 	std::vector<std::vector<uint8_t>> Pages;
@@ -212,6 +213,7 @@ public:
 		*(uint32_t*)getPositionAddress(position) = newValue;
 	}
 };
+#pragma endregion
 
 class CompileBase
 {
@@ -317,7 +319,8 @@ protected:
 		DisableFunctionNames(Disable_Function_Names)
 	{
 		//Set Endian
-		if (HLData->getBuildPlatform() == Platform::P_PC && HLData->getBuildType() == BT_GTAV)
+		const int BT = HLData->getBuildType();
+		if ((HLData->getBuildPlatform() == Platform::P_PC && BT == BT_GTAV) || (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT))
 		{
 			CodePageData = std::make_unique<CodePageCollectionLit>();
 			AddInt32toBuff = &CompileBase::AddInt32toBuffL;
@@ -334,7 +337,7 @@ protected:
 			ChangeInt64inBuff = &CompileBase::ChangeInt64inBuffB;
 		}
 	}
-	virtual ~CompileBase(){}
+	virtual ~CompileBase() {};
 
 	virtual void Compile(const std::string& outDirectory) = 0;
 
@@ -379,7 +382,7 @@ protected:
 		else
 			Utils::System::Throw("Cannot add function. function \"" + function->getName() + "\" already exists.");
 	}
-	void AddJumpLoc(const JumpInstructionType it, const std::string& label)
+	virtual void AddJumpLoc(const JumpInstructionType it, const std::string& label)
 	{
 		// this should only be called on jump forward
 		JumpLocations.push_back({ CodePageData->getTotalSize(), it, label, false });
@@ -437,7 +440,7 @@ protected:
 	#pragma endregion
 
 	#pragma region Opcode_Functions
-	void AddFunction(const FunctionData* function, bool disableFunctionName)
+	virtual void AddFunction(const FunctionData* function, bool disableFunctionName)
 	{
 		if (disableFunctionName || function->isBuiltIn())
 		{
@@ -496,8 +499,8 @@ protected:
 	void AddImm(){ AddImm(DATA->getInt()); }
 	virtual void MultImm(const int32_t Literal);//Override: GTAIV
 	void MultImm(){ MultImm(DATA->getInt()); }
-	void FAddImm();
-	void FMultImm();
+	virtual void FAddImm();
+	virtual void FMultImm();
 	virtual void GetImmPStack() = 0;
 	virtual void GetImmP() { AddImm((uint32_t)DATA->getUShort(0) * 4); };//Override: GTAV
 	virtual void GetImm() = 0;
@@ -621,7 +624,7 @@ protected:
 	void WriteFinalCodePage();
 	void WriteNativesNoPadding();
 	virtual void WriteNatives();
-	void WriteStaticsNoPadding();
+	virtual void WriteStaticsNoPadding();
 	virtual void WriteStatics();
 	virtual void WriteHeader() = 0;
 	virtual void WritePointers() = 0;
@@ -631,11 +634,144 @@ protected:
 
 	#pragma region Parse_Functions
 	void CheckLabels();
-	void BuildTables();
+	virtual void BuildTables();
 	virtual void fixFunctionJumps() = 0;
 	virtual void fixFunctionCalls() = 0;
 	void ParseGeneral(const OpcodeKind OK);
 	#pragma endregion
+};
+
+class CompileGTAIV : CompileBase
+{
+public:
+	CompileGTAIV(const Script& data, bool Disable_Function_Names) : CompileBase(GTAIVOpcodes, data, 0, 0, Disable_Function_Names) { }
+
+	void Compile(const std::string& outDirectory) override
+	{
+		BuildTables();
+		switch (HLData->getBuildType())
+		{
+			case BT_GTAIV_TLAD:
+			case BT_GTAIV_TBOGT:
+			case BT_GTAIV:
+			SCOWrite((outDirectory + HLData->getBuildFileName()).data(), SCRFlags::CompressedEncrypted);
+			break;
+			default:
+			assert(false && "Incompatible build type for GTAIV");
+			break;
+		}
+	}
+private:
+	//visual studio plz... designated initializers were added in 1999 get with the times
+	const OpCodes GTAIVOpcodes = { IVO_Nop, IVO_Add, IVO_Sub, IVO_Mult, IVO_Div, IVO_Mod, IVO_Not, IVO_Neg, IVO_CmpEq, IVO_CmpNe, IVO_CmpGt, IVO_CmpGe, IVO_CmpLt, IVO_CmpLe, IVO_fAdd, IVO_fSub, IVO_fMult, IVO_fDiv, IVO_fMod, IVO_fNeg, IVO_fCmpEq, IVO_fCmpNe, IVO_fCmpGt, IVO_fCmpGe, IVO_fCmpLt, IVO_fCmpLe, IVO_vAdd, IVO_vSub, IVO_vMult, IVO_vDiv, IVO_vNeg, IVO_And, IVO_Or, IVO_Xor, IVO_ItoF, IVO_FtoI, IVO_FtoV, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Push, IVO_PushF, IVO_Dup, IVO_Drop, IVO_CallNative, IVO_Function, IVO_Return, IVO_pGet, IVO_pSet, IVO_pPeekSet, IVO_ToStack, IVO_FromStack, IVO_Nop, IVO_Nop, IVO_Nop, IVO_GetFrameP1, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_PushS, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_GetFrameP2, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Jump, IVO_JumpFalse, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Call, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Switch, IVO_PushString, IVO_StrCopy, IVO_ItoS, IVO_StrAdd, IVO_StrAddi, IVO_MemCopy, IVO_Catch, IVO_Throw, IVO_Nop, IVO_Push_Neg1, IVO_Push_0, IVO_Push_1, IVO_Push_2, IVO_Push_3, IVO_Push_4, IVO_Push_5, IVO_Push_6, IVO_Push_7, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_PushStringNull, IVO_JumpTrue, IVO_GetFrameP0, IVO_GetFrameP3, IVO_GetFrameP4, IVO_GetFrameP5, IVO_GetFrameP6, IVO_GetFrameP7, IVO_GetFrameP, IVO_GetGlobalP, IVO_GetStaticP, IVO_GetArrayP, IVO_GetXProtect, IVO_SetXProtect, IVO_RefXProtect, IVO_Exit };
+
+	#pragma region Type_Defines
+	enum class SCRFlags
+	{
+		  Standard = 0x5343520D
+		, Encrypted = 0x7363720E
+		, CompressedEncrypted = 0x5363720E
+	};
+	enum class SignatureTypes
+	{
+		GTAIV = 0x0044207E
+		, TLAD = 0x3FA5FA2D
+		, TBOGT = 0x4AA44B39
+	};
+	#pragma endregion
+
+	#pragma region Data_Functions
+	virtual void AddLabel(const std::string& label) override;
+	virtual void AddJumpLoc(const JumpInstructionType it, const std::string& label) override
+	{
+		// this should only be called on jump forward
+		JumpLocations.push_back({ CodePageData->getTotalSize(), it, label, false });
+		LabelLocations[label].JumpIndexes.push_back(JumpLocations.size() - 1);
+		switch (it)
+		{
+			case JumpInstructionType::Switch:
+			case JumpInstructionType::Jump:
+			case JumpInstructionType::JumpFalse:
+			case JumpInstructionType::JumpEQ:
+			case JumpInstructionType::JumpNE:
+			case JumpInstructionType::JumpGT:
+			case JumpInstructionType::JumpGE:
+			case JumpInstructionType::JumpLT:
+			case JumpInstructionType::JumpLE:
+			case JumpInstructionType::LabelLoc:		AddInt32(0); break;
+			default: assert(false && "Invalid Type");
+		}
+	}
+	virtual void AddJump(const JumpInstructionType type, const std::string& label) override;
+	virtual JumpLabelData AddSwitchJump(const JumpInstructionType type, const std::string& label) override;
+	#pragma endregion
+	
+	#pragma region Opcode_Functions
+	virtual void AddFunction(const FunctionData* function, bool disableFunctionName) override
+	{
+		DoesOpcodeHaveRoom(4);
+		AddFuncLabel(function);
+		AddOpcode(Function);
+		AddInt8(function->getParamCount());
+		AddInt16(function->getStackSize());
+	}
+	virtual void PushInt(const int32_t Literal) override;
+	void PushInt() { PushInt(DATA->getInt()); }
+	virtual void PushBytes() override;
+	virtual void PushFloat(const float Literal) override;
+	void PushFloat() { PushFloat(DATA->getFloat()); }
+	virtual void CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount) override;
+	virtual void GetArrayP() override;
+	virtual void GetArray() override;
+	virtual void SetArray() override;
+	virtual void GetFrameP() override;
+	virtual void GetFrame() override;
+	virtual void SetFrame() override;
+	virtual void GetStaticP() override;
+	virtual void GetStaticPRaw() override;
+	virtual void GetStatic() override;
+	virtual void GetStaticRaw() override;
+	virtual void SetStatic() override;
+	virtual void SetStaticRaw() override;
+	virtual void GetGlobalP() override;
+	virtual void GetGlobal() override;
+	virtual void SetGlobal() override;
+	virtual void AddFuncLoc(const FunctionData* function) override;
+
+	//Do these opcodes use code buffer???
+	//virtual void StrCopy() override { DoesOpcodeHaveRoom(2); AddOpcode(StrCopy); AddInt8(DATA->getByte(0)); };//Override: GTAIV
+	//virtual void ItoS() override { DoesOpcodeHaveRoom(2); AddOpcode(ItoS); AddInt8(DATA->getByte(0)); };//Override: GTAIV
+	//virtual void StrAdd() override { DoesOpcodeHaveRoom(2); AddOpcode(StrAdd); AddInt8(DATA->getByte(0)); };//Override: GTAIV
+	//virtual void StrAddI() override { DoesOpcodeHaveRoom(2); AddOpcode(StrAddi); AddInt8(DATA->getByte(0)); };//Override: GTAIV
+	virtual void pCall() override;
+	virtual void AddImm(const int32_t Literal) override;
+	virtual void MultImm(const int32_t Literal) override;
+	virtual void FAddImm() override;
+	virtual void FMultImm() override;
+
+	void GetHash() override { CallNative(JoaatConst("get_hash_key"), 1, 1); };
+	void Call() override;
+	void GetImmPStack() override;
+	void GetImm() override;
+	void SetImm() override;
+	void GoToStack() override;
+	void AddJumpTable() override;
+	#pragma endregion
+
+	#pragma region Parse_Functions
+	virtual void BuildTables() override;
+	void fixFunctionCalls() override;
+	void fixFunctionJumps() override;
+	#pragma endregion
+
+	#pragma region Write_Functions
+	SignatureTypes GetSignature();
+	virtual void WriteStaticsNoPadding() override;
+	virtual void WriteHeader() override {};
+	virtual void WritePointers() override {};
+	void SCOWrite(const char* path, SCRFlags flag);
+	#pragma endregion
+	
 };
 
 class CompileRDR : CompileBase
@@ -819,9 +955,7 @@ private:
 	virtual void addDecryptionFunction(__int64 xorValue, size_t entryCallLoc);
 	void BuildTablesCheckEnc();
 public:
-	void setEncryptStrings(bool bValue = true){
-		isStringEncrypted = true;
-	}
+	void setEncryptStrings(bool bValue = true) { isStringEncrypted = true; }
 	#pragma endregion
 };
 

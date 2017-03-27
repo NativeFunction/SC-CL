@@ -47,6 +47,21 @@ static void ResetCurrentItem()
 #pragma region ItemTypes
 
 #pragma region AdvancedItems
+void SetHeaderForwardedAdvanced(bool(*DynamicChecker)(int Id))
+{
+	AddItemCounter = 0;
+	Container->TotalItemCount = 0;
+	if (DynamicChecker)
+	{
+		bit_set(&Container->BitSet, PB_IsCurrentMenuDynamic);
+		Container->Level[Container->CurrentMenuLevel].DynamicChecker = DynamicChecker;
+	}
+	else
+	{
+		bit_reset(&Container->BitSet, PB_IsCurrentMenuDynamic);
+		Container->Level[Container->CurrentMenuLevel].DynamicChecker = nullptr;
+	}
+}
 void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt, bool(*DynamicChecker)(int Id))
 {
 	AddItemCounter = 0;
@@ -62,8 +77,9 @@ void SetHeaderAdvanced(const char* HeaderText, bool IsItemGxt, bool(*DynamicChec
 		Container->Level[Container->CurrentMenuLevel].DynamicChecker = nullptr;
 	}
 
-	Container->Ui.HeaderText = (char*)HeaderText;
-	Container->Ui.IsHeaderGxt = IsItemGxt;
+	Container->Ui.HeaderText[Container->CurrentMenuLevel] = (char*)HeaderText;
+	if (IsItemGxt)
+		set_bit(&Container->Ui.IsHeaderGxtBitSet, Container->CurrentMenuLevel);
 }
 void AddItemAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, const char* AltExeControlText, bool IsDisabled, bool HasConformation, void(*Callback)(), void(*AlternateCallback)())
 {
@@ -202,13 +218,15 @@ void AddItemEnumAdvanced(const char* ItemText, bool IsItemGxt, const char* Descr
 
 	Container->TotalItemCount++;
 }
-void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, void(*Callback)())
+void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, bool ForwardsHeaderText, void(*Callback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
 		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
 		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		if (ForwardsHeaderText)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemForwardHeaderText);
 		if(IsItemGxt)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
@@ -222,13 +240,15 @@ void AddItemMenuAdvanced(const char* ItemText, bool IsItemGxt, const char* Descr
 
 	Container->TotalItemCount++;
 }
-void AddItemMenuWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, int Param, void(*Callback)())
+void AddItemMenuWithParamAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, bool ForwardsHeaderText, int Param, void(*Callback)())
 {
 	if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
 	{
 		ResetCurrentItem();
 		Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
 		Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+		if (ForwardsHeaderText)
+			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemForwardHeaderText);
 		if (IsItemGxt)
 			bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
 		if (IsDisabled)
@@ -409,14 +429,20 @@ void AddItemVehicleAdvanced(int VehicleHash, const char* Description, const char
 #pragma endregion
 
 #pragma region NormalItems
+void SetHeaderForwarded()
+{
+	AddItemCounter = 0;
+	Container->TotalItemCount = 0;
+	bit_reset(&Container->BitSet, PB_IsCurrentMenuDynamic);
+}
 void SetHeader(const char* HeaderText)
 {
 	AddItemCounter = 0;
 	Container->TotalItemCount = 0;
 	bit_reset(&Container->BitSet, PB_IsCurrentMenuDynamic);
 
-	Container->Ui.HeaderText = (char*)HeaderText;
-	Container->Ui.IsHeaderGxt = false;
+	Container->Ui.HeaderText[Container->CurrentMenuLevel] = (char*)HeaderText;
+	clear_bit(&Container->Ui.IsHeaderGxtBitSet, Container->CurrentMenuLevel);
 }
 void AddItem(const char* ItemText, void(*Callback)())
 {
@@ -620,6 +646,8 @@ void AddItemVehicle(int VehicleHash, void(*Callback)())
 		Container->Item[AddItemCounter].Execute = Callback;
 		Container->Item[AddItemCounter].Selection.Type = MST_MenuParam;
 		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
+		bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemForwardHeaderText);
+
 		AddItemCounter++;
 	}
 
@@ -629,6 +657,59 @@ void AddItemVehicle(int VehicleHash, void(*Callback)())
 
 #pragma region DynamicNormalItems
 //TODO: add rest of dynamic items
+
+void AddItemMenuDynamicAdvanced(const char* ItemText, bool IsItemGxt, const char* Description, bool IsDisabled, bool HasConformation, bool ForwardsHeaderText, int DynamicId, void(*Callback)())
+{
+	if (DynamicDumping.IsDumpingDynamicIds)
+	{
+		if (Container->TotalItemCount < MaxDynamicItems)
+			DynamicDumping.DynamicDumpPtr[Container->TotalItemCount] = DynamicId;
+	}
+	else
+	{
+		if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+		{
+			ResetCurrentItem();
+
+			Container->Item[AddItemCounter].Selection.DynamicId = DynamicId;
+			Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+			Container->Item[AddItemCounter].Ui.Description = (char*)Description;
+			if (ForwardsHeaderText)
+				bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemForwardHeaderText);
+			if (IsItemGxt)
+				bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemGxt);
+			if (IsDisabled)
+				bit_set(&Container->Item[AddItemCounter].BitSet, ICB_IsItemDisabled);
+			if (HasConformation)
+				bit_set(&Container->Item[AddItemCounter].BitSet, ICB_DoesItemHaveConfirmation);
+			Container->Item[AddItemCounter].Execute = Callback;
+			Container->Item[AddItemCounter].Selection.Type = MST_Menu;
+			AddItemCounter++;
+		}
+	}
+	Container->TotalItemCount++;
+}
+void AddItemMenuDynamic(const char* ItemText, int DynamicId, void(*Callback)())
+{
+	if (DynamicDumping.IsDumpingDynamicIds)
+	{
+		if (Container->TotalItemCount < MaxDynamicItems)
+			DynamicDumping.DynamicDumpPtr[Container->TotalItemCount] = DynamicId;
+	}
+	else
+	{
+		if (Container->TotalItemCount >= Container->ItemStartIndex && AddItemCounter < MaxDisplayableItems)
+		{
+			ResetCurrentItem();
+			Container->Item[AddItemCounter].Selection.DynamicId = DynamicId;
+			Container->Item[AddItemCounter].Ui.ItemText = (char*)ItemText;
+			Container->Item[AddItemCounter].Execute = Callback;
+			Container->Item[AddItemCounter].Selection.Type = MST_Menu;
+			AddItemCounter++;
+		}
+	}
+	Container->TotalItemCount++;
+}
 void AddItemDynamic(const char* ItemText, int DynamicId, void(*Callback)())
 {
 	if (DynamicDumping.IsDumpingDynamicIds)
@@ -665,7 +746,7 @@ void AddItemPlayer(int PlayerId, void(*Callback)())
 			Container->Item[AddItemCounter].Selection.DynamicId = PlayerId;
 			Container->Item[AddItemCounter].Ui.ItemText = (char*)get_player_name(PlayerId);
 			Container->Item[AddItemCounter].Execute = Callback;
-			Container->Item[AddItemCounter].Selection.Type = MST_Player;
+			Container->Item[AddItemCounter].Selection.Type = MST_Player;//change to playermenu
 			AddItemCounter++;
 		}
 	}
@@ -721,6 +802,12 @@ inline ItemContainer* GetCurrentItemFromLastMenu()
 {
 	int LevelIndex = Container->CurrentMenuLevel > 0 ? Container->CurrentMenuLevel - 1 : 0;
 	return &Container->Item[Container->Level[LevelIndex].SavedCursor.CursorIndex - Container->Level[LevelIndex].SavedCursor.ItemStartIndex];
+}
+inline int GetLastDynamicId()
+{
+	if (Container->CurrentMenuLevel - 1 < 0)
+		return 0;
+	return Container->Level[Container->CurrentMenuLevel - 1].SavedCursor.DynamicId;
 }
 inline ItemContainer* GetCurrentItem()
 {

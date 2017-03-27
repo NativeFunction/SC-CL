@@ -73,6 +73,8 @@ namespace Utils {
 	namespace IO
 	{
 		void LoadData(const char* path, std::vector<uint8_t>& out);
+		bool CheckFopenFile(const char* path, FILE* file);
+
 	}
 	namespace System
 	{
@@ -171,14 +173,15 @@ namespace Utils {
 
 		};
 
-		void ZLIB_Decompress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t outSize);
+		void ZLIB_Decompress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize);
 		void ZLIB_Compress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize);
+		void ZLIB_CompressChecksum(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize);
 		std::string ZLIB_ErrorCodeToStr(int32_t errorcode);
 	}
 	namespace Crypt
 	{
-		bool AES_Decrypt(uint8_t * data, size_t length);
-		bool AES_Encrypt(uint8_t * data, size_t length);
+		bool AES_Decrypt(uint8_t * data, size_t length, const uint8_t key[32]);
+		bool AES_Encrypt(uint8_t * data, size_t length, const uint8_t key[32]);
 	}
 
 }

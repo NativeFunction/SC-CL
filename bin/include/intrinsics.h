@@ -97,9 +97,9 @@ extern __unsafeIntrinsic void __pushStruct(void* structure);///Pushes a struct o
 extern __unsafeIntrinsic void __popStruct(void* structure);///Pops a struct off the stack
 extern __unsafeIntrinsic void __rev(const int numItems);///Reverses items on stack
 extern __unsafeIntrinsic void __exch(const int structStackSize);///Exchanges a struct on the stack
-extern __unsafeIntrinsic int __popI();///Gets top int on stack 
-extern __unsafeIntrinsic float __popF();///Gets top float on stack 
-extern __unsafeIntrinsic vector3 __popV();///Gets top vector3 on stack 
+extern __unsafeIntrinsic int __popI();///Gets top int on stack
+extern __unsafeIntrinsic float __popF();///Gets top float on stack
+extern __unsafeIntrinsic vector3 __popV();///Gets top vector3 on stack
 extern __unsafeIntrinsic void __ptrToStack(const void* address, int count);///pushes count amount of items from the specified pointer to the stack
 extern __unsafeIntrinsic void __ptrFromStack(const void* address, int count);///pushes count amount of items from the stack to the specified pointer
 #pragma endregion //}
@@ -203,3 +203,20 @@ extern __unsafeIntrinsic void __pCall();
 
 #undef __asm_unsafe
 #undef __intrinsic
+
+
+#define CreateSizedArray(name, sizein)\
+struct\
+{\
+	int size;\
+	any items[sizein];\
+} name = {.size = sizein};
+
+#define ArrayToSizedArray(arr, sizedarr)\
+if(sizeof(arr) == sizeof(sizedarr.items))\
+	memcpy(sizedarr.items, arr, countof(arr));
+
+#define SizedArrayToArray(sizedarr, arr)\
+if(sizeof(arr) == sizeof(sizedarr.items))\
+	memcpy(arr, sizedarr.items, countof(sizedarr.items));
+

@@ -615,7 +615,6 @@ void CompileBase::SetGlobal()
 	AddOpcodeB_2or3(SetGlobal, "SetGlobal index too high");
 }
 
-
 void CompileBase::PushString()
 {
 	DoesOpcodeHaveRoom(DATA->getString().size() + 3);//opcode, len, null terminator
@@ -820,6 +819,7 @@ void CompileBase::FMultImm()
 #pragma region Write_Functions
 void CompileBase::WriteCodePagesNoPadding()
 {
+	SavedOffsets.CodePagePointers.resize(CodePageData->getPageCount());
 	for (uint32_t i = 0; i < CodePageData->getPageCount() - 1; i++)
 	{	
 		SavedOffsets.CodePagePointers[i] = BuildBuffer.size();
@@ -937,6 +937,579 @@ void CompileBase::WriteStatics()
 
 }
 #pragma endregion
+
+#pragma endregion
+
+#pragma region GTAIV
+
+#pragma region Data_Functions
+void CompileGTAIV::AddLabel(const string& label)
+{
+	auto it = LabelLocations.find(label);
+	if (it == LabelLocations.end())
+	{
+		LabelLocations.insert({ label,{ CodePageData->getTotalSize(), true } });
+	}
+	else if (!it->second.isSet)
+	{
+		it->second.isSet = true;
+		it->second.LabelLocation = CodePageData->getTotalSize();
+		for (uint32_t i = 0; i < it->second.JumpIndexes.size(); i++)
+		{
+			//Fix jump forwards that are in range. Out of range jumps should have already been fixed.
+
+			if (!JumpLocations[it->second.JumpIndexes[i]].isSet)
+			{
+				if (JumpLocations[it->second.JumpIndexes[i]].InstructionType != JumpInstructionType::LabelLoc)
+				{
+					ChangeInt32InCodePage(it->second.LabelLocation, JumpLocations[it->second.JumpIndexes[i]].JumpLocation);
+					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
+				}
+				else
+				{
+					ChangeInt32InCodePage(it->second.LabelLocation, JumpLocations[it->second.JumpIndexes[i]].JumpLocation);
+					JumpLocations[it->second.JumpIndexes[i]].isSet = true;
+				}
+			}
+		}
+	}
+	else
+		Utils::System::Throw("Cannot add label. Label \"" + label + "\" already exists.");
+}
+void CompileGTAIV::AddJump(const JumpInstructionType type, const string& label)
+{
+	auto it = LabelLocations.find(label);
+	if (it == LabelLocations.end() || !it->second.isSet)
+	{
+		//jump forward
+		switch (type)
+		{
+			case JumpInstructionType::Jump:			DoesOpcodeHaveRoom(5); AddOpcode(Jump); AddJumpLoc(type, label); break;
+			case JumpInstructionType::JumpFalse:	DoesOpcodeHaveRoom(5); AddOpcode(JumpFalse); AddJumpLoc(type, label); break;
+			case JumpInstructionType::JumpNE:		DoesOpcodeHaveRoom(6); AddOpcode(CmpNe); AddOpcode(JumpTrue); AddJumpLoc(type, label); break;
+			case JumpInstructionType::JumpEQ:		DoesOpcodeHaveRoom(6); AddOpcode(CmpEq); AddOpcode(JumpTrue); AddJumpLoc(type, label); break;
+			case JumpInstructionType::JumpLE:		DoesOpcodeHaveRoom(6); AddOpcode(CmpLe); AddOpcode(JumpTrue); AddJumpLoc(type, label); break;
+			case JumpInstructionType::JumpLT:		DoesOpcodeHaveRoom(6); AddOpcode(CmpLt); AddOpcode(JumpTrue); AddJumpLoc(type, label); break;
+			case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(6); AddOpcode(CmpGe); AddOpcode(JumpTrue); AddJumpLoc(type, label); break;
+			case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(6); AddOpcode(CmpGt); AddOpcode(JumpTrue); AddJumpLoc(type, label); break;
+			case JumpInstructionType::LabelLoc:		DoesOpcodeHaveRoom(5); AddOpcode(Push); AddJumpLoc(type, label); break;
+			default: assert(false && "Invalid JumpInstructionType"); break;
+		}
+	}
+	else
+	{
+		//jump backward
+		switch (type)
+		{
+			case JumpInstructionType::Jump:			DoesOpcodeHaveRoom(5); AddOpcode(Jump); AddInt32(it->second.LabelLocation); break;
+			case JumpInstructionType::JumpFalse:	DoesOpcodeHaveRoom(5); AddOpcode(JumpFalse); AddInt32(it->second.LabelLocation); break;
+			case JumpInstructionType::JumpNE:		DoesOpcodeHaveRoom(6); AddOpcode(CmpNe); AddOpcode(JumpTrue); AddInt32(it->second.LabelLocation); break;
+			case JumpInstructionType::JumpEQ:		DoesOpcodeHaveRoom(6); AddOpcode(CmpEq); AddOpcode(JumpTrue); AddInt32(it->second.LabelLocation); break;
+			case JumpInstructionType::JumpLE:		DoesOpcodeHaveRoom(6); AddOpcode(CmpLe); AddOpcode(JumpTrue); AddInt32(it->second.LabelLocation); break;
+			case JumpInstructionType::JumpLT:		DoesOpcodeHaveRoom(6); AddOpcode(CmpLt); AddOpcode(JumpTrue); AddInt32(it->second.LabelLocation); break;
+			case JumpInstructionType::JumpGE:		DoesOpcodeHaveRoom(6); AddOpcode(CmpGe); AddOpcode(JumpTrue); AddInt32(it->second.LabelLocation); break;
+			case JumpInstructionType::JumpGT:		DoesOpcodeHaveRoom(6); AddOpcode(CmpGt); AddOpcode(JumpTrue); AddInt32(it->second.LabelLocation); break;
+			case JumpInstructionType::LabelLoc:		PushInt(it->second.LabelLocation); break;
+			default: assert(false && "Invalid JumpInstructionType"); break;
+		}
+	}
+
+}
+CompileBase::JumpLabelData CompileGTAIV::AddSwitchJump(const JumpInstructionType type, const string& label)
+{
+	if (type != JumpInstructionType::Switch)
+		assert(false && "Invalid JumpInstructionType");
+
+	auto it = LabelLocations.find(label);
+	if (it == LabelLocations.end() || !it->second.isSet)
+	{
+		//jump forward
+		AddJumpLoc(type, label);
+		return{ { 0,type,label,false },{ 0,0,{} } };
+	}
+	else
+	{
+		//jump backward
+		assert(it->second.LabelLocation - CodePageData->getTotalSize() - 4 >= 0);
+
+		AddInt32(0);
+
+		//have to add a jump forward to jump backward
+		return{ { CodePageData->getTotalSize() - 4, type, label, false }, it->second };
+	}
+
+}
+#pragma endregion
+
+#pragma region Opcode_Functions
+void CompileGTAIV::PushInt(const int32_t Literal)
+{
+	if (Literal >= -16 && Literal <= 159) {
+		DoesOpcodeHaveRoom(1);
+		AddInt8(BaseOpcodes->Push_0 + Literal);
+	}
+	else if (Literal >= -32768 && Literal <= 32767)
+	{
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(PushS);
+		AddInt16(Literal);
+	}
+	else
+	{
+		DoesOpcodeHaveRoom(5);
+		AddOpcode(Push);
+		AddInt32(Literal);
+	}
+
+
+}
+void CompileGTAIV::PushFloat(const float Literal)
+{
+	DoesOpcodeHaveRoom(5);
+	AddOpcode(PushF);
+	AddFloat(Literal);
+}
+void CompileGTAIV::PushBytes()
+{
+	switch (DATA->getByte(0))
+	{
+		case 0: assert(false && "Empty PushBytes opcode"); break;
+		case 1: PushInt(DATA->getByte(1)); break;
+		case 2: PushInt(DATA->getByte(1)); PushInt(DATA->getByte(2)); break;
+		case 3: PushInt(DATA->getByte(1)); PushInt(DATA->getByte(2)); PushInt(DATA->getByte(3)); break;
+		default:
+		assert(false && "Too many bytes in PushBytes opcode");
+	}
+}
+void CompileGTAIV::GetArrayP()
+{
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(GetArrayP);
+}
+void CompileGTAIV::GetArray()
+{
+	GetArrayP();
+	AddOpcode(pGet);
+}
+void CompileGTAIV::SetArray()
+{
+	GetArrayP();
+	AddOpcode(pSet);
+}
+void CompileGTAIV::GetFrameP()
+{
+	const uint32_t value = DATA->getInt();
+	if (value >= 0 && value <= 7)
+	{
+		switch (value)
+		{
+			case 0: DoesOpcodeHaveRoom(1); AddOpcode(GetFrameP0); break;
+			case 1: DoesOpcodeHaveRoom(1); AddOpcode(GetFrameP1); break;
+			case 2: DoesOpcodeHaveRoom(1); AddOpcode(GetFrameP2); break;
+			case 3: DoesOpcodeHaveRoom(1); AddOpcode(GetFrameP3); break;
+			case 4: DoesOpcodeHaveRoom(1); AddOpcode(GetFrameP4); break;
+			case 5: DoesOpcodeHaveRoom(1); AddOpcode(GetFrameP5); break;
+			case 6: DoesOpcodeHaveRoom(1); AddOpcode(GetFrameP6); break;
+			case 7: DoesOpcodeHaveRoom(1); AddOpcode(GetFrameP7); break;
+			default: assert(false && "Invalid FrameP Opcode");
+		}
+	}
+	else
+	{
+		PushInt(DATA->getInt());
+		DoesOpcodeHaveRoom(1);
+		AddOpcode(GetFrameP);
+	}
+	
+}
+void CompileGTAIV::GetFrame()
+{
+	GetFrameP();
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(pGet);
+}
+void CompileGTAIV::SetFrame()
+{
+	GetFrameP();
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(pSet);
+}
+void CompileGTAIV::GetStaticP()
+{
+	assert(DATA->getStaticData()->getStatic()->isUsed() && "unused static referenced, this shouldn't happen");
+	const uint32_t value = DATA->getStaticData()->getStatic()->getIndex() + DATA->getStaticData()->getImmIndex();
+	PushInt(value);
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(GetStaticP);
+}
+void CompileGTAIV::GetStaticPRaw()
+{
+	PushInt(DATA->getInt());
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(GetStaticP);
+}
+void CompileGTAIV::GetStatic()
+{
+	GetStaticP();
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(pGet);
+}
+void CompileGTAIV::GetStaticRaw()
+{
+	GetStaticPRaw();
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(pGet);
+}
+void CompileGTAIV::SetStatic()
+{
+	GetStaticP();
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(pSet);
+}
+void CompileGTAIV::SetStaticRaw()
+{
+	GetStaticPRaw();
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(pSet);
+}
+void CompileGTAIV::GetGlobalP()
+{
+	PushInt(DATA->getInt());
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(GetGlobalP);
+}
+void CompileGTAIV::GetGlobal()
+{
+	GetGlobalP();
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(pGet);
+}
+void CompileGTAIV::SetGlobal()
+{
+	GetGlobalP();
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(pSet);
+}
+void CompileGTAIV::AddFuncLoc(const FunctionData* function)
+{
+	DoesOpcodeHaveRoom(5);
+	AddOpcode(Push);
+	CallLocations.push_back({ CodePageData->getTotalSize(), CallInstructionType::FuncLoc, function });
+	AddInt32(0);
+}
+
+void CompileGTAIV::pCall()
+{
+	DoesOpcodeHaveRoom(15);
+	AddOpcode(PushString);
+	AddInt8(1);//length
+	AddInt8(83);
+	AddOpcode(Push_5);
+	AddOpcode(Add);
+	AddOpcode(pSet);
+	AddOpcode(Call);
+	AddInt32(0xCDCDCDCD);
+}
+void CompileGTAIV::AddImm(const int32_t Literal)
+{
+	PushInt(Literal);
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(Add);
+}
+void CompileGTAIV::MultImm(const int32_t Literal)
+{
+	PushInt(Literal);
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(Mult);
+}
+void CompileGTAIV::FAddImm()
+{
+	PushFloat();
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(fAdd);
+}
+void CompileGTAIV::FMultImm()
+{
+	PushFloat();
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(fMult);
+}
+void CompileGTAIV::CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount)
+{
+	// gta5 1 byte param/return, 2 byte call loc
+
+
+	DoesOpcodeHaveRoom(7);
+
+	AddOpcode(CallNative);
+
+	if (paramCount > 255)
+		Utils::System::Throw("Native Calls Can Only Have Up To 255 Params");
+	else
+		AddInt8(paramCount);
+	
+	if (returnCount > 255)
+		Utils::System::Throw("Native Calls Can Only Have Up To 255 Returns");
+	else
+		AddInt8(returnCount);
+
+	AddInt32(hash);
+}
+
+void CompileGTAIV::Call()
+{
+	// gta4: 4 byte loc
+	DoesOpcodeHaveRoom(5);
+	AddOpcode(Call);
+	CallLocations.push_back({ CodePageData->getTotalSize(), CallInstructionType::Call, DATA->getFunctionData() });
+	AddInt32(0);
+}
+void CompileGTAIV::GetImmPStack()
+{
+	PushInt(4);
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(Mult);
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(Add);
+}
+void CompileGTAIV::GetImm()
+{
+	const uint32_t value = (uint32_t)DATA->getInt() * 4;
+	AddImm(value);
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(pGet);
+}
+void CompileGTAIV::SetImm()
+{
+	const uint32_t value = (uint32_t)DATA->getInt() * 4;
+	AddImm(value);
+	DoesOpcodeHaveRoom(1);
+	AddOpcode(pSet);
+}
+void CompileGTAIV::GoToStack()
+{
+	DoesOpcodeHaveRoom(4);
+	AddOpcode(Function);
+	AddInt8(0);
+	AddInt16(2);
+	DoesOpcodeHaveRoom(3);
+	AddOpcode(Return);
+	AddInt16(0);
+}
+void CompileGTAIV::AddJumpTable()
+{
+	auto jumpTable = DATA->getJumpTable();
+	const uint32_t len = jumpTable->getByteSize();
+	if (len < 256)//push string
+	{
+		DoesOpcodeHaveRoom(2 + len);//PushString - Size - length
+		AddOpcode(PushString);
+		AddInt8(len);
+		for (unsigned i = 0; i < jumpTable->getItemCount(); i++)
+		{
+			jumpTableLocs.push_back({ CodePageData->getTotalSize(), jumpTable->getJumpLocAsString(i), jumpTable->getXORValue() });
+			AddInt32(0);//place holder
+		}
+	}
+	else
+	{
+		DoesOpcodeHaveRoom(3);
+		AddOpcode(PushString);
+		AddInt8(0);
+		AddInt8(0);
+
+		DoesOpcodeHaveRoom(5);
+		AddOpcode(Jump);
+		AddInt32(len);
+		for (unsigned i = 0; i < jumpTable->getItemCount(); i++)
+		{
+			jumpTableLocs.push_back({ CodePageData->getTotalSize(), jumpTable->getJumpLocAsString(i), jumpTable->getXORValue() });
+			AddInt32(0);//place holder
+		}
+
+		PushInt(len + 1 + 5);
+		DoesOpcodeHaveRoom(1);
+		AddOpcode(Add);
+	}
+}
+#pragma endregion
+
+#pragma region Parse_Functions
+void CompileGTAIV::fixFunctionCalls()
+{
+	for (auto CallInfo : CallLocations)
+	{
+		auto it = FuncLocations.find(CallInfo.Function);
+		if (it == FuncLocations.end())
+		{
+			Utils::System::Throw("Function \"" + CallInfo.Function->getName() + "\" not found");
+		}
+		uint32_t pos = it->second;
+		switch (CallInfo.InstructionType)
+		{
+			case CallInstructionType::FuncLoc:
+			ChangeInt32InCodePage(pos, CallInfo.CallLocation);
+			break;
+			case CallInstructionType::Call:
+			ChangeInt32InCodePage(pos, CallInfo.CallLocation);
+			break;
+			default: assert(false && "Invalid Call Instruction"); break;
+		}
+	}
+}
+void CompileGTAIV::fixFunctionJumps()
+{
+	for (auto jTableItem : jumpTableLocs)
+	{
+		auto it = LabelLocations.find(jTableItem.labelName);
+		if (it == LabelLocations.end())
+		{
+			Throw("Jump table label '" + jTableItem.labelName + "' not found");
+		}
+		ChangeInt32InCodePage(it->second.LabelLocation ^ jTableItem.xorVal, jTableItem.tableOffset);
+	}
+	jumpTableLocs.clear();
+	JumpLocations.clear();
+	LabelLocations.clear();
+	SignedJumpLocationInc = UnsignedJumpLocationInc = 0;
+}
+void CompileGTAIV::BuildTables()
+{
+	for (FunctionCount = 0; FunctionCount < HLData->getFunctionCount(); FunctionCount++)
+	{
+		if (HLData->getFunctionFromIndex(FunctionCount)->IsUsed())
+		{
+			AddFunction(HLData->getFunctionFromIndex(FunctionCount), DisableFunctionNames);
+			for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
+			{
+				ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
+			}
+			CheckLabels();
+			fixFunctionJumps();
+		}
+	}
+	fixFunctionCalls();
+}
+
+#pragma endregion
+
+#pragma region Write_Functions
+void CompileGTAIV::WriteStaticsNoPadding()
+{
+	const size_t staticByteSize = HLData->getStaticCount() * 4;
+	SavedOffsets.Statics = BuildBuffer.size();
+	BuildBuffer.resize(BuildBuffer.size() + staticByteSize);
+	for (uint32_t i = 0; i < staticByteSize; i += 4)
+	{
+		*(int32_t*)(BuildBuffer.data() + BuildBuffer.size() - staticByteSize + i) = Utils::Bitwise::SwapEndian(*(int32_t*)(HLData->getNewStaticData() + i));
+	}
+}
+
+CompileGTAIV::SignatureTypes CompileGTAIV::GetSignature()
+{
+	switch (HLData->getBuildType())
+	{
+		case BT_GTAIV_TLAD:
+		return SignatureTypes::TLAD;
+		break;
+		case BT_GTAIV_TBOGT:
+		return SignatureTypes::TBOGT;
+		break;
+		default:
+		case BT_GTAIV:
+		return SignatureTypes::GTAIV;
+		break;
+	}
+}
+void CompileGTAIV::SCOWrite(const char* path, CompileGTAIV::SCRFlags EncryptionCompressionLevel)
+{
+	const uint8_t GTAIVEncryptionKey[32] = { 0x1A,0xB5,0x6F,0xED,0x7E,0xC3,0xFF,0x01,0x22,0x7B,0x69,0x15,0x33,0x97,0x5D,0xCE,0x47,0xD7,0x69,0x65,0x3F,0xF7,0x75,0x42,0x6A,0x96,0xCD,0x6D,0x53,0x07,0x56,0x5D };
+
+	FilePadding = 0x00;
+	ClearWriteVars();
+
+	enum HeaderIndexes
+	{
+		CodeSize = 1,
+		StaticsCount = 2,
+		GlobalsCount = 3,
+	};
+
+	const uint32_t HeaderSize = 24;
+	const vector<uint32_t> SCR_Header = {
+		Utils::Bitwise::SwapEndian((uint32_t)EncryptionCompressionLevel)//SCR.
+		, CodePageData->getTotalSize()//code size
+		, HLData->getStaticCount()//statics count
+		, 0u//Globals Alloc Count
+		, Utils::Bitwise::SwapEndian(0u)//Script Flags
+		, Utils::Bitwise::SwapEndian((uint32_t)GetSignature())//Signature
+	};
+	
+	WriteCodePagesNoPadding();
+	WriteStaticsNoPadding();
+	//Globals should be written here if we decide to use them
+
+	#pragma region Write_File
+
+	switch (EncryptionCompressionLevel)
+	{
+		case SCRFlags::CompressedEncrypted:{
+			uint32_t CompressedSize = BuildBuffer.size();
+			vector<uint8_t> CompressedData(CompressedSize * 2, 0);
+			Utils::Compression::ZLIB_CompressChecksum(BuildBuffer.data(), BuildBuffer.size(), CompressedData.data(), CompressedSize);
+
+			if (CompressedSize <= 0)
+				Utils::System::Throw("SCO Compressed Size Invalid");
+
+			if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize, GTAIVEncryptionKey))
+				Utils::System::Throw("SCO Encryption Failed");
+
+			FILE* file = fopen(path, "wb");
+			if (Utils::IO::CheckFopenFile(path, file))
+			{
+				std::fwrite(SCR_Header.data(), 1, HeaderSize, file);//header
+				std::fwrite(&CompressedSize, 1, 4, file);//compressed size
+				std::fwrite(CompressedData.data(), 1, CompressedSize, file);//opcode data
+				std::fclose(file);
+			}
+		}
+		break;
+		case SCRFlags::Encrypted:{
+			if (SCR_Header[CodeSize] > 0)
+			{
+				if (!Utils::Crypt::AES_Encrypt(BuildBuffer.data(), SCR_Header[CodeSize], GTAIVEncryptionKey))
+					Utils::System::Throw("SCO Code Page Encryption Failed");
+			}
+			if (SCR_Header[StaticsCount] > 0)
+			{
+				if (!Utils::Crypt::AES_Encrypt(BuildBuffer.data() + SCR_Header[CodeSize], SCR_Header[StaticsCount] * 4, GTAIVEncryptionKey))
+					Utils::System::Throw("SCO Statics Page Encryption Failed");
+			}
+			if (SCR_Header[GlobalsCount] > 0)
+			{
+				if (!Utils::Crypt::AES_Encrypt(BuildBuffer.data() + SCR_Header[CodeSize] + SCR_Header[StaticsCount] * 4, SCR_Header[GlobalsCount] * 4, GTAIVEncryptionKey))
+					Utils::System::Throw("SCO Globals Page Encryption Failed");
+			}
+		}
+		//intentional no break
+		case SCRFlags::Standard:{
+			FILE* file = fopen(path, "wb");
+			if (Utils::IO::CheckFopenFile(path, file))
+			{
+				std::fwrite(SCR_Header.data(), 1, HeaderSize, file);//header
+				std::fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
+				std::fclose(file);
+			}
+		}
+		break;
+	}
+
+	#pragma endregion
+
+}
+
+#pragma endregion
+
 
 #pragma endregion
 
@@ -1385,8 +1958,9 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 		}
 
 
+		const uint8_t RDREncryptionKey[32] = { 0xB7, 0x62, 0xDF, 0xB6, 0xE2, 0xB2, 0xC6, 0xDE, 0xAF, 0x72, 0x2A, 0x32, 0xD2, 0xFB, 0x6F, 0x0C, 0x98, 0xA3, 0x21, 0x74, 0x62, 0xC9, 0xC4, 0xED, 0xAD, 0xAA, 0x2E, 0xD0, 0xDD, 0xF9, 0x2F, 0x10 };
 
-		if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedLen))
+		if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedLen, RDREncryptionKey))
 			Throw("Encryption Failed");
 
 		const vector<uint32_t> CSR_Header =
@@ -1444,9 +2018,11 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 		Utils::Compression::ZLIB_Compress(BuildBuffer.data(), BuildBuffer.size(), CompressedData.data(), CompressedSize);
 		//fix length of compressed data
 
+		const uint8_t RDREncryptionKey[32] = { 0xB7, 0x62, 0xDF, 0xB6, 0xE2, 0xB2, 0xC6, 0xDE, 0xAF, 0x72, 0x2A, 0x32, 0xD2, 0xFB, 0x6F, 0x0C, 0x98, 0xA3, 0x21, 0x74, 0x62, 0xC9, 0xC4, 0xED, 0xAD, 0xAA, 0x2E, 0xD0, 0xDD, 0xF9, 0x2F, 0x10 };
+
 		if (CompressedSize = 0)
 			Utils::System::Throw("SCO Compressed Size Invalid");
-		else if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize))
+		else if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize, RDREncryptionKey))
 			Utils::System::Throw("SCO Encryption Failed");
 
 		const vector<uint32_t> SCR_Header = //size: 12
@@ -1543,7 +2119,7 @@ void CompileGTAV::fixFunctionCalls()
 		uint32_t pos = it->second;
 		if (pos >= 0x1000000)
 		{
-			Utils::System::Throw("Function \"" + CallInfo.Function->getName() + "\" out of call range");//realistally this is never going to happen
+			Utils::System::Throw("Function \"" + CallInfo.Function->getName() + "\" out of call range");//realistically this is never going to happen
 		}
 		switch (CallInfo.InstructionType)
 		{

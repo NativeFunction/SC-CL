@@ -17,10 +17,13 @@
 
 #elif defined(__GTAV__)
 	#include "GTAV/constsShared.h"
-		
+
 	#ifdef __YSC__
 		#include "GTAV/consts64.h"
 	#else
 		#include "GTAV/consts32.h"
 	#endif
+
+#elif defined(__GTAIV__)
+	#include "GTAIV/consts32.h"
 #endif

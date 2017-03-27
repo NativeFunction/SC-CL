@@ -35,6 +35,15 @@ namespace Utils {
 				Throw("Input File Could Not Be Opened");
 
 		}
+		bool CheckFopenFile(const char* path, FILE* file)
+		{
+			if (file == NULL)
+			{
+				System::Throw("Could Not Open File: " + string(path));
+				return false;
+			}
+			return true;
+		}
 
 	}
 
@@ -252,7 +261,7 @@ namespace Utils {
 			return hr;
 		}
 
-		void ZLIB_Decompress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t outSize)
+		void ZLIB_Decompress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize)
 		{
 			z_stream infstream;
 			infstream.zalloc = Z_NULL;
@@ -288,6 +297,8 @@ namespace Utils {
 				Throw("ZLIB InflateEnd Failed");
 			}
 
+			outSize = infstream.next_out - out;
+
 
 		}
 		void ZLIB_Compress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize)
@@ -303,7 +314,51 @@ namespace Utils {
 			defstream.avail_in = inSize; // size of input
 			defstream.next_out = out; // output char array
 			defstream.avail_out = outSize; // size of output
+
 			
+			int32_t res = deflateInit(&defstream, Z_BEST_COMPRESSION);
+			if (res != Z_OK)
+			{
+				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
+				//cout << "Error: " << zError(res) << '\n';
+				Throw("ZLIB DeflateInit Failed");
+			}
+
+			res = deflate(&defstream, Z_FINISH);
+			if (!(res == Z_STREAM_END || res == Z_OK))
+			{
+				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
+				//cout << "Error: " << zError(res) << '\n';
+				Throw("ZLIB deflate Failed ");
+			}
+			
+
+			res = deflateEnd(&defstream);
+			if (res != Z_OK)
+			{
+				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
+				//cout << "Error: " << zError(res) << '\n';
+				Throw("ZLIB deflateEnd Failed");
+			}
+
+			outSize = defstream.next_out - out;
+		}
+		void ZLIB_CompressChecksum(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize)
+		{
+			z_stream defstream;
+			defstream.zalloc = Z_NULL;
+			defstream.zfree = Z_NULL;
+			defstream.opaque = Z_NULL;
+			defstream.data_type = Z_BINARY;
+			// setup "a" as the input and "b" as the compressed output
+
+			defstream.next_in = in; // input char array
+			defstream.avail_in = inSize; // size of input
+			defstream.next_out = out; // output char array
+			defstream.avail_out = outSize; // size of output
+
+			//deflateSetDictionary(&defstream, )
+
 			int32_t res = deflateInit(&defstream, Z_BEST_COMPRESSION);
 			if (res != Z_OK)
 			{
@@ -329,7 +384,14 @@ namespace Utils {
 			}
 
 			outSize = defstream.next_out - out;
+
+			if (*(uint32_t*)(out + outSize - 4) != _byteswap_ulong(defstream.adler))
+			{
+				*(uint32_t*)(out + outSize) = _byteswap_ulong(defstream.adler);
+				outSize += 4;
+			}
 		}
+
 		string ZLIB_ErrorCodeToStr(int32_t errorcode)
 		{
 			switch (errorcode)
@@ -351,7 +413,7 @@ namespace Utils {
 
 	namespace Crypt
 	{
-		bool AES_Decrypt(uint8_t * data, size_t length)
+		bool AES_Decrypt(uint8_t * data, size_t length, const uint8_t key[32])
 		{
 			if (length == 0)
 				return false;
@@ -361,8 +423,7 @@ namespace Utils {
 			{
 
 				aes256_context ctx;
-				uint8_t key[32] = { 0xB7, 0x62, 0xDF, 0xB6, 0xE2, 0xB2, 0xC6, 0xDE, 0xAF, 0x72, 0x2A, 0x32, 0xD2, 0xFB, 0x6F, 0x0C, 0x98, 0xA3, 0x21, 0x74, 0x62, 0xC9, 0xC4, 0xED, 0xAD, 0xAA, 0x2E, 0xD0, 0xDD, 0xF9, 0x2F, 0x10 };
-				aes256_init(&ctx, key);
+				aes256_init(&ctx, const_cast<uint8_t*>(key));
 
 				for (uint32_t i = 0; i < inputCount; i += 16)
 				{
@@ -375,7 +436,7 @@ namespace Utils {
 			}
 			return false;
 		}
-		bool AES_Encrypt(uint8_t * data, size_t length)
+		bool AES_Encrypt(uint8_t * data, size_t length, const uint8_t key[32])
 		{
 			if (length == 0)
 				return false;
@@ -385,8 +446,7 @@ namespace Utils {
 			{
 
 				aes256_context ctx;
-				uint8_t key[32] = { 0xB7, 0x62, 0xDF, 0xB6, 0xE2, 0xB2, 0xC6, 0xDE, 0xAF, 0x72, 0x2A, 0x32, 0xD2, 0xFB, 0x6F, 0x0C, 0x98, 0xA3, 0x21, 0x74, 0x62, 0xC9, 0xC4, 0xED, 0xAD, 0xAA, 0x2E, 0xD0, 0xDD, 0xF9, 0x2F, 0x10 };
-				aes256_init(&ctx, key);
+				aes256_init(&ctx, const_cast<uint8_t*>(key));
 
 				for (uint32_t i = 0; i < inputCount; i += 16)
 				{

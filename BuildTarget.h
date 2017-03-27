@@ -9,6 +9,8 @@ typedef enum
 typedef enum
 {
 	BT_GTAIV,
+	BT_GTAIV_TLAD,
+	BT_GTAIV_TBOGT,
 	BT_RDR_XSC,
 	BT_RDR_SCO,
 	BT_GTAV
