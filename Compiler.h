@@ -289,9 +289,9 @@ protected:
 	#pragma endregion
 
 	#pragma region Parse_Data_Vars
-	const uint32_t ReadBufferSize = 0;
 	const OpCodes* BaseOpcodes;//dynamic opcode list
 	const Script* HLData;//data to parse(High Level Data)
+	const uint32_t ReadBufferSize = 0;
 	uint32_t FunctionCount = 0;
 	uint32_t InstructionCount = 0;
 	const bool DisableFunctionNames = false;
@@ -308,7 +308,7 @@ protected:
 
 
 	#define DATA HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)
-	#define AddOpcode(op) AddInt8(BaseOpcodes->##op);
+	#define AddOpcode(op) AddInt8(BaseOpcodes->op);
 
 	CompileBase(const OpCodes& Op, const Script& data, const uint32_t Function_Count, const uint32_t Instruction_Count, bool Disable_Function_Names) :
 		BaseOpcodes(&Op), 
@@ -814,34 +814,34 @@ private:
 	#pragma endregion
 
 	#pragma region CallParsing
-	const uint8_t GetNewCallOpCode(const uint32_t needOffset) const { 
+	uint8_t GetNewCallOpCode(const uint32_t needOffset) const { 
 		return needOffset >= 1048576 ? 255 : 82 + (needOffset >> 16); 
 	}
-	const uint16_t GetNewCallOffset(const uint32_t needOffset) const { 
+	uint16_t GetNewCallOffset(const uint32_t needOffset) const { 
 		return needOffset - (((needOffset >> 16)) << 16); 
 	}
-	const int32_t GetCallOffset(const int32_t readOffset, const int32_t opCode) const {
+	int32_t GetCallOffset(const int32_t readOffset, const int32_t opCode) const {
 		return readOffset | ((opCode - 82) << 16); 
 	}
 	#pragma endregion
 	#pragma region NativeParsing
-	const int32_t GetArgCountFromIndex(const uint16_t* Indblock) const {
+	int32_t GetArgCountFromIndex(const uint16_t* Indblock) const {
 		return (((uint8_t*)Indblock)[0] & 0x3e) >> 1; 
 	}
-	const int32_t GetIndex(const uint16_t val) const {
+	int32_t GetIndex(const uint16_t val) const {
 		return (((val & 0xFF) << 2) & 0x300) | ((val >> 8) & 0xFF);
 	}
-	const bool FunctionHasReturn(const uint16_t* data) const { 
+	bool FunctionHasReturn(const uint16_t* data) const { 
 		return (((uint8_t*)data)[0] & 1) == 1 ? true : false; 
 	}
-	const uint16_t SetNewIndex(const uint16_t index, const int parameterCount, const bool ret) const { 
+	uint16_t SetNewIndex(const uint16_t index, const int parameterCount, const bool ret) const { 
 		return Utils::Bitwise::SwapEndian((uint16_t)(((index & 0xFF00) >> 2) | ((index & 0xFF) << 8) | (ret ? 1 : 0) | (parameterCount << 1)));
 	}
 	#pragma endregion
 	#pragma region RSC85Parsing
 	uint32_t GetHeaderFormatFromFlag(uint32_t val);
 	uint32_t GetFlagFromReadbuffer(uint32_t buffer);
-	const uint32_t GetFullFlagWithSize(const uint32_t size, const uint32_t flag)
+	uint32_t GetFullFlagWithSize(const uint32_t size, const uint32_t flag)
 	{
 		return flag | (size >> 12 & 0xFF) | (size >> 12 & 0xFF00) | (size >> 12 & 0xFF0000);
 	}
@@ -999,7 +999,7 @@ class CompileGTAVPC : public CompileGTAV
 			natFile.read((char*)&verCount, 4);
 			natFile.read((char*)&natCount, 4);
 			char buff[8];
-			uint32_t usedVersion = -1;
+			uint32_t usedVersion = (uint32_t)-1;
 			for (uint32_t i = 0; i < verCount;i++)
 			{
 				natFile.read(buff, 8);
@@ -1010,7 +1010,7 @@ class CompileGTAVPC : public CompileGTAV
 					break;
 				}
 			}
-			if (usedVersion == -1)
+			if (usedVersion == (uint32_t)-1)
 			{
 				Utils::System::Warn("Version string '" + gameVersionStr + "' was not found in translation data file, defaulting to latest game version");
 				usedVersion = verCount - 1;

@@ -5,7 +5,7 @@
 using namespace std;
 
 Script::Script(string scriptName, BuildType buildType, Platform platform, bool isSingleton, bool isEntryFunctionPadding, OptimisationLevel optLevel) :
-	 mainFunction(NULL), currentFunc(NULL), _scriptName(scriptName), _bType(buildType), _platform(platform), scriptParams(), _isSingleton(isSingleton), EntryFunctionPadding(isEntryFunctionPadding), _optLevel(optLevel)
+	 mainFunction(NULL), currentFunc(NULL), _bType(buildType), _platform(platform), _scriptName(scriptName), scriptParams(), _isSingleton(isSingleton), EntryFunctionPadding(isEntryFunctionPadding), _optLevel(optLevel)
 {
 	auto entry = std::make_unique<FunctionData>("__builtin__entryPoint", 0, 0);
 	entryFunction = entry.get();

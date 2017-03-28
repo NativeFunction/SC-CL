@@ -154,5 +154,5 @@ const string StaticData::getStringOutput(Endian endian, uint8_t stackWidth)const
 			assert(false && "This shouldnt happen, invalid stack width");
 		}
 	}
-	return std::move(output);
+	return output;
 }
