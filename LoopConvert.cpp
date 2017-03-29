@@ -183,7 +183,7 @@ static cl::opt<bool> Option_EntryFunctionPadding(//TODO: if selected set static 
 //static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 //static cl::extrahelp ProgramHelp("\nTemp text...\n");
 
-static Rewriter rewriter;
+static Rewriter *rewriter;
 #pragma endregion
 
 #pragma region Global_Var_and_Scope_Decls
@@ -373,7 +373,7 @@ uint32_t getSizeOfType(const Type* type) {
 			for (const auto *CS : rd->fields()) {
 				if (CS->isBitField())
 				{
-					Throw("Bit fileds aren't yet supported", rewriter, CS->getSourceRange());
+					Throw("Bit fileds aren't yet supported", *rewriter, CS->getSourceRange());
 				}
 				const Type* type = CS->getType().getTypePtr();
 
@@ -563,7 +563,7 @@ const DeclRefExpr *getDeclRefExpr(const Expr *e) {
 
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
 public:
-	MyASTVisitor(Rewriter &R, ASTContext *context, Script& scriptData) : TheRewriter(R), context(context), scriptData(scriptData) {}
+	MyASTVisitor(Rewriter &R, const ASTContext& context, Script& scriptData) : TheRewriter(R), context(context), scriptData(scriptData) {}
 
 	#pragma region Misc_Functions
 	void ComplexToBoolean(bool floating)
@@ -649,7 +649,7 @@ public:
 						return to_string(literal->getValue().convertToDouble());
 				}
 				else {
-					Throw("Unhandled Integral Cast", rewriter, castExpr->getSourceRange());
+					Throw("Unhandled Integral Cast", TheRewriter, castExpr->getSourceRange());
 				}
 			}
 			case clang::CK_FunctionToPointerDecay:
@@ -661,17 +661,17 @@ public:
 						return getNameForFunc(decl);
 					}
 					else {
-						Throw("Unimplemented Cast", rewriter, castExpr->getSourceRange());
+						Throw("Unimplemented Cast", TheRewriter, castExpr->getSourceRange());
 					}
 
 				}
 				else {
-					Throw("Unimplemented Cast", rewriter, castExpr->getSourceRange());
+					Throw("Unimplemented Cast", TheRewriter, castExpr->getSourceRange());
 				}
 			}
 			break;
 			default:
-			Throw("Unimplemented Cast", rewriter, castExpr->getSourceRange());
+			Throw("Unimplemented Cast", TheRewriter, castExpr->getSourceRange());
 		}
 		return "";
 	}
@@ -881,9 +881,9 @@ public:
 		return true;
 	}
 	bool handleDecl(DeclStmt* decl) {
-		for (DeclStmt::decl_iterator I = decl->decl_begin(), E = decl->decl_end(); I != E; ++I) {
-			if (isa<VarDecl>(*I)) {
-				VarDecl *var = cast<VarDecl>(*I);
+		for (auto& decl : decl->decls()){
+			if (isa<VarDecl>(decl)) {
+				VarDecl *var = cast<VarDecl>(decl);
 
 				//out << +var->getStorageClass() << endl;
 				if (var->getStorageClass() != SC_Static)//static vars are initialized in the globals visitor
@@ -899,7 +899,7 @@ public:
 							size = getSizeOfCXXDecl(arr->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl(), true, false) * cArrType->getSize().getSExtValue();
 						}
 						else {
-							Throw("Unsupported decl of " + string(var->getDeclKindName()), rewriter, var->getLocStart());
+							Throw("Unsupported decl of " + string(var->getDeclKindName()), TheRewriter, var->getLocStart());
 						}
 
 					}
@@ -995,12 +995,12 @@ public:
 			return false;
 
 		if (callee->getStorageClass() != SC_Extern)
-			Throw("Intrinsic functions must be declared with the 'extern' keyword", rewriter, callee->getLocation());
+			Throw("Intrinsic functions must be declared with the 'extern' keyword", TheRewriter, callee->getLocation());
 
 		string funcName = dumpName(cast<NamedDecl>(callee));
 
 		if (callee->getAttr<IntrinsicFuncAttr>()->getIsUnsafe() && !scriptData.isUnsafeContext())
-			Warn("Unsafe Intrinsic \"" + funcName + "\" used in an unsafe context. This could lead to crashes", rewriter, call->getSourceRange());
+			Warn("Unsafe Intrinsic \"" + funcName + "\" used in an unsafe context. This could lead to crashes", TheRewriter, call->getSourceRange());
 
 
 		const Expr * const*argArray = call->getArgs();
@@ -1009,17 +1009,17 @@ public:
 
 		
 		#define ChkHashCol(str) if(strcmp(funcName.c_str(), str) != 0) goto _IntrinsicNotFound;
-		#define BadIntrin else Throw("Intrinsic not correctly defined", rewriter, callee->getSourceRange());
-		#define EvalFailed else Throw("Value must be a integer literal", rewriter, call->getSourceRange());
-		#define EvalFailedFlt else Throw("Value must be a floating literal", rewriter, call->getSourceRange());
-		#define EvalFailedStr else Throw("Value must be a string literal", rewriter, call->getSourceRange());
-		#define BadIntrinArgC else Throw("Bad arg count", rewriter, call->getSourceRange());
+		#define BadIntrin else Throw("Intrinsic not correctly defined", TheRewriter, callee->getSourceRange());
+		#define EvalFailed else Throw("Value must be a integer literal", TheRewriter, call->getSourceRange());
+		#define EvalFailedFlt else Throw("Value must be a floating literal", TheRewriter, call->getSourceRange());
+		#define EvalFailedStr else Throw("Value must be a string literal", TheRewriter, call->getSourceRange());
+		#define BadIntrinArgC else Throw("Bad arg count", TheRewriter, call->getSourceRange());
 
 
 		auto AddAsmIntrinsic = [&](const char* str, void(FunctionData::*func)(void)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
-				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+				Throw("No intrinsic function found named " + funcName, TheRewriter, callee->getLocation());
 			if (argCount == 0 && callee->getReturnType()->isVoidType()) {
 				(scriptData.getCurrentFunction()->*func)();
 				ret = true;
@@ -1029,10 +1029,10 @@ public:
 		auto AddAsmIntrinsic8 = [&](const char* str, void(FunctionData::*func)(uint8_t)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
-				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+				Throw("No intrinsic function found named " + funcName, TheRewriter, callee->getLocation());
 			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
 				APSInt apCount;
-				if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+				if (argArray[0]->EvaluateAsInt(apCount, context)) {
 					(scriptData.getCurrentFunction()->*func)(apCount.getSExtValue());
 					ret = true;
 					return;
@@ -1042,10 +1042,10 @@ public:
 		auto AddAsmIntrinsic16 = [&](const char* str, void(FunctionData::*func)(uint16_t)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
-				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+				Throw("No intrinsic function found named " + funcName, TheRewriter, callee->getLocation());
 			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
 				APSInt apCount;
-				if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+				if (argArray[0]->EvaluateAsInt(apCount, context)) {
 					(scriptData.getCurrentFunction()->*func)(apCount.getSExtValue());
 					ret = true;
 					return;
@@ -1055,7 +1055,7 @@ public:
 		auto AddAsmIntrinsicLocal = [&](const char* str, void(FunctionData::*func)(uint16_t)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
-				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+				Throw("No intrinsic function found named " + funcName, TheRewriter, callee->getLocation());
 			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType())
 			{
 				string str;
@@ -1070,14 +1070,14 @@ public:
 						return;
 					}
 					else
-						Throw("varName \"" + str + "\" not found", rewriter, call->getSourceRange());
+						Throw("varName \"" + str + "\" not found", TheRewriter, call->getSourceRange());
 				} EvalFailedStr
 			} BadIntrin
 		};
 		auto AddAsmIntrinsicStatic = [&](const char* str, void(FunctionData::*func)(StaticData*)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
-				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+				Throw("No intrinsic function found named " + funcName, TheRewriter, callee->getLocation());
 			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType())
 			{
 				string str;
@@ -1092,17 +1092,17 @@ public:
 						return;
 					}
 					else
-						Throw("varName \"" + str + "\" not found", rewriter, call->getSourceRange());
+						Throw("varName \"" + str + "\" not found", TheRewriter, call->getSourceRange());
 				} EvalFailedStr
 			} BadIntrin
 		};
 		auto AddAsmIntrinsic32 = [&](const char* str, void(FunctionData::*func)(int)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
-				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+				Throw("No intrinsic function found named " + funcName, TheRewriter, callee->getLocation());
 			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()) {
 				APSInt apCount;
-				if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+				if (argArray[0]->EvaluateAsInt(apCount, context)) {
 					(scriptData.getCurrentFunction()->*func)(apCount.getSExtValue());
 					ret = true;
 					return;
@@ -1112,7 +1112,7 @@ public:
 		auto AddAsmIntrinsicJump = [&](const char* str, void(FunctionData::*func)(const string&)) -> void
 		{
 			if (strcmp(funcName.c_str(), str) != 0)
-				Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+				Throw("No intrinsic function found named " + funcName, TheRewriter, callee->getLocation());
 
 			if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType()) {
 				string str;
@@ -1137,7 +1137,7 @@ public:
 				{
 					llvm::APSInt apCount;
 					int iCount;
-					if (argArray[2]->EvaluateAsInt(apCount, *context) && (iCount = apCount.getSExtValue(), iCount > 0) && iCount % stackWidth == 0)
+					if (argArray[2]->EvaluateAsInt(apCount, context) && (iCount = apCount.getSExtValue(), iCount > 0) && iCount % stackWidth == 0)
 					{
 						int itemCount = iCount / stackWidth;
 						if (itemCount == 1)
@@ -1239,7 +1239,7 @@ public:
 
 				}
 				else
-					Throw("memcpy must have signature \"extern __intrinsic void memcpy(void* dst, void* src, int len);\"", rewriter, callee->getSourceRange());
+					Throw("memcpy must have signature \"extern __intrinsic void memcpy(void* dst, void* src, int len);\"", TheRewriter, callee->getSourceRange());
 				return true;
 			} break;
 			case JoaatCasedConst("memset"):{
@@ -1250,13 +1250,13 @@ public:
 					loopLblCount++;
 
 					llvm::APSInt sResult, vResult;
-					if (argArray[2]->EvaluateAsInt(sResult, *context) && sResult.getSExtValue() % scriptData.getBuildPlatformSize() == 0 && argArray[1]->EvaluateAsInt(vResult, *context))
+					if (argArray[2]->EvaluateAsInt(sResult, context) && sResult.getSExtValue() % scriptData.getBuildPlatformSize() == 0 && argArray[1]->EvaluateAsInt(vResult, context))
 					{
 
 						if (sResult.getSExtValue() <= 0)
-							Throw("memset size must greater then 0", rewriter, callee->getSourceRange());
+							Throw("memset size must greater then 0", TheRewriter, callee->getSourceRange());
 						if ((uint32_t)vResult.getExtValue() > 255)
-							Throw("memset value must be a byte", rewriter, callee->getSourceRange());
+							Throw("memset value must be a byte", TheRewriter, callee->getSourceRange());
 						int value = vResult.getSExtValue() & 0xFF;
 						value = value << 24 | value << 16 | value << 8 | value;
 						int itemCount = sResult.getSExtValue() / scriptData.getBuildPlatformSize();
@@ -1357,7 +1357,7 @@ public:
 
 				}
 				else
-					Throw("memset must have signature \"extern __intrinsic void memset(void* dst, byte src, size_t len);\"", rewriter, callee->getSourceRange());
+					Throw("memset must have signature \"extern __intrinsic void memset(void* dst, byte src, size_t len);\"", TheRewriter, callee->getSourceRange());
 				return true;
 			} break;
 			case JoaatCasedConst("strcpy"):{
@@ -1367,27 +1367,28 @@ public:
 					parseExpression(argArray[1], false, true);
 					if (isPushString(argArray[0]))
 					{
-						Throw("strcpy called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+						Throw("strcpy called with string literal as destination index", TheRewriter, argArray[0]->getSourceRange());
 					}
 					parseExpression(argArray[0], false, true);
 
 					llvm::APSInt result;
-					if (argArray[2]->EvaluateAsInt(result, *context))
+					if (argArray[2]->EvaluateAsInt(result, context))
 					{
-						uint8_t iValue = result.getSExtValue();
+						int64_t iValue = result.isSigned() ? result.getSExtValue() : result.getExtValue();
+						
 						if (iValue > 0 && iValue < 256)
 						{
 							AddInstruction(StrCopy, iValue);
 							return true;
 						}
 						else
-							Throw("Integer constant for string max length argument in strcpy must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+							Throw("Integer constant for string max length argument in strcpy must be between 1 and 255, got " + to_string(iValue), TheRewriter, argArray[2]->getSourceRange());
 					}
 					else
-						Throw("Expected integer constant for string max length argument in strcpy", rewriter, argArray[2]->getSourceRange());
+						Throw("Expected integer constant for string max length argument in strcpy", TheRewriter, argArray[2]->getSourceRange());
 				}
 				else
-					Throw("strcpy must have signature \"extern __intrinsic void strcpy(char* dst, char* src, const byte len);\"", rewriter, callee->getSourceRange());
+					Throw("strcpy must have signature \"extern __intrinsic void strcpy(char* dst, char* src, const byte len);\"", TheRewriter, callee->getSourceRange());
 
 				return false;
 			} break;
@@ -1398,27 +1399,27 @@ public:
 					parseExpression(argArray[1], false, true);
 					if (isPushString(argArray[0]))
 					{
-						Throw("stradd called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+						Throw("stradd called with string literal as destination index", TheRewriter, argArray[0]->getSourceRange());
 					}
 					parseExpression(argArray[0], false, true);
 
 					llvm::APSInt result;
-					if (argArray[2]->EvaluateAsInt(result, *context))
+					if (argArray[2]->EvaluateAsInt(result, context))
 					{
-						uint8_t iValue = result.getSExtValue();
+						int64_t iValue = result.isSigned() ? result.getSExtValue() : result.getExtValue();
 						if (iValue > 0 && iValue < 256)
 						{
 							AddInstruction(StrAdd, iValue);
 							return true;
 						}
 						else
-							Throw("Integer constant for string max length argument in stradd must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+							Throw("Integer constant for string max length argument in stradd must be between 1 and 255, got " + to_string(iValue), TheRewriter, argArray[2]->getSourceRange());
 					}
 					else
-						Throw("Expected integer constant for string max length argument in stradd", rewriter, argArray[2]->getSourceRange());
+						Throw("Expected integer constant for string max length argument in stradd", TheRewriter, argArray[2]->getSourceRange());
 				}
 				else
-					Throw("stradd must have signature \"extern __intrinsic void stradd(char* dst, char* append, const byte len);\"", rewriter, callee->getSourceRange());
+					Throw("stradd must have signature \"extern __intrinsic void stradd(char* dst, char* append, const byte len);\"", TheRewriter, callee->getSourceRange());
 
 				return false;
 			} break;
@@ -1429,27 +1430,27 @@ public:
 					parseExpression(argArray[1], false, true);
 					if (isPushString(argArray[0]))
 					{
-						Throw("straddi called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+						Throw("straddi called with string literal as destination index", TheRewriter, argArray[0]->getSourceRange());
 					}
 					parseExpression(argArray[0], false, true);
 
 					llvm::APSInt result;
-					if (argArray[2]->EvaluateAsInt(result, *context))
+					if (argArray[2]->EvaluateAsInt(result, context))
 					{
-						uint8_t iValue = result.getSExtValue();
+						int64_t iValue = result.isSigned() ? result.getSExtValue() : result.getExtValue();
 						if (iValue > 0 && iValue < 256)
 						{
 							AddInstruction(StrAddI, iValue);
 							return true;
 						}
 						else
-							Throw("Integer constant for string max length argument in straddi must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+							Throw("Integer constant for string max length argument in straddi must be between 1 and 255, got " + to_string(iValue), TheRewriter, argArray[2]->getSourceRange());
 					}
 					else
-						Throw("Expected integer constant for string max length argument in straddi", rewriter, argArray[2]->getSourceRange());
+						Throw("Expected integer constant for string max length argument in straddi", TheRewriter, argArray[2]->getSourceRange());
 				}
 				else
-					Throw("straddi must have signature \"extern __intrinsic void straddi(char* dst, int append, const byte len);\"", rewriter, callee->getSourceRange());
+					Throw("straddi must have signature \"extern __intrinsic void straddi(char* dst, int append, const byte len);\"", TheRewriter, callee->getSourceRange());
 
 				return false;
 			} break;
@@ -1460,27 +1461,27 @@ public:
 					parseExpression(argArray[1], false, true);
 					if (isPushString(argArray[0]))
 					{
-						Throw("itos called with string literal as destination index", rewriter, argArray[0]->getSourceRange());
+						Throw("itos called with string literal as destination index", TheRewriter, argArray[0]->getSourceRange());
 					}
 					parseExpression(argArray[0], false, true);
 
 					llvm::APSInt result;
-					if (argArray[2]->EvaluateAsInt(result, *context))
+					if (argArray[2]->EvaluateAsInt(result, context))
 					{
-						uint8_t iValue = result.getSExtValue();
+						int64_t iValue = result.isSigned() ? result.getSExtValue() : result.getExtValue();
 						if (iValue > 0 && iValue < 256)
 						{
 							AddInstruction(ItoS, iValue);
 							return true;
 						}
 						else
-							Throw("Integer constant for string max length argument in itos must be between 1 and 255, got " + to_string(iValue), rewriter, argArray[2]->getSourceRange());
+							Throw("Integer constant for string max length argument in itos must be between 1 and 255, got " + to_string(iValue), TheRewriter, argArray[2]->getSourceRange());
 					}
 					else
-						Throw("Expected integer constant for string max length argument in itos", rewriter, argArray[2]->getSourceRange());
+						Throw("Expected integer constant for string max length argument in itos", TheRewriter, argArray[2]->getSourceRange());
 				}
 				else
-					Throw("itos must have signature \"extern __intrinsic void itos(char* dst, int value, const byte len);\"", rewriter, callee->getSourceRange());
+					Throw("itos must have signature \"extern __intrinsic void itos(char* dst, int value, const byte len);\"", TheRewriter, callee->getSourceRange());
 
 				return false;
 			} break;
@@ -1492,7 +1493,7 @@ public:
 					AddInstruction(GetHash);
 					return true;
 				}
-				Throw("getHashKey must have signature \"extern __intrinsic int getHashKey(char *string);\"", rewriter, callee->getSourceRange());
+				Throw("getHashKey must have signature \"extern __intrinsic int getHashKey(char *string);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 #pragma endregion
@@ -1518,10 +1519,10 @@ public:
 							return true;
 						}
 						else
-							Throw("__varIndex varName not found", rewriter, callee->getSourceRange());
+							Throw("__varIndex varName not found", TheRewriter, callee->getSourceRange());
 					} EvalFailedStr
 				}
-				else Throw("__varIndex must have signature \"extern __unsafeIntrinsic const uint __varIndex(const char* varName);\"", rewriter, callee->getSourceRange());
+				else Throw("__varIndex must have signature \"extern __unsafeIntrinsic const uint __varIndex(const char* varName);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("__getReturnAddress"): {
@@ -1532,7 +1533,7 @@ public:
 					return true;
 				}
 				else{
-					Throw("__getReturnAddress must have signature \"extern __unsafeIntrinsic int __getReturnAddress();\"", rewriter, callee->getSourceRange());
+					Throw("__getReturnAddress must have signature \"extern __unsafeIntrinsic int __getReturnAddress();\"", TheRewriter, callee->getSourceRange());
 				}
 			} break;
 			case JoaatCasedConst("__addressOFReturnAddress"): {
@@ -1543,7 +1544,7 @@ public:
 					return true;
 				}
 				else{
-					Throw("__addressOFReturnAddress must have signature \"extern __unsafeIntrinsic int* __addressOFReturnAddress();\"", rewriter, callee->getSourceRange());
+					Throw("__addressOFReturnAddress must have signature \"extern __unsafeIntrinsic int* __addressOFReturnAddress();\"", TheRewriter, callee->getSourceRange());
 				}
 			} break;
 #pragma endregion
@@ -1555,7 +1556,7 @@ public:
 					parseExpression(argArray[0], false, true);
 					return true;
 				}
-				Throw("reinterpretIntToFloat must have signature \"extern __intrinsic float reinterpretIntToFloat(int intValue);\"", rewriter, callee->getSourceRange());
+				Throw("reinterpretIntToFloat must have signature \"extern __intrinsic float reinterpretIntToFloat(int intValue);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("reinterpretFloatToInt"): {
@@ -1565,7 +1566,7 @@ public:
 					parseExpression(argArray[0], false, true);
 					return true;
 				}
-				Throw("reinterpretFloatToInt must have signature \"extern __intrinsic int reinterpretFloatToInt(float floatValue);\"", rewriter, callee->getSourceRange());
+				Throw("reinterpretFloatToInt must have signature \"extern __intrinsic int reinterpretFloatToInt(float floatValue);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("toVector3"): {
@@ -1577,7 +1578,7 @@ public:
 					AddInstruction(FtoV);
 					return true;
 				}
-				Throw("tovector3 must have signature \"extern __intrinsic vector3 tovector3(float value);\"", rewriter, callee->getSourceRange());
+				Throw("tovector3 must have signature \"extern __intrinsic vector3 tovector3(float value);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector3Add"): {
@@ -1591,7 +1592,7 @@ public:
 					AddInstruction(VAdd);
 					return true;
 				}
-				Throw("vector3Add must have signature \"extern __intrinsic vector3 vector3Add(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				Throw("vector3Add must have signature \"extern __intrinsic vector3 vector3Add(vector3 left, vector3 right)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector3Sub"): {
@@ -1605,7 +1606,7 @@ public:
 					AddInstruction(VSub);
 					return true;
 				}
-				Throw("vector3Sub must have signature \"extern __intrinsic vector3 vector3Sub(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				Throw("vector3Sub must have signature \"extern __intrinsic vector3 vector3Sub(vector3 left, vector3 right)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector3Mult"): {
@@ -1619,7 +1620,7 @@ public:
 					AddInstruction(VMult);
 					return true;
 				}
-				Throw("vector3Mult must have signature \"extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				Throw("vector3Mult must have signature \"extern __intrinsic vector3 vector3Mult(vector3 left, vector3 right)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector3Div"): {
@@ -1633,7 +1634,7 @@ public:
 					AddInstruction(VDiv);
 					return true;
 				}
-				Throw("vector3Div must have signature \"extern __intrinsic vector3 vector3Div(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				Throw("vector3Div must have signature \"extern __intrinsic vector3 vector3Div(vector3 left, vector3 right)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector3Neg"): {
@@ -1646,7 +1647,7 @@ public:
 					AddInstruction(VNeg);
 					return true;
 				}
-				Throw("vector3Neg must have signature \"extern __intrinsic vector3 vector3Neg(vector3 vector)\"", rewriter, callee->getSourceRange());
+				Throw("vector3Neg must have signature \"extern __intrinsic vector3 vector3Neg(vector3 vector)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector3Dot"): {
@@ -1662,7 +1663,7 @@ public:
 					AddInstruction(FAdd);
 					return true;
 				}
-				Throw("vector3Dot must have signature \"extern __intrinsic float vector3Dot(vector3 left, vector3 right)\"", rewriter, callee->getSourceRange());
+				Throw("vector3Dot must have signature \"extern __intrinsic float vector3Dot(vector3 left, vector3 right)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("toVector2"): {
@@ -1674,7 +1675,7 @@ public:
 					AddInstruction(Dup);
 					return true;
 				}
-				Throw("tovector2 must have signature \"extern __intrinsic vector2 tovector2(float value);\"", rewriter, callee->getSourceRange());
+				Throw("tovector2 must have signature \"extern __intrinsic vector2 tovector2(float value);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector2Add"): {
@@ -1691,7 +1692,7 @@ public:
 					AddInstruction(Drop);
 					return true;
 				}
-				Throw("vector2Add must have signature \"extern __intrinsic vector2 vector2Add(vector2 left, vector2 right)\"", rewriter, callee->getSourceRange());
+				Throw("vector2Add must have signature \"extern __intrinsic vector2 vector2Add(vector2 left, vector2 right)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector2Sub"): {
@@ -1707,7 +1708,7 @@ public:
 					AddInstruction(Drop);
 					return true;
 				}
-				Throw("vector2Sub must have signature \"extern __intrinsic vector2 vector2Sub(vector2 left, vector2 right)\"", rewriter, callee->getSourceRange());
+				Throw("vector2Sub must have signature \"extern __intrinsic vector2 vector2Sub(vector2 left, vector2 right)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector2Mult"): {
@@ -1724,7 +1725,7 @@ public:
 					AddInstruction(Drop);
 					return true;
 				}
-				Throw("vector2Mult must have signature \"extern __intrinsic vector2 vector3Mult(vector2 left, vector2 right)\"", rewriter, callee->getSourceRange());
+				Throw("vector2Mult must have signature \"extern __intrinsic vector2 vector3Mult(vector2 left, vector2 right)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector2Div"): {
@@ -1741,7 +1742,7 @@ public:
 					AddInstruction(Drop);
 					return true;
 				}
-				Throw("vector2Div must have signature \"extern __intrinsic vector2 vector2Div(vector2 left, vector2 right)\"", rewriter, callee->getSourceRange());
+				Throw("vector2Div must have signature \"extern __intrinsic vector2 vector2Div(vector2 left, vector2 right)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector2Neg"): {
@@ -1756,7 +1757,7 @@ public:
 					AddInstruction(Drop);
 					return true;
 				}
-				Throw("vector2Neg must have signature \"extern __intrinsic vector2 vector2Neg(vector2 vector)\"", rewriter, callee->getSourceRange());
+				Throw("vector2Neg must have signature \"extern __intrinsic vector2 vector2Neg(vector2 vector)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector2Dot"): {
@@ -1774,7 +1775,7 @@ public:
 					AddInstruction(FAdd);
 					return true;
 				}
-				Throw("vector2Dot must have signature \"extern __intrinsic float vector2Dot(vector2 left, vector2 right)\"", rewriter, callee->getSourceRange());
+				Throw("vector2Dot must have signature \"extern __intrinsic float vector2Dot(vector2 left, vector2 right)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("fMod"): {
@@ -1792,7 +1793,7 @@ public:
 				if (argCount == 2 && callee->getReturnType()->isBooleanType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
-					if (argArray[1]->EvaluateAsInt(result, *context))
+					if (argArray[1]->EvaluateAsInt(result, context))
 					{
 						auto iResult = result.getSExtValue();
 						if (iResult < 32 && iResult >= 0)
@@ -1802,16 +1803,16 @@ public:
 							return true;
 						}
 					}
-					Throw("bitIndex argument for bit_test must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
+					Throw("bitIndex argument for bit_test must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
 				}
-				Throw("bit_test must have signature \"extern __intrinsic bool bit_test(int value, const byte bitIndex);\"", rewriter, callee->getSourceRange());
+				Throw("bit_test must have signature \"extern __intrinsic bool bit_test(int value, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
 			} break;
 			case JoaatCasedConst("bit_set"): {
 				ChkHashCol("bit_set");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
-					if (argArray[1]->EvaluateAsInt(result, *context))
+					if (argArray[1]->EvaluateAsInt(result, context))
 					{
 						auto iResult = result.getSExtValue();
 						if (iResult < 32 && iResult >= 0)
@@ -1821,16 +1822,16 @@ public:
 							return true;
 						}
 					}
-					Throw("bitIndex argument for bit_set must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
+					Throw("bitIndex argument for bit_set must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
 				}
-				Throw("bit_set must have signature \"extern __intrinsic bool bit_set(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
+				Throw("bit_set must have signature \"extern __intrinsic bool bit_set(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
 			} break;
 			case JoaatCasedConst("bit_reset"): {
 				ChkHashCol("bit_reset");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
-					if (argArray[1]->EvaluateAsInt(result, *context))
+					if (argArray[1]->EvaluateAsInt(result, context))
 					{
 						auto iResult = result.getSExtValue();
 						if (iResult < 32 && iResult >= 0)
@@ -1840,16 +1841,16 @@ public:
 							return true;
 						}
 					}
-					Throw("bitIndex argument for bit_reset must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
+					Throw("bitIndex argument for bit_reset must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
 				}
-				Throw("bit_reset must have signature \"extern __intrinsic bool bit_reset(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
+				Throw("bit_reset must have signature \"extern __intrinsic bool bit_reset(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
 			} break;
 			case JoaatCasedConst("bit_flip"): {
 				ChkHashCol("bit_flip");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
-					if (argArray[1]->EvaluateAsInt(result, *context))
+					if (argArray[1]->EvaluateAsInt(result, context))
 					{
 						auto iResult = result.getSExtValue();
 						if (iResult < 32 && iResult >= 0)
@@ -1859,9 +1860,9 @@ public:
 							return true;
 						}
 					}
-					Throw("bitIndex argument for bit_flip must be a compile time constant integer between 0 and 31", rewriter, argArray[1]->getSourceRange());
+					Throw("bitIndex argument for bit_flip must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
 				}
-				Throw("bit_flip must have signature \"extern __intrinsic bool bit_flip(int* address, const byte bitIndex);\"", rewriter, callee->getSourceRange());
+				Throw("bit_flip must have signature \"extern __intrinsic bool bit_flip(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
 			} break;
 			case JoaatCasedConst("vector3ToVector2"): {
 				ChkHashCol("vector3ToVector2");
@@ -1873,7 +1874,7 @@ public:
 					AddInstruction(Drop);
 					return true;
 				}
-				Throw("vector3ToVector2 must have signature \"extern __intrinsic vector2 vector3ToVector2(vector3 vector)\"", rewriter, callee->getSourceRange());
+				Throw("vector3ToVector2 must have signature \"extern __intrinsic vector2 vector3ToVector2(vector3 vector)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector2ToVector3"): {
@@ -1886,7 +1887,7 @@ public:
 					AddInstruction(PushFloat, 0.0f);
 					return true;
 				}
-				Throw("vector2ToVector3 must have signature \"extern __intrinsic vector3 vector2ToVector3(vector2 vector)\"", rewriter, callee->getSourceRange());
+				Throw("vector2ToVector3 must have signature \"extern __intrinsic vector3 vector2ToVector3(vector2 vector)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("vector3Flatten"): {
@@ -1899,7 +1900,7 @@ public:
 					AddInstruction(PushFloat, 0.0f);
 					return true;
 				}
-				Throw("vector3Flatten must have signature \"extern __intrinsic vector3 vector3Flatten(vector3 vector)\"", rewriter, callee->getSourceRange());
+				Throw("vector3Flatten must have signature \"extern __intrinsic vector3 vector3Flatten(vector3 vector)\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("setLoDWord"): {
@@ -1919,7 +1920,7 @@ public:
 						return true;
 					}
 					else{
-						Throw("setLoDWord must have signature \"extern __intrinsic void setLoDWord(void* addr, int value)\"", rewriter, callee->getSourceRange());
+						Throw("setLoDWord must have signature \"extern __intrinsic void setLoDWord(void* addr, int value)\"", TheRewriter, callee->getSourceRange());
 					}
 				}
 				else{
@@ -1944,7 +1945,7 @@ public:
 						return true;
 					}
 					else{
-						Throw("setHiDWord must have signature \"extern __intrinsic void setHiDWord(void* addr, int value)\"", rewriter, callee->getSourceRange());
+						Throw("setHiDWord must have signature \"extern __intrinsic void setHiDWord(void* addr, int value)\"", TheRewriter, callee->getSourceRange());
 					}
 				}
 				else{
@@ -1963,7 +1964,7 @@ public:
 						return true;
 					}
 					else{
-						Throw("getLoDWord must have signature \"extern __intrinsic int getLoDWord(void* addr)\"", rewriter, callee->getSourceRange());
+						Throw("getLoDWord must have signature \"extern __intrinsic int getLoDWord(void* addr)\"", TheRewriter, callee->getSourceRange());
 					}
 				}
 				else{
@@ -1983,7 +1984,7 @@ public:
 						return true;
 					}
 					else{
-						Throw("getHiDWord must have signature \"extern __intrinsic int getHiDWord(void* addr)\"", rewriter, callee->getSourceRange());
+						Throw("getHiDWord must have signature \"extern __intrinsic int getHiDWord(void* addr)\"", TheRewriter, callee->getSourceRange());
 					}
 				}
 				else{
@@ -2003,11 +2004,11 @@ public:
 						return true;
 					}
 					else{
-						Throw("getByte must have signature \"extern __intrinsic unsigned char getByte(void* addr)\"", rewriter, callee->getSourceRange());
+						Throw("getByte must have signature \"extern __intrinsic unsigned char getByte(void* addr)\"", TheRewriter, callee->getSourceRange());
 					}
 				}
 				else{
-					Throw("getByte intrinsic is only available for GTA V", rewriter, callee->getSourceRange());
+					Throw("getByte intrinsic is only available for GTA V", TheRewriter, callee->getSourceRange());
 				}
 			} break;
 			case JoaatCasedConst("setByte"): {
@@ -2018,9 +2019,9 @@ public:
 						AddInstruction(PushInt, 0);
 						AddInstruction(PushInt, 7);
 						llvm::APSInt result;
-						if (argArray[1]->EvaluateAsInt(result, *context)){
+						if (argArray[1]->EvaluateAsInt(result, context)){
 							if (result.getExtValue() > 0xFF){
-								Warn("Result does not fit into a byte", rewriter, argArray[1]->getSourceRange());
+								Warn("Result does not fit into a byte", TheRewriter, argArray[1]->getSourceRange());
 							}
 							AddInstruction(PushInt, result.getExtValue() & 0xFF);
 						}
@@ -2033,11 +2034,11 @@ public:
 						return true;
 					}
 					else{
-						Throw("setByte must have signature \"extern __intrinsic void setByte(void* addr, unsigned char value)\"", rewriter, callee->getSourceRange());
+						Throw("setByte must have signature \"extern __intrinsic void setByte(void* addr, unsigned char value)\"", TheRewriter, callee->getSourceRange());
 					}
 				}
 				else{
-					Throw("setByte intrinsic is only available for GTA V", rewriter, callee->getSourceRange());
+					Throw("setByte intrinsic is only available for GTA V", TheRewriter, callee->getSourceRange());
 				}
 			} break;
 			#pragma endregion
@@ -2047,7 +2048,7 @@ public:
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, context))
 					{
 						parseExpression(argArray[1], false, true);
 						AddInstruction(SetStaticRaw, result.getSExtValue());
@@ -2060,7 +2061,7 @@ public:
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, context))
 					{
 						AddInstruction(GetStaticRaw, result.getSExtValue());
 						return true;
@@ -2072,7 +2073,7 @@ public:
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, context))
 					{
 						AddInstruction(GetStaticPRaw, result.getSExtValue());
 						return true;
@@ -2084,7 +2085,7 @@ public:
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, context))
 					{
 						parseExpression(argArray[1], false, true);
 						AddInstruction(SetGlobal, result.getSExtValue());
@@ -2097,7 +2098,7 @@ public:
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, context))
 					{
 						AddInstruction(GetGlobal, result.getSExtValue());
 						return true;
@@ -2109,7 +2110,7 @@ public:
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1)
 				{
 					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, context))
 					{
 						AddInstruction(GetGlobalP, result.getSExtValue());
 						return true;
@@ -2121,13 +2122,13 @@ public:
 				if (argCount == 3 && callee->getReturnType()->isPointerType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
 				{
 					llvm::APSInt itemSize;
-					if (argArray[2]->EvaluateAsInt(itemSize, *context))
+					if (argArray[2]->EvaluateAsInt(itemSize, context))
 					{
 						if (itemSize.getSExtValue() < 1 || itemSize.getSExtValue() > 0xFFFF)
-							Throw("getPtrFromArrayIndex item size expected a value between 1 and 65535, got'" + to_string(itemSize.getSExtValue()) + "'", rewriter, argArray[2]->getSourceRange());
+							Throw("getPtrFromArrayIndex item size expected a value between 1 and 65535, got'" + to_string(itemSize.getSExtValue()) + "'", TheRewriter, argArray[2]->getSourceRange());
 						
 						llvm::APSInt index;
-						if (Option_OptimizationLevel > OptimisationLevel::OL_Trivial && argArray[1]->EvaluateAsInt(index ,*context) &&  ((itemSize.getSExtValue() * index.getSExtValue()) < 0xFFFF))
+						if (Option_OptimizationLevel > OptimisationLevel::OL_Trivial && argArray[1]->EvaluateAsInt(index, context) &&  ((itemSize.getSExtValue() * index.getSExtValue()) < 0xFFFF))
 						{
 							parseExpression(argArray[0], false, true);
 							AddInstruction(GetImmP, 1 + itemSize.getSExtValue() * index.getSExtValue());
@@ -2155,7 +2156,7 @@ public:
 				if (argCount == 2 && callee->getReturnType()->isPointerType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType())
 				{
 					APSInt index;
-					if (argArray[1]->EvaluateAsInt(index, *context) && index.getSExtValue() >= 0 && index.getSExtValue() <= 0xFFFF)
+					if (argArray[1]->EvaluateAsInt(index, context) && index.getSExtValue() >= 0 && index.getSExtValue() <= 0xFFFF)
 					{
 						parseExpression(argArray[0], false, true);
 						AddInstructionComment(GetImmP, "imm_" + to_string(index.getSExtValue()), index.getSExtValue());
@@ -2179,12 +2180,12 @@ public:
 					llvm::APSInt result;
 					if (argArray[0]->getType()->isIntegerType())
 					{
-						if (argArray[0]->EvaluateAsInt(result, *context))
+						if (argArray[0]->EvaluateAsInt(result, context))
 						{
 							int intValue = result.getSExtValue();
 							if (intValue <= 0)
 							{
-								Throw("Expected positive integer constant for pop amount argument in popMult, got " + to_string(intValue), rewriter, argArray[0]->getSourceRange());
+								Throw("Expected positive integer constant for pop amount argument in popMult, got " + to_string(intValue), TheRewriter, argArray[0]->getSourceRange());
 								return false;
 							}
 							for (int i = 0; i < intValue; i++)
@@ -2193,11 +2194,11 @@ public:
 							}
 							return true;;
 						}
-						Throw("Expected positive integer constant for pop amount argument in popMult", rewriter, argArray[0]->getSourceRange());
+						Throw("Expected positive integer constant for pop amount argument in popMult", TheRewriter, argArray[0]->getSourceRange());
 						return false;
 					}
 				}
-				Throw("popMult must have signature \"extern __intrinsic void popMult(const int amount);\"", rewriter, callee->getSourceRange());
+				Throw("popMult must have signature \"extern __intrinsic void popMult(const int amount);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("__pushV"): {
@@ -2208,7 +2209,7 @@ public:
 					parseExpression(argArray[0], false, true);
 					return true;
 				}
-				Throw("pushVector3 must have signature \"extern __intrinsic void pushVector3(vector3 vec3Value);\"", rewriter, callee->getSourceRange());
+				Throw("pushVector3 must have signature \"extern __intrinsic void pushVector3(vector3 vec3Value);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("__pushStruct"): {
@@ -2227,10 +2228,10 @@ public:
 							return true;
 						}
 					}
-					Throw("Couldnt extract type information from the argument in pushStruct", rewriter, argArray[0]->getSourceRange());
+					Throw("Couldnt extract type information from the argument in pushStruct", TheRewriter, argArray[0]->getSourceRange());
 					return false;
 				}
-				Throw("pushStruct must have signature \"extern __intrinsic void pushStruct(void *Struct);\"", rewriter, callee->getSourceRange());
+				Throw("pushStruct must have signature \"extern __intrinsic void pushStruct(void *Struct);\"", TheRewriter, callee->getSourceRange());
 				return false;;
 			} break;
 			case JoaatCasedConst("__popStruct"): {
@@ -2250,10 +2251,10 @@ public:
 							return true;
 						}
 					}
-					Throw("Couldnt extract type information from the argument in popStruct", rewriter, argArray[0]->getSourceRange());
+					Throw("Couldnt extract type information from the argument in popStruct", TheRewriter, argArray[0]->getSourceRange());
 					return false;
 				}
-				Throw("popStruct must have signature \"extern __intrinsic void popStruct(void *Struct);\"", rewriter, callee->getSourceRange());
+				Throw("popStruct must have signature \"extern __intrinsic void popStruct(void *Struct);\"", TheRewriter, callee->getSourceRange());
 				return false;;
 			} break;
 			case JoaatCasedConst("__rev"): {
@@ -2262,7 +2263,7 @@ public:
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, context))
 					{
 						int64_t value = result.getSExtValue();
 						if (value >= 2)
@@ -2284,16 +2285,16 @@ public:
 							LocalVariables.removeLevel();
 						}
 						else
-							Warn("Reverse called with " + to_string(value) + " exchange num.  Expected >= 2", rewriter, argArray[0]->getSourceRange());
+							Warn("Reverse called with " + to_string(value) + " exchange num.  Expected >= 2", TheRewriter, argArray[0]->getSourceRange());
 					}
 					else
 					{
-						Throw("Reverse count must be called with a compile time constant", rewriter, argArray[0]->getSourceRange());
+						Throw("Reverse count must be called with a compile time constant", TheRewriter, argArray[0]->getSourceRange());
 						return false;
 					}
 					return true;
 				}
-				Throw("rev must have signature \"extern __intrinsic void rev(const int numItems);\"", rewriter, callee->getSourceRange());
+				Throw("rev must have signature \"extern __intrinsic void rev(const int numItems);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("__exch"): {
@@ -2302,12 +2303,12 @@ public:
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context))
+					if (argArray[0]->EvaluateAsInt(result, context))
 					{
 						const Expr* expr = argArray[0]->IgnoreParens()->IgnoreCasts();
 						if (isa<UnaryExprOrTypeTraitExpr>(expr) && cast<UnaryExprOrTypeTraitExpr>(expr)->getKind() == UETT_SizeOf)
 						{
-							Warn("Exchange called with a sizeof operation, did you mean to use stacksizeof", rewriter, argArray[0]->getSourceRange());
+							Warn("Exchange called with a sizeof operation, did you mean to use stacksizeof", TheRewriter, argArray[0]->getSourceRange());
 						}
 						int64_t value = result.getSExtValue();
 						if (value > 0)
@@ -2345,16 +2346,16 @@ public:
 							LocalVariables.removeLevel();
 						}
 						else
-							Warn("Exchange called with " + to_string(value) + " item size num.  Expected a positive value", rewriter, argArray[0]->getSourceRange());
+							Warn("Exchange called with " + to_string(value) + " item size num.  Expected a positive value", TheRewriter, argArray[0]->getSourceRange());
 					}
 					else
 					{
-						Throw("Exchange structSize must be called with a compile time constant", rewriter, argArray[0]->getSourceRange());
+						Throw("Exchange structSize must be called with a compile time constant", TheRewriter, argArray[0]->getSourceRange());
 						return false;
 					}
 					return true;
 				}
-				Throw("exchange must have signature \"extern __intrinsic void exchange(const int structStackSize);\"", rewriter, callee->getSourceRange());
+				Throw("exchange must have signature \"extern __intrinsic void exchange(const int structStackSize);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("__popI"): {
@@ -2363,7 +2364,7 @@ public:
 				{
 					return true;
 				}
-				Throw("popInt must have signature \"extern __intrinsic int pushInt();\"", rewriter, callee->getSourceRange());
+				Throw("popInt must have signature \"extern __intrinsic int pushInt();\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("__popF"): {
@@ -2372,7 +2373,7 @@ public:
 				{
 					return true;
 				}
-				Throw("popFloat must have signature \"extern __intrinsic float pushFloat();\"", rewriter, callee->getSourceRange());
+				Throw("popFloat must have signature \"extern __intrinsic float pushFloat();\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("__popV"): {
@@ -2382,7 +2383,7 @@ public:
 				{
 					return true;
 				}
-				Throw("popVector3 must have signature \"extern __intrinsic vector3 popVector3();\"", rewriter, callee->getSourceRange());
+				Throw("popVector3 must have signature \"extern __intrinsic vector3 popVector3();\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			#pragma endregion
@@ -2391,13 +2392,13 @@ public:
 				ChkHashCol("__nop");
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType()){
 					APSInt result;
-					if (argArray[0]->EvaluateAsInt(result, *context) && result.getSExtValue() > 0 && result.getSExtValue() <= 4096)
+					if (argArray[0]->EvaluateAsInt(result, context) && result.getSExtValue() > 0 && result.getSExtValue() <= 4096)
 					{
 						AddInstruction(Nop, result.getSExtValue());
 						return true;
 					}
 					else
-						Throw("nopCount argument must be a constant integer between 1 and 4096", rewriter, argArray[0]->getSourceRange());
+						Throw("nopCount argument must be a constant integer between 1 and 4096", TheRewriter, argArray[0]->getSourceRange());
 				} BadIntrin
 			} break;
 			case JoaatCasedConst("__add"):			AddAsmIntrinsic("__add", GetInsPtr(Add)); break;
@@ -2440,9 +2441,9 @@ public:
 				ChkHashCol("__push2");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType()) {
 					APSInt apCount;
-					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+					if (argArray[0]->EvaluateAsInt(apCount, context)) {
 						AddInstruction(PushInt, apCount.getSExtValue());
-						if (argArray[1]->EvaluateAsInt(apCount, *context)) {
+						if (argArray[1]->EvaluateAsInt(apCount, context)) {
 							AddInstruction(PushInt, apCount.getSExtValue());
 							return true;
 						} EvalFailed
@@ -2453,11 +2454,11 @@ public:
 				ChkHashCol("__push3");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType()) {
 					APSInt apCount;
-					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
+					if (argArray[0]->EvaluateAsInt(apCount, context)) {
 						AddInstruction(PushInt, apCount.getSExtValue());
-						if (argArray[1]->EvaluateAsInt(apCount, *context)) {
+						if (argArray[1]->EvaluateAsInt(apCount, context)) {
 							AddInstruction(PushInt, apCount.getSExtValue());
-							if (argArray[2]->EvaluateAsInt(apCount, *context)) {
+							if (argArray[2]->EvaluateAsInt(apCount, context)) {
 								AddInstruction(PushInt, apCount.getSExtValue());
 								return true;
 							} EvalFailed
@@ -2469,7 +2470,7 @@ public:
 			case JoaatCasedConst("__pushF"): {
 				if (argCount == 1 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isRealFloatingType()) {
 					Expr::EvalResult ER;
-					if (argArray[0]->EvaluateAsRValue(ER, *context)) {
+					if (argArray[0]->EvaluateAsRValue(ER, context)) {
 						AddInstruction(PushFloat, ER.Val.getFloat().convertToFloat());
 						return true;
 					} EvalFailed
@@ -2482,9 +2483,9 @@ public:
 				ChkHashCol("__callNative");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType()) {
 					APSInt apCount, apCount1, apCount2;
-					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
-						if (argArray[1]->EvaluateAsInt(apCount1, *context)) {
-							if (argArray[2]->EvaluateAsInt(apCount2, *context)) {
+					if (argArray[0]->EvaluateAsInt(apCount, context)) {
+						if (argArray[1]->EvaluateAsInt(apCount1, context)) {
+							if (argArray[2]->EvaluateAsInt(apCount2, context)) {
 								AddInstruction(Native, apCount.getSExtValue() & 0xFFFFFFFF, apCount1.getSExtValue(), apCount2.getSExtValue());
 								return true;
 							} EvalFailed
@@ -2496,10 +2497,10 @@ public:
 				ChkHashCol("__callNativePc");
 				if (argCount == 4 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType() && argArray[3]->getType()->isIntegerType()) {
 					APSInt apCount, apCount1, apCount2, apCount3;
-					if (argArray[0]->EvaluateAsInt(apCount, *context)) {
-						if (argArray[1]->EvaluateAsInt(apCount1, *context)) {
-							if (argArray[2]->EvaluateAsInt(apCount2, *context)) {
-								if (argArray[3]->EvaluateAsInt(apCount2, *context)) {
+					if (argArray[0]->EvaluateAsInt(apCount, context)) {
+						if (argArray[1]->EvaluateAsInt(apCount1, context)) {
+							if (argArray[2]->EvaluateAsInt(apCount2, context)) {
+								if (argArray[3]->EvaluateAsInt(apCount2, context)) {
 									AddInstruction(Native, (apCount.getSExtValue() << 32) | apCount1.getSExtValue(), apCount2.getSExtValue(), apCount3.getSExtValue());
 									return true;
 								} EvalFailed
@@ -2512,8 +2513,8 @@ public:
 				ChkHashCol("__return");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType()) {
 					APSInt apCount, apCount1;
-					if (argArray[0]->EvaluateAsInt(apCount, *context) && apCount.getSExtValue() <= 255) {
-						if (argArray[1]->EvaluateAsInt(apCount1, *context) && apCount.getSExtValue() <= 255) {
+					if (argArray[0]->EvaluateAsInt(apCount, context) && apCount.getSExtValue() <= 255) {
+						if (argArray[1]->EvaluateAsInt(apCount1, context) && apCount.getSExtValue() <= 255) {
 							AddInstruction(Return, apCount.getSExtValue(), apCount1.getSExtValue());
 							return true;
 						} EvalFailed
@@ -2579,7 +2580,7 @@ public:
 								AddInstruction(Switch);
 								SwitchCount++;
 							}
-							if (argArray[i]->EvaluateAsInt(apCount, *context)) {
+							if (argArray[i]->EvaluateAsInt(apCount, context)) {
 								if (EvaluateAsString(argArray[i + 1], str))
 								{
 									scriptData.getCurrentFunction()->addSwitchCase(apCount.getSExtValue(), str + scriptData.getInlineJumpLabelAppend());
@@ -2613,7 +2614,7 @@ public:
 							return true;
 						}
 						else
-							Throw("__call: Function \"" + str + "\" not found", rewriter, call->getExprLoc());
+							Throw("__call: Function \"" + str + "\" not found", TheRewriter, call->getExprLoc());
 						return true;
 					} EvalFailedStr
 				} BadIntrin
@@ -2641,7 +2642,7 @@ public:
 
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType()){
 					llvm::APSInt result;
-					if (argArray[1]->EvaluateAsInt(result, *context) && result == 1){
+					if (argArray[1]->EvaluateAsInt(result, context) && result == 1){
 						parseExpression(argArray[0], false, true);
 						AddInstruction(PGet);
 					}
@@ -2653,7 +2654,7 @@ public:
 					return true;
 				}
 				else{
-					Throw("__ptrToStack must have signature \"extern __unsafeIntrinsic void __ptrToStack(const void* address, int count);\"", rewriter, callee->getSourceRange());
+					Throw("__ptrToStack must have signature \"extern __unsafeIntrinsic void __ptrToStack(const void* address, int count);\"", TheRewriter, callee->getSourceRange());
 				}
 			} break;
 			case JoaatCasedConst("__ptrFromStack"): {
@@ -2661,7 +2662,7 @@ public:
 
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType()){
 					llvm::APSInt result;
-					if (argArray[1]->EvaluateAsInt(result, *context) && result == 1){
+					if (argArray[1]->EvaluateAsInt(result, context) && result == 1){
 						parseExpression(argArray[0], false, true);
 						AddInstruction(PSet);
 					}
@@ -2673,7 +2674,7 @@ public:
 					return true;
 				}
 				else{
-					Throw("__ptrFromStack must have signature \"extern __unsafeIntrinsic void __ptrFromStack(const void* address, int count);\"", rewriter, callee->getSourceRange());
+					Throw("__ptrFromStack must have signature \"extern __unsafeIntrinsic void __ptrFromStack(const void* address, int count);\"", TheRewriter, callee->getSourceRange());
 				}
 			} break;
 
@@ -2681,7 +2682,7 @@ public:
 
 			default:
 		_IntrinsicNotFound:
-			Throw("No intrinsic function found named " + funcName, rewriter, callee->getLocation());
+			Throw("No intrinsic function found named " + funcName, TheRewriter, callee->getLocation());
 		}
 
 		#undef ChkHashCol
@@ -2694,11 +2695,10 @@ public:
 
 	bool findAnyLabel(const Stmt* stmt)
 	{
-		for (auto it = stmt->child_begin(); it!=stmt->child_end();++it)
-		{
-			if (isa<LabelStmt>(*it))
+		for (const auto& childStmt : stmt->children()){
+			if (isa<LabelStmt>(childStmt))
 				return true;
-			return findAnyLabel(*it);
+			return findAnyLabel(childStmt);
 		}
 		return false;
 	}
@@ -2718,7 +2718,7 @@ public:
 		const BinaryOperator* binaryOp;
 		static int counter = 0;
 		string label = "__pcf_" + to_string(counter++);
-		if (binaryOp = dyn_cast<BinaryOperator>(conditional->IgnoreParens()))
+		if ((binaryOp = dyn_cast<BinaryOperator>(conditional->IgnoreParens())))
 		{
 			switch (binaryOp->getOpcode()){
 				case BO_LAnd:
@@ -2772,7 +2772,7 @@ public:
 		const BinaryOperator* binaryOp;
 		static int counter = 0;
 		string label = "__pct_" + to_string(counter++);
-		if (binaryOp = dyn_cast<BinaryOperator>(conditional->IgnoreParens()))
+		if ((binaryOp = dyn_cast<BinaryOperator>(conditional->IgnoreParens())))
 		{
 			switch (binaryOp->getOpcode()){
 				case BO_LAnd:
@@ -2864,7 +2864,7 @@ public:
 					Else = NULL;
 				}
 				else{
-					if (conditional->HasSideEffects(*context, true)){
+					if (conditional->HasSideEffects(context, true)){
 						parseExpression(conditional);//parse then drop
 					}
 					return true;
@@ -2874,12 +2874,12 @@ public:
 
 			Expr::EvalResult eResult;
 			bool bValue = false, ignoreCondition = false;
-			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
+			if (conditional->EvaluateAsRValue(eResult, context) && eResult.Val.isInt())
 			{
 				bValue = eResult.Val.getInt().getBoolValue();
 				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
-					Warn("if condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !conditional->HasSideEffects(*context, true);
+					Warn("if condition always evaluates to " + (bValue ? string("true") : string("false")), TheRewriter, conditional->getSourceRange());
+				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !conditional->HasSideEffects(context, true);
 			}
 			if (ignoreCondition)
 			{
@@ -2986,12 +2986,12 @@ public:
 
 			Expr::EvalResult eResult;
 			bool bValue = false, ignoreCondition = false;
-			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
+			if (conditional->EvaluateAsRValue(eResult, context) && eResult.Val.isInt())
 			{
 				bValue = eResult.Val.getInt().getBoolValue();
 				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
-					Warn("While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !conditional->HasSideEffects(*context, true);
+					Warn("While condition always evaluates to " + (bValue ? string("true") : string("false")), TheRewriter, conditional->getSourceRange());
+				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !conditional->HasSideEffects(context, true);
 			}
 			if (ignoreCondition)
 			{
@@ -3092,12 +3092,12 @@ public:
 
 			Expr::EvalResult eResult;
 			bool bValue = false, ignoreCondition = false;
-			if (conditional->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
+			if (conditional->EvaluateAsRValue(eResult, context) && eResult.Val.isInt())
 			{
 				bValue = eResult.Val.getInt().getBoolValue();
 				if (!isa<IntegerLiteral>(conditional->IgnoreParenCasts()))
-					Warn("do While condition always evaluates to " + (bValue ? string("true") : string("false")), rewriter, conditional->getSourceRange());
-				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !conditional->HasSideEffects(*context, true);
+					Warn("do While condition always evaluates to " + (bValue ? string("true") : string("false")), TheRewriter, conditional->getSourceRange());
+				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !conditional->HasSideEffects(context, true);
 			}
 			if (ignoreCondition)
 			{
@@ -3124,7 +3124,7 @@ public:
 				int size = 0;
 				if (ret->getRetValue()) {
 					QualType type = ret->getRetValue()->getType();
-					size = context->getTypeInfoDataSizeInChars(type).first.getQuantity();
+					size = context.getTypeInfoDataSizeInChars(type).first.getQuantity();
 				}
 
 				int32_t paramSize = 0;
@@ -3196,21 +3196,21 @@ public:
 					CaseStmt *caseS = cast<CaseStmt>(sCase);
 
 					llvm::APSInt result;
-					if (caseS->getLHS()->EvaluateAsInt(result, *context)) {
+					if (caseS->getLHS()->EvaluateAsInt(result, context)) {
 						int val;
 						if (!CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &val))
 						{
 							val = result.getSExtValue();
 						}
 						if (caseS->getRHS()){
-							if (caseS->getRHS()->EvaluateAsInt(result, *context)) {
+							if (caseS->getRHS()->EvaluateAsInt(result, context)) {
 								int valR;
 								if (!CheckExprForSizeOf(caseS->getLHS()->IgnoreParens(), &valR))
 								{
 									valR = result.getSExtValue();
 								}
 								if (val > valR){
-									Throw("GNU switch range min value is greater than max value", rewriter, SourceRange(caseS->getLHS()->getLocStart(), caseS->getRHS()->getLocEnd()));
+									Throw("GNU switch range min value is greater than max value", TheRewriter, SourceRange(caseS->getLHS()->getLocStart(), caseS->getRHS()->getLocEnd()));
 								}
 								for (int i = val; i <= valR; i++){
 									caseLabels.push_back({ i, loc });
@@ -3221,13 +3221,13 @@ public:
 							caseLabels.push_back({ val, loc });
 						}
 					}
-					else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", rewriter, caseS->getLHS()->getSourceRange());
+					else Throw("Unsupported case statement \"" + string(caseS->getLHS()->getStmtClassName()) + "\"", TheRewriter, caseS->getLHS()->getSourceRange());
 
 				}
 				else if (isa<DefaultStmt>(sCase))
 				{
 					if (defaultLoc.size() != 0) {
-						Throw("Multiple default statements found in switch", rewriter, sCase->getSourceRange());
+						Throw("Multiple default statements found in switch", TheRewriter, sCase->getSourceRange());
 					}
 					defaultLoc = loc;
 				}
@@ -3257,7 +3257,7 @@ public:
 			int sSize = caseLabels.size();
 			if (!sSize)
 			{
-				Warn("Switch statement contains no cases", rewriter, switchStmt->getSourceRange());
+				Warn("Switch statement contains no cases", TheRewriter, switchStmt->getSourceRange());
 				AddInstruction(Switch);
 			}
 			else if (sSize > 255)
@@ -3337,10 +3337,10 @@ public:
 		else if (isa<GCCAsmStmt>(s))
 		{
 			GCCAsmStmt *asmstmt = cast<GCCAsmStmt>(s);
-			Throw("Coding in assembley isnt supported", rewriter, s->getSourceRange());//throw an error as the new method of compiling wont support this
+			Throw("Coding in assembley isnt supported", TheRewriter, s->getSourceRange());//throw an error as the new method of compiling wont support this
 			if (scriptData.getInlineCount())
 			{
-				Warn("Using a __asm__ statement in an inlined function may lead to undesireable effects\r\nConsider marking the function as __attribute__((__noinline__))", rewriter, asmstmt->getSourceRange());
+				Warn("Using a __asm__ statement in an inlined function may lead to undesireable effects\r\nConsider marking the function as __attribute__((__noinline__))", TheRewriter, asmstmt->getSourceRange());
 			}
 		}
 		else if (isa<IndirectGotoStmt>(s))
@@ -3350,7 +3350,7 @@ public:
 			AddInstruction(GoToStack);
 		}
 		else
-			Throw("Undefined statement \"" + string(s->getStmtClassName()) + "\"", rewriter, s->getLocStart());
+			Throw("Undefined statement \"" + string(s->getStmtClassName()) + "\"", TheRewriter, s->getLocStart());
 
 		return true;
 	}
@@ -3367,7 +3367,7 @@ public:
 	int parseExpression(const Expr *e, bool isAddr = false, bool isLtoRValue = false, bool printVTable = true, bool isAssign = false, bool isArrToPtrDecay = false) {
 		Expr::EvalResult result;
 
-		if (!isAddr && e->EvaluateAsRValue(result, *context) && !result.HasSideEffects)
+		if (!isAddr && e->EvaluateAsRValue(result, context) && !result.HasSideEffects)
 		{
 			if (result.Val.isInt())
 			{
@@ -3385,7 +3385,7 @@ public:
 					if (doesInt64FitIntoInt32(resValue))
 					{
 						string value = to_string(resValue);
-						Warn("Integer overflow. Value: " + value + " is out of bounds of (-2,147,483,648 to 2,147,483,647). Changed value to " + to_string((int32_t)resValue), rewriter, e->getExprLoc(), e->getExprLoc().getLocWithOffset(value.length() - 1));
+						Warn("Integer overflow. Value: " + value + " is out of bounds of (-2,147,483,648 to 2,147,483,647). Changed value to " + to_string((int32_t)resValue), TheRewriter, e->getExprLoc(), e->getExprLoc().getLocWithOffset(value.length() - 1));
 					}
 
 					if (e->getType()->isBooleanType() && (int32_t)resValue == -1)
@@ -3477,7 +3477,7 @@ public:
 			const Expr* callee = call->getCallee();
 			if (isAddr)
 			{
-				Throw("cannot take the address of an rvalue of type '" + QualType::getAsString(call->getCallReturnType(*context).split()) + "'", rewriter, call->getSourceRange());
+				Throw("cannot take the address of an rvalue of type '" + QualType::getAsString(call->getCallReturnType(context).split()) + "'", TheRewriter, call->getSourceRange());
 			}
 			LocalVariables.addLevel();
 			if (isa<MemberExpr>(callee))
@@ -3499,7 +3499,7 @@ public:
 					}
 				}
 				else {
-					Throw("Unhandled Call Member Expression", rewriter, e->getSourceRange());
+					Throw("Unhandled Call Member Expression", TheRewriter, e->getSourceRange());
 				}
 			}
 			else if (isa<CastExpr>(callee))
@@ -3524,7 +3524,7 @@ public:
 
 					if (call->getDirectCallee()->getStorageClass() != SC_Extern)
 					{
-						Throw("Natives should be defined with the 'extern' keyword", rewriter, call->getDirectCallee()->getLocation());
+						Throw("Natives should be defined with the 'extern' keyword", TheRewriter, call->getDirectCallee()->getLocation());
 					}
 					const QualType type = call->getDirectCallee()->getReturnType();
 					int pCount = 0;
@@ -3545,7 +3545,7 @@ public:
 
 				}
 				//else if (call->getDirectCallee() && !call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
-				//	Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", rewriter, call->getExprLoc());
+				//	Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", TheRewriter, call->getExprLoc());
 				else if (isa<PointerType>(callee->getType()) && !call->getDirectCallee())
 				{
 					parseExpression(call->getCallee(), false, true);
@@ -3649,7 +3649,7 @@ public:
 							AddInstructionComment(Call, "NumArgs: " + to_string(call->getNumArgs()), func);
 						}
 						else
-							Throw("Function \"" + name + "\" not found", rewriter, call->getExprLoc());
+							Throw("Function \"" + name + "\" not found", TheRewriter, call->getExprLoc());
 						
 					}
 
@@ -3667,7 +3667,7 @@ public:
 				}
 			}
 			else
-				Throw("Unexpected Expression for Callee!", rewriter, callee->getExprLoc());
+				Throw("Unexpected Expression for Callee!", TheRewriter, callee->getExprLoc());
 			LocalVariables.removeLevel();
 			return 1;
 
@@ -3769,7 +3769,7 @@ public:
 						}
 					}
 					else {
-						Throw("Unsupported Cast", rewriter, icast->getSourceRange());
+						Throw("Unsupported Cast", TheRewriter, icast->getSourceRange());
 					}
 
 
@@ -3829,7 +3829,7 @@ public:
 					if (isLtoRValue) 
 					{
 						const BinaryOperator* bOp;
-						if (!icast->getSubExpr()->isEvaluatable(*context, Expr::SE_NoSideEffects) && !((bOp = dyn_cast<BinaryOperator>(icast->getSubExpr())) && (bOp->getOpcode() == BO_LOr || bOp->getOpcode() == BO_LAnd)))
+						if (!icast->getSubExpr()->isEvaluatable(context, Expr::SE_NoSideEffects) && !((bOp = dyn_cast<BinaryOperator>(icast->getSubExpr())) && (bOp->getOpcode() == BO_LOr || bOp->getOpcode() == BO_LAnd)))
 						{
 							AddInstruction(IsNotZero);
 						}
@@ -3935,7 +3935,7 @@ public:
 					break;
 				}
 				default:
-				Throw("Unhandled cast (CK) of type " + string(icast->getCastKindName()), rewriter, e->getSourceRange());
+				Throw("Unhandled cast (CK) of type " + string(icast->getCastKindName()), TheRewriter, e->getSourceRange());
 
 			}
 		}
@@ -4008,7 +4008,7 @@ public:
 				}
 				else
 				{
-					Throw("unimplmented UO_MINUS", rewriter, e->getSourceRange());
+					Throw("unimplmented UO_MINUS", TheRewriter, e->getSourceRange());
 				}
 				return false;
 			}
@@ -4064,7 +4064,7 @@ public:
 				}
 				else
 				{
-					Throw("unimplmented UO_LNot", rewriter, e->getSourceRange());
+					Throw("unimplmented UO_LNot", TheRewriter, e->getSourceRange());
 				}
 
 				return true;
@@ -4098,7 +4098,7 @@ public:
 				}
 				else
 				{
-					Throw("unimplmented UO_Not", rewriter, e->getSourceRange());
+					Throw("unimplmented UO_Not", TheRewriter, e->getSourceRange());
 				}
 				return true;
 			}
@@ -4257,7 +4257,7 @@ public:
 				}
 				else
 				{
-					Throw("unimplmented UO_Real", rewriter, e->getSourceRange());
+					Throw("unimplmented UO_Real", TheRewriter, e->getSourceRange());
 				}
 				return true;
 			}
@@ -4285,7 +4285,7 @@ public:
 				}
 				else
 				{
-					Throw("unimplmented UO_Imag", rewriter, e->getSourceRange());
+					Throw("unimplmented UO_Imag", TheRewriter, e->getSourceRange());
 				}
 				return true;
 			}
@@ -4334,7 +4334,7 @@ public:
 						}
 						else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
 						{
-							Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
+							Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", TheRewriter, subE->getSourceRange());
 						}
 						else
 						{
@@ -4397,7 +4397,7 @@ public:
 					}
 					else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
 					{
-						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
+						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", TheRewriter, subE->getSourceRange());
 					}
 					else
 					{
@@ -4484,7 +4484,7 @@ public:
 					}
 					else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
 					{
-						Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
+						Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", TheRewriter, subE->getSourceRange());
 					}
 					else
 					{
@@ -4546,7 +4546,7 @@ public:
 					}
 					else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
 					{
-						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", rewriter, subE->getSourceRange());
+						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", TheRewriter, subE->getSourceRange());
 					}
 					else
 					{
@@ -4737,7 +4737,7 @@ public:
 						default:
 						parseExpression(bOp->getLHS());
 						parseExpression(bOp->getRHS());
-						Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
+						Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", TheRewriter, bOp->getOperatorLoc());
 						return true;
 					}
 				}
@@ -4993,7 +4993,7 @@ public:
 						}
 						goto CheckAssignL2R;
 						default:
-						Throw("Unsupported binary operator \"" + bOp->getOpcodeStr().str() + "\" for Complex data type", rewriter, bOp->getOperatorLoc());
+						Throw("Unsupported binary operator \"" + bOp->getOpcodeStr().str() + "\" for Complex data type", TheRewriter, bOp->getOperatorLoc());
 						break;
 					CheckAssignL2R:
 						if (isLtoRValue)
@@ -5023,7 +5023,7 @@ public:
 			{
 				if (bOp->getType()->isRealFloatingType() && floatVar == (OpcodeKind)-1)
 				{
-					Throw("Unsuppored binary operation '" + bOp->getOpcodeStr().str() + "' on floating point data type.", rewriter, bOp->getSourceRange());
+					Throw("Unsuppored binary operation '" + bOp->getOpcodeStr().str() + "' on floating point data type.", TheRewriter, bOp->getSourceRange());
 				}
 				bool pointerSet = true;
 				if (isa<DeclRefExpr>(bOp->getLHS()))
@@ -5042,7 +5042,7 @@ public:
 					AddInstruction(PGet);
 				}
 				llvm::APSInt intRes;
-				if (bOp->getRHS()->EvaluateAsInt(intRes, *context))
+				if (bOp->getRHS()->EvaluateAsInt(intRes, context))
 				{
 					int64_t val = intRes.getSExtValue();
 					if (isa<PointerType>(bOp->getLHS()->getType()))
@@ -5202,7 +5202,7 @@ public:
 									AddInstruction(FDiv, &isZeroDiv);
 									if (isZeroDiv)
 									{
-										Warn("Zero division error detected", rewriter, bOp->getRHS()->getSourceRange());//just warn the user of the undefined behaviour
+										Warn("Zero division error detected", TheRewriter, bOp->getRHS()->getSourceRange());//just warn the user of the undefined behaviour
 									}
 								}
 								break;
@@ -5215,7 +5215,7 @@ public:
 								case BO_Add: AddInstruction(FAdd); break;
 
 								default:
-								Throw("Unimplemented binary floating op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
+								Throw("Unimplemented binary floating op " + bOp->getOpcodeStr().str(), TheRewriter, bOp->getExprLoc());
 							}
 						}
 						else {
@@ -5228,7 +5228,7 @@ public:
 									AddInstruction(Div, &isZeroDiv);
 									if (isZeroDiv)
 									{
-										Warn("Zero division error detected", rewriter, bOp->getRHS()->getSourceRange());//just warn the user of the undefined behaviour
+										Warn("Zero division error detected", TheRewriter, bOp->getRHS()->getSourceRange());//just warn the user of the undefined behaviour
 									}
 								} break;
 								case BO_Rem: AddInstruction(Mod); break;
@@ -5245,7 +5245,7 @@ public:
 								case BO_Shl: AddInstruction(ShiftLeft); break;
 								case BO_Shr: AddInstruction(ShiftRight); break;
 								default:
-								Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
+								Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), TheRewriter, bOp->getExprLoc());
 							}
 						}
 					}
@@ -5253,7 +5253,7 @@ public:
 					{
 						parseExpression(bOp->getLHS());
 						parseExpression(bOp->getRHS());
-						Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
+						Warn("Unused operator \"" + bOp->getOpcodeStr().str() + "\"", TheRewriter, bOp->getOperatorLoc());
 					}
 				}
 
@@ -5361,7 +5361,7 @@ public:
 									if (i + j < initCount)
 									{
 										inits[j] = I->getInit(i + j);
-										if ((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+										if ((succ[j] = inits[j]->EvaluateAsInt(res, context)))
 										{
 											evaluated[j] = res.getSExtValue() & 0xFF;
 										}
@@ -5442,7 +5442,7 @@ public:
 									if (i + j < initCount)
 									{
 										inits[j] = I->getInit(i + j);
-										if ((succ[j] = inits[j]->EvaluateAsInt(res, *context)))
+										if ((succ[j] = inits[j]->EvaluateAsInt(res, context)))
 										{
 											evaluated[j] = res.getSExtValue() & 0xFFFF;
 										}
@@ -5575,14 +5575,14 @@ public:
 							}
 							break;
 						}
-						Throw("Jenkins Method called with unsupported arg type, please use a StringLiteral argument", rewriter, arg->getLocStart());
+						Throw("Jenkins Method called with unsupported arg type, please use a StringLiteral argument", TheRewriter, arg->getLocStart());
 						break;
 					}
 				}
-				Throw("Jenkins Method called without any argument, please use a StringLiteral argument", rewriter, ueTrait->getLocStart());
+				Throw("Jenkins Method called without any argument, please use a StringLiteral argument", TheRewriter, ueTrait->getLocStart());
 				break;
 				default:
-				Throw("Unsupported UnaryExprOrTypeTrait Type:" + to_string(ueTrait->getKind()), rewriter, ueTrait->getLocStart());
+				Throw("Unsupported UnaryExprOrTypeTrait Type:" + to_string(ueTrait->getKind()), TheRewriter, ueTrait->getLocStart());
 				break;
 			}
 		}
@@ -5594,12 +5594,12 @@ public:
 			auto condition = cond->getCond();
 			Expr::EvalResult eResult;
 			bool bValue = false, ignoreCondition = false;
-			if (condition->EvaluateAsRValue(eResult, *context) && eResult.Val.isInt())
+			if (condition->EvaluateAsRValue(eResult, context) && eResult.Val.isInt())
 			{
 				bValue = eResult.Val.getInt().getBoolValue();
 				if (!isa<IntegerLiteral>(condition->IgnoreParenCasts()))
-					Warn("Conditional operator always evaluates to " + (bValue ? string("true") : string("false")), rewriter, condition->getSourceRange());
-				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !condition->HasSideEffects(*context, true);
+					Warn("Conditional operator always evaluates to " + (bValue ? string("true") : string("false")), TheRewriter, condition->getSourceRange());
+				ignoreCondition = Option_OptimizationLevel > OptimisationLevel::OL_None && !condition->HasSideEffects(context, true);
 			}
 			if (ignoreCondition){
 				parseExpression(bValue ? cond->getLHS() : cond->getRHS(), isAddr, isLtoRValue);
@@ -5618,7 +5618,7 @@ public:
 		}
 		else if (isa<ImaginaryLiteral>(e))
 		{
-			Warn("Imaginary literals aren't supported", rewriter, e->getExprLoc());
+			Warn("Imaginary literals aren't supported", TheRewriter, e->getExprLoc());
 			/*const ImaginaryLiteral *literal = cast<ImaginaryLiteral>(e);
 			const Expr* item = literal->getSubExpr();
 			if (isa<FloatingLiteral>(item))
@@ -5672,7 +5672,7 @@ public:
 			}
 		}
 		else
-			Throw("Unimplemented expression " + string(e->getStmtClassName()), rewriter, e->getExprLoc());
+			Throw("Unimplemented expression " + string(e->getStmtClassName()), TheRewriter, e->getExprLoc());
 
 		return -1;
 	}
@@ -5683,7 +5683,7 @@ public:
 		const Expr *index = arr->getIdx();
 
 		llvm::APSInt evalIndex;
-		bool isCst = index->EvaluateAsInt(evalIndex, *context);
+		bool isCst = index->EvaluateAsInt(evalIndex, context);
 
 		const DeclRefExpr *declRef = getDeclRefExpr(base);
 		const Type *type = base->getType().getTypePtr();//declRef->getType().getTypePtr()->getArrayElementTypeNoTypeQual();
@@ -5915,11 +5915,11 @@ public:
 		if (f->hasBody()) {
 			if (f->hasAttr<NativeFuncAttr>())
 			{
-				Throw("Native function attribute cannot be used on functions which have a body declared", rewriter, f->getAttr<NativeFuncAttr>()->getRange());
+				Throw("Native function attribute cannot be used on functions which have a body declared", TheRewriter, f->getAttr<NativeFuncAttr>()->getRange());
 			}
 			else if (f->hasAttr<IntrinsicFuncAttr>())
 			{
-				Throw("Intrinsic function attribute cannot be used on functions which have a body declared", rewriter, f->getAttr<IntrinsicFuncAttr>()->getRange());
+				Throw("Intrinsic function attribute cannot be used on functions which have a body declared", TheRewriter, f->getAttr<IntrinsicFuncAttr>()->getRange());
 			}
 
 
@@ -5972,11 +5972,11 @@ public:
 				AddInstruction(Return);
 			}
 
-			//Throw(f->getNameAsString() + ": not all control paths return a value", rewriter, f->getLocEnd());
+			//Throw(f->getNameAsString() + ": not all control paths return a value", TheRewriter, f->getLocEnd());
 			//uint32_t FunctionStackCount = LocalVariables.maxIndex - (isa<CXXMethodDecl>(f) ? 1 : 0) - paramSize;
 
 			if (LocalVariables.getMaxIndex() > 65536)
-				Throw("Function \"" + f->getNameAsString() + "\" has a stack size of " + to_string(LocalVariables.getMaxIndex()) + " when the max is 65536", rewriter, f->getLocStart());
+				Throw("Function \"" + f->getNameAsString() + "\" has a stack size of " + to_string(LocalVariables.getMaxIndex()) + " when the max is 65536", TheRewriter, f->getLocStart());
 			else
 			{
 				func->setStackSize(LocalVariables.getMaxIndex());
@@ -5998,7 +5998,7 @@ public:
 				case obf_high:func->codeLayoutRandomisation(scriptData, 30, 15, false, true); break;
 				case obf_veryhigh: func->codeLayoutRandomisation(scriptData, 15, 5, false, true); break;
 				case obf_max: func->codeLayoutRandomisation(scriptData, 5, 1, false, true); break;
-				default: Throw("Unknown Obfuscation Level: " + Option_ObfuscationLevel);
+				default: Throw("Unknown Obfuscation Level: " + to_string(Option_ObfuscationLevel));
 			}
 				
 			scriptData.clearCurrentFunction();
@@ -6242,7 +6242,7 @@ public:
 
 					parseExpression(IS->getInit());
 					AddInstructionComment(GetFrame, "this", 0);
-					AddInstructionComment(SetImm, IS->getMember()->getDeclName().getAsString(), getSizeFromBytes(getCXXOffsetOfNamedDecl(d, IS->getMember())))
+					AddInstructionComment(SetImm, IS->getMember()->getDeclName().getAsString(), getSizeFromBytes(getCXXOffsetOfNamedDecl(d, IS->getMember())));
 				}
 				else {
 					if (isa<CXXConstructExpr>(IS->getInit())) {
@@ -6283,7 +6283,7 @@ public:
 
 public:
 	Rewriter &TheRewriter;
-	ASTContext *context;
+	const ASTContext &context;
 	stringstream out;//temp until CXX stuff sorted/removed
 
 	const FunctionDecl *currFunction;
@@ -6293,7 +6293,7 @@ public:
 #pragma region GlobalsVisitor
 class GlobalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
 public:
-	GlobalsVisitor(Rewriter &R, ASTContext *context, Script& scriptData) : TheRewriter(R), context(context), scriptData(scriptData) {}
+	GlobalsVisitor(Rewriter &R,const ASTContext &context, Script& scriptData) : TheRewriter(R), context(context), scriptData(scriptData) {}
 
 	string getNameForFunc(const FunctionDecl *decl) {
 
@@ -6337,7 +6337,7 @@ public:
 			scriptData.getCurrentStatic()->pushNullInit(size, scriptData.getStackWidth());
 			return true;
 		}
-		else if (e->EvaluateAsRValue(result, *context))
+		else if (e->EvaluateAsRValue(result, context))
 		{
 			if (!isLtoRValue)
 			{
@@ -6352,7 +6352,7 @@ public:
 				if (doesInt64FitIntoInt32(resValue))
 				{
 					string value = to_string(resValue);
-					Warn("Integer overflow. Value: " + value + " is out of bounds of (-2,147,483,648 to 2,147,483,647). Changed value to " + to_string((int32_t)resValue), rewriter, e->getExprLoc(), e->getExprLoc().getLocWithOffset(value.length() - 1));
+					Warn("Integer overflow. Value: " + value + " is out of bounds of (-2,147,483,648 to 2,147,483,647). Changed value to " + to_string((int32_t)resValue), TheRewriter, e->getExprLoc(), e->getExprLoc().getLocWithOffset(value.length() - 1));
 				}
 				const Type* typeE = e->getType().getTypePtr();
 				const Type* type = typeE;//globalVarDecl->getType().getTypePtr();
@@ -6613,7 +6613,7 @@ public:
 					scriptData.getCurrentStatic()->setDynamic();
 				}
 				else// need to test byte* t = {1,2,3};
-					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getSourceRange());
+					Throw("Unimplemented CK_ArrayToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), TheRewriter, icast->getSubExpr()->getSourceRange());
 				break;
 
 				case CK_FunctionToPointerDecay://int (*ggg)(int, float) = test; // test is a function
@@ -6636,7 +6636,7 @@ public:
 
 				}
 				else
-					Throw("Unimplemented CK_FunctionToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), rewriter, icast->getSubExpr()->getSourceRange());
+					Throw("Unimplemented CK_FunctionToPointerDecay for " + string(icast->getSubExpr()->getStmtClassName()), TheRewriter, icast->getSubExpr()->getSourceRange());
 				break;
 
 				case clang::CK_PointerToIntegral://int ptoitest = &addrptrtest;
@@ -6653,7 +6653,7 @@ public:
 				break;
 
 				default:
-				Throw("Unimplemented ImplicitCastExpr of type " + string(icast->getCastKindName()), rewriter, icast->getSourceRange());
+				Throw("Unimplemented ImplicitCastExpr of type " + string(icast->getCastKindName()), TheRewriter, icast->getSourceRange());
 			}
 
 
@@ -6722,7 +6722,7 @@ public:
 					return -1;
 				}
 				else
-					Throw("Pointer to pointer operation not subtraction \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
+					Throw("Pointer to pointer operation not subtraction \"" + bOp->getOpcodeStr().str() + "\"", TheRewriter, bOp->getOperatorLoc());
 			}
 			else if (isa<PointerType>(bOp->getLHS()->getType()))
 			{
@@ -6741,7 +6741,7 @@ public:
 						scriptData.getCurrentStatic()->addOpMultImm(pSize);
 				}
 				else
-					Throw("Pointer to literal operation not addition or subtraction \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
+					Throw("Pointer to literal operation not addition or subtraction \"" + bOp->getOpcodeStr().str() + "\"", TheRewriter, bOp->getOperatorLoc());
 
 			}
 			else if (isa<PointerType>(bOp->getRHS()->getType()))
@@ -6759,14 +6759,14 @@ public:
 						scriptData.getCurrentStatic()->addOpMultImm(pSize);
 				}
 				else
-					Throw("Pointer to literal operation not addition or subtraction \"" + bOp->getOpcodeStr().str() + "\"", rewriter, bOp->getOperatorLoc());
+					Throw("Pointer to literal operation not addition or subtraction \"" + bOp->getOpcodeStr().str() + "\"", TheRewriter, bOp->getOperatorLoc());
 
 				ParseLiteral(bOp->getRHS(), bOp->getRHS()->getType().getTypePtr()->isArrayType(), true);
 			}
 			else
 			{
 				//no pointer operations
-				Throw("Expected pointer operation for static BinaryOperator", rewriter, e->getExprLoc());
+				Throw("Expected pointer operation for static BinaryOperator", TheRewriter, e->getExprLoc());
 				//parseExpression(bOp->getLHS(), false, true);
 				//parseExpression(bOp->getRHS(), false, true);
 			}
@@ -6776,7 +6776,7 @@ public:
 				case BO_Sub: scriptData.getCurrentStatic()->addOpSub();  break;
 				case BO_Add: scriptData.getCurrentStatic()->addOpAdd(); break;
 				default:
-				Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), rewriter, bOp->getExprLoc());
+				Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), TheRewriter, bOp->getExprLoc());
 			}
 
 		}
@@ -6798,7 +6798,7 @@ public:
 				else if(isa<ParenExpr>(base))
 					base = cast<ParenExpr>(base)->getSubExpr();
 				else
-					Throw("Unimplemented static array base resolution of " + string(base->getStmtClassName()), rewriter, e->getSourceRange());
+					Throw("Unimplemented static array base resolution of " + string(base->getStmtClassName()), TheRewriter, e->getSourceRange());
 
 
 
@@ -6811,7 +6811,7 @@ public:
 					type = const_cast<Type*>(type->getPointeeType().getTypePtr());
 
 				llvm::APSInt iResult;
-				if (index->EvaluateAsInt(iResult, *context))
+				if (index->EvaluateAsInt(iResult, context))
 				{
 					doesCurrentValueNeedSet = true;
 					auto cur = scriptData.getCurrentStatic();
@@ -6837,7 +6837,7 @@ public:
 					ssize = getSizeOfType(type);
 				}
 				else
-					Throw("Expected integer literal for static array pointer initialisation", rewriter, e->getSourceRange());
+					Throw("Expected integer literal for static array pointer initialisation", TheRewriter, e->getSourceRange());
 
 				inc++;
 				sexpr = const_cast<Expr*>(base);
@@ -6852,7 +6852,7 @@ public:
 		{
 			if (!isAddr)
 			{
-				Throw("Can only get address of members for static defines", rewriter, e->getExprLoc());
+				Throw("Can only get address of members for static defines", TheRewriter, e->getExprLoc());
 			}
 			auto cur = scriptData.getCurrentStatic();
 			doesCurrentValueNeedSet = true;
@@ -6904,12 +6904,12 @@ public:
 				}
 				else
 				{
-					Throw("DeclRefExpr error", rewriter, e->getSourceRange());
+					Throw("DeclRefExpr error", TheRewriter, e->getSourceRange());
 				}
 			}
 			else
 			{
-				Throw("DeclRefExpr error", rewriter, e->getSourceRange());
+				Throw("DeclRefExpr error", TheRewriter, e->getSourceRange());
 			}
 		}
 		else
@@ -6928,12 +6928,12 @@ public:
 					{
 						if (globalVarDecl->hasInit())
 						{
-							Throw("Global variables cannot be initialised", rewriter, D->getSourceRange());
+							Throw("Global variables cannot be initialised", TheRewriter, D->getSourceRange());
 						}
 					}
 					else
 					{
-						Throw("Global variables cannot have a storage class associated with them", rewriter, globalVarDecl->getSourceRange());
+						Throw("Global variables cannot have a storage class associated with them", TheRewriter, globalVarDecl->getSourceRange());
 					}
 					
 				}
@@ -6968,7 +6968,7 @@ public:
 								}
 								break;
 							default:
-							Throw("Unhandled Storage Class", rewriter, globalVarDecl->getSourceRange());
+							Throw("Unhandled Storage Class", TheRewriter, globalVarDecl->getSourceRange());
 						}
 
 						resetIntIndex();
@@ -7006,7 +7006,7 @@ public:
 					else
 					{
 						if (globalVarDecl->getStorageClass() != SC_Extern)
-							Throw("Var " + dumpName(cast<NamedDecl>(D)) + " is already defined", rewriter, D->getLocStart());
+							Throw("Var " + dumpName(cast<NamedDecl>(D)) + " is already defined", TheRewriter, D->getLocStart());
 					}
 						
 				}
@@ -7037,60 +7037,27 @@ public:
 
 private:
 	Rewriter &TheRewriter;
-	ASTContext *context;
+	const ASTContext &context;
 	Script& scriptData;
-};
-#pragma endregion
-
-#pragma region LocalsVisitor
-class LocalsVisitor : public RecursiveASTVisitor<GlobalsVisitor> {
-public:
-	LocalsVisitor(Rewriter &R, ASTContext *context) : TheRewriter(R), context(context) { currentFunction = NULL; }
-
-	bool VisitDecl(Decl *D) {
-		return true;
-	}
-
-	string dumpName(const NamedDecl *ND) {
-		if (ND->getDeclName()) {
-
-			return ND->getNameAsString();
-		}
-		return "";
-	}
-
-	bool TraverseDecl(Decl *D) {
-
-		RecursiveASTVisitor::TraverseDecl(D);
-		return true;
-	}
-
-private:
-	Rewriter &TheRewriter;
-	ASTContext *context;
-	const FunctionDecl *currentFunction;
-
 };
 #pragma endregion
 
 #pragma region HandleASTConsumer
 class MyASTConsumer : public ASTConsumer {
 public:
-	MyASTConsumer(Rewriter &R, ASTContext *context, Script& scriptData) : Visitor(R, context, scriptData), GlobalsVisitor(R, context, scriptData), scriptData(scriptData) {}
+	MyASTConsumer(Rewriter &R, const ASTContext &context, Script& scriptData) : Visitor(R, context, scriptData), GlobalsVisitor(R, context, scriptData) {}
 
 	// Override the method that gets called for each parsed top-level
 	// declaration.
 	bool HandleTopLevelDecl(DeclGroupRef DR) override {
-		for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b) {
+		for (auto& decl : DR){
 			// Traverse the declaration using our AST visitor.
-			GlobalsVisitor.TraverseDecl(*b);
-			//            (*b)->dump();
+			GlobalsVisitor.TraverseDecl(decl);
 		}
 
-		for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b) {
+		for (auto& decl : DR){
 			// Traverse the declaration using our AST visitor.
-			Visitor.TraverseDecl(*b);
-			//(*b)->dump();
+			Visitor.TraverseDecl(decl);
 		}
 
 		return true;
@@ -7101,7 +7068,6 @@ public:
 private:
 	MyASTVisitor Visitor;
 	GlobalsVisitor GlobalsVisitor;
-	Script &scriptData;
 };
 #pragma endregion
 
@@ -7190,7 +7156,7 @@ public:
 		CI.getLangOpts().Freestanding = true;
 
 		TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-		rewriter = TheRewriter;
+		rewriter = &TheRewriter;
 
 		//const SourceManager &SM = TheRewriter.getSourceMgr();
 		//string fileName(string(SM.getFileEntryForID(SM.getMainFileID())->getName()));
@@ -7199,7 +7165,7 @@ public:
 		ModifyClangWarnings(*diagnostics);
 		AddDefines(CI.getPreprocessor());
 
-		return llvm::make_unique<MyASTConsumer>(TheRewriter, &CI.getASTContext(), *scriptData);
+		return llvm::make_unique<MyASTConsumer>(TheRewriter, CI.getASTContext(), *scriptData);
 	}
 
 private:

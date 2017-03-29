@@ -134,7 +134,7 @@ int Opcode::getSizeEstimate() const
 			return 0;
 
 		case OK_PushFloat:
-			switch (getInt())
+			switch ((uint32_t)getInt())
 			{
 				case 0xbf800000:
 				case 0x80000000://neg 0
@@ -234,7 +234,7 @@ int Opcode::getSizeEstimate() const
 		}
 		return 6;//Push Val, Mult
 		case OK_FAddImm:
-			switch (getInt())
+			switch ((uint32_t)getInt())
 			{
 				case 0x80000000://neg 0
 				case 0x00000000://pos 0
@@ -257,7 +257,7 @@ int Opcode::getSizeEstimate() const
 			}
 			return 6;//PushF Val, FAdd/FSub
 		case OK_FMultImm:
-			switch (getInt())
+			switch ((uint32_t)getInt())
 			{
 				case 0xbf800000:
 					return 1;//FNeg
@@ -399,7 +399,7 @@ string Opcode::toString() const
 		break;
 		case OK_PushFloat:
 		{
-			switch (getInt())
+			switch ((uint32_t)getInt())
 			{
 				case 0xbf800000:
 					current = "PushF_-1"; break;
@@ -507,7 +507,7 @@ string Opcode::toString() const
 		}
 		case OK_FAddImm:
 		{
-			switch (getInt())
+			switch ((uint32_t)getInt())
 			{
 				case 0xc0e00000:
 					current = "PushF_7\r\nFSub"; break;
@@ -556,7 +556,7 @@ string Opcode::toString() const
 		}
 		case OK_FMultImm:
 		{
-			switch (getInt())
+			switch ((uint32_t)getInt())
 			{
 				case 0xbf800000:
 					current = "FNeg"; break;//this should never come up

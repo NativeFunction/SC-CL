@@ -56,3 +56,4 @@ bin/projects/MenuBase/*.bat
 bin/projects/MenuBase/*.db
 bin/projects/MenuBase/*.opendb
 bin/projects/MenuBase/*.TMP
+*.exe

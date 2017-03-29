@@ -373,19 +373,19 @@ class Opcode
 	{
 		storage.f32 = value;
 	}
-	void setShort(int16_t value, int offset)
+	void setShort(int16_t value, uint32_t offset)
 	{
-		assert(offset >= 0 && offset < (sizeof(void*) / 2) && "short offset must be between 0 and 2");
+		assert(offset < (sizeof(void*) / 2) && "short offset must be between 0 and 2");
 		storage.i16[offset] = value;
 	}
-	void setUShort(uint16_t value, int offset)
+	void setUShort(uint16_t value, uint32_t offset)
 	{
-		assert(offset >= 0 && offset < (sizeof(void*) / 2) && "short offset must be between 0 and 2");
+		assert(offset < (sizeof(void*) / 2) && "short offset must be between 0 and 2");
 		storage.u16[offset] = value;
 	}
-	void setByte(uint8_t value, int offset)
+	void setByte(uint8_t value, uint32_t offset)
 	{
-		assert(offset >= 0 && offset < (sizeof(void*)) && "byte offset must be between 0 and 4");
+		assert(offset < (sizeof(void*)) && "byte offset must be between 0 and 4");
 		storage.u8[offset] = value;
 	}
 	void setKind(OpcodeKind newKind){ opcodeKind = newKind; }
@@ -513,19 +513,19 @@ public:
 	{
 		return storage.f32;
 	}
-	int16_t getShort(int offset) const
+	int16_t getShort(uint32_t offset) const
 	{
-		assert(offset >= 0 && offset < (sizeof(void*) / 2) && "short offset must be between 0 and 2");
+		assert(offset < (sizeof(void*) / 2) && "short offset must be between 0 and 2");
 		return storage.i16[offset];
 	}
-	uint16_t getUShort(int offset) const
+	uint16_t getUShort(uint32_t offset) const
 	{
-		assert(offset >= 0 && offset < (sizeof(void*) / 2) && "ushort offset must be between 0 and 2");
+		assert(offset < (sizeof(void*) / 2) && "ushort offset must be between 0 and 2");
 		return storage.u16[offset];
 	}
-	uint8_t getByte(int offset) const
+	uint8_t getByte(uint32_t offset) const
 	{
-		assert(offset >= 0 && offset < (sizeof(void*)) && "byte offset must be between 0 and 4");
+		assert(offset < (sizeof(void*)) && "byte offset must be between 0 and 4");
 		return storage.u8[offset];
 	}
 	int getSizeEstimate() const;

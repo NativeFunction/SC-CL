@@ -6,7 +6,7 @@
 	int i1, i2; \
 	if (tryPop2Ints(i1, i2)) \
 	{ \
-		addOpPushInt(i1 ##Op i2); \
+		addOpPushInt((i1) Op (i2)); \
 	} \
 	else { \
 		Instructions.push_back(new Opcode(OK_##OpName)); \
@@ -18,7 +18,7 @@
 	float f1, f2; \
 	if (tryPop2Floats(f1, f2)) \
 	{ \
-		addOpPushFloat(f1 ##Op f2); \
+		addOpPushFloat((f1) Op (f2)); \
 	} \
 	else { \
 		Instructions.push_back(new Opcode(OK_##OpName)); \

@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\LoopConvert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ClangUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Compiler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\FunctionData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Script.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Opcode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\StaticData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Crypto\aes256.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\BuildTarget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ClangUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Compiler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ConsoleColor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ConstExpr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\FunctionData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Opcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\OpcodeConsts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Script.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\StaticData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="G:\llvm xsc\llvm-3.8.1.src\resources\windows_version_resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{BF444B34-4233-3386-A537-1CE79718E222}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{31B10E70-BCE4-3012-A1E4-3976712BA463}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{287000A5-71FF-3C75-B3D5-B995A5A58379}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

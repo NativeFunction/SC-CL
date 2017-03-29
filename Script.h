@@ -131,7 +131,7 @@ public:
 			out += sdata->getStringOutput(getEndian(), getStackWidth());
 		}
 		out += "\r\n//<\r\n";
-		return std::move(out);
+		return out;
 	}
 
 	std::string getScriptName()const{ return _scriptName; }

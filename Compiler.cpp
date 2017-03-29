@@ -213,7 +213,7 @@ void CompileBase::AddLabel(const string& label)
 	auto it = LabelLocations.find(label);
 	if (it == LabelLocations.end())
 	{
-		LabelLocations.insert({ label,{ CodePageData->getTotalSize(), true } });
+		LabelLocations.insert({ label,{ CodePageData->getTotalSize(), true, std::vector<uint32_t>() } });
 	}
 	else if (!it->second.isSet)
 	{
@@ -469,7 +469,7 @@ void CompileBase::PushInt(const int32_t Literal)
 }
 void CompileBase::PushFloat(const float Literal)
 {
-	switch (Utils::DataConversion::FloatToInt(Literal))
+	switch ((uint32_t)Utils::DataConversion::FloatToInt(Literal))
 	{
 		case 0xbf800000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_Neg1); break;
 		case 0x80000000://neg 0
@@ -503,13 +503,13 @@ const uint32_t value = DATA->getInt();\
 if (value <= 0xFF)\
 {\
 	DoesOpcodeHaveRoom(2);\
-	AddInt8(BaseOpcodes->##op##1);\
+	AddInt8(BaseOpcodes->op##1);\
 	AddInt8(value);\
 }\
 else if (value <= 0xFFFF)\
 {\
 	DoesOpcodeHaveRoom(3);\
-	AddInt8(BaseOpcodes->##op##2);\
+	AddInt8(BaseOpcodes->op##2);\
 	AddInt16(value);\
 }\
 else{\
@@ -521,13 +521,13 @@ const uint32_t value = DATA->getStaticData()->getStatic()->getIndex() + DATA->ge
 if (value <= 0xFF)\
 {\
 	DoesOpcodeHaveRoom(2);\
-	AddInt8(BaseOpcodes->##op##1);\
+	AddInt8(BaseOpcodes->op##1);\
 	AddInt8(value);\
 }\
 else if (value <= 0xFFFF)\
 {\
 	DoesOpcodeHaveRoom(3);\
-	AddInt8(BaseOpcodes->##op##2);\
+	AddInt8(BaseOpcodes->op##2);\
 	AddInt16(value);\
 }\
 else{\
@@ -540,13 +540,13 @@ const uint32_t value = DATA->getInt();\
 if (value <= 0xFFFF)\
 {\
 	DoesOpcodeHaveRoom(3);\
-	AddInt8(BaseOpcodes->##op##2);\
+	AddInt8(BaseOpcodes->op##2);\
 	AddInt16(value);\
 }\
 else if (value <= 0xFFFFFF)\
 {\
 	DoesOpcodeHaveRoom(4);\
-	AddInt8(BaseOpcodes->##op##3);\
+	AddInt8(BaseOpcodes->op##3);\
 	AddInt24(value);\
 }\
 else{\
@@ -786,7 +786,7 @@ void CompileBase::MultImm(const int32_t Literal)
 }
 void CompileBase::FAddImm()
 {
-	switch (DATA->getInt())
+	switch ((uint32_t)DATA->getInt())
 	{
 		case 0xc0e00000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_7); DoesOpcodeHaveRoom(1); AddOpcode(fSub); break;
 		case 0xc0c00000: DoesOpcodeHaveRoom(1); AddOpcode(PushF_6); DoesOpcodeHaveRoom(1); AddOpcode(fSub); break;
@@ -948,7 +948,7 @@ void CompileGTAIV::AddLabel(const string& label)
 	auto it = LabelLocations.find(label);
 	if (it == LabelLocations.end())
 	{
-		LabelLocations.insert({ label,{ CodePageData->getTotalSize(), true } });
+		LabelLocations.insert({ label,{ CodePageData->getTotalSize(), true, std::vector<uint32_t>() } });
 	}
 	else if (!it->second.isSet)
 	{
@@ -1098,7 +1098,7 @@ void CompileGTAIV::SetArray()
 }
 void CompileGTAIV::GetFrameP()
 {
-	const uint32_t value = DATA->getInt();
+	const int value = DATA->getInt();
 	if (value >= 0 && value <= 7)
 	{
 		switch (value)
@@ -2020,7 +2020,7 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 
 		const uint8_t RDREncryptionKey[32] = { 0xB7, 0x62, 0xDF, 0xB6, 0xE2, 0xB2, 0xC6, 0xDE, 0xAF, 0x72, 0x2A, 0x32, 0xD2, 0xFB, 0x6F, 0x0C, 0x98, 0xA3, 0x21, 0x74, 0x62, 0xC9, 0xC4, 0xED, 0xAD, 0xAA, 0x2E, 0xD0, 0xDD, 0xF9, 0x2F, 0x10 };
 
-		if (CompressedSize = 0)
+		if (CompressedSize == 0)
 			Utils::System::Throw("SCO Compressed Size Invalid");
 		else if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize, RDREncryptionKey))
 			Utils::System::Throw("SCO Encryption Failed");
