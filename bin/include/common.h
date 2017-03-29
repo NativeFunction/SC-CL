@@ -1,4 +1,5 @@
 #pragma once
+#include "types.h"
 
 #define SwapEndian(x) _Generic((x),\
 short int: SwapEndian16(x), unsigned short int: SwapEndian16(x),\

@@ -56,6 +56,12 @@ typedef int ScrHandle;
 typedef int DecisionMaker;
 typedef int ScriptAny;
 typedef int UnkInt;
+typedef int Actor;
+typedef int Controller;
+typedef int Layout;
+typedef int Iterator;
+typedef int IterationSet;
+typedef int GUIWindow;
 
 typedef union vector2
 {
@@ -183,6 +189,5 @@ typedef union any
 #define Vector2(x, y) (vector2){x, y}
 #define Vector3(x,y,z) (vector3){x,y,z}
 
-
-typedef void* sizedarrayp;
+typedef void* SizedArray;
 
