@@ -5,13 +5,13 @@
 #include <utility>
 #include <map>
 #include <cmath>
-#include "ClangUtils.h"
-#include "Utils.h"
-#include "FunctionData.h"
+#include "Utils/ClangUtils.h"
+#include "Utils/Utils.h"
+#include "ClangParsing/FunctionData.h"
 #include "clang/Lex/PreProcessor.h"
-#include "ConstExpr.h"
-#include "Script.h"
-#include "Compiler.h"
+#include "Utils/ConstExpr.h"
+#include "ClangParsing/Script.h"
+#include "Compiler/Compiler.h"
 
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h)

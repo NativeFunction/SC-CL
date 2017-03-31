@@ -1,5 +1,9 @@
 *
 !.gitignore
+!SC-CL.sln
+!SC-CL.vcxproj
+!SC-CL.vcxproj.user
+!SC-CL.vcxproj.filters
 !BuildTarget.h
 !CMakeLists.txt
 !ConsoleColor.h
@@ -21,6 +25,7 @@
 !Script.cpp
 !StaticData.h
 !StaticData.cpp
+!Include/
 !bin/
 !Debug/
 !include/
@@ -31,9 +36,12 @@
 !RDR/
 !GTAV/
 !GTAIV/
-!compiler/
+!Compiler/
 !Crypto/
 !Compression/
+!ASM Compiler/
+!Utils/
+!ClangParsing/
 compiler/XscCompilerRaw (RDR)/obj/
 compiler/XscCompilerRaw (RDR)/bin/
 compiler/XscCompilerRaw/bin/

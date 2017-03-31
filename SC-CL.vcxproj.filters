@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\LoopConvert.cpp" />
+    <ClCompile Include="Include\Utils\ClangUtils.cpp">
+      <Filter>Utils\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\Utils\Utils.cpp">
+      <Filter>Utils\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\ClangParsing\FunctionData.cpp">
+      <Filter>ClangParsing\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\ClangParsing\Script.cpp">
+      <Filter>ClangParsing\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\ClangParsing\StaticData.cpp">
+      <Filter>ClangParsing\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\Compiler\Compiler.cpp">
+      <Filter>Compiler\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\Compiler\Opcode.cpp">
+      <Filter>Compiler\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\Crypto\aes256.c">
+      <Filter>Crypto</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\Utils\ClangUtils.h">
+      <Filter>Utils\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Utils\ConsoleColor.h">
+      <Filter>Utils\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Utils\ConstExpr.h">
+      <Filter>Utils\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Utils\Utils.h">
+      <Filter>Utils\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ClangParsing\FunctionData.h">
+      <Filter>ClangParsing\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ClangParsing\Script.h">
+      <Filter>ClangParsing\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ClangParsing\StaticData.h">
+      <Filter>ClangParsing\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Compiler\BuildTarget.h">
+      <Filter>Compiler\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Compiler\Compiler.h">
+      <Filter>Compiler\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Compiler\Opcode.h">
+      <Filter>Compiler\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Compiler\OpcodeConsts.h">
+      <Filter>Compiler\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Compression\zlib.h">
+      <Filter>Compression</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Compression\zconf.h">
+      <Filter>Compression</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Crypto\aes256.h">
+      <Filter>Crypto</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{287000A5-71FF-3C75-B3D5-B995A5A58379}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{7a07714e-4eb9-4f8e-976c-58d8de4ad7bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils\Header Files">
+      <UniqueIdentifier>{ee6ea854-8df6-4eb5-a1f2-1b4a47596067}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils\Source Files">
+      <UniqueIdentifier>{71bccc04-c7f8-40da-8c4a-974c47611975}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Crypto">
+      <UniqueIdentifier>{eb4ca946-8030-45d8-8ca4-252071ad349b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compression">
+      <UniqueIdentifier>{040dbb30-93fa-462e-b203-8f7b9e8ae86c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiler">
+      <UniqueIdentifier>{772e84cc-4411-46e7-82ed-1ab5b0ce85c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiler\Source Files">
+      <UniqueIdentifier>{db39616d-d311-45e5-a751-3ec66e564aa3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Compiler\Header Files">
+      <UniqueIdentifier>{fe26e4dc-5442-45d2-8287-fd070a930b42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ClangParsing">
+      <UniqueIdentifier>{82dda410-6499-480e-993d-cd8ee5ab28bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ClangParsing\Header Files">
+      <UniqueIdentifier>{3afc5e05-23fd-4b1a-9991-f944641efde8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ClangParsing\Source Files">
+      <UniqueIdentifier>{8cfec505-21ac-4f33-b8e8-47f46ce9e96e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\resources\windows_version_resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt">
+      <Filter>Resource Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

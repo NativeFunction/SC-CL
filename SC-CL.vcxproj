@@ -1,0 +1,561 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|Win32">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|Win32">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGUID>{0F0985E6-0DFB-35DB-B69F-AA2EE4029CAA}</ProjectGUID>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>Win32</Platform>
+    <ProjectName>SC-CL</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bin\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">SC-CL.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">SC-CL</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bin\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SC-CL.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SC-CL</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">bin\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">SC-CL.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">SC-CL</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">bin\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">SC-CL.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">SC-CL</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalOptions> -w14062 /Zc:inline /Zc:sizedDealloc- /EHs-c- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\..\include;$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Debug/</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4141;4146;4180;4244;4258;4267;4291;4345;4351;4355;4456;4457;4458;4459;4503;4624;4722;4800;4100;4127;4512;4505;4610;4510;4702;4245;4706;4310;4701;4703;4389;4611;4805;4204;4577;4091;4592;4324</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <TreatSpecificWarningsAsErrors>4238</TreatSpecificWarningsAsErrors>
+      <UndefinePreprocessorDefinitions>NDEBUG</UndefinePreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_HAS_EXCEPTIONS=0;GTEST_HAS_RTTI=0;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;__STDC_FORMAT_MACROS;__STDC_LIMIT_MACROS;_GNU_SOURCE;CLANG_ENABLE_ARCMT;CLANG_ENABLE_OBJC_REWRITER;CLANG_ENABLE_STATIC_ANALYZER;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_HAS_EXCEPTIONS=0;GTEST_HAS_RTTI=0;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;__STDC_FORMAT_MACROS;__STDC_LIMIT_MACROS;_GNU_SOURCE;CLANG_ENABLE_ARCMT;CLANG_ENABLE_OBJC_REWRITER;CLANG_ENABLE_STATIC_ANALYZER;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\..\include;$(ProjectDir)..\..\..\..\..\include;$(ProjectDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\include;C:\Users\Rocko\Desktop\llvm-3.8.1.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalOptions> /machine:X86 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\..\..\..\..\Debug\lib\LLVMSupport.lib;..\..\..\..\..\Debug\lib\clangTooling.lib;..\..\..\..\..\Debug\lib\clangBasic.lib;..\..\..\..\..\Debug\lib\clangASTMatchers.lib;..\..\..\..\..\Debug\lib\clangFrontend.lib;..\..\..\..\..\Debug\lib\clangDriver.lib;..\..\..\..\..\Debug\lib\LLVMOption.lib;..\..\..\..\..\Debug\lib\clangParse.lib;..\..\..\..\..\Debug\lib\LLVMMCParser.lib;..\..\..\..\..\Debug\lib\clangSerialization.lib;..\..\..\..\..\Debug\lib\clangSema.lib;..\..\..\..\..\Debug\lib\clangEdit.lib;..\..\..\..\..\Debug\lib\clangAnalysis.lib;..\..\..\..\..\Debug\lib\LLVMBitReader.lib;..\..\..\..\..\Debug\lib\clangToolingCore.lib;..\..\..\..\..\Debug\lib\clangAST.lib;..\..\..\..\..\Debug\lib\clangRewrite.lib;..\..\..\..\..\Debug\lib\clangLex.lib;..\..\..\..\..\Debug\lib\LLVMCore.lib;..\..\..\..\..\Debug\lib\LLVMMC.lib;Include\Compression\zlib.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>Debug</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>$(ProjectDir)SC-CL.dir\Debug\SC-CL.lib</ImportLibrary>
+      <ProgramDataBaseFile>$(ProjectDir)SC-CL.dir\Debug\SC-CL.pdb</ProgramDataBaseFile>
+      <StackReserveSize>10000000</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+      <Version>
+      </Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalOptions> -w14062 /Zc:inline /Zc:sizedDealloc- /EHs-c- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\include;C:\Users\Rocko\Desktop\llvm-3.8.1.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>Release/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DisableSpecificWarnings>4141;4146;4180;4244;4258;4267;4291;4345;4351;4355;4456;4457;4458;4459;4503;4624;4722;4800;4100;4127;4512;4505;4610;4510;4702;4245;4706;4310;4701;4703;4389;4611;4805;4204;4577;4091;4592;4324</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <TreatSpecificWarningsAsErrors>4238</TreatSpecificWarningsAsErrors>
+      <UndefinePreprocessorDefinitions>NDEBUG</UndefinePreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_HAS_EXCEPTIONS=0;GTEST_HAS_RTTI=0;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;__STDC_FORMAT_MACROS;__STDC_LIMIT_MACROS;_GNU_SOURCE;CLANG_ENABLE_ARCMT;CLANG_ENABLE_OBJC_REWRITER;CLANG_ENABLE_STATIC_ANALYZER;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_HAS_EXCEPTIONS=0;GTEST_HAS_RTTI=0;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;__STDC_FORMAT_MACROS;__STDC_LIMIT_MACROS;_GNU_SOURCE;CLANG_ENABLE_ARCMT;CLANG_ENABLE_OBJC_REWRITER;CLANG_ENABLE_STATIC_ANALYZER;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\include;C:\Users\Rocko\Desktop\llvm-3.8.1.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\include;C:\Users\Rocko\Desktop\llvm-3.8.1.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalOptions> /machine:X86 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\..\..\..\..\Release\lib\LLVMSupport.lib;..\..\..\..\..\Release\lib\clangTooling.lib;..\..\..\..\..\Release\lib\clangBasic.lib;..\..\..\..\..\Release\lib\clangASTMatchers.lib;..\..\..\..\..\Release\lib\clangFrontend.lib;..\..\..\..\..\Release\lib\clangDriver.lib;..\..\..\..\..\Release\lib\LLVMOption.lib;..\..\..\..\..\Release\lib\clangParse.lib;..\..\..\..\..\Release\lib\LLVMMCParser.lib;..\..\..\..\..\Release\lib\clangSerialization.lib;..\..\..\..\..\Release\lib\clangSema.lib;..\..\..\..\..\Release\lib\clangEdit.lib;..\..\..\..\..\Release\lib\clangAnalysis.lib;..\..\..\..\..\Release\lib\LLVMBitReader.lib;..\..\..\..\..\Release\lib\clangToolingCore.lib;..\..\..\..\..\Release\lib\clangAST.lib;..\..\..\..\..\Release\lib\clangRewrite.lib;..\..\..\..\..\Release\lib\clangLex.lib;..\..\..\..\..\Release\lib\clangBasic.lib;..\..\..\..\..\Release\lib\LLVMCore.lib;..\..\..\..\..\Release\lib\LLVMMC.lib;..\..\..\..\..\Release\lib\LLVMSupport.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>No</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/Rocko/Desktop/llvm-3.8.1.src/Release/lib/loop-convert.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/Rocko/Desktop/llvm-3.8.1.src/Release/bin/loop-convert.pdb</ProgramDataBaseFile>
+      <StackReserveSize>10000000</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+      <Version>
+      </Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
+    <ClCompile>
+      <AdditionalOptions> -w14062 /Zc:inline /Zc:sizedDealloc- /EHs-c- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\include;C:\Users\Rocko\Desktop\llvm-3.8.1.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DisableSpecificWarnings>4141;4146;4180;4244;4258;4267;4291;4345;4351;4355;4456;4457;4458;4459;4503;4624;4722;4800;4100;4127;4512;4505;4610;4510;4702;4245;4706;4310;4701;4703;4389;4611;4805;4204;4577;4091;4592;4324</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <TreatSpecificWarningsAsErrors>4238</TreatSpecificWarningsAsErrors>
+      <UndefinePreprocessorDefinitions>NDEBUG</UndefinePreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_HAS_EXCEPTIONS=0;GTEST_HAS_RTTI=0;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;__STDC_FORMAT_MACROS;__STDC_LIMIT_MACROS;_GNU_SOURCE;CLANG_ENABLE_ARCMT;CLANG_ENABLE_OBJC_REWRITER;CLANG_ENABLE_STATIC_ANALYZER;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_HAS_EXCEPTIONS=0;GTEST_HAS_RTTI=0;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;__STDC_FORMAT_MACROS;__STDC_LIMIT_MACROS;_GNU_SOURCE;CLANG_ENABLE_ARCMT;CLANG_ENABLE_OBJC_REWRITER;CLANG_ENABLE_STATIC_ANALYZER;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\include;C:\Users\Rocko\Desktop\llvm-3.8.1.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\include;C:\Users\Rocko\Desktop\llvm-3.8.1.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalOptions> /machine:X86 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\..\..\..\..\MinSizeRel\lib\LLVMSupport.lib;..\..\..\..\..\MinSizeRel\lib\clangTooling.lib;..\..\..\..\..\MinSizeRel\lib\clangBasic.lib;..\..\..\..\..\MinSizeRel\lib\clangASTMatchers.lib;..\..\..\..\..\MinSizeRel\lib\clangFrontend.lib;..\..\..\..\..\MinSizeRel\lib\clangDriver.lib;..\..\..\..\..\MinSizeRel\lib\LLVMOption.lib;..\..\..\..\..\MinSizeRel\lib\clangParse.lib;..\..\..\..\..\MinSizeRel\lib\LLVMMCParser.lib;..\..\..\..\..\MinSizeRel\lib\clangSerialization.lib;..\..\..\..\..\MinSizeRel\lib\clangSema.lib;..\..\..\..\..\MinSizeRel\lib\clangEdit.lib;..\..\..\..\..\MinSizeRel\lib\clangAnalysis.lib;..\..\..\..\..\MinSizeRel\lib\LLVMBitReader.lib;..\..\..\..\..\MinSizeRel\lib\clangToolingCore.lib;..\..\..\..\..\MinSizeRel\lib\clangAST.lib;..\..\..\..\..\MinSizeRel\lib\clangRewrite.lib;..\..\..\..\..\MinSizeRel\lib\clangLex.lib;..\..\..\..\..\MinSizeRel\lib\clangBasic.lib;..\..\..\..\..\MinSizeRel\lib\LLVMCore.lib;..\..\..\..\..\MinSizeRel\lib\LLVMMC.lib;..\..\..\..\..\MinSizeRel\lib\LLVMSupport.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>No</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/Rocko/Desktop/llvm-3.8.1.src/MinSizeRel/lib/loop-convert.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/Rocko/Desktop/llvm-3.8.1.src/MinSizeRel/bin/loop-convert.pdb</ProgramDataBaseFile>
+      <StackReserveSize>10000000</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+      <Version>
+      </Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
+    <ClCompile>
+      <AdditionalOptions> -w14062 /Zc:inline /Zc:sizedDealloc- /EHs-c- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\include;C:\Users\Rocko\Desktop\llvm-3.8.1.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4141;4146;4180;4244;4258;4267;4291;4345;4351;4355;4456;4457;4458;4459;4503;4624;4722;4800;4100;4127;4512;4505;4610;4510;4702;4245;4706;4310;4701;4703;4389;4611;4805;4204;4577;4091;4592;4324</DisableSpecificWarnings>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <TreatSpecificWarningsAsErrors>4238</TreatSpecificWarningsAsErrors>
+      <UndefinePreprocessorDefinitions>NDEBUG</UndefinePreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_HAS_EXCEPTIONS=0;GTEST_HAS_RTTI=0;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;__STDC_FORMAT_MACROS;__STDC_LIMIT_MACROS;_GNU_SOURCE;CLANG_ENABLE_ARCMT;CLANG_ENABLE_OBJC_REWRITER;CLANG_ENABLE_STATIC_ANALYZER;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_HAS_EXCEPTIONS=0;GTEST_HAS_RTTI=0;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_NONSTDC_NO_WARNINGS;_SCL_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;__STDC_CONSTANT_MACROS;__STDC_FORMAT_MACROS;__STDC_LIMIT_MACROS;_GNU_SOURCE;CLANG_ENABLE_ARCMT;CLANG_ENABLE_OBJC_REWRITER;CLANG_ENABLE_STATIC_ANALYZER;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\include;C:\Users\Rocko\Desktop\llvm-3.8.1.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\include;C:\Users\Rocko\Desktop\llvm-3.8.1.src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalOptions> /machine:X86 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\..\..\..\..\RelWithDebInfo\lib\LLVMSupport.lib;..\..\..\..\..\RelWithDebInfo\lib\clangTooling.lib;..\..\..\..\..\RelWithDebInfo\lib\clangBasic.lib;..\..\..\..\..\RelWithDebInfo\lib\clangASTMatchers.lib;..\..\..\..\..\RelWithDebInfo\lib\clangFrontend.lib;..\..\..\..\..\RelWithDebInfo\lib\clangDriver.lib;..\..\..\..\..\RelWithDebInfo\lib\LLVMOption.lib;..\..\..\..\..\RelWithDebInfo\lib\clangParse.lib;..\..\..\..\..\RelWithDebInfo\lib\LLVMMCParser.lib;..\..\..\..\..\RelWithDebInfo\lib\clangSerialization.lib;..\..\..\..\..\RelWithDebInfo\lib\clangSema.lib;..\..\..\..\..\RelWithDebInfo\lib\clangEdit.lib;..\..\..\..\..\RelWithDebInfo\lib\clangAnalysis.lib;..\..\..\..\..\RelWithDebInfo\lib\LLVMBitReader.lib;..\..\..\..\..\RelWithDebInfo\lib\clangToolingCore.lib;..\..\..\..\..\RelWithDebInfo\lib\clangAST.lib;..\..\..\..\..\RelWithDebInfo\lib\clangRewrite.lib;..\..\..\..\..\RelWithDebInfo\lib\clangLex.lib;..\..\..\..\..\RelWithDebInfo\lib\clangBasic.lib;..\..\..\..\..\RelWithDebInfo\lib\LLVMCore.lib;..\..\..\..\..\RelWithDebInfo\lib\LLVMMC.lib;..\..\..\..\..\RelWithDebInfo\lib\LLVMSupport.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>Debug</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/Rocko/Desktop/llvm-3.8.1.src/RelWithDebInfo/lib/loop-convert.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/Rocko/Desktop/llvm-3.8.1.src/RelWithDebInfo/bin/loop-convert.pdb</ProgramDataBaseFile>
+      <StackReserveSize>10000000</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+      <Version>
+      </Version>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building Custom Rule C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/tools/extra/loop-convert/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">setlocal
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HC:/Users/Rocko/Desktop/llvm-3.8.1.src -BC:/Users/Rocko/Desktop/llvm-3.8.1.src --check-stamp-file C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/tools/extra/loop-convert/CMakeLists.txt;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building Custom Rule C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/tools/extra/loop-convert/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">setlocal
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HC:/Users/Rocko/Desktop/llvm-3.8.1.src -BC:/Users/Rocko/Desktop/llvm-3.8.1.src --check-stamp-file C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/tools/extra/loop-convert/CMakeLists.txt;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">Building Custom Rule C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/tools/extra/loop-convert/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">setlocal
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HC:/Users/Rocko/Desktop/llvm-3.8.1.src -BC:/Users/Rocko/Desktop/llvm-3.8.1.src --check-stamp-file C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/tools/extra/loop-convert/CMakeLists.txt;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Building Custom Rule C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/tools/extra/loop-convert/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -HC:/Users/Rocko/Desktop/llvm-3.8.1.src -BC:/Users/Rocko/Desktop/llvm-3.8.1.src --check-stamp-file C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeFiles\generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/tools/extra/loop-convert/CMakeLists.txt;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt;C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Include\ClangParsing\FunctionData.cpp" />
+    <ClCompile Include="Include\ClangParsing\Script.cpp" />
+    <ClCompile Include="Include\ClangParsing\StaticData.cpp" />
+    <ClCompile Include="Include\Compiler\Compiler.cpp" />
+    <ClCompile Include="Include\Compiler\Opcode.cpp" />
+    <ClCompile Include="Include\Crypto\aes256.c" />
+    <ClCompile Include="Include\Utils\ClangUtils.cpp" />
+    <ClCompile Include="Include\Utils\Utils.cpp" />
+    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\LoopConvert.cpp" />
+    <ClInclude Include="Include\ClangParsing\FunctionData.h" />
+    <ClInclude Include="Include\ClangParsing\Script.h" />
+    <ClInclude Include="Include\ClangParsing\StaticData.h" />
+    <ClInclude Include="Include\Compiler\BuildTarget.h" />
+    <ClInclude Include="Include\Compiler\Compiler.h" />
+    <ClInclude Include="Include\Compiler\Opcode.h" />
+    <ClInclude Include="Include\Compiler\OpcodeConsts.h" />
+    <ClInclude Include="Include\Compression\zconf.h" />
+    <ClInclude Include="Include\Compression\zlib.h" />
+    <ClInclude Include="Include\Crypto\aes256.h" />
+    <ClInclude Include="Include\Utils\ClangUtils.h" />
+    <ClInclude Include="Include\Utils\ConsoleColor.h" />
+    <ClInclude Include="Include\Utils\ConstExpr.h" />
+    <ClInclude Include="Include\Utils\Utils.h" />
+    <ResourceCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\resources\windows_version_resource.rc">
+      <SuppressStartupBanner Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</SuppressStartupBanner>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">RC_VERSION_FIELD_1=3;RC_VERSION_FIELD_2=8;RC_VERSION_FIELD_3=1;RC_VERSION_FIELD_4=0;RC_FILE_VERSION=\"3.8.1 (LLVM 3.8.1)\";RC_INTERNAL_NAME=\"loop-convert\";RC_PRODUCT_NAME=\"clang\";RC_PRODUCT_VERSION=\"3.8.1 (LLVM 3.8.1)\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SuppressStartupBanner Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</SuppressStartupBanner>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">RC_VERSION_FIELD_1=3;RC_VERSION_FIELD_2=8;RC_VERSION_FIELD_3=1;RC_VERSION_FIELD_4=0;RC_FILE_VERSION=\"3.8.1 (LLVM 3.8.1)\";RC_INTERNAL_NAME=\"loop-convert\";RC_PRODUCT_NAME=\"clang\";RC_PRODUCT_VERSION=\"3.8.1 (LLVM 3.8.1)\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SuppressStartupBanner Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">true</SuppressStartupBanner>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">RC_VERSION_FIELD_1=3;RC_VERSION_FIELD_2=8;RC_VERSION_FIELD_3=1;RC_VERSION_FIELD_4=0;RC_FILE_VERSION=\"3.8.1 (LLVM 3.8.1)\";RC_INTERNAL_NAME=\"loop-convert\";RC_PRODUCT_NAME=\"clang\";RC_PRODUCT_VERSION=\"3.8.1 (LLVM 3.8.1)\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SuppressStartupBanner Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">true</SuppressStartupBanner>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">RC_VERSION_FIELD_1=3;RC_VERSION_FIELD_2=8;RC_VERSION_FIELD_3=1;RC_VERSION_FIELD_4=0;RC_FILE_VERSION=\"3.8.1 (LLVM 3.8.1)\";RC_INTERNAL_NAME=\"loop-convert\";RC_PRODUCT_NAME=\"clang\";RC_PRODUCT_VERSION=\"3.8.1 (LLVM 3.8.1)\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/ZERO_CHECK.vcxproj">
+      <Project>761B2C1B-37EF-33D1-953F-08F8916DA447</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangARMNeon.vcxproj">
+      <Project>3F3C9227-393A-3EF6-8958-7E607DD1C38F</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangAttrClasses.vcxproj">
+      <Project>457E6682-05C3-369E-82F0-AAFC086BC8A2</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangAttrDump.vcxproj">
+      <Project>BABFCDD0-A2D4-3A94-9933-2EF03EF2C801</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangAttrHasAttributeImpl.vcxproj">
+      <Project>8CE0F609-483C-39FB-9E45-EB4E2DF4B37D</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangAttrImpl.vcxproj">
+      <Project>A364B0D1-B7EB-334F-AEAD-CB630F7DD764</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangAttrList.vcxproj">
+      <Project>9791EEF7-FD2F-3BDB-AFF4-F92773C24873</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Serialization/ClangAttrPCHRead.vcxproj">
+      <Project>E6EE82FF-0197-3D6D-B79E-77E0DEAC7AAB</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Serialization/ClangAttrPCHWrite.vcxproj">
+      <Project>4F9DF7EE-EC14-3D1D-AD28-6DF7064A17EE</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Sema/ClangAttrParsedAttrImpl.vcxproj">
+      <Project>36E61030-B19D-30EC-A2B9-5558B9A69306</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Sema/ClangAttrParsedAttrKinds.vcxproj">
+      <Project>93A09387-FF88-3149-845B-02CBAB071D34</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Sema/ClangAttrParsedAttrList.vcxproj">
+      <Project>A75A958B-2DCC-33D6-BE94-92F7529BE4B6</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Parse/ClangAttrParserStringSwitches.vcxproj">
+      <Project>F111B54F-5827-35B3-8B49-83FA47916E8F</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Sema/ClangAttrSpellingListIndex.vcxproj">
+      <Project>01765B12-78E3-324C-B95D-A0CC8AE6704C</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Sema/ClangAttrTemplateInstantiate.vcxproj">
+      <Project>7ECF7027-9CF9-37B3-A349-2751A72AC79F</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangAttrVisitor.vcxproj">
+      <Project>6AE2AE30-3126-35D9-A792-30C36C82D8C8</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangCommentCommandInfo.vcxproj">
+      <Project>6E88EF18-1B7F-3F3B-8898-26879E26B957</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangCommentCommandList.vcxproj">
+      <Project>9E874758-76C7-398F-B020-C232A73C872D</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangCommentHTMLNamedCharacterReferences.vcxproj">
+      <Project>8DCEC1EE-5968-3B60-BA6C-F47ECC693F64</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangCommentHTMLTags.vcxproj">
+      <Project>D65C2D8F-43F6-3401-B8F8-074B85B25DE0</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangCommentHTMLTagsProperties.vcxproj">
+      <Project>8F6D78AE-2BF5-388B-A3FD-E474F5E74394</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangCommentNodes.vcxproj">
+      <Project>000B69AE-39F1-34A4-BC8F-A5BA51C28566</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangDeclNodes.vcxproj">
+      <Project>498851F0-DE54-3B59-8D41-184869FC977F</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticAST.vcxproj">
+      <Project>B74C0551-801B-33E7-9667-ED2953EB2BDD</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticAnalysis.vcxproj">
+      <Project>D02FB0E6-8CE0-3677-8B67-19911CECBD2D</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticComment.vcxproj">
+      <Project>83AC5285-02C0-3F8B-A80C-122E85C3D2F3</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticCommon.vcxproj">
+      <Project>F82FD269-F4D6-311D-829D-858A25D5A390</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticDriver.vcxproj">
+      <Project>D97D6EF8-E877-3391-9B64-9EC67EE3BB69</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticFrontend.vcxproj">
+      <Project>5FC7B56D-A478-3CBA-BC78-7596AEE150BA</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticGroups.vcxproj">
+      <Project>20180322-232C-3592-A4F0-5F898155C5B5</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticIndexName.vcxproj">
+      <Project>DEE2FB56-AF23-394D-9F57-EAED786DF9E9</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticLex.vcxproj">
+      <Project>E98E3429-1441-39EF-AB89-C1197FDF3CC1</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticParse.vcxproj">
+      <Project>06DBC288-B2B5-35C3-B525-43BE71F0DAAE</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticSema.vcxproj">
+      <Project>580E3E8F-140D-3BD0-8848-D1509F900B7F</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/Basic/ClangDiagnosticSerialization.vcxproj">
+      <Project>8754EBA3-E9AD-3EE3-ABCB-CED32C82C676</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/include/clang/AST/ClangStmtNodes.vcxproj">
+      <Project>11DC0492-7167-3BE4-BD03-52D2E37A171E</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/lib/Bitcode/Reader/LLVMBitReader.vcxproj">
+      <Project>7D60DB8D-D5E5-322C-B512-68504F3BEFCB</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/lib/IR/LLVMCore.vcxproj">
+      <Project>C621CD4B-4414-3CB5-9CCA-7AB4108A09E9</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/lib/MC/LLVMMC.vcxproj">
+      <Project>61669CC5-8A48-3AB3-ADBC-1C3C199218FE</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/lib/MC/MCParser/LLVMMCParser.vcxproj">
+      <Project>EBC51E07-9D50-327B-B682-0A1984FA199F</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/lib/Option/LLVMOption.vcxproj">
+      <Project>DABBA1FD-305A-3D17-89CF-A7187C950595</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/lib/Support/LLVMSupport.vcxproj">
+      <Project>D2C69956-4F85-3A43-A867-1E62685974BD</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/AST/clangAST.vcxproj">
+      <Project>B064C4BC-D477-3180-9D92-DDE36F41C77C</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/ASTMatchers/clangASTMatchers.vcxproj">
+      <Project>CAF6FAD5-CA36-3DB5-B026-8EB25BCF20D8</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Analysis/clangAnalysis.vcxproj">
+      <Project>C572CA4F-F9AD-39DC-9AD8-BCBBA7691449</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Basic/clangBasic.vcxproj">
+      <Project>35A82654-3988-371D-A397-9DB5FA9F024B</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Driver/clangDriver.vcxproj">
+      <Project>FB8A304D-7C19-34EE-9F4B-91B7097E7A70</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Edit/clangEdit.vcxproj">
+      <Project>D02DAD23-7C37-3AF3-B69B-0957B8246E28</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Frontend/clangFrontend.vcxproj">
+      <Project>53555B06-9516-394E-9442-A38C3B77E755</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Lex/clangLex.vcxproj">
+      <Project>B6B2C796-F362-3179-9ED8-7868A89753DF</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Parse/clangParse.vcxproj">
+      <Project>1E70A650-0B1D-3894-9B92-55938CDD22E9</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Rewrite/clangRewrite.vcxproj">
+      <Project>E8B37869-EA7D-3050-9A4B-1BF01CD0EC05</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Sema/clangSema.vcxproj">
+      <Project>BC91631C-9B4E-30C9-8A15-8471C1F913C9</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Serialization/clangSerialization.vcxproj">
+      <Project>BA717295-7BF3-3DB0-9D0E-6BE3867C69A8</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Tooling/clangTooling.vcxproj">
+      <Project>23EE3A3C-233B-3D0C-AFC1-38574C426C97</Project>
+    </ProjectReference>
+    <ProjectReference Include="C:/Users/Rocko/Desktop/llvm-3.8.1.src/tools/clang/lib/Tooling/Core/clangToolingCore.vcxproj">
+      <Project>A547D8E4-6464-376A-911B-EECDD2A74AF4</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
