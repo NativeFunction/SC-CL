@@ -356,7 +356,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="Include\Crypto\aes256.c" />
     <ClCompile Include="Include\Utils\ClangUtils.cpp" />
     <ClCompile Include="Include\Utils\Utils.cpp" />
-    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\LoopConvert.cpp" />
+    <ClCompile Include="SC-CL.cpp" />
     <ClInclude Include="Include\ClangParsing\FunctionData.h" />
     <ClInclude Include="Include\ClangParsing\Script.h" />
     <ClInclude Include="Include\ClangParsing\StaticData.h" />

@@ -24,7 +24,7 @@
 !FunctionData.h
 !Opcode.h
 !Opcode.cpp
-!LoopConvert.cpp
+!SC-CL.cpp
 !Utils.cpp
 !Utils.h
 !ClangUtils.cpp

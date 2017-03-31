@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\LoopConvert.cpp" />
     <ClCompile Include="Include\Utils\ClangUtils.cpp">
       <Filter>Utils\Source Files</Filter>
     </ClCompile>
@@ -26,6 +25,7 @@
     <ClCompile Include="Include\Crypto\aes256.c">
       <Filter>Crypto</Filter>
     </ClCompile>
+    <ClCompile Include="SC-CL.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Utils\ClangUtils.h">
