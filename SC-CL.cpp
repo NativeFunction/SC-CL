@@ -3439,8 +3439,7 @@ public:
 					AddInstructionComment(GetFrameP, "compound literal ptr decay", index);
 				}
 			}
-			//else
-				//Utils::System::Throw("Could not Parse Compound Literal");
+				
 		}
 		else if (isa<StringLiteral>(e)) {
 			string str = cast<const StringLiteral>(e)->getString().str();
@@ -4113,6 +4112,10 @@ public:
 					if (!isLtoRValue && !isAddr) {
 						AddInstructionComment(Drop, "unused result (UO_AddrOf - DeclRefExpr)");
 					}
+				}
+				else if (isa<CompoundLiteralExpr>(subE))
+				{
+					Throw("error: taking address of temporary", TheRewriter, subE->getSourceRange());
 				}
 				else {
 					parseExpression(subE, true, false);
