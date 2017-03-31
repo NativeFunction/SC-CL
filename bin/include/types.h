@@ -63,6 +63,11 @@ typedef int Iterator;
 typedef int IterationSet;
 typedef int GUIWindow;
 
+typedef struct NetworkHandle
+{
+	int data[13];
+} NetworkHandle;
+
 typedef union vector2
 {
 	struct { float x, y; };
@@ -160,8 +165,6 @@ typedef union flint
 	int Int;
 	float Float;
 } flint;
-
-
 
 typedef union any
 {

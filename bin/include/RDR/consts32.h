@@ -1,5 +1,49 @@
 #pragma once
 
+#pragma region Explosions
+#define EXPLOSION_DefaultFire "DefaultFire"
+#define EXPLOSION_GrenadeExplosion "GrenadeExplosion"
+#define EXPLOSION_KeroseneLampExplosion "KeroseneLampExplosion"
+#define EXPLOSION_FireBottleExplosion "FireBottleExplosion"
+#define EXPLOSION_ManureExplosion "ManureExplosion"
+#define EXPLOSION_Grave02_Wagon_Fire "Grave02_Wagon_Fire"
+#define EXPLOSION_ExplosionMedium "ExplosionMedium"
+#define EXPLOSION_ExplosionLarge "ExplosionLarge"
+#define EXPLOSION_ExplosionLargeNoFx "ExplosionLargeNoFx"
+#define EXPLOSION_DynamiteExplosion "DynamiteExplosion"
+#define EXPLOSION_DynamiteCrateExp "DynamiteCrateExp"
+#define EXPLOSION_CannonballExplosion "CannonballExplosion"
+#define EXPLOSION_BuriedDynamiteExplosion "BuriedDynamiteExplosion"
+#define EXPLOSION_FakeButterBridgeDemo "FakeButterBridgeDemo"
+#define EXPLOSION_Merchant03BlockadeExplosion "Merchant03BlockadeExplosion"
+#define EXPLOSION_Rebel06WagonExplosion "Rebel06WagonExplosion"
+#define EXPLOSION_TrainBoilerExplosion "TrainBoilerExplosion"
+#define EXPLOSION_CaveExplosion "CaveExplosion"
+#define EXPLOSION_ExplosionFallback "ExplosionFallback"
+#define EXPLOSION_HolyWaterExplosion "HolyWaterExplosion"
+#define EXPLOSION_ZombieBaitExplosion "ZombieBaitExplosion"
+#define EXPLOSION_ToxicZombieExplosion "ToxicZombieExplosion"
+#define EXPLOSION_ATRifleExplosion "ATRifleExplosion"
+#define EXPLOSION_ATRifleExplosion_MP "ATRifleExplosion_MP"
+#pragma endregion
+
+#pragma region Projectiles
+#define PROJECTILE_BASE_DUALPISTOL "base_dualpistol"
+#define PROJECTILE_BASE_MELEE "base_melee"
+#define PROJECTILE_BASE_PISTOL "base_pistol"
+#define PROJECTILE_BASE_RIFLE "base_rifle"
+#define PROJECTILE_BASE_SHOTGUN "base_shotgun"
+#define PROJECTILE_BASE_SNIPERRIFLE "base_sniperrifle"
+#define PROJECTILE_BASE_THROWN "base_thrown"
+#define PROJECTILE_BASE_THROWN_EXPLODING "base_thrown_exploding"
+#define PROJECTILE_BASE_LASSO "base_lasso"
+#define PROJECTILE_BASE_TURRET "base_turret"
+#define PROJECTILE_BASE_CANNON "base_cannon"
+#define PROJECTILE_BASE_REPEATER "base_repeater"
+#define PROJECTILE_BASE_MAXIM "base_maxim"
+#define PROJECTILE_BASE_BOW "base_bow"
+#pragma endregion
+
 typedef enum eKey
 {
 	KEY_ESC = 1,
@@ -164,6 +208,7 @@ typedef enum eButton
 	DPAD_RIGHT = 13,
 	DPAD_DOWN = 14,
 	DPAD_LEFT = 15,
+	BUTTON_UNK = 16,
 
 	BUTTON_L2 = 0,
 	BUTTON_R2 = 1,
@@ -1760,7 +1805,7 @@ typedef enum eActor
 	ACTOR_UN_RIDEABLE_ANIMAL_ZOMBIE_Horse04 = 1251,
 	ACTOR_UN_ZOMBIE_DeadMaleBody_05 = 1252,
 	ACTOR_UN_ZOMBIE_DeadMaleBody_06 = 1253,
-	ACTOR_UN_ZOMBIE_Default_Normal = 1254,
+	ACTOR_UN_ZOMBIE_Default_Normal = 1254,//Buffalo
 	ACTOR_UN_MISC_BlackwaterMan_01 = 1255,
 	ACTOR_UN_MISC_BlackwaterMan_02 = 1256,
 	ACTOR_UN_MISC_BlackwaterDaughter = 1257,
