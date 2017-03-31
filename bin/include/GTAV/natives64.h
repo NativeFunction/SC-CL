@@ -1410,7 +1410,7 @@ extern _native64(0x8D474C8FAEFF6CDE) bool unk_0x8D474C8FAEFF6CDE(Vehicle vehicle
 extern _native64(0x983765856F2564F9) void set_vehicle_engine_can_degrade(Vehicle vehicle, bool toggle);
 extern _native64(0xF0E4BA16D1DB546C) void unk_0xF0E4BA16D1DB546C(Vehicle vehicle, int p1, int p2);
 extern _native64(0xF87D9F2301F7D206) void unk_0xF87D9F2301F7D206(any p0);
-extern _native64(0x4198AB0022B15F87) bool _vehicle_has_landing_gear(bool p0);
+extern _native64(0x4198AB0022B15F87) bool _vehicle_has_landing_gear(Vehicle vehicle);
 extern _native64(0x755D6D5267CBBD7E) bool _are_propellers_undamaged(Vehicle vehicle);
 extern _native64(0x0CDDA42F9E360CA6) void unk_0x0CDDA42F9E360CA6(Vehicle vehicle, bool p1);
 extern _native64(0x4AF9BD80EEBEB453) bool is_vehicle_stolen(Vehicle vehicle);
@@ -5146,7 +5146,7 @@ extern _native64(0x83666F9FB8FEBD4B) int timera();
 extern _native64(0xC9D9444186B5A374) int timerb();
 extern _native64(0xC1B1E9A034A63A62) void settimera(int value);
 extern _native64(0x5AE11BC36633DE4E) void settimerb(int value);
-extern _native64(0x0000000050597EE2) float timestep();
+extern __attribute((native(0x50597EE2))) float timestep();
 extern _native64(0x0BADBFA3B172435F) float sin(float value);
 extern _native64(0xD0FFB162F40A139C) float cos(float value);
 extern _native64(0x71D93B57D07F9804) float sqrt(float value);
