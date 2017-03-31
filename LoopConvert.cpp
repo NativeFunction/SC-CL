@@ -3439,6 +3439,8 @@ public:
 					AddInstructionComment(GetFrameP, "compound literal ptr decay", index);
 				}
 			}
+			else
+				Utils::System::Throw("Could not Parse Compound Literal");
 		}
 		else if (isa<StringLiteral>(e)) {
 			string str = cast<const StringLiteral>(e)->getString().str();

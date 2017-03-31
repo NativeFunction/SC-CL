@@ -1,76 +1,37 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\LoopConvert.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ClangUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Compiler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\FunctionData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Script.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Opcode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\StaticData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Crypto\aes256.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\LoopConvert.cpp" />
+    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Utils.cpp" />
+    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ClangUtils.cpp" />
+    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Compiler.cpp" />
+    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\FunctionData.cpp" />
+    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Script.cpp" />
+    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Opcode.cpp" />
+    <ClCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\StaticData.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\BuildTarget.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ClangUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Compiler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ConsoleColor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ConstExpr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\FunctionData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Opcode.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\OpcodeConsts.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Script.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\StaticData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClInclude Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\BuildTarget.h" />
+    <ClInclude Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ClangUtils.h" />
+    <ClInclude Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Compiler.h" />
+    <ClInclude Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ConsoleColor.h" />
+    <ClInclude Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\ConstExpr.h" />
+    <ClInclude Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\FunctionData.h" />
+    <ClInclude Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Opcode.h" />
+    <ClInclude Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\OpcodeConsts.h" />
+    <ClInclude Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Script.h" />
+    <ClInclude Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\StaticData.h" />
+    <ClInclude Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\Utils.h" />
+    <ClInclude Include="Crypto\aes256.h" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="G:\llvm xsc\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\tools\clang\tools\extra\loop-convert\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="G:\llvm xsc\llvm-3.8.1.src\resources\windows_version_resource.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
+    <ResourceCompile Include="C:\Users\Rocko\Desktop\llvm-3.8.1.src\resources\windows_version_resource.rc" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -82,5 +43,8 @@
     <Filter Include="Resource Files">
       <UniqueIdentifier>{287000A5-71FF-3C75-B3D5-B995A5A58379}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
   </ItemGroup>
 </Project>

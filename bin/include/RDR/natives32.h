@@ -2568,7 +2568,7 @@ extern _native int unk_0xFC718FC5(int pram0, int pram1, int pram2, int pram3, in
 extern _native void gringo_set_target_object(int pram0, int pram1, int pram2)l
 extern _native int unk_0xB78BC233(int pram0, int pram1, int pram2)l
 extern _native void add_cameratransition_event_cutgamecamerabehindplayer(int pram0, int pram1, int pram2)l
-extern _native int camera_probe(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8)l
+extern _native bool camera_probe(vector3* VecP0, vector3 Source, vector3 Vec1, Actor pram7, int UnkEnum)l
 extern _native void unk_0x8B011F5D()l
 extern _native void unk_0xA8226DFF(int pram0)l
 extern _native void unk_0x831FC466(int pram0)l

@@ -28,7 +28,8 @@ bool FunctionData::tryPop2Ints(int & i1, int & i2)
 					delete prev;
 					i2 = last->getInt();
 					delete prev;
-					Instructions._Pop_back_n(2);
+					Instructions.pop_back();
+					Instructions.pop_back();
 					return true;
 				case OK_GetFrame:
 				{
@@ -41,7 +42,8 @@ bool FunctionData::tryPop2Ints(int & i1, int & i2)
 								delete last;
 								i1 = prev3->getInt();
 								delete prev;
-								Instructions._Pop_back_n(2);
+								Instructions.pop_back();
+								Instructions.pop_back();
 								return true;
 							}
 						}
@@ -59,7 +61,8 @@ bool FunctionData::tryPop2Ints(int & i1, int & i2)
 								delete last;
 								i1 = prev3->getInt();
 								delete prev;
-								Instructions._Pop_back_n(2);
+								Instructions.pop_back();
+								Instructions.pop_back();
 								return true;
 							}
 						}
@@ -77,7 +80,8 @@ bool FunctionData::tryPop2Ints(int & i1, int & i2)
 								delete last;
 								i1 = prev3->getInt();
 								delete prev;
-								Instructions._Pop_back_n(2);
+								Instructions.pop_back();
+								Instructions.pop_back();
 								return true;
 							}
 						}
@@ -95,7 +99,8 @@ bool FunctionData::tryPop2Ints(int & i1, int & i2)
 								delete last;
 								i1 = prev3->getInt();
 								delete prev;
-								Instructions._Pop_back_n(2);
+								Instructions.pop_back();
+								Instructions.pop_back();
 								return true;
 							}
 						}
@@ -207,7 +212,8 @@ bool FunctionData::tryPop2Floats(float & f1, float & f2)
 			f2 = last->getFloat();
 			delete prev;
 			delete last;
-			Instructions._Pop_back_n(2);
+			Instructions.pop_back();
+			Instructions.pop_back();
 			return true;
 		}
 	}
@@ -1726,7 +1732,8 @@ void FunctionData::addOpDrop()
 								delete typeSize;
 								typeSize = ptr;
 								delete Instructions.back();//toStack
-								Instructions._Pop_back_n(2);
+								Instructions.pop_back();
+								Instructions.pop_back();
 								addOpPGet();
 							}
 							else{
