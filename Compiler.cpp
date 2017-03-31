@@ -1919,7 +1919,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 
 		switch (HLData->getBuildPlatform())
 		{
-			case Platform::P_XBOX:
+			case Platform::P_X360:
 			{
 				Utils::Compression::xCompress Compression;
 				Compression.xCompressInit();
@@ -1965,7 +1965,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 
 		const vector<uint32_t> CSR_Header =
 		{
-			SwapEndian(HLData->getBuildPlatform() == Platform::P_XBOX ? 0x85435352u : 0x86435352u),//.CSR
+			SwapEndian(HLData->getBuildPlatform() == Platform::P_X360 ? 0x85435352u : 0x86435352u),//.CSR
 			SwapEndian(0x00000002u),//Resource Type Script
 			SwapEndian(0x80000000u),//unk int max val (flags1)
 			SwapEndian(GetFullFlagWithSize(BuildBuffer.size(), headerFlag))//size (flags2)

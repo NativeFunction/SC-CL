@@ -234,7 +234,7 @@ string Script::getPlatformAbv() const
 	const int BT = getBuildType();
 	switch (getBuildPlatform())
 	{
-		case P_XBOX: return "x";
+		case P_X360: return "x";
 		case P_PS3: return "c";
 		case P_PC: return (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT) ? "w" : "y";
 	}
@@ -246,7 +246,7 @@ string Script::getPlatformAbvUpper() const
 	const int BT = getBuildType();
 	switch (getBuildPlatform())
 	{
-		case P_XBOX: return "X";
+		case P_X360: return "X";
 		case P_PS3: return "C";
 		case P_PC: return (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT) ? "W" : "Y";
 	}

@@ -1,7 +1,7 @@
 #pragma once
 typedef enum
 {
-	P_XBOX,
+	P_X360,
 	P_PS3,
 	P_PC
 } Platform;

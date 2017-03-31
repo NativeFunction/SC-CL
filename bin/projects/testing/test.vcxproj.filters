@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{99bf53d6-378f-413e-b921-40ff6f9d3da1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\GTAV">
+      <UniqueIdentifier>{819b25ed-b4b1-4046-927c-dccde87a5d1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\RDR">
+      <UniqueIdentifier>{ed7861d1-017e-4050-9c2f-9e77ed20764d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\GTAIV">
+      <UniqueIdentifier>{e81238d2-000a-4c81-808c-b2f7939fab42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{053dd82d-826d-458a-997e-921c5a8208b1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\GTAV\natives64.h">
+      <Filter>include\GTAV</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\GTAV\natives32.h">
+      <Filter>include\GTAV</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\GTAV\constsShared.h">
+      <Filter>include\GTAV</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\GTAV\consts64.h">
+      <Filter>include\GTAV</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\GTAV\consts32.h">
+      <Filter>include\GTAV</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\types.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\natives.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\intrinsics.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\constants.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\common.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\RDR\natives32.h">
+      <Filter>include\RDR</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\RDR\consts32.h">
+      <Filter>include\RDR</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\GTAIV\consts32.h">
+      <Filter>include\GTAIV</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\GTAIV\natives32.h">
+      <Filter>include\GTAIV</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\GTAIV\natives32Old.h">
+      <Filter>include\GTAIV</Filter>
+    </ClInclude>
+    <ClInclude Include="inc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\include\common.c">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="funcs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="inc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

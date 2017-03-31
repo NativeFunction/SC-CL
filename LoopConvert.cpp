@@ -75,7 +75,7 @@ static cl::opt<Platform> Option_Platform(
 	cl::ValueRequired,
 	cl::cat(CompilerOptions),
 	cl::values(
-	clEnumValN(Platform::P_XBOX, "XBOX", "Target Xbox (32 bit, big endian)"),
+	clEnumValN(Platform::P_X360, "X360", "Target Xbox (32 bit, big endian)"),
 	clEnumValN(Platform::P_PS3, "PS3", "Target PS3 (32 bit, big endian)"),
 	clEnumValN(Platform::P_PC, "PC", "Target PC (64 bit, little endian)"),
 	clEnumValEnd
@@ -91,7 +91,7 @@ static cl::opt<BuildType> Option_BuildType(
 	clEnumValN(BuildType::BT_GTAIV_TBOGT, "GTAIV_TBOGT", "Grand Theft Auto IV The Ballad of Gay Tony (sco output)"),
 	clEnumValN(BuildType::BT_GTAV, "GTAV", "Grand Theft Auto V (#sc output)"),
 	clEnumValN(BuildType::BT_RDR_SCO, "RDR_SCO", "Red Dead Redemption (sco output)"),
-	clEnumValN(BuildType::BT_RDR_XSC, "RDR_XSC", "Red Dead Redemption (#sc output)"),
+	clEnumValN(BuildType::BT_RDR_XSC, "RDR_#SC", "Red Dead Redemption (#sc output)"),
 	clEnumValEnd
 ));
 
@@ -7094,8 +7094,8 @@ public:
 
 		switch (scriptData->getBuildPlatform())
 		{
-			case P_XBOX:
-			preDefines += "\n#define __XBOX__";
+			case P_X360:
+			preDefines += "\n#define __X360__";
 			break;
 			case P_PS3:
 			preDefines += "\n#define __PS3__";
@@ -7214,7 +7214,7 @@ void WriteScriptFile(const string& outDir)
 		{
 			switch (scriptData->getBuildPlatform())
 			{
-				case P_XBOX:
+				case P_X360:
 				case P_PS3:
 				case P_PC:
 				{
@@ -7232,7 +7232,7 @@ void WriteScriptFile(const string& outDir)
 		{
 			switch (scriptData->getBuildPlatform())
 			{
-				case P_XBOX:
+				case P_X360:
 				case P_PS3:
 				{
 					CompileRDR c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
@@ -7248,7 +7248,7 @@ void WriteScriptFile(const string& outDir)
 		{
 			switch (scriptData->getBuildPlatform())
 			{
-				case P_XBOX:
+				case P_X360:
 				case P_PS3:
 				{
 					CompileGTAV c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);

@@ -22,8 +22,8 @@
 #define stacksizeof(x) ((sizeof(x) + 3) >> 2)
 
 #pragma region String //{
-extern __intrinsic void memset(void* dest, byte value, size_t len);
-extern __intrinsic void memcpy(void* dest, const void* src, size_t len);
+extern __intrinsic void memset(void* dest, byte value, unsigned int len);
+extern __intrinsic void memcpy(void* dest, const void* src, unsigned int len);
 extern __intrinsic void strcpy(char* dest, const char* src, const byte destBufferLen);
 extern __intrinsic void stradd(char* dest, const char* src, const byte destBufferLen);
 extern __intrinsic void straddi(char* dest, int value, const byte destBufferLen);
@@ -204,13 +204,16 @@ extern __unsafeIntrinsic void __pCall();
 #undef __asm_unsafe
 #undef __intrinsic
 
-
-#define CreateSizedArray(name, sizein)\
-struct\
+#define CreateSizedArray(type, name, sizein, ...)\
+struct SizedArray\
 {\
-	int size;\
-	any items[sizein];\
-} name = {.size = sizein};
+	unsigned int size;\
+	type items[sizein];\
+} name = {.size = sizein, .items = {__VA_ARGS__}}
+
+#define GetSizedArraySize(sizedarr) (*(unsigned int*)sizedarr)
+#define GetSizedArrayItem(sizedarr, type, index) (*(type*)((int*)sizedarr + 1 + index))
+
 
 #define ArrayToSizedArray(arr, sizedarr)\
 if(sizeof(arr) == sizeof(sizedarr.items))\
