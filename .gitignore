@@ -6,6 +6,18 @@
 !SC-CL.vcxproj.filters
 !BuildTarget.h
 !CMakeLists.txt
+!Include/
+!Compiler/
+!Crypto/
+!Compression/
+!ASM Compiler/
+!Utils/
+!ClangParsing/
+!zconf.h
+!zlib.h
+!zlib.lib
+!aes256.h
+!aes256.c
 !ConsoleColor.h
 !contributors.txt
 !FunctionData.cpp
@@ -25,7 +37,6 @@
 !Script.cpp
 !StaticData.h
 !StaticData.cpp
-!Include/
 !bin/
 !Debug/
 !include/
@@ -36,16 +47,10 @@
 !RDR/
 !GTAV/
 !GTAIV/
-!Compiler/
-!Crypto/
-!Compression/
-!ASM Compiler/
-!Utils/
-!ClangParsing/
-compiler/XscCompilerRaw (RDR)/obj/
-compiler/XscCompilerRaw (RDR)/bin/
-compiler/XscCompilerRaw/bin/
-compiler/XscCompilerRaw/obj/New Text Document.txt
+ASM Compiler/XscCompilerRaw (RDR)/obj/
+ASM Compiler/XscCompilerRaw (RDR)/bin/
+ASM Compiler/XscCompilerRaw/bin/
+ASM Compiler/XscCompilerRaw/obj/New Text Document.txt
 bin/Debug/*.exe
 bin/Debug/*.ilk
 bin/projects/*/*.xsc
