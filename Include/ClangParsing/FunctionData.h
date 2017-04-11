@@ -31,9 +31,7 @@ class Script;
 
 class FunctionData
 {
-	bool tryPop2Ints(int& i1, int& i2);
-	bool tryPopInt(int& result);
-	bool tryPop2Floats(float& f1, float& f2);
+	
 	std::string name;
 	uint32_t hash;
 	uint8_t pcount;
@@ -50,6 +48,10 @@ class FunctionData
 	std::vector<FunctionData *> usedFuncs;
 	std::vector<StaticData*> _usedStatics;
 	OptimisationLevel _optLevel = OptimisationLevel::OL_None;
+
+	bool tryPop2Ints(int& i1, int& i2);
+	bool tryPopInt(int& result);
+	bool tryPop2Floats(float& f1, float& f2);
 	void optimisePushBytes();
 	void jumpThreading();
 	void insertDrop(size_t index);

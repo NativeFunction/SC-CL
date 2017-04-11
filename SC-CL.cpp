@@ -7307,7 +7307,8 @@ int ProcessFiles(ClangTool &Tool)
 	bool ProcessingFailed = true;
 	if (SourcePaths.size() > 0)
 	{
-		//this is temporary. script name should be set from the file that the main function is in
+		//TODO: this is temporary. script name should be set from the file that the main function is in
+		//TODO: find or make a command for an out directory
 
 		string outDir = GetDir(SourcePaths[0]);
 		string scriptName = (Option_OutputFileName != "" ? Option_OutputFileName : GetBaseNameFromDir(SourcePaths[0]));

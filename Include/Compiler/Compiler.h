@@ -9,6 +9,7 @@
 #include "Utils/ConstExpr.h"
 #include "ClangParsing/Script.h"
 #include "fstream"
+#include <ctime>
 extern std::string globalDirectory;
 
 #pragma region Collections
@@ -38,6 +39,10 @@ public:
 
 	size_t getTotalSize()const {
 		return ((Pages.size() - 1) << 14) + getLastPageSize();
+	}
+	size_t getPageSize(int PageIndex)const
+	{
+		return Pages[PageIndex].size();
 	}
 	size_t getLastPageSize()const{
 		return lastPage->size();
@@ -135,7 +140,6 @@ public:
 		*((float*)(lastPage->data() + lastPage->size()) - 1) = Utils::Bitwise::SwapEndian(value);
 	}
 };
-
 class CodePageCollectionLit : public CodePageCollection{
 public:
 	void AddInt16(const int16_t value)override{
@@ -274,6 +278,124 @@ protected:
 		std::string labelName;
 		uint32_t xorVal;
 	} JumpTableData;//these can be set at the end of compiling a function
+	
+
+	/*
+	typedef uint32_t relPtr;
+	typedef struct
+	{
+		uint32_t HeaderID;//OBJ\0 = 0x4F424A00
+		uint16_t BuildPlatform;
+		uint16_t BuildTarget;
+		uint32_t UnixTimeOfCompile;
+
+		relPtr CallLabelTable;
+		relPtr StaticNameRefTable;
+		relPtr FunctonLocTable;
+		relPtr StaticNameTable;
+		relPtr CodeTable;
+		relPtr StaticsTable;
+		relPtr StringTable;
+	} ObjectFileHeader;
+
+	typedef struct
+	{
+		std::string FunctionName;
+		uint32_t CallOffsetsCount;
+		uint32_t CallOffsets[];
+	} CallLabelEntry;
+	typedef struct
+	{
+		std::string StaticName;
+		uint32_t StaticOffsetsCount;
+		uint32_t StaticOffsets[];
+	} StaticNameRefTableEntry;
+	typedef struct
+	{
+		std::string FunctionName;
+		uint32_t FunctionOffset;
+		uint32_t FunctionParamCount;
+		uint32_t FunctionReturnCount;
+	} FunctionLocEntry;
+	typedef struct
+	{
+		std::string StaticName;
+		uint32_t StaticIndex;
+	} StaticNameTableEntry;
+	typedef struct
+	{
+		uint16_t CodeTableSize;
+		uint8_t CodeTable[];
+	} CodeTableEntry;
+	typedef struct
+	{
+		uint16_t StringTableSize;
+		uint8_t StringTable[];
+	} StringTableEntry;
+
+	void WriteObjectFile(const char* Path, Platform BuildPlatform, BuildType BuildType, vector<CallLabelEntry>& CallLableTable,
+						 vector<StaticNameRefTableEntry>& StaticNameRefTable, vector<FunctionLocEntry>& FunctonLocTable, 
+						 vector<StaticNameTableEntry>& StaticNameTable, std::unique_ptr<StringPageCollection> StringPageData = nullptr)
+	{
+		
+		ObjectFileHeader Header =
+		{
+			'OBJ\0',
+			BuildPlatform,
+			BuildType,
+			std::time(0),
+		};
+
+
+		FILE* file = fopen(Path, "wb");
+		if (Utils::IO::CheckFopenFile(Path, file))
+		{
+			fwrite(&Header, 1, sizeof(ObjectFileHeader), file);
+			Header.CallLabelTable = (uint32_t)ftell(file);
+			fwrite(CallLableTable.data(), 1, CallLableTable.size(), file);
+			Header.StaticNameRefTable = (uint32_t)ftell(file);
+			fwrite(StaticNameRefTable.data(), 1, StaticNameRefTable.size(), file);
+			Header.FunctonLocTable = (uint32_t)ftell(file);
+			fwrite(FunctonLocTable.data(), 1, FunctonLocTable.size(), file);
+			Header.StaticNameTable = (uint32_t)ftell(file);
+			fwrite(StaticNameTable.data(), 1, StaticNameTable.size(), file);
+			Header.CodeTable = (uint32_t)ftell(file);
+			vector<uint8_t> Buffer(16386);
+			for (uint32_t i = 0; i < CodePageData->getPageCount(); i++)
+			{
+				const size_t PageSize = CodePageData->getPageSize(i);
+				assert(PageSize <= 0xFFFF && "CodePage size greater then size of ushort");
+				*(uint16_t*)Buffer.data() = PageSize;
+				memcpy(Buffer.data() + 2, CodePageData->getPageAddress(i), PageSize);
+				fwrite(Buffer.data(), 1, PageSize, file);
+			}
+
+			Header.StaticsTable = (uint32_t)ftell(file);
+			fwrite(HLData->getNewStaticData(), 1, HLData->getStaticCount() * 4, file);
+			
+			if (BuildType == BT_GTAV)
+			{
+				assert(StringPageData && "Invalid String Page Pointer");
+				Header.StringTable = (uint32_t)ftell(file);
+				for (uint32_t i = 0; i < StringPageData->getPageCount(); i++)
+				{
+					const size_t PageSize = StringPageData->getPageSize(i);
+					assert(PageSize <= 0xFFFF && "StringPage size greater then size of ushort");
+					*(uint16_t*)Buffer.data() = PageSize;
+					memcpy(Buffer.data() + 2, StringPageData->getPageAddress(i), PageSize);
+					fwrite(Buffer.data(), 1, PageSize, file);
+				}
+			}
+			
+			fseek(file, 0, SEEK_SET);
+			fwrite(&Header, 1, sizeof(ObjectFileHeader), file);
+
+			fclose(file);
+		}
+
+	}
+	*/
+	
 	#pragma endregion
 
 	#pragma region Parsed_Data_Vars
@@ -565,7 +687,7 @@ protected:
 	{
 		*(int64_t*)(BuildBuffer.data() + index) = Utils::Bitwise::SwapEndian(value);
 	}
-	
+
 	uint32_t GetSpaceLeft(uint32_t size)
 	{
 		const uint32_t rem = size - (BuildBuffer.size() % size);
@@ -618,6 +740,7 @@ protected:
 			BuildBuffer.resize(BuildBuffer.size() + pad, FilePadding);
 	}
 	int32_t IntToPointerInt(int32_t x) { return 0x50000000 | x; }
+	
 
 	void WriteCodePagesNoPadding();
 	void Write16384CodePages();
@@ -628,16 +751,21 @@ protected:
 	virtual void WriteStatics();
 	virtual void WriteHeader() = 0;
 	virtual void WritePointers() = 0;
-	
 
 	#pragma endregion
-
+	
 	#pragma region Parse_Functions
 	void CheckLabels();
 	virtual void BuildTables();
 	virtual void fixFunctionJumps() = 0;
 	virtual void fixFunctionCalls() = 0;
 	void ParseGeneral(const OpcodeKind OK);
+	#pragma endregion
+
+	#pragma region Object File Functions
+
+
+
 	#pragma endregion
 };
 

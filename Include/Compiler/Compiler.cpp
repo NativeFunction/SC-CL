@@ -1972,27 +1972,23 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 		};
 
 		FILE* file = fopen(path, "wb");
-		if (file != NULL)
+		if (Utils::IO::CheckFopenFile(path, file))
 		{
 			fwrite(CSR_Header.data(), 1, 16, file);//encrypted data
 			fwrite(CompressedData.data(), 1, CompressedLen, file);//encrypted data
 			fclose(file);
 		}
-		else
-			Throw("Could Not Open Output File");
 
 	}
 	else
 	{
 		FILE* file = fopen(path, "wb");
 
-		if (file != NULL)
+		if (Utils::IO::CheckFopenFile(path, file))
 		{
 			fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
 			fclose(file);
 		}
-		else
-			Throw("Could Not Open Output File");
 	}
 
 	#pragma endregion
@@ -2042,26 +2038,22 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 		};
 
 		FILE* file = fopen(path, "wb");
-		if (file != NULL)
+		if (Utils::IO::CheckFopenFile(path, file))
 		{
 			fwrite(SCR_Header.data(), 1, 48, file);//encrypted data
 			fwrite(CompressedData.data(), 1, CompressedSize, file);//encrypted data
 			fclose(file);
 		}
-		else
-			Utils::System::Throw("Could Not Open Output File");
 	}
 	else
 	{
 		FILE* file = fopen(path, "wb");
 
-		if (file != NULL)
+		if (Utils::IO::CheckFopenFile(path, file))
 		{
 			fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
 			fclose(file);
 		}
-		else
-			Utils::System::Throw("Could Not Open Output File");
 	}
 
 	#pragma endregion
@@ -2407,22 +2399,25 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 
 	FILE* file = fopen(path, "wb");
 
-	#pragma region Write_File
-	if (AddRsc7Header)
+	if (Utils::IO::CheckFopenFile(path, file))
 	{
-		const vector<uint32_t> rsc7 =
+		#pragma region Write_File
+		if (AddRsc7Header)
 		{
-			Utils::Bitwise::SwapEndian(0x52534337u),//magic
-			Utils::Bitwise::SwapEndian((uint32_t)ResourceType::ScriptContainer),//resourceType
-			Utils::Bitwise::SwapEndian(GetFlagFromSize(BuildBuffer.size())),//systemFlag
-			Utils::Bitwise::SwapEndian(0x90000000u)//graphicsFlag
-		};
+			const vector<uint32_t> rsc7 =
+			{
+				Utils::Bitwise::SwapEndian(0x52534337u),//magic
+				Utils::Bitwise::SwapEndian((uint32_t)ResourceType::ScriptContainer),//resourceType
+				Utils::Bitwise::SwapEndian(GetFlagFromSize(BuildBuffer.size())),//systemFlag
+				Utils::Bitwise::SwapEndian(0x90000000u)//graphicsFlag
+			};
 
-		fwrite(rsc7.data(), 1, 16, file);
+			fwrite(rsc7.data(), 1, 16, file);
+		}
+
+		fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
+		fclose(file);
 	}
-
-	fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
-	fclose(file);
 	#pragma endregion
 
 }
@@ -3052,24 +3047,26 @@ void CompileGTAVPC::YSCWrite(const char* path, bool AddRsc7Header)
 		ChangeInt64inBuff(IntToPointerInt(SavedOffsets.StringPagePointers[i]), SavedOffsets.StringBlocks + (i * 8));
 	#pragma endregion
 
-	FILE* file = fopen(path, "wb");
-
 	#pragma region Write_File
-	if (AddRsc7Header)
+	FILE* file = fopen(path, "wb");
+	if (Utils::IO::CheckFopenFile(path, file))
 	{
-		const vector<uint32_t> rsc7 =
+		if (AddRsc7Header)
 		{
-			Utils::Bitwise::SwapEndian(0x52534337u),//magic
-			Utils::Bitwise::SwapEndian((uint32_t)ResourceType::ScriptContainer),//resourceType
-			Utils::Bitwise::SwapEndian(GetFlagFromSize(BuildBuffer.size())),//systemFlag
-			Utils::Bitwise::SwapEndian(0x90000000u)//graphicsFlag
-		};
+			const vector<uint32_t> rsc7 =
+			{
+				Utils::Bitwise::SwapEndian(0x52534337u),//magic
+				Utils::Bitwise::SwapEndian((uint32_t)ResourceType::ScriptContainer),//resourceType
+				Utils::Bitwise::SwapEndian(GetFlagFromSize(BuildBuffer.size())),//systemFlag
+				Utils::Bitwise::SwapEndian(0x90000000u)//graphicsFlag
+			};
 
-		fwrite(rsc7.data(), 1, 16, file);
+			fwrite(rsc7.data(), 1, 16, file);
+		}
+
+		fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
+		fclose(file);
 	}
-
-	fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
-	fclose(file);
 	#pragma endregion
 
 }
