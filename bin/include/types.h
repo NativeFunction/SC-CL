@@ -62,6 +62,7 @@ typedef int Layout;
 typedef int Iterator;
 typedef int IterationSet;
 typedef int GUIWindow;
+typedef float Time;
 
 typedef struct NetworkHandle
 {
@@ -78,6 +79,8 @@ typedef union vector2
 
 typedef union vector3
 {
+	//GTA Coord Type = Over Top
+	//RDR Coord Type = Side Scroll
 	struct { float x, y, z; };
 	float v[3];
 } vector3;

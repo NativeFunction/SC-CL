@@ -1841,6 +1841,58 @@ typedef enum eActor
 #pragma endregion//}
 } eActor;
 
+typedef enum eWeapon
+{
+	WEAPON_PISTOL_Volcanic,
+	WEAPON_PISTOL_SemiAuto,
+	WEAPON_PISTOL_HighPower,
+	WEAPON_PISTOL_Mauser,
+	WEAPON_REVOLVER_Cattleman,
+	WEAPON_REVOLVER_Schofield,
+	WEAPON_REVOLVER_DoubleAction,
+	WEAPON_REVOLVER_Lemat,
+	WEAPON_REPEATER_Carbine,
+	WEAPON_REPEATER_Winchester,
+	WEAPON_REPEATER_Henry,
+	WEAPON_REPEATER_Evans,
+	WEAPON_RIFLE_Springfield,
+	WEAPON_RIFLE_BoltAction,
+	WEAPON_RIFLE_Buffalo,
+	WEAPON_SHOTGUN_SawedOff,
+	WEAPON_SHOTGUN_DoubleBarrel,
+	WEAPON_SHOTGUN_PumpAction,
+	WEAPON_SHOTGUN_SemiAuto,
+	WEAPON_SNIPERRIFLE_RollingBlock,
+	WEAPON_SNIPERRIFLE_Carcano,
+	WEAPON_LASSO_Lasso,
+	WEAPON_MELEE_Knife,
+	WEAPON_THROWN_FireBottle,
+	WEAPON_THROWN_Dynamite,
+	WEAPON_THROWN_ThrowingKnife,
+	WEAPON_TURRET_Gatling,
+	WEAPON_TURRET_Browning,
+	WEAPON_DEFAULT_Cannon,
+	WEAPOM_THROWN_Tomahawk,
+	WEAPON_BOW_ShortBow,
+	WEAPON_RIFLE_Antitank,
+	WEAPON_THROWN_ZombieSpit,
+	WEAPON_MELEE_TORCH,
+	WEAPON_SHOTGUN_Blunderbuss,
+	WEAPON_THROWN_HolyWater,
+	WEAPON_THROWN_ZombieBait,
+	WEAPON_THROWN_ZombieBoomBait
+} eWeapon;
+
+typedef enum eWeather
+{
+	WEATHER_CLEAR,
+	WEATHER_FAIR,
+	WEATHER_CLOUDY,
+	WEATHER_RAINY,
+	WEATHER_STORMY,
+	WEATHER_SNOWY,
+} eWeather;
+
 typedef enum eAssetType
 {
 	ASSET_TYPE_SCRIPT = 4,

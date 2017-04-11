@@ -6,6 +6,9 @@ short int: SwapEndian16(x), unsigned short int: SwapEndian16(x),\
 default: SwapEndian32(x))
 
 #define SwapEndian32Const(value)  ((((value) & 0xff000000) >> 24) | (((value) & 0x00ff0000) >>  8) | (((value) & 0x0000ff00) <<  8) | (((value) & 0x000000ff) << 24))
+#define DegreesToRadians(degrees) (degrees * (PI / 180.0f))
+#define RadiansToDegrees(radians) (radians * (180.0f / PI))
+
 
 void print(const char* str, int ms);
 const char* strcatGlobal(const char* str1, const char* str2);
@@ -20,13 +23,8 @@ int DivInt(int a, int b);
 float DivFloat(float a, float b);
 const char* IntToHex(int val);
 int HexToInt(const char* hex);
-int SetBit(int value, uint index);
-int ClearBit(int value, uint index);
-int ToggleBit(int value, uint index);
-int SetBitInline(int value, uint index, bool bit);
+void SetBitAtIndex(int* value, uint index, bool bit);
 int ModNegitive(int value1, int value2);
-float DegreesToRadians(float degrees);
-float RadiansToDegrees(float radians);
 quaternion EulerToQuaternion(vector3 euler);
 vector3 RotationLookAtPoint(vector3 pos, vector3 endpos);
 #ifndef __GTAV__

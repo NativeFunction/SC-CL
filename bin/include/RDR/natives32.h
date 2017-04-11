@@ -15,12 +15,16 @@
 
 #define sin sin_degree
 #define cos cos_degree
+#define tan tan_degree
+#define atan atan_degree
 #define atan2 atan2_degree
 
-extern _native int floor(float value)l
-extern _native float sin_degree(float value)l
-extern _native float cos_degree(float value)l
-extern _native float atan2_degree(float value1, float value2)l
+extern _native int floor(float x)l
+extern _native float sin_degree(float x)l
+extern _native float cos_degree(float x)l
+extern _native float tan_degree(float x)l
+extern _native float atan_degree(float x)l
+extern _native float atan2_degree(float x, float y)l
 extern _native void unk_0x0728B211()l
 extern _native void unk_0xF037DCA2(int pram0)l
 extern _native void unk_0x1F0CD262(int pram0)l
@@ -39,31 +43,31 @@ extern _native int unk_0x814D97E8()l
 extern _native void unk_0x6CD7DCE1(int pram0, int pram1)l
 extern _native int rand_int_range(int min, int max)l
 extern _native int to_float(int pram0)l
-extern _native bool ui_isactive(const char* uiLayer)l
-extern _native void ui_activate(const char* uiLayer)l
+extern _native bool ui_isactive(const char* UiLayer)l
+extern _native void ui_activate(const char* UiLayer)l
 extern _native void set_start_pos(int pram0, int pram1, int pram2, int pram3, int pram4)l
-extern _native int request_asset(const char* AssetDir, int AssetType)l
+extern _native int request_asset(const char* AssetDir, eAssetType AssetType)l
 extern _native void wait(int ms)l
 extern _native int launch_new_script(const char* ScriptDir, int Unk0)l
-extern _native bool is_script_valid(char* scriptName)l
-extern _native Layout find_named_layout(char* layoutName)l
+extern _native bool is_script_valid(int ScriptID)l
+extern _native Layout find_named_layout(const char* LayoutName)l
 extern _native32(0xFC8E55ED) bool _is_layout_valid(Layout Layout)l
-extern _native Actor find_actor_in_layout(Layout layout, const char* ActorName)l
+extern _native Actor find_actor_in_layout(Layout Layout, const char* ActorName)l
 extern _native bool is_actor_valid(Actor Actor)l
-extern _native int make_time_of_day(int pram0, int pram1, int pram2)l
-extern _native void set_weather(int pram0, int pram1)l
+extern _native Time make_time_of_day(int Hour, int Minute, int Second)l
+extern _native void set_weather(eWeather WeatherType, Time Time)l
 extern _native int streaming_is_world_loaded()l
 extern _native void hud_fade_in(int pram0, int pram1)l
 extern _native void camera_reset(int pram0)l
 extern _native void streaming_set_cutscene_mode(int pram0)l
 extern _native void terminate_this_script()l
-extern _native Layout create_layout(char* layoutName)l
+extern _native Layout create_layout(const char* layoutName)l
 extern _native void clear_regions()l
 extern _native int is_ps3()l
 extern _native void unk_0x7ABDE1F0(int pram0)l
 extern _native void unk_0x7D7F9770(int pram0)l
 extern _native void printnl()l
-extern _native int unk_0xD3C7AEFA(int pram0)l
+extern _native int ui_get_num_children(int pram0)l
 extern _native void ui_add_child(int pram0, int pram1)l
 extern _native void ui_set_data(int pram0, int pram1, int pram2)l
 extern _native void unk_0xEC86DB0E()l
@@ -85,11 +89,11 @@ extern _native void lights_set_off_time(int pram0, int pram1)l
 extern _native int unk_0x8BA565F7(int pram0)l
 extern _native int unk_0xB8E09389(int pram0)l
 extern _native int unk_0x0E453CF0(int pram0, int pram1, int pram2, int pram3)l
-extern _native void set_time_of_day(int pram0)l
+extern _native void set_time_of_day(Time UnixTime)l
 extern _native int net_is_session_host()l
 extern _native int net_is_in_session()l
 extern _native int unk_0x5D934CCB(int pram0, int pram1)l
-extern _native int rand_float_range(int pram0, int pram1)l
+extern _native float rand_float_range(float Min, float Max)l
 extern _native void unk_0xB35C0660(int pram0)l
 extern _native int decor_get_int(int pram0, int pram1)l
 extern _native void unk_0x0E4B7A33(int pram0, int pram1)l
@@ -117,7 +121,7 @@ extern _native int is_exitflag_set()l
 extern _native int get_profile_time()l
 extern _native void unk_0xB9D95B4C()l
 extern _native int unk_0x5C8DD257(int pram0)l
-extern _native int get_time_of_day()l
+extern _native Time get_time_of_day()l
 extern _native int get_hour(int pram0)l
 extern _native int hud_is_faded()l
 extern _native int hud_is_fading()l
@@ -159,13 +163,13 @@ extern _native int shift_left(int pram0, int pram1)l
 extern _native int unk_0x7AB722D8()l
 extern _native int unk_0x84B0B5D6()l
 extern _native int is_actor_alive(int pram0)l
-extern _native32(0xAE44869D) void _set_weapon_gold(Actor Actor, int Weapon, bool Gold)l
+extern _native void set_weapon_gold(Actor Actor, int Weapon, bool Gold)l
 extern _native void unk_0x7D6A8D4A(int pram0, int pram1)l
 extern _native int has_achievement_been_passed(int pram0)l
 extern _native int award_achievement(int pram0)l
 extern _native int award_avatar(int pram0)l
 extern _native int decor_check_exist(int pram0, int pram1)l
-extern _native int is_dev_build()l
+extern _native bool is_dev_build()l
 extern _native const char* ss_get_string(int pram0, int pram1)l
 extern _native int save_game(int pram0)l
 extern _native void unk_0x17F34613(int pram0)l
@@ -237,7 +241,7 @@ extern _native int shift_right(int pram0, int pram1)l
 extern _native int vdist(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5)l
 extern _native int unk_0x115CD0CC(int pram0)l
 extern _native void unk_0x4F52CB58(int pram0)l
-extern _native void destroy_object(int pram0)l
+extern _native void destroy_object(Object Object)l
 extern _native int is_door_valid(int pram0)l
 extern _native int decor_get_object(int pram0, int pram1)l
 extern _native int is_door_locked(int pram0)l
@@ -263,7 +267,7 @@ extern _native int string_contains_string(int pram0, int pram1)l
 extern _native int unk_0x8C37CA1A(int pram0, int pram1)l
 extern _native int unk_0x39286DE5(int pram0, int pram1, int pram2, int pram3)l
 extern _native int unk_0x6745191B(int pram0, int pram1, int pram2, int pram3)l
-extern _native void terminate_script(int pram0)l
+extern _native void terminate_script(int ScriptID)l
 extern _native int unk_0x3B1B6407()l
 extern _native void unk_0x4C02E1E5()l
 extern _native void request_anim_set(int pram0, int pram1)l
@@ -289,7 +293,7 @@ extern _native void unk_0x309D058C(int pram0)l
 extern _native void unk_0x1900A97E(int pram0, int pram1)l
 extern _native void unk_0xAA99E18E(int pram0)l
 extern _native void unk_0x2CCE1115(int pram0)l
-extern _native int string_to_float(int pram0)l
+extern _native float string_to_float(const char* Str)l
 extern _native Iterator create_object_iterator(Layout layout)l
 extern _native void iterate_on_object_type(Iterator Iterator, int Type)l
 extern _native Object start_object_iterator(Iterator Iterator)l
@@ -300,7 +304,7 @@ extern _native int object_iterator_next(int pram0)l
 extern _native void destroy_iterator(int pram0)l
 extern _native int string_length(const char* pram0)l
 extern _native int string_upper(int pram0)l
-extern _native int unk_0x8218D693(int pram0, int pram1)l
+extern _native32(0x8218D693) bool _string_compare(const char* Str1, const char* Str2)l
 extern _native int string_to_int(const char* pram0)l
 extern _native void get_position(int pram0, vector3* outCoords)l
 extern _native float get_heading(int pram0)l
@@ -312,8 +316,8 @@ extern _native void net_log(int pram0, int pram1, int pram2, int pram3, int pram
 extern _native Camera get_game_camera()l
 extern _native void get_camera_direction(Camera Cam, vector3* OutDirection)l
 extern _native void get_camera_position(Camera Cam, vector3* OutPosition)l
-extern _native void vscale(int pram0, int pram1)l
-extern _native int unk_0x8B217CAC(int pram0)l
+extern _native void vscale(vector3* Vector, float Scale)l
+extern _native int get_actorenum_from_string(const char* ActorName)l
 extern _native void streaming_request_actor(int pram0, int pram1, int pram2)l
 extern _native int streaming_is_actor_loaded(int pram0, int pram1)l
 extern _native int unk_0x4A2063EC(int pram0)l
@@ -328,7 +332,7 @@ extern _native int launch_new_script_with_args(int pram0, int pram1, int pram2, 
 extern _native int get_actor_axis(int pram0, int pram1, int pram2)l
 extern _native void script_breakpoint(int pram0)l
 extern _native int unk_0x025C9845(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8)l
-extern _native int unk_0xE351587D(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8, int pram9)l
+extern _native Object create_prop_in_layout(Layout Layout, const char* PropName, const char* FragmentPath, vector3 Position, vector3 Rotation, bool Frozen)l
 extern _native int find_object_in_object(int pram0, int pram1)l
 extern _native int in_targetting_posse(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8)l
 extern _native int snap_actor_to_gringo(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5)l
@@ -386,7 +390,7 @@ extern _native void unk_0x6761D53A(int pram0, int pram1)l
 extern _native int unk_0x85C58BE1(int pram0)l
 extern _native void unk_0x2D6CD106(int pram0, int pram1)l
 extern _native int unk_0xD60032F6(int pram0)l
-extern _native int find_object_in_layout(int pram0, int pram1)l
+extern _native Object find_object_in_layout(Layout Layout, const char* ObjectName)l
 extern _native int is_crime_valid(int pram0)l
 extern _native void set_crime_type(int pram0, int pram1)l
 extern _native void set_crime_victim(int pram0, int pram1)l
@@ -408,13 +412,13 @@ extern _native void iterate_in_set(Iterator Iterator, IterationSet IterationSet)
 extern _native int get_iterator_parent(int pram0)l
 extern _native int unk_0x7C3D1193(int pram0)l
 extern _native void add_time(int pram0, int pram1, int pram2, int pram3, int pram4)l
-extern _native void set_rain_amount(int pram0)l
-extern _native void unk_0xF0C9645A(int pram0)l
+extern _native void set_rain_amount(float Amount)l
+extern _native void unk_0xF0C9645A(float Amount)l
 extern _native void unk_0xEB866555()l
 extern _native void set_wind(int pram0, int pram1, int pram2)l
 extern _native void set_auto_wind()l
 extern _native void unk_0x063F900A(int pram0)l
-extern _native int does_script_exist(int pram0)l
+extern _native bool does_script_exist(const char* ScriptPath)l
 extern _native void file_start_path(int pram0)l
 extern _native void unk_0x63CDBB01(int pram0)l
 extern _native void file_end_path()l
@@ -540,8 +544,8 @@ extern _native int unk_0x01309706(int pram0)l
 extern _native void unk_0x90CD8795(int pram0, int pram1)l
 extern _native void unk_0x9E88643A(int pram0, int pram1)l
 extern _native void unk_0xDAD46FAB()l
-extern _native void unk_0xB731EB45(int pram0)l
-extern _native int unk_0x3F67DEDB(int pram0)l
+extern _native32(0xB731EB45) void _cheat_infinite_horse_stamina(bool Activate)l
+extern _native32(0x3F67DEDB) int _cheat_blazing_guns(bool Activate)l
 extern _native void unk_0x7D0EFDD8(int pram0)l
 extern _native void push_command_handle(int pram0, int pram1)l
 extern _native void unk_0xF1A723D0(int pram0, int pram1)l
@@ -558,9 +562,9 @@ extern _native const char* vector_to_string(vector3* Vec)l
 extern _native void audio_music_set_state(int pram0)l
 extern _native int unk_0x38771B89(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8, int pram9, int pram10)l
 extern _native int unk_0xC426D16F(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8, int pram9, int pram10, int pram11)l
-extern _native void load_audio_bank(int pram0, int pram1)l
-extern _native int unk_0x98CD7340(int pram0, int pram1)l
-extern _native void unk_0x176E921C(int pram0)l
+extern _native void load_audio_bank(const char* RefName, const char* BankPath)l
+extern _native32(0x98CD7340) bool _is_audio_bank_loading(const char* RefName, const char* BankPath)l
+extern _native void unk_0x176E921C(const char* pram0)l
 extern _native int request_mission_audio_bank(int pram0)l
 extern _native void unk_0xA82D893C(int pram0, int pram1)l
 extern _native void destroy_volume(int pram0)l
@@ -603,11 +607,11 @@ extern _native void settimera(int pram0)l
 extern _native int unk_0x82A290D4()l
 extern _native int unk_0x111554E2(int pram0)l
 extern _native int unk_0xC64DF45D()l
-extern _native int unk_0x6F2509E8(int pram0)l
+extern _native int ui_isfocused(const char* UiLayer)l
 extern _native int net_is_online_available()l
 extern _native int unk_0xCF02D1D6(int pram0)l
-extern _native bool is_button_pressed(Controller Controller, eButton pram1, int Unk1, int Unk0)l
-extern _native void ui_exit(char* uiLayer)l
+extern _native bool is_button_pressed(Controller Controller, eButton Button, int Unk1, int Unk0)l
+extern _native void ui_exit(const char* uiLayer)l
 extern _native int unk_0x03962973()l
 extern _native void destroy_objectset(int pram0)l
 extern _native int unk_0x2D160228(int pram0, int pram1)l
@@ -655,7 +659,7 @@ extern _native int unk_0x0DC149BD(int pram0, int pram1, int pram2, int pram3)l
 extern _native int unk_0xD92BA5B6(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8, int pram9)l
 extern _native int unk_0xFF8CBD07(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7)l
 extern _native int get_locator_offsets(int pram0, int pram1, int pram2, int pram3)l
-extern _native int set_object_position(int pram0, int pram1, int pram2, int pram3)l
+extern _native int set_object_position(Object Obj, vector3 Position)l
 extern _native void unk_0x47C5E353(int pram0, int pram1)l
 extern _native void unk_0x3932B786(int pram0)l
 extern _native int unk_0xF7277A0F(int pram0, int pram1)l
@@ -675,14 +679,14 @@ extern _native void task_clear(int pram0)l
 extern _native void task_wander(int pram0, int pram1)l
 extern _native void memory_prefer_riding(int pram0, int pram1)l
 extern _native void release_layout_objects(int pram0)l
-extern _native bool is_actor_riding_vehicle(int actor)l
+extern _native bool is_actor_riding_vehicle(Actor Actor)l
 extern _native int get_mount(int pram0)l
 extern _native int unk_0xF68C926F(int pram0)l
 extern _native int unk_0xD85CA776(int pram0)l
 extern _native int get_draft_actor(int pram0, int pram1)l
 extern _native bool is_actor_dead(Actor actor)l
 extern _native int is_object_in_objectset(int pram0, int pram1)l
-extern _native char* get_actor_name(Actor actor)l
+extern _native const char* get_actor_name(Actor actor)l
 extern _native int unk_0x1449EE9E(int pram0)l
 extern _native void ai_set_nav_material_usage(int pram0, int pram1, int pram2)l
 extern _native void set_actor_exempt_from_ambient_restrictions(int pram0, int pram1)l
@@ -760,7 +764,7 @@ extern _native int unk_0x7A6146DB(int pram0, int pram1, int pram2, int pram3, in
 extern _native void set_camera_focus_prompt_text(int pram0, int pram1)l
 extern _native void unk_0x601FC9F4(int pram0, int pram1)l
 extern _native void unk_0x04A38C60(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6)l
-extern _native char* get_script_name()l
+extern _native const char* get_script_name()l
 extern _native int get_total_minutes(int pram0)l
 extern _native int unk_0xA5FF6076(int pram0, int pram1, int pram2, int pram3, int pram4)l
 extern _native int unk_0x0E018669(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8)l
@@ -831,12 +835,12 @@ extern _native void print_help_format(int pram0, int pram1, int pram2, int pram3
 extern _native32(0xB114332D) int _push_neg_one()l
 extern _native void unk_0x45589499(int pram0)l
 extern _native int gui_set_text(int TextHandle, const char* MenuName)l
-extern _native32(0xCBC97619) int _is_key_pressed(eKey KeyCode)l
+extern _native32(0xCBC97619) bool _is_key_pressed(eKey KeyCode)l
 extern _native int gui_make_text(int GUIHandle, SizedArray Position, const char* MenuTitle, const char* GXTText, float pram4)l
 extern _native int gui_set_text_color(int TextHandle, float* ColorArea)l
 extern _native32(0x524F6981) Controller _get_actor_controller(int ActorId)l
-extern _native32(0x7C6D41A4) float _get_analog_button_value_x(Controller Controller, int unk0, int unk1)l
-extern _native32(0x9AAF7E28) float _get_analog_button_value_y(Controller Controller, int unk0, int unk1)l
+extern _native32(0x7C6D41A4) float get_stick_y(Controller Controller, bool IsRightStick, int unk1)l
+extern _native32(0x9AAF7E28) float get_stick_x(Controller Controller, bool IsRightStick, int unk1)l
 extern _native void unk_0x3C2D93C1(float x, float y, const char* Text, float r, float g, float b, float a)l
 extern _native int gui_set_text_justify(int TextHandle, int JustifyType)l
 extern _native int get_task_status(int pram0, int pram1)l
@@ -862,9 +866,9 @@ extern _native int gringo_update_int(int pram0, int pram1, int pram2, int pram3)
 extern _native void set_actor_update_priority(int pram0, int pram1)l
 extern _native int unk_0xBE5D84BF(int pram0)l
 extern _native void get_formation_location(int pram0, int pram1, int pram2)l
-extern _native void set_draw_actor(int pram0, int pram1)l
+extern _native void set_draw_actor(Actor pram0, bool ToDraw)l
 extern _native void clear_actor_max_speed(int pram0)l
-extern _native int is_actor_animal(int pram0)l
+extern _native bool is_actor_animal(Actor Actor)l
 extern _native int animal_actor_get_species(int pram0)l
 extern _native void animal_species_rel_set_can_attack(int pram0, int pram1, int pram2)l
 extern _native void combat_class_ai_set_attrib_bool(int pram0, int pram1, int pram2)l
@@ -888,8 +892,8 @@ extern _native int create_weapon_pickup(int pram0, int pram1, int pram2, int pra
 extern _native void set_draw_object(int pram0, int pram1)l
 extern _native int unk_0xDAB0D820(int pram0)l
 extern _native int unk_0x3ACE659E(int pram0)l
-extern _native int get_actor_in_vehicle_seat(int pram0, int pram1)l
-extern _native32(0xE7023D23) void _create_explosion(vector3* coords, char* explosionName, bool pram2, vector3* damageVector, bool pram4)l
+extern _native Actor get_actor_in_vehicle_seat(Vehicle Veh, int SeatID)l
+extern _native32(0xE7023D23) void _create_explosion(vector3* coords, const char* explosionName, bool pram2, vector3* damageVector, bool pram4)l
 extern _native int unk_0xF04335A6(int pram0, int pram1)l
 extern _native int unk_0x4FF36FA7(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5)l
 extern _native int is_physinst_valid(int pram0)l
@@ -917,7 +921,7 @@ extern _native int unk_0x21C59F4C(int pram0)l
 extern _native void remove_ambient_move_restriction_stay_outside_of_volume(int pram0)l
 extern _native int does_ambient_spawn_restriction_volume_exist(int pram0)l
 extern _native void remove_ambient_spawn_restriction_stay_outside_of_volume(int pram0)l
-extern _native void ui_push(int pram0)l
+extern _native void ui_push(const char* pram0)l
 extern _native void unk_0x5C94F6EC(int pram0, int pram1, int pram2, int pram3)l
 extern _native void play_cutsceneobject(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8, int pram9)l
 extern _native void unk_0xDCC91F8C(int pram0, int pram1)l
@@ -1056,7 +1060,7 @@ extern _native void memory_attack_on_sight(int pram0, int pram1)l
 extern _native void set_actor_faction(int pram0, int pram1)l
 extern _native void unk_0x0B5E1904(int pram0, int pram1)l
 extern _native int actor_reset_anims(int pram0, int pram1)l
-extern _native void play_sound_frontend(int pram0)l
+extern _native void play_sound_frontend(const char* SoundName)l
 extern _native void set_actor_can_bump(int pram0, int pram1)l
 extern _native void unk_0xC52B5F18(int pram0, int pram1)l
 extern _native void unk_0xEB7B0FAA(int pram0, int pram1)l
@@ -1177,7 +1181,7 @@ extern _native int unk_0x0B40BBE3(int pram0, int pram1, int pram2)l
 extern _native int get_slot_actor(int pram0)l
 extern _native int unk_0x579C2014(int pram0)l
 extern _native void unk_0xA6403262(int pram0, int pram1)l
-extern _native void ui_enter(char* uiLayer)l
+extern _native void ui_enter(const char* uiLayer)l
 extern _native void task_shoot_from_position(int pram0, int pram1, int pram2)l
 extern _native void unk_0xEF270DC9()l
 extern _native void unk_0xD1628C57()l
@@ -1242,7 +1246,7 @@ extern _native void set_actor_min_speed(int pram0, int pram1)l
 extern _native void set_actor_rideable(Actor Actor, bool Rideable)l
 extern _native void task_follow_path(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6)l
 extern _native void task_sequence_perform_repeatedly(int pram0, int pram1, int pram2)l
-extern _native void animal_actor_set_domestication(int pram0, int pram1)l
+extern _native void animal_actor_set_domestication(Actor Actor, bool Domestication)l
 extern _native void animal_tuning_set_attrib_bool(int pram0, int pram1, int pram2)l
 extern _native int unk_0x9A4CD54B(int pram0)l
 extern _native void audio_music_set_mood(int pram0, int pram1, int pram2, int pram3)l
@@ -1278,7 +1282,7 @@ extern _native void task_override_set_movespeed_absolute(int pram0, int pram1)l
 extern _native void unk_0x7EDD316C(int pram0)l
 extern _native int get_actors_horse(int pram0)l
 extern _native void add_cameratransition_event_gamecamerareset(int pram0, int pram1, int pram2, int pram3)l
-extern _native void play_sound_from_position(int pram0, int pram1, int pram2, int pram3)l
+extern _native void play_sound_from_position(const char* SoundName, vector3 Position)l
 extern _native void audio_play_vocal_effect(int pram0, int pram1, int pram2)l
 extern _native int play_sound_from_actor(int pram0, int pram1, int pram2)l
 extern _native void open_door_direction_fast(int pram0, int pram1)l
@@ -1323,7 +1327,7 @@ extern _native void task_hide_at_cover(int pram0, int pram1, int pram2, int pram
 extern _native int remove_actorset_member(int pram0, int pram1)l
 extern _native void unk_0x6118212B(int pram0, int pram1, int pram2)l
 extern _native void unk_0xF9C5DC76(int pram0, int pram1)l
-extern _native int is_button_down(Controller Controller, eButton Button, int Unk1, int Unk0)l
+extern _native bool is_button_down(Controller Controller, eButton Button, int Unk1, int Unk0)l
 extern _native void feed_code_warp_dist(int pram0)l
 extern _native void unk_0xD4FECCBC(int pram0)l
 extern _native void clear_actors_horse(int pram0)l
@@ -1387,7 +1391,7 @@ extern _native int get_y(int pram0)l
 extern _native int unk_0xD14515A3(int pram0, int pram1)l
 extern _native void task_vehicle_enter(int pram0, int pram1, int pram2, int pram3)l
 extern _native void set_vehicle_allowed_to_drive(Actor Vehicle, bool Allowed)l
-extern _native int set_actor_in_vehicle(Actor Source, Actor Destination, int SeatID)l
+extern _native bool set_actor_in_vehicle(Actor Source, Actor Destination, int SeatID)l
 extern _native void set_actor_auto_transition_to_driver_seat(int pram0, int pram1)l
 extern _native void reference_object(int pram0)l
 extern _native int cutsceneobject_add_transition_decorator(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6)l
@@ -1514,7 +1518,7 @@ extern _native int leash_attach_to_world(int pram0, int pram1, int pram2, int pr
 extern _native void unk_0x65DAA654(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5)l
 extern _native int unk_0x4B67B8BB(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8, int pram9, int pram10, int pram11)l
 extern _native void unk_0x1CD960B8(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5)l
-extern _native void ui_refresh(int pram0)l
+extern _native void ui_refresh(const char* pram0)l
 extern _native void unk_0x6B5DF46D(int pram0, int pram1)l
 extern _native int gringo_get_target(int pram0)l
 extern _native int unk_0x1FCC8FEF(int pram0)l
@@ -1644,12 +1648,12 @@ extern _native void unk_0x437588E6(int pram0)l
 extern _native void clear_actor_proof(int pram0, int pram1)l
 extern _native int unk_0x6396ABB7(int pram0)l
 extern _native void unk_0x7E0CDD87()l
-extern _native void ui_focus(char* uiLayer)l
+extern _native void ui_focus(const char* uiLayer)l
 extern _native int unk_0x8EFDFE89(int pram0)l
 extern _native int unk_0x7609A328(int pram0)l
 extern _native void unk_0x1105FB64(int pram0, int pram1)l
 extern _native int unk_0x9D20BDC4(int pram0)l
-extern _native32(0x03568B83) int _ui_get_flash_int(char* scaleformName, char* scaleformVarName)l
+extern _native32(0x03568B83) int _ui_get_flash_int(const char* scaleformName, const char* scaleformVarName)l
 extern _native void unk_0x8266C617(int pram0, int pram1, int pram2)l
 extern _native int unk_0xAB2D8A68(int pram0, int pram1, int pram2)l
 extern _native void unk_0x3E8E7D7B(int pram0)l
@@ -1687,7 +1691,7 @@ extern _native void set_camerashot_targetdof_smoothing(int pram0, int pram1)l
 extern _native void set_camerashot_targetdof_filtertype(int pram0, int pram1)l
 extern _native void set_camerashot_targetdof_fstop(int pram0, int pram1)l
 extern _native void camerashot_add_arc_behavior(int pram0, int pram1)l
-extern _native void ui_set_string_format(char* GXTName, char* FormatString, char* String1, char* String2, char* String3)l
+extern _native void ui_set_string_format(const char* GXTName, const char* FormatString, const char* String1, const char* String2, const char* String3)l
 extern _native int in_selected_pedpath(int pram0)l
 extern _native int unk_0xF81E2097(int pram0, int pram1)l
 extern _native int unk_0xA6AA7B9E(int pram0, int pram1)l
@@ -1798,8 +1802,8 @@ extern _native void task_go_near_actorset(int pram0, int pram1, int pram2, int p
 extern _native int unk_0xA9F5CDCB(int pram0)l
 extern _native void train_enable_visual_debug(int pram0)l
 extern _native void destroy_layout_objects(int pram0)l
-extern _native void ui_hide(char* uiLayer)l
-extern _native void ui_show(char* uiLayer)l
+extern _native void ui_hide(const char* uiLayer)l
+extern _native void ui_show(const char* uiLayer)l
 extern _native void unk_0xB3FC8CB7(int pram0, int pram1)l
 extern _native void unk_0x5AEA32D1(int pram0, int pram1)l
 extern _native void unk_0x175BE678(int pram0, int pram1, int pram2, int pram3, int pram4)l
@@ -1872,7 +1876,7 @@ extern _native int unk_0x59466B4D()l
 extern _native int play_sound_from_object(int pram0, int pram1)l
 extern _native void release_sound_id(int pram0)l
 extern _native int unk_0xADF7D54B(int pram0)l
-extern _native int create_mp_text(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8, int pram9)l
+extern _native Object create_mp_text(Object Prop, const char* UnkNullStr, const char* GXTTextToDisplay, vector3 Position, vector3 Rotation, bool MaybeIsStringLiteral)l
 extern _native int unk_0xE8739A48(int pram0)l
 extern _native void unk_0x1F9EE9E1(int pram0, int pram1, int pram2, int pram3)l
 extern _native int unk_0x6AFF3122(int pram0)l
@@ -1913,7 +1917,7 @@ extern _native int unk_0xD9965A9A()l
 extern _native void unk_0x4585821E(int pram0, int pram1, int pram2, int pram3)l
 extern _native void unk_0x4238C471()l
 extern _native void set_blip_visible(int pram0, int pram1)l
-extern _native int is_button_released(Controller Controller, eButton Button, int Unk1, int Unk0)l
+extern _native bool is_button_released(Controller Controller, eButton Button, int Unk1, int Unk0)l
 extern _native void unk_0x408E28E2(int pram0)l
 extern _native int net_is_player_participant(int pram0)l
 extern _native void set_faction_is_lawful_to_attack(int pram0, int pram1)l
@@ -1934,7 +1938,7 @@ extern _native void at_fired_last(int pram0, int pram1, int pram2)l
 extern _native void unk_0x1182C34F(int pram0)l
 extern _native void unk_0xD0FB6AF0(int pram0, int pram1, int pram2, int pram3)l
 extern _native void unk_0xDF50D8DE(int pram0, int pram1)l
-extern _native32(0x4778A580) int _ui_set_flash_int(char* scaleformName, char* scaleformVarName, int value)l
+extern _native32(0x4778A580) int _ui_set_flash_int(const char* scaleformName, const char* scaleformVarName, int value)l
 extern _native int unk_0x554CF528(int pram0)l
 extern _native int set_object_animator_node(int pram0, int pram1)l
 extern _native void unk_0xC00F8181(int pram0)l
@@ -1970,7 +1974,7 @@ extern _native void ui_set_prompt_icon(int pram0, int pram1)l
 extern _native int unk_0x0627DDEC(int pram0, int pram1)l
 extern _native int unk_0x9BC05C90(int pram0, int pram1)l
 extern _native int set_panim_phase(int pram0, int pram1)l
-extern _native32(0x9E31EEA7) int _ui_set_flash_string(char* scaleformName, char* scaleformVarName, int pram2, int pram3)l
+extern _native32(0x9E31EEA7) int _ui_set_flash_string(const char* scaleformName, const char* scaleformVarName, int pram2, int pram3)l
 extern _native int unk_0x54A417F3(int pram0, int pram1)l
 extern _native void set_camerashot_targetdof_fixed_distance(int pram0, int pram1)l
 extern _native int add_camera_shot_transition_ease_in_out(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5)l
@@ -1991,12 +1995,12 @@ extern _native int is_local_player(int pram0)l
 extern _native int unk_0x554FC5E0()l
 extern _native void unk_0x1EEE7494(int pram0, int pram1)l
 extern _native void set_actor_allow_dismount(int pram0, int pram1)l
-extern _native void ui_deactivate(int pram0)l
+extern _native void ui_deactivate(const char* pram0)l
 extern _native int unk_0x1A59E608(int pram0)l
 extern _native void unk_0xA3AE09EF()l
 extern _native void unk_0x27D40FD1(int pram0, int pram1, int pram2)l
 extern _native void unk_0xB4C867BD(int pram0, int pram1, int pram2, int pram3)l
-extern _native int is_actor_shooting(int pram0)l
+extern _native bool is_actor_shooting(Actor Actor)l
 extern _native int is_actor_throwing(int pram0)l
 extern _native void set_equip_slot_enabled(int pram0, int pram1, int pram2)l
 extern _native int copy_volume(int pram0, int pram1, int pram2, int pram3)l
@@ -2422,7 +2426,7 @@ extern _native int set_actor_hearing_max_range(int pram0, int pram1)l
 extern _native int is_door_open_in_direction(int pram0, int pram1)l
 extern _native void set_door_auto_close(int pram0, int pram1)l
 extern _native int unk_0xD6F4FDAD(int pram0)l
-extern _native int get_draw_actor(int pram0)l
+extern _native bool get_draw_actor(Actor Actor)l
 extern _native void set_player_deadeye_mode(int pram0, int pram1)l
 extern _native void unk_0xCC69DCC1(int pram0, int pram1, int pram2)l
 extern _native void task_guard_stand(int pram0, int pram1, int pram2)l
@@ -2568,7 +2572,7 @@ extern _native int unk_0xFC718FC5(int pram0, int pram1, int pram2, int pram3, in
 extern _native void gringo_set_target_object(int pram0, int pram1, int pram2)l
 extern _native int unk_0xB78BC233(int pram0, int pram1, int pram2)l
 extern _native void add_cameratransition_event_cutgamecamerabehindplayer(int pram0, int pram1, int pram2)l
-extern _native bool camera_probe(vector3* VecP0, vector3 Source, vector3 Vec1, Actor pram7, int UnkEnum)l
+extern _native bool camera_probe(vector3* Result, vector3 Source, vector3 Target, Actor Owner, int Flag)l
 extern _native void unk_0x8B011F5D()l
 extern _native void unk_0xA8226DFF(int pram0)l
 extern _native void unk_0x831FC466(int pram0)l
@@ -2842,7 +2846,7 @@ extern _native int unk_0x8DF05A4F(int pram0)l
 extern _native void unk_0x651F6299(int pram0)l
 extern _native int unk_0x4A721118(int pram0)l
 extern _native int unk_0x4500B98A(int pram0)l
-extern _native32(0x6DBD1DDB) int _is_weapon_gold(Actor Actor, Weapon Weapon)l
+extern _native int get_weapon_gold(Actor Actor, Weapon Weapon)l
 extern _native int unk_0x3AE1062C()l
 extern _native32(0xC666B987) bool _is_actor_ammo_infinite(Actor Actor, int pram1)l
 extern _native void ready_item(const char* ItemName, Actor Actor)l
@@ -2895,7 +2899,7 @@ extern _native void hud_stamina_override(int pram0, int pram1, int pram2)l
 extern _native int unk_0x6F513950(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5)l
 extern _native int get_camera_shot_transition(int pram0)l
 extern _native void set_fixed_transition_t(int pram0, int pram1)l
-extern _native void animal_actor_set_docile(int pram0, int pram1)l
+extern _native void animal_actor_set_docile(Actor Actor, bool Docile)l
 extern _native void get_camera_up_vector(int pram0, int pram1)l
 extern _native int cutsceneobject_add_transition_fixed(int pram0, int pram1, int pram2, int pram3, int pram4)l
 extern _native void unk_0xCA99D3B4()l
@@ -3078,6 +3082,363 @@ extern _native int set_cutsceneinputs_target_guid(int pram0, int pram1, int pram
 extern _native int unk_0x8701F1F6()l
 extern _native int unk_0xB5401D4A()l
 extern _native int unk_0x80B30545()l
+extern _native bool get_last_hit_zone(Actor Actor, int* out)l
+extern _native const char* get_weapon_display_name(eWeapon WeaponID)l
+extern _native Blip get_blip_on_object(Object Obj)l
+
+
+/*---------------Undocumented Natives------------------
+actor_has_anim_loaded
+actor_is_hidden_by_cutscene
+actor_set_max_gait
+add_accessory
+add_camera_shot_transition_ease_out
+add_camera_shot_transition_hold
+ai_action_is_active
+ai_avoid_clear_ignore_actor
+ai_dont_slow_down_to_walk_for_turns
+ai_goal_aim_at_coord
+ai_goal_shoot_at_object
+ai_goal_stand_at_coord
+ai_goal_stand_clear
+ai_has_player_fired_gun_within
+ai_reset_nav_actor_width
+ai_riding_set_attribute
+ai_set_enable_reaction_vo
+ai_set_ignore_open_area_material
+ai_set_nav_allow_tweak_desired_movement
+ai_set_nav_max_slope
+ai_shoot_target_clear_offset
+ai_shoot_target_set_offset
+animal_actor_get_docile
+animal_species_add_external_path_attraction
+animal_species_remove_external_path_attraction
+append_journal_note
+clear_actor_proof_all
+clear_player_control_horse_follow
+combat_class_ai_get_attrib_bool
+combat_class_ai_set_fight_time_between_attacks_multiplier
+create_corpse_variation_in_layout
+detach_draft_from_vehicle_by_actor
+estimate_distance_along_path
+estimate_path_length
+gateway_is_disabled
+get_actor_max_speed
+get_actor_min_speed
+get_actor_vision_field_of_view
+get_allow_ride
+get_allow_ride_by_player
+get_draw_object
+get_max_speed
+get_prop_health
+grave_is_dug_up
+gringo_force_update
+gringo_set_money_presence
+horse_auto_jump_enabled_for_ai_riders
+horse_enable_auto_jump_for_ai_riders
+is_actor_on_path
+is_camera_focus_prompt_enabled
+is_player_in_horse_follow
+is_player_targetting_object
+iterate_in_area
+memory_allow_pickup_weapons
+pause_scripted_conversation
+remove_horse_accessory
+restart_scripted_conversation
+set_actor_frozen_after_corpsify
+set_actor_min_speed_absolute
+set_actor_movable_nav_mesh
+set_actor_observed_targeted_reactions
+set_actor_permanent
+set_allow_lasso_mini_game
+set_allow_melee_special_move
+set_allow_ride
+set_player_allow_pickup
+set_player_cause_weapon_reactions
+set_player_melee_mode_selected
+set_player_vehicle_input
+set_time_warp
+squad_battle_allies_set_objective
+squad_flock_event_boost_set_enabled
+squad_flock_set_allow_stragglers
+squad_flock_set_flocking_parameter
+squad_follow_path_in_formation_set_behavior_flag
+squad_follow_path_in_formation_set_desired_leader
+squad_follow_path_in_formation_set_nonstop
+squad_follow_path_in_formation_set_path
+squad_follow_path_in_formation_set_speed
+squad_follow_path_in_formation_set_speed_absolute
+squad_follow_path_in_formation_set_speed_normalized
+squad_goal_add_flock
+squad_goal_add_follow_path_in_formation
+streaming_set_custcene_mode
+task_action_perform_at_position
+task_animal_follow_aggressively
+task_animal_hunt
+task_bird_fly_near_coord
+task_bird_soar
+task_follow_and_attack_object_along_path
+task_follow_path_from_point
+task_go_to_coord_using_material
+task_guard_patrol_auto
+task_jump_over_obstruction
+task_jump_to_object
+task_shoot_enemies_from_preferred_cover
+train_set_speed
+set_corpse_permanent
+set_radar_streaming
+destroy_camera_shot
+has_accessory
+net_session_gamer_count
+remove_physinst
+is_prop_broken
+is_using_turret
+is_physinst_active
+is_physinst_frozen
+hud_timer_set
+hud_timer_unpause
+find_named_actorset
+train_set_fx
+leash_detatch_object
+set_gringo_struct_attr
+ui_disable_input
+start_new_script
+waitunwarped
+waitunpaused
+get_timestamp
+task_divetoward
+task_diveawayfrom
+cancel_duel
+get_actor_type
+task_play_anim
+start_new_script_with_args
+set_camera_targetdof_focal_length
+get_camerashot_up_vector
+get_camerashot_x_vector
+set_camerashot_target_object_bone
+get_equip_slot_enabled
+create_corpse_variation_in_layout_random
+set_actor_react_to_lasso
+task_be_dead
+task_be_dead_random
+task_bird_land
+task_door_action
+task_warn_char
+task_action_perform_on_target
+task_follow_object_in_formation
+task_ledge_action
+task_seek_cover_from_coord
+task_simple_behavior
+task_stealth_attack
+task_tr_action
+task_tr_action_on_actor
+task_use_gringo_group
+squad_flock_set_bool_flocking_parameter
+squad_follow_traffic_curve_get_all_behavior_flags
+squad_follow_traffic_curve_set_all_behavior_flags
+squad_follow_traffic_curve_get_behavior_flag
+squad_follow_traffic_curve_set_speed
+squad_follow_traffic_curve_set_speed_absolute
+squad_follow_traffic_curve_set_speed_normalized
+squad_follow_traffic_curve_set_offset_x
+squad_follow_traffic_curve_set_desired_leader
+squad_follow_traffic_curve_clear_desired_leader
+squad_follow_path_in_formation_get_all_behavior_flags
+squad_follow_path_in_formation_set_all_behavior_flags
+squad_follow_path_in_formation_get_behavior_flag
+squad_follow_path_in_formation_set_task_priority
+squad_follow_path_in_formation_set_offset_x
+squad_follow_path_in_formation_clear_desired_leader
+squad_follow_traffic_curve_set_curve
+squad_goal_add_follow_object_in_formation
+ai_get_nav_actor_avoidance_allow_turns
+ai_get_nav_allow_tweak_desired_movement
+ai_set_nav_unalerted_prefer_pedpath
+ai_goal_look_at_player_when_within_clear
+is_ai_actor_performing_task
+ai_self_defense_get_player_attacked_first
+ai_self_defense_set_player_attacked_first
+ai_get_ignore_open_area_material
+ai_was_pushed_over_by
+memory_get_weapon_draw_preference
+memory_set_unarmed_retreat
+set_prop_no_fade
+streaming_load_all_requests_now
+set_deadeye_time_limit
+set_wagon_to_wagon_jack_enable
+toggle_cover_prop
+detach_draft_from_vehicle_by_index
+net_get_overload_state_for_slot
+get_faction_is_lawful_to_attack
+is_physinst_hide
+set_actor_stamina
+set_physinst_hide
+debug_draw_line
+debug_draw_string
+debug_draw_vector
+debug_draw_sphere
+find_closest_door
+create_named_population_set
+create_event_trap
+create_object_animator_on_object
+create_gateway_type
+create_leash_object
+create_obstacle_on_object
+create_fire_on_object
+gringo_is_prop_ready
+is_actor_on_ladder
+is_actor_draft_vehicle
+is_actor_hogtie_attached
+is_actor_being_dragged
+reset_vehicle_bump_count
+reset_props_in_volume
+leash_detach_object
+decor_get_string_hash
+is_object_animator_valid
+is_object_animator_ready
+is_vehicle_allowed_to_drive
+is_local_player_valid
+is_script_use_context_valid
+is_pers_char_valid
+is_door_opened
+is_object_in_volume
+is_actor_in_room
+set_zone_population_count
+set_zone_population_density
+get_object_from_actor
+get_object_from_crime
+get_object_from_event
+get_object_from_volume
+get_object_from_gringo
+get_object_from_objectset
+get_object_from_pers_char
+get_object_from_physinst
+get_object_from_animator
+get_object_from_squad
+get_object_animator_on_object
+get_object_animator_phase
+get_object_model_name
+destroy_pers_char
+release_script_use_context
+add_script_use_context
+get_actor_from_actorset
+get_actor_enum_string
+get_actor_enum_faction
+get_actor_drafted_to
+release_pers_char
+set_actor_to_seat
+get_local_player_name
+get_system_time
+get_last_hit_flags
+get_last_hit_weapon
+get_camera_from_object
+get_blip_on_object
+get_camera_aspect_ratio
+get_population_set_name
+get_factions_status
+get_weapon_max_ammo
+get_weapon_in_hand
+get_weapon_fragment_name
+set_camera_follow_actor
+net_is_session_client
+cutscene_manager_load_cutscene
+cutscene_manager_load_cutfile
+cutscene_manager_hide_actor
+cutscene_manager_unload_cutscene
+cutscene_manager_play_cutscene
+cutscene_manager_stop_cutscene
+cutscene_manager_show_actor
+hide_child_sector
+show_child_sector
+prepend_journal_entry
+net_get_gamer_posse_size
+net_get_gamer_posse_leader
+net_get_session_gamer_count
+enable_game_camera_focus
+disable_game_camera_focus
+shop_add_item
+shop_get_item_quantity
+shop_set_player_bank
+shop_set_item_quantity
+shop_is_sell_selected
+create_fire_property
+is_actor_crouching
+is_actor_blindfiring
+set_actor_stop_update
+get_actor_stop_update
+is_display_widescreen
+is_player_teleporting
+is_seat_occupied
+net_session_set_invitable
+net_session_start_gameplay
+net_session_end_gameplay
+get_game_edition
+get_fire_property
+get_event_perpetrator
+get_actor_incapacitated
+ui_label_set_text
+get_last_frame_time
+get_last_attack_time
+get_last_attack_target
+ui_label_set_value
+get_corpse_actor_enum
+get_blip_on_actor
+fire_set_max_flames
+flash_set_int
+flash_set_bool
+flash_set_float
+flash_set_string
+flash_get_int
+flash_get_bool
+flash_get_float
+flash_set_array_int
+flash_set_array_string
+net_posse_remove_gamer
+flash_set_extent_bool
+is_actor_inside_vehicle
+can_actor_hogtie_target
+set_game_camera_focus
+create_actorset_in_layout
+create_point_in_layout
+create_volume_in_layout
+create_gringo_in_layout
+create_propset_in_layout
+create_path_in_layout
+create_squad_in_layout
+create_formation_in_layout
+create_crime_in_layout
+create_objectset_in_layout
+create_gateway_in_layout
+create_camera_in_layout
+create_camerashot_in_layout
+create_aimramp_in_layout
+create_cutsceneobject_in_layout
+get_prop_from_object
+get_crime_from_object
+get_event_from_object
+get_physinst_from_actor
+get_physinst_from_object
+get_iterator_from_object
+get_curve_from_object
+get_volume_from_object
+get_squad_from_object
+get_objectset_from_object
+set_prop_cause_arm_up
+ai_get_nav_failsafe_movement_enabled
+ai_set_tr_program_for_actor
+animal_species_tuning_get_attrib_float
+get_journal_entry_detail_style_by_hash
+set_actor_low_drop_damage
+set_actor_medium_drop_damage
+set_actor_high_drop_damage
+set_actor_fly_fx
+turn_actor_into_zombie
+set_door_lock_visible
+set_actor_base_score
+set_actor_allow_disarm
+
+
+*/
 
 #undef _native
 #undef _native32

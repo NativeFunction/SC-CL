@@ -1,7 +1,8 @@
-#include "natives.h"
-#include "intrinsics.h"
 #include "types.h"
 #include "constants.h"
+#include "natives.h"
+#include "intrinsics.h"
+
 
 #define GlobalCharBufferD "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
 
@@ -18,7 +19,7 @@ void print(const char* str, int ms)
 		_print_subtitle(str, ms != 0 ? (float)ms / 1000.0f : 0, true, 2, 1, 0, 0, 0);
 	#elif defined(__GTAIV__)
 		CLEAR_PRINTS();
-		PRINT_STRING_WITH_LITERAL_STRING_NOW(str, ms);
+		PRINT_STRING_WITH_LITERAL_STRING_NOW("STRING", str, ms, true);
 	#endif
 }
 
@@ -57,7 +58,12 @@ void Throw(const char* str)
 	stradd(Buffer, str, 255);
 	print(Buffer, 10000);
 	wait(10000);
+
+#ifdef __GTAV__
 	terminate_this_thread();
+#else
+	terminate_this_script();
+#endif
 }
 void Warn(const char* str)
 {
@@ -122,34 +128,14 @@ int HexToInt(const char *hex)
 
 	return result;
 }
-int SetBit(int value, uint index)
+void SetBitAtIndex(int* value, uint index, bool bit)
 {
-	return index > 31 ? value : value | (1 << index);
-}
-int ClearBit(int value, uint index)
-{
-	return index > 31 ? value : value & ~(1 << index);
-}
-int ToggleBit(int value, uint index)
-{
-	return index > 31 ? value : value ^ (1 << index);
-}
-int SetBitInline(int value, uint index, bool bit)
-{
-	return index > 31 ? value : value ^ ((-bit ^ value) & (1 << index));
+	*value = *value ^ ((-bit ^ *value) & (1 << (index % 32)));
 }
 int ModNegitive(int value1, int value2)
 {
 	int ret = value1 % value2;
 	return ret < 0 ? ret + value2 : ret;
-}
-float DegreesToRadians(float degrees)
-{
-	return degrees * (PI / 180);
-}
-float RadiansToDegrees(float radians)
-{
-	return radians * (180 / PI);
 }
 quaternion EulerToQuaternion(vector3 euler)
 {
