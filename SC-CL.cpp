@@ -178,6 +178,18 @@ static cl::opt<bool> Option_EntryFunctionPadding(//TODO: if selected set static 
 	cl::Grouping,
 	cl::cat(CompilerOptions)
 );
+static cl::opt<bool> Option_EmitAsm(
+	"emit-asm", cl::desc("Emits the pre compiled ASM representation of the script"),
+	cl::Hidden,
+	cl::Grouping,
+	cl::cat(CompilerOptions)
+);
+static cl::opt<bool> Option_AsmOnly(
+	"S", cl::desc("Only emits the pre compiled ASM representation of the script"),
+	cl::Hidden,
+	cl::Grouping,
+	cl::cat(CompilerOptions)
+);
 #pragma endregion
 
 //static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
@@ -7332,8 +7344,12 @@ int ProcessFiles(ClangTool &Tool)
 			}
 			scriptData->finaliseEntryFunction();
 
-			WriteAsmFile(outDir);
-			WriteScriptFile(outDir);
+			if (Option_AsmOnly || Option_EmitAsm) {
+				WriteAsmFile(outDir);
+			}
+			if (!Option_AsmOnly) {
+				WriteScriptFile(outDir);
+			}
 
 		}
 		else
