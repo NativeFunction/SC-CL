@@ -819,17 +819,12 @@ void CompileBase::FMultImm()
 #pragma region Write_Functions
 void CompileBase::WriteCodePagesNoPadding()
 {
-	SavedOffsets.CodePagePointers.resize(CodePageData->getPageCount());
-	for (uint32_t i = 0; i < CodePageData->getPageCount() - 1; i++)
-	{	
-		SavedOffsets.CodePagePointers[i] = BuildBuffer.size();
-		BuildBuffer.resize(BuildBuffer.size() + 16384);
-		memcpy(BuildBuffer.data() + BuildBuffer.size() - 16384, CodePageData->getPageAddress(i), 16384);
-	}
-	const uint32_t LastCodePageSize = CodePageData->getLastPageSize();
-	SavedOffsets.CodePagePointers[CodePageData->getPageCount() - 1] = BuildBuffer.size();
-	BuildBuffer.resize(BuildBuffer.size() + LastCodePageSize);
-	memcpy(BuildBuffer.data() + BuildBuffer.size() - LastCodePageSize, CodePageData->getPageAddress(CodePageData->getPageCount() - 1), LastCodePageSize);
+	assert(CodePageData->getPageCount() == 1 && "Invalid Page Count");
+	const uint32_t CurrentCodePageSize = CodePageData->getLastPageSize();
+	
+	BuildBuffer.resize(BuildBuffer.size() + CurrentCodePageSize);
+	memcpy(BuildBuffer.data() + BuildBuffer.size() - CurrentCodePageSize, CodePageData->getPageAddress(CodePageData->getPageCount() - 1), CurrentCodePageSize);
+
 };
 void CompileBase::Write16384CodePages()
 {
@@ -1435,17 +1430,19 @@ void CompileGTAIV::SCOWrite(const char* path, CompileGTAIV::SCRFlags EncryptionC
 		GlobalsCount = 3,
 	};
 
+	WriteCodePagesNoPadding();
+
 	const uint32_t HeaderSize = 24;
 	const vector<uint32_t> SCR_Header = {
 		Utils::Bitwise::SwapEndian((uint32_t)EncryptionCompressionLevel)//SCR.
-		, CodePageData->getTotalSize()//code size
+		, BuildBuffer.size()//code size
 		, HLData->getStaticCount()//statics count
 		, 0u//Globals Alloc Count
 		, Utils::Bitwise::SwapEndian(0u)//Script Flags
 		, Utils::Bitwise::SwapEndian((uint32_t)GetSignature())//Signature
 	};
 	
-	WriteCodePagesNoPadding();
+	
 	WriteStaticsNoPadding();
 	//Globals should be written here if we decide to use them
 

@@ -7383,12 +7383,12 @@ void ParseCommandLine(int argc, const char **argv, const char* Overview, unique_
 }
 int main(int argc, const char **argv)
 {
-	cout << "Starting Clang 3.8.1\n";
+	llvm::errs() << "Starting SC-CL " << Version << " running Clang 3.8.1\n";
 
 	globalDirectory = GetDir(string(argv[0]));
 	cl::SetVersionPrinter(PrintVersion);
 	unique_ptr<CompilationDatabase> Compilations;
-	ParseCommandLine(argc, argv, " XSC-CL\n", Compilations);
+	ParseCommandLine(argc, argv, " SC-CL\n", Compilations);
 
 	ClangTool Tool(*Compilations, SourcePaths);
 	return ProcessFiles(Tool);

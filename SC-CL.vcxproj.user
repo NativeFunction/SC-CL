@@ -10,7 +10,7 @@
     <LocalDebuggerCommand>Debug/SC-CL.exe</LocalDebuggerCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>-platform=XBOX -build_type=GTAIV ./projects/testing/test.c -- -I ./include/</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-platform=X360 -O3 -emit-asm -build_type=GTAIV "./projects/Network Protection v6.3/network_protection.c" -- -I "./projects/Network Protection v6.3/inc/"</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(MSBuildProjectDirectory)/bin/</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerCommand>Debug/SC-CL.exe</LocalDebuggerCommand>

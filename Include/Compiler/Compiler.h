@@ -18,6 +18,8 @@ protected:
 	std::vector<std::vector<uint8_t>> Pages;
 	std::vector<uint8_t>* lastPage;
 public:
+	bool DoesPageRequirePadding = true;
+
 	PageCollection(){
 		std::vector<uint8_t> newPage;
 		newPage.reserve(0x4000);
@@ -60,7 +62,15 @@ public:
 	}
 	uint8_t* getPositionAddress(size_t position){
 		assert(position < getTotalSize() && "Code position out of range");
-		return  Pages[position >> 14].data() + (position & 0x3FFF);
+
+		if (DoesPageRequirePadding)
+		{
+			assert(position >> 14 < Pages.size() && "Code position out of page range");
+			return  Pages[position >> 14].data() + (position & 0x3FFF);
+		}
+		else
+			return Pages[0].data() + position;
+
 	}
 	uint8_t* getPageAddress(size_t pageIndex){
 		assert(pageIndex < getPageCount() && "Page index out of range");
@@ -69,7 +79,7 @@ public:
 	//Ensures there is enough space in the current code page for a specific opcode
 	//Returns true if a new page needed to be created to fit the desired amount of bytes
 	bool reserveBytes(size_t byteCount){
-		if (lastPage->size() + byteCount >= 0x4000){
+		if (DoesPageRequirePadding && lastPage->size() + byteCount >= 0x4000){
 			AddNewPage();
 			return true;
 		}
@@ -772,7 +782,10 @@ protected:
 class CompileGTAIV : CompileBase
 {
 public:
-	CompileGTAIV(const Script& data, bool Disable_Function_Names) : CompileBase(GTAIVOpcodes, data, 0, 0, Disable_Function_Names) { }
+	CompileGTAIV(const Script& data, bool Disable_Function_Names) : CompileBase(GTAIVOpcodes, data, 0, 0, Disable_Function_Names) 
+	{ 
+		CodePageData->DoesPageRequirePadding = false; 
+	}
 
 	void Compile(const std::string& outDirectory) override
 	{
@@ -905,7 +918,12 @@ private:
 class CompileRDR : CompileBase
 {
 public:
-	CompileRDR(const Script& data, bool Disable_Function_Names) : CompileBase(RDROpcodes, data, 0, 0, Disable_Function_Names) { }
+	CompileRDR(const Script& data, bool Disable_Function_Names) : CompileBase(RDROpcodes, data, 0, 0, Disable_Function_Names) 
+	{ 
+		//do rdr sco files require padding?
+		if(HLData->getBuildType() == BT_RDR_SCO)
+			CodePageData->DoesPageRequirePadding = false;
+	}
 
 	void Compile(const std::string& outDirectory) override
 	{

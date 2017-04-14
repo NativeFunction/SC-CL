@@ -79,8 +79,8 @@ typedef union vector2
 
 typedef union vector3
 {
-	//GTA Coord Type = Over Top
-	//RDR Coord Type = Side Scroll
+	//GTA Coord Type = Y Depth
+	//RDR Coord Type = Z Depth
 	struct { float x, y, z; };
 	float v[3];
 } vector3;
