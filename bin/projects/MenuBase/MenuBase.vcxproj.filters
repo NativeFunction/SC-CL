@@ -1,29 +1,30 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="include">
       <UniqueIdentifier>{99bf53d6-378f-413e-b921-40ff6f9d3da1}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\GTAV">
       <UniqueIdentifier>{819b25ed-b4b1-4046-927c-dccde87a5d1a}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="MenuBase.c">
-      <Filter>Source Files</Filter>
-    </CustomBuild>
+    <Filter Include="Menu Internals">
+      <UniqueIdentifier>{2e099389-1864-4977-81a3-83360328882f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Menu Internals\Source Files">
+      <UniqueIdentifier>{2a26512b-a37b-44ac-8cab-ffda6c4ba7d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Menu Internals\Header Files">
+      <UniqueIdentifier>{cf6c15cc-8ee1-4b34-8f2b-356b564490b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utilities">
+      <UniqueIdentifier>{2382d49f-fac8-4c10-a3df-e0f4dd24c277}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utilities\Source Files">
+      <UniqueIdentifier>{f1b9fd85-a8b0-4908-9050-1ecb1fae5d04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utilities\Header Files">
+      <UniqueIdentifier>{ca7abc21-2a46-4a35-86d0-ce8d9248c9cc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\GTAV\natives64.h">
@@ -53,43 +54,46 @@
     <ClInclude Include="..\..\include\constants.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="MenuUiHandling.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\common.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="MenuExecutionHandling.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Include\Menu Internals\MenuUiHandling.h">
+      <Filter>Menu Internals\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ItemExecution.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Include\Menu Internals\MenuExecutionHandling.h">
+      <Filter>Menu Internals\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Memory.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Include\Menu Internals\ItemExecution.h">
+      <Filter>Menu Internals\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Utilities\Memory.h">
+      <Filter>Utilities\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Utilities\Utils.h">
+      <Filter>Utilities\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\include\common.c">
       <Filter>include</Filter>
     </ClCompile>
-    <ClCompile Include="MenuUiHandling.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Include\Menu Internals\ItemExecution.c">
+      <Filter>Menu Internals\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Utils.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Include\Menu Internals\MenuExecutionHandling.c">
+      <Filter>Menu Internals\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ItemExecution.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Include\Menu Internals\MenuUiHandling.c">
+      <Filter>Menu Internals\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MenuExecutionHandling.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Include\Utilities\Memory.c">
+      <Filter>Utilities\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Memory.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Include\Utilities\Utils.c">
+      <Filter>Utilities\Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="MenuBase.c" />
   </ItemGroup>
 </Project>

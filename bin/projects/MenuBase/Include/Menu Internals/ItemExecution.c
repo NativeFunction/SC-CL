@@ -5,7 +5,6 @@
 #include "Utils.h"
 #include "common.h"
 
-
 #include "MenuExecutionHandling.h"
 #include "Memory.h"
 
@@ -23,145 +22,6 @@ enum MenuBits
 	MB_NeverWanted
 };
 static int MenuLoopedBitset = 0;
-#pragma endregion
-
-#pragma region AlignedDataTesting
-noinline short NoInlineShort()
-{
-	return 5;
-}
-static short InlineShort()
-{
-	return 3000;
-}
-noinline ushort NoInlineUShort()
-{
-	return 5;
-}
-ushort InlineUShort()
-{
-	return 300;
-}
-noinline void asmComment(const char* x)
-{
-
-}
-void ShortTesting()
-{
-	short sArr2D[3][5] = { { 1000,2000,3000,4000 },{ 6000,7000,8000,9000,10000 },{ 11000,12000,13000,14000,15000 } };
-
-	int IntToShortConv = 50000000;
-	char CharToShortConv = 'A';
-
-	asmComment("-------Static Short Initialization---------");
-	short StaticShortInit = 30000;
-	short StaticShortInitNeg = (short)-30000;
-	short StaticShortInitNegOverflow = (short)-300000000;
-	short StaticShortInitOverflow = (short)300000000;
-
-	asmComment("-------Static UShort Initialization---------");
-	ushort StaticUShortInit = 50000;
-	ushort StaticUShortInitNegConv = (short)-30000;
-	ushort StaticUShortInitNegConv2 = (short)-1;
-	ushort StaticUShortInitNegOverflow = (short)-300000000;
-	ushort StaticUShortInitOverflow = (short)300000000;
-
-	asmComment("-------Dynamic Short Initialization---------");
-	short DynamicShortInit_WithShort = StaticShortInit;
-	short DynamicShortInit_WithNegShort = StaticShortInitNegOverflow;
-	short DynamicShortInit_WithUShort = StaticUShortInit;
-	short DynamicShortInit_WithNegUShort = StaticUShortInitNegOverflow;
-	short DynamicShortInit_WithInt = IntToShortConv;
-	short DynamicShortInit_WithChar = CharToShortConv;
-	short DynamicShortInit_WithShortArray = sArr2D[1][1];
-	short DynamicShortInit_WithShortFunction = NoInlineShort();
-	short DynamicShortInit_WithShortFunctionInline = InlineShort();
-	short DynamicShortInit_WithUShortFunction = NoInlineUShort();
-	short DynamicShortInit_WithUShortFunctionInline = InlineUShort();
-
-	asmComment("-------Dynamic UShort Initialization---------");
-	ushort DynamicUShortInit_WithShort = StaticShortInit;
-	ushort DynamicUShortInit_WithNegShort = StaticShortInitNegOverflow;
-	ushort DynamicUShortInit_WithUShort = StaticUShortInit;
-	ushort DynamicUShortInit_WithNegUShort = StaticUShortInitNegOverflow;
-	ushort DynamicUShortInit_WithInt = IntToShortConv;
-	ushort DynamicUShortInit_WithChar = CharToShortConv;
-	ushort DynamicUShortInit_WithShortArray = sArr2D[1][2];
-	ushort DynamicUShortInit_WithShortFunction = NoInlineShort();
-	ushort DynamicUShortInit_WithShortFunctionInline = InlineShort();
-	ushort DynamicUShortInit_WithUShortFunction = NoInlineUShort();
-	ushort DynamicUShortInit_WithUShortFunctionInline = InlineUShort();
-
-	asmComment("setting short 2d array");
-	sArr2D[2][1] = 5000;
-	asmComment("setting derefed short 2d array with math");
-	*(sArr2D[1] + 3) = 6000;
-	asmComment("setting derefed short 2d array with math and sizeof");
-	*(*sArr2D + sizeof(sArr2D[0]) + 3) = 7000;//CError: #64: sizeof short arrays of arrays are too big (mult bug)
-	asmComment("setting derefed short 2d array");
-	*(*sArr2D) = 7000;
-	asmComment("short 2d array to int");
-	int stoi_2d = sArr2D[0][3];
-	asmComment("short 2d array to short");
-	short stos_2d = sArr2D[0][3];
-	asmComment("short 2d array to char");
-	char stoc_2d = sArr2D[0][2];
-
-	short sArr3D[3][4][5] =
-	{ { { 1000,2000,3000,4000 },{ 6000,7000,8000,9000,10000 },{ 11000,12000,13000,14000 } },
-	{ { 16000,17000,18000,19000 },{ 20000,21000,22000,23000,24000 },{ 25000,26000,27000,28000,29000 },{ 30000,31000,32000,33000,34000 } },
-	{ { 38000,39000,40000,41000,42000 } } };
-
-	asmComment("-------seting normal and getting test---------");
-	asmComment("simple set array value");
-	sArr3D[1][0][2] = 4444;
-	asmComment("simple set array negitive value");
-	sArr3D[2][3][4] = -5555;
-	asmComment("set array value narrowing conversion literal");
-	sArr3D[0][0][0] = (short)1000000;
-	asmComment("set array value to array value");
-	sArr3D[1][1][3] = sArr3D[2][0][3];
-	asmComment("set array value to array pointer + index deref");
-	sArr3D[2][2][2] = *(sArr3D[2][0] + 3);
-	asmComment("set array value to array pointer + array pointer deref + index deref");
-	sArr3D[1][2][0] = *(*(sArr3D[2] + 2) + 1);
-	asmComment("set array value to array pointer with only adding index");
-	sArr3D[0][2][1] = ***(sArr3D + 1);
-
-	asmComment("--------setting to it self---------");
-	*(sArr3D[2][0] + 3) = *(sArr3D[2][0] + 3);
-	*(*(sArr3D[2] + 2) + 1) = *(*(sArr3D[2] + 2) + 1);
-	***(sArr3D + 1) = ***(sArr3D + 1);
-
-	asmComment("--------incrementation----------");
-	sArr3D[1][1][3]++;
-	(*(sArr3D[2][0] + 3))++;
-	(*(*(sArr3D[2] + 2) + 1))--;
-	(***(sArr3D + 1))++;
-
-	asmComment("---------increment it self----------");
-	*(sArr3D[2][0] + 3) += *(sArr3D[2][0] + 3);
-	*(*(sArr3D[2] + 2) + 1) -= *(*(sArr3D[2] + 2) + 1);
-	***(sArr3D + 1) += ***(sArr3D + 1);
-
-
-
-
-	*(sArr2D[1] + 3) = 6000;
-	*(*sArr2D + sizeof(sArr2D[0]) + 3) = 7000;
-	*(*sArr2D) = 7000;
-	int stoi = sArr2D[0][1];
-	uint stoui = sArr2D[0][2];
-	short stos = sArr2D[0][4];
-	ushort stous = sArr2D[0][3];
-	char stoc = sArr2D[0][2];
-	uchar stouc = sArr2D[0][3];
-
-	//ShortParamTest(NoInlineUShort(), sArr2D[0], *sArr2D, (short**)sArr2D);
-	//short ShortParamTest(short a, short b[], short* c, short* d[])
-
-}
-
 #pragma endregion
 
 #pragma region Helpers
@@ -499,12 +359,13 @@ void Menu__PlayerList()
 	//DynamicChecker[MaxMenuLevels]
 	
 	SetHeaderAdvanced("Player List", false, DynamicChecker__PlayerList);
-	//for (int i = 0; i < LobbySizeWithSpectators; i++)
-	//{
-	//	if (DynamicChecker__PlayerList(i))
-	//		AddItemPlayer(i, Option_Blank);
-	//}
+	for (int i = 0; i < LobbySizeWithSpectators; i++)
+	{
+		if (DynamicChecker__PlayerList(i))
+			AddItemPlayer(i, Option_Blank);
+	}
 	
+	/*
 	#pragma region net sim
 	static int netsimstart = true;
 	startnettime:
@@ -627,8 +488,9 @@ void Menu__PlayerList()
 		goto startnettime;
 	}
 	#pragma endregion
-
-	if(!GetCurrentItemCount())
+	*/
+	
+if(!GetCurrentItemCount())
 		SetCurrentMenuInvalid(true, "No active players in session");
 }
 void Menu__LargeSubmenuTest()
@@ -1686,7 +1548,6 @@ void FlyModController(Player CurrentPlayerPed)
 		FlyMod(CurrentPlayerPed);
 }
 
-
 inline void LoopedOptions()
 {
 	Player CurrentPlayerPed = player_ped_id();
@@ -1736,17 +1597,19 @@ inline void LoopedOptions()
 
 
 	
+	/*
+	//Single Player Snow Fall
 	if (!has_named_ptfx_asset_loaded("core_snow"))
 	{
 		request_named_ptfx_asset("core_snow");
-
+	
 		//request_script_audio_bank("SNOW_FOOTSTEPS", false, -1)
 		request_script_audio_bank("SNOW_FOOTSTEPS", false);
 	}
 	else
 	{
 		//XBOX TU27 Search "XMAS" Addr = IsNetworkGame function call
-		#ifndef __YSC__
+		#ifdef __X360__
 		*(int*)0x8274B3D0 = 0x60000000;
 		*(int*)(0x8274B3D0 + 4) = 0x39200001;
 		
@@ -1756,15 +1619,9 @@ inline void LoopedOptions()
 		set_weather_type_now_persist("XMAS");
 		_set_force_ped_footsteps_tracks(1);
 		_set_force_vehicle_trails(1);
-
-
-	}
-
 	
-
+	
+	}
+	*/
 }
 #pragma endregion
-
-
-
-

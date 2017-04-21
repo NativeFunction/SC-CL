@@ -2,20 +2,31 @@
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ShowAllFiles>false</ShowAllFiles>
+	<DefineCommonCapabilities>false</DefineCommonCapabilities>
+    <DefineCommonReferenceSchemas>false</DefineCommonReferenceSchemas>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV TLAD|Win32'">
+    <DebuggerFlavor></DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV TBOGT|Win32'">
+    <DebuggerFlavor></DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAV|Win32'">
+    <DebuggerFlavor></DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDR|Win32'">
+    <DebuggerFlavor></DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV|Win32'">
+    <DebuggerFlavor></DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommand>compile.bat</LocalDebuggerCommand>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <DebuggerFlavor></DebuggerFlavor>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'">
-    <LocalDebuggerCommand>compile.bat</LocalDebuggerCommand>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDR SCO|Win32'">
+    <DebuggerFlavor></DebuggerFlavor>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Itanium'">
-    <LocalDebuggerCommand>compile.bat</LocalDebuggerCommand>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAV|Xbox 360'">
-    <DebuggerFlavor>Xbox360Debugger</DebuggerFlavor>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDR _SC|Win32'">
+    <DebuggerFlavor></DebuggerFlavor>
   </PropertyGroup>
 </Project>

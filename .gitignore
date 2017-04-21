@@ -40,13 +40,18 @@
 !bin/
 !Debug/
 !include/
+!varargs.h
 !Release/
 !projects/
 !testing/
 !MenuBase/
+!Menu Internals/
+!Utilities/
 !RDR/
 !GTAV/
 !GTAIV/
+!*.c
+!*.h
 ASM Compiler/XscCompilerRaw (RDR)/obj/
 ASM Compiler/XscCompilerRaw (RDR)/bin/
 ASM Compiler/XscCompilerRaw/bin/
