@@ -9,11 +9,9 @@
 #define _native64(hash) __attribute((native(hash & 0xFFFFFFFF, hash >> 32)))
 #define l ;
 #else
+#define l {}
 #define _native64(hash)
-#define l {};
 #endif
-
-
 
 #pragma region PLAYER //{
 extern _native64(0x43A66C31C68491C0) Ped get_player_ped(Player player)l
@@ -250,7 +248,7 @@ extern _native64(0xE465D4AB7CA6AE72) vector3 get_collision_normal_of_last_hit_fo
 extern _native64(0x40FDEDB72F8293B2) void force_entity_ai_and_animation_update(Entity entity)l
 extern _native64(0x346D81500D088F42) float get_entity_anim_current_time(Entity entity, const char* animDict, const char* animName)l
 extern _native64(0x50BD2730B191E360) float get_entity_anim_total_time(Entity entity, const char* animDict, const char* animName)l
-extern _native64(0xFEDDF04D62B8D790) float _get_anim_duration(const char* animDict, const char* animName)l
+extern _native64(0xFEDDF04D62B8D790) float get_anim_duration(const char* animDict, const char* animName)l
 extern _native64(0x48C2BED9180FE123) Entity get_entity_attached_to(Entity entity)l
 extern _native64(0x3FEF770D40960D5A) vector3 get_entity_coords(Entity entity, bool alive)l
 extern _native64(0x0A794A5A57F8DF91) vector3 get_entity_forward_vector(Entity entity)l
@@ -284,7 +282,7 @@ extern _native64(0x44A8FCB8ED227738) vector3 get_world_position_of_entity_bone(E
 extern _native64(0x7196842CB375CDB3) Player get_nearest_player_to_entity(Entity entity)l
 extern _native64(0x4DC9A62F844D9337) Player get_nearest_player_to_entity_on_team(Entity entity, int team)l
 extern _native64(0x8ACD366038D14505) int get_entity_type(Entity entity)l
-extern _native64(0xF6F5161F4534EDFF) int _get_entity_population_type(Entity entity)l
+extern _native64(0xF6F5161F4534EDFF) int get_entity_population_type(Entity entity)l
 extern _native64(0x731EC8A916BD11A1) bool is_an_entity(int handle)l
 extern _native64(0x524AC5ECEA15343E) bool is_entity_a_ped(Entity entity)l
 extern _native64(0x0A7B270912999B3C) bool is_entity_a_mission_entity(Entity entity)l
@@ -347,7 +345,7 @@ extern _native64(0x1760FFA8AB074D66) void set_entity_can_be_damaged(Entity entit
 extern _native64(0xE22D8FDE858B8119) void set_entity_can_be_damaged_by_relationship_group(Entity entity, bool bCanBeDamaged, int relGroup)l
 extern _native64(0xD3997889736FD899) void set_entity_can_be_targeted_without_los(Entity entity, bool toggle)l
 extern _native64(0x1A9205C1B9EE827F) void set_entity_collision(Entity entity, bool toggle, bool keepPhysics)l
-extern _native64(0xCCF1E97BEFDAE480) bool _get_entity_collison_disabled(Entity entity)l
+extern _native64(0xCCF1E97BEFDAE480) bool get_entity_collison_disabled(Entity entity)l
 extern _native64(0x9EBC85ED0FFFE51C) void unk_0x9EBC85ED0FFFE51C(Entity entity, bool p1, bool p2)l
 extern _native64(0x06843DA7060A026B) void set_entity_coords(Entity entity, vector3 Pos, bool xAxis, bool yAxis, bool zAxis, bool clearArea)l
 extern _native64(0x621873ECE1178967) void _set_entity_coords_2(Entity entity, vector3 Pos, bool xAxis, bool yAxis, bool zAxis, bool clearArea)l
@@ -795,7 +793,7 @@ extern _native64(0xE1E65CA8AC9C00ED) void play_facial_anim(Ped ped, const char* 
 extern _native64(0xFFC24B988B938B38) void set_facial_idle_anim_override(Ped ped, const char* animName, const char* animDict)l
 extern _native64(0x726256CC1EEB182F) void clear_facial_idle_anim_override(Ped ped)l
 extern _native64(0xBAF20C5432058024) void set_ped_can_play_gesture_anims(Ped ped, bool toggle)l
-extern _native64(0xF833DDBA3B104D43) void set_ped_can_play_viseme_anims(Ped ped, bool p1, bool p2)l
+extern _native64(0xF833DDBA3B104D43) void set_ped_can_play_viseme_anims(Ped ped, bool toggle, bool p2)l
 extern _native64(0x33A60D8BDD6E508C) void unk_0x33A60D8BDD6E508C(Ped ped, bool p1)l
 extern _native64(0x6373D1349925A70E) void set_ped_can_play_ambient_anims(Ped ped, bool toggle)l
 extern _native64(0x0EB0585D15254740) void set_ped_can_play_ambient_base_anims(Ped ped, bool toggle)l
@@ -1406,17 +1404,17 @@ extern _native64(0xE6C0C80B8C867537) void unk_0xE6C0C80B8C867537(bool p0)l
 extern _native64(0x36492C2F0D134C56) any unk_0x36492C2F0D134C56(any p0)l
 extern _native64(0x06582AFF74894C75) void unk_0x06582AFF74894C75(any p0, bool p1)l
 extern _native64(0xDFFCEF48E511DB48) void unk_0xDFFCEF48E511DB48(any p0, bool p1)l
-extern _native64(0x8D474C8FAEFF6CDE) bool unk_0x8D474C8FAEFF6CDE(Vehicle vehicle)l
+extern _native64(0x8D474C8FAEFF6CDE) bool _is_vehicle_shop_respray_allowed(Vehicle vehicle)l
 extern _native64(0x983765856F2564F9) void set_vehicle_engine_can_degrade(Vehicle vehicle, bool toggle)l
 extern _native64(0xF0E4BA16D1DB546C) void unk_0xF0E4BA16D1DB546C(Vehicle vehicle, int p1, int p2)l
 extern _native64(0xF87D9F2301F7D206) void unk_0xF87D9F2301F7D206(any p0)l
-extern _native64(0x4198AB0022B15F87) bool _vehicle_has_landing_gear(bool vehicle)l
+extern _native64(0x4198AB0022B15F87) bool _vehicle_has_landing_gear(Vehicle vehicle)l
 extern _native64(0x755D6D5267CBBD7E) bool _are_propellers_undamaged(Vehicle vehicle)l
 extern _native64(0x0CDDA42F9E360CA6) void unk_0x0CDDA42F9E360CA6(Vehicle vehicle, bool p1)l
 extern _native64(0x4AF9BD80EEBEB453) bool is_vehicle_stolen(Vehicle vehicle)l
 extern _native64(0x67B2C79AA7FF5738) any set_vehicle_is_stolen(Vehicle vehicle, bool isStolen)l
 extern _native64(0xAD2D28A1AFDFF131) void unk_0xAD2D28A1AFDFF131(Vehicle vehicle, float p1)l
-extern _native64(0x5991A01434CE9677) bool add_a_marker_over_vehicle(any p0)l
+extern _native64(0x5991A01434CE9677) bool add_a_marker_over_vehicle(Vehicle vehicle)l
 extern _native64(0xB264C4D2F2B0A78B) void unk_0xB264C4D2F2B0A78B(Vehicle vehicle)l
 extern _native64(0x0E21D3DF1051399D) void detach_vehicle_from_cargobob(Vehicle vehicle, Vehicle cargobob)l
 extern _native64(0xADF7BE450512C12F) bool detach_vehicle_from_any_cargobob(Vehicle vehicle)l
@@ -1425,20 +1423,20 @@ extern _native64(0x873B82D42AC2B9E5) Vehicle get_vehicle_attached_to_cargobob(Ve
 extern _native64(0x4127F1D84E347769) void attach_vehicle_to_cargobob(Vehicle vehicle, Vehicle cargobob, int p2, vector3 vec)l
 extern _native64(0x571FEB383F629926) void unk_0x571FEB383F629926(Vehicle cargobob, bool p1)l
 extern _native64(0xCBDB9B923CACC92D) vector3 _get_cargobob_hook_position(Vehicle cargobob)l
-extern _native64(0x1821D91AD4B56108) bool _is_cargobob_hook_active(Vehicle cargobob)l
-extern _native64(0x7BEB0C7A235F6F3B) void _enable_cargobob_hook(Vehicle cargobob, int state)l
-extern _native64(0x9768CF648F54C804) void _retract_cargobob_hook(Vehicle cargobob)l
-extern _native64(0x877C1EAEAC531023) void _set_cargobob_hook_position(any p0, float p1, float p2, bool p3)l
+extern _native64(0x1821D91AD4B56108) bool does_cargobob_have_pick_up_rope(Vehicle cargobob)l
+extern _native64(0x7BEB0C7A235F6F3B) void create_pick_up_rope_for_cargobob(Vehicle cargobob, int state)l
+extern _native64(0x9768CF648F54C804) void remove_pick_up_rope_for_cargobob(Vehicle cargobob)l
+extern _native64(0x877C1EAEAC531023) void _set_cargobob_hook_position(any p0, float p1, float p2, int state)l
 extern _native64(0xCF1182F682F65307) void unk_0xCF1182F682F65307(any p0, float p1)l
-extern _native64(0x6E08BF5B3722BAC9) bool _is_cargobob_magnet_active(Vehicle cargobob)l
-extern _native64(0x9A665550F8DA349B) void _cargobob_magnet_grab_vehicle(Vehicle cargobob, bool toggle)l
-extern _native64(0xBCBFCD9D1DAC19E2) void unk_0xBCBFCD9D1DAC19E2(Vehicle cargobob, float p1)l
+extern _native64(0x6E08BF5B3722BAC9) bool does_cargobob_have_pickup_magnet(Vehicle cargobob)l
+extern _native64(0x9A665550F8DA349B) void set_cargobob_pickup_magnet_active(Vehicle cargobob, bool isActive)l
+extern _native64(0xBCBFCD9D1DAC19E2) void set_cargobob_pickup_magnet_strength(Vehicle cargobob, float strength)l
 extern _native64(0xA17BAD153B51547E) void unk_0xA17BAD153B51547E(Vehicle cargobob, float p1)l
 extern _native64(0x66979ACF5102FD2F) void unk_0x66979ACF5102FD2F(Vehicle cargobob, float p1)l
 extern _native64(0x6D8EAC07506291FB) void unk_0x6D8EAC07506291FB(Vehicle cargobob, float p1)l
 extern _native64(0xED8286F71A819BAA) void unk_0xED8286F71A819BAA(Vehicle cargobob, float p1)l
 extern _native64(0x685D5561680D088B) void unk_0x685D5561680D088B(any p0, float p1)l
-extern _native64(0xE301BD63E9E13CF0) void unk_0xE301BD63E9E13CF0(any p0, any p1)l
+extern _native64(0xE301BD63E9E13CF0) void unk_0xE301BD63E9E13CF0(Vehicle cargobob, Vehicle vehicle)l
 extern _native64(0x9BDDC73CC6A115D4) void unk_0x9BDDC73CC6A115D4(any p0, bool p1, bool p2)l
 extern _native64(0x56EB5E94318D3FB6) void unk_0x56EB5E94318D3FB6(any p0, bool p1)l
 extern _native64(0x25ECB9F8017D98E0) bool does_vehicle_have_weapons(Vehicle vehicle)l
@@ -1516,6 +1514,8 @@ extern _native64(0xA6D3A8750DC73270) void _set_vehicle_livery2(Vehicle vehicle, 
 extern _native64(0x86B4B6212CB8B627) void _set_vehicle_weapons_disabled(Vehicle vehicle, bool disable)l
 extern _native64(0xB0AD1238A709B1A2) bool _is_boat(Vehicle vehicle)l
 extern _native64(0x3B458DDB57038F08) void _set_vehicle_door_unkn(Vehicle vehicle, int doorIndex, bool p2)l
+extern _native64(0x4D610C6B56031351) void _vehicle_set_custom_parachute_model(Vehicle vehicle, Hash parachuteModel)l
+extern _native64(0xA74AD2439468C883) void _vehicle_set_custom_parachute_texture(Vehicle vehicle, int colorIndex)l
 #pragma endregion //}
 #pragma region OBJECT //{
 extern _native64(0x509D5878EB39E842) Object create_object(Object modelHash, vector3 vec, bool isNetwork, bool p5, bool dynamic)l
@@ -1972,8 +1972,8 @@ extern _native64(0x11B56FBBF7224868) void unk_0x11B56FBBF7224868(const char* p0)
 extern _native64(0xFC4842A34657BFCB) void _set_cloud_hat_transition(const char* type, float transitionTime)l
 extern _native64(0xA74802FB8D0B7814) void unk_0xA74802FB8D0B7814(const char* p0, float p1)l
 extern _native64(0x957E790EA1727B64) void _clear_cloud_hat()l
-extern _native64(0xF36199225D6D8C86) void unk_0xF36199225D6D8C86(float p0)l
-extern _native64(0x20AC25E781AE4A84) float unk_0x20AC25E781AE4A84()l
+extern _native64(0xF36199225D6D8C86) void _set_cloud_hat_opacity(float opacity)l
+extern _native64(0x20AC25E781AE4A84) float _get_cloud_hat_opacity()l
 extern _native64(0x9CD27B0045628463) int get_game_timer()l
 extern _native64(0x15C40837039FFAF7) float get_frame_time()l
 extern _native64(0xE599A503B3837E1B) float unk_0xE599A503B3837E1B()l
@@ -2134,7 +2134,7 @@ extern _native64(0xEB1774DF12BB9F12) void stop_save_struct()l
 extern _native64(0x60FE567DF1B1AF9D) void _start_save_array(any* p0, int p1, const char* arrayName)l
 extern _native64(0x04456F95153C6BE4) void stop_save_array()l
 extern _native64(0xDC0F817884CDD856) void enable_dispatch_service(int dispatchType, bool toggle)l
-extern _native64(0x9B2BD3773123EA2F) void unk_0x9B2BD3773123EA2F(any p0, any p1)l
+extern _native64(0x9B2BD3773123EA2F) void unk_0x9B2BD3773123EA2F(int type, bool toggle)l
 extern _native64(0xEB4A0C2D56441717) int unk_0xEB4A0C2D56441717(int p0)l
 extern _native64(0x3F892CAF67444AE7) bool create_incident(int incidentType, vector3 vec, int p5, float radius, int* outIncidentID)l
 extern _native64(0x05983472F0494E60) bool create_incident_with_entity(int incidentType, Ped ped, int amountOfPeople, float radius, int* outIncidentID)l
@@ -2209,7 +2209,7 @@ extern _native64(0x9689123E3F213AA5) bool unk_0x9689123E3F213AA5()l
 extern _native64(0x9D8D44ADBBA61EF2) void unk_0x9D8D44ADBBA61EF2(bool p0)l
 extern _native64(0x23227DF0B2115469) void unk_0x23227DF0B2115469()l
 extern _native64(0xD10282B6E3751BA0) any unk_0xD10282B6E3751BA0()l
-extern _native64(0x213AEB2B90CBA7AC) void memmove(void* ptr1, const void* ptr2, int bufferSize64)l
+extern _native64(0x213AEB2B90CBA7AC) void _memmove(void* ptr1, const void* ptr2, int bufferSize64)l
 #pragma endregion //}
 #pragma region AUDIO //{
 extern _native64(0xF9E56683CA8E11A5) void play_ped_ringtone(const char* ringtoneName, Ped ped, bool p2)l
@@ -2218,7 +2218,7 @@ extern _native64(0x6C5AE23EFA885092) void stop_ped_ringtone(Ped ped)l
 extern _native64(0x7497D2CE2C30D24C) bool is_mobile_phone_call_ongoing()l
 extern _native64(0xC8B1B2425604CDD0) any unk_0xC8B1B2425604CDD0()l
 extern _native64(0xD2C91A0B572AAE56) void create_new_scripted_conversation()l
-extern _native64(0xC5EF963405593646) void add_line_to_conversation(any p0, any* p1, any* p2, any p3, any p4, bool p5, bool p6, bool p7, bool p8, any p9, bool p10, bool p11, bool p12)l
+extern _native64(0xC5EF963405593646) void add_line_to_conversation(int p0, const char* p1, const char* p2, int p3, int p4, bool p5, bool p6, bool p7, bool p8, int p9, bool p10, bool p11, bool p12)l
 extern _native64(0x95D9F4BC443956E7) void add_ped_to_conversation(any p0, any ped, const char* p2)l
 extern _native64(0x33E3C6C6F2F0B506) void unk_0x33E3C6C6F2F0B506(any p0, float p1, float p2, float p3)l
 extern _native64(0x892B6AB8F33606F5) void unk_0x892B6AB8F33606F5(any p0, any p1)l
@@ -2483,7 +2483,7 @@ extern _native64(0x9896CE4721BE84BA) void set_cutscene_trigger_area(float p0, fl
 extern _native64(0x645D0B458D8E17B5) bool can_set_enter_state_for_registered_entity(const char* cutsceneEntName, Hash modelHash)l
 extern _native64(0x4C6A6451C79E4662) bool can_set_exit_state_for_registered_entity(const char* cutsceneEntName, Hash modelHash)l
 extern _native64(0xB2CBCD0930DFB420) bool can_set_exit_state_for_camera(bool p0)l
-extern _native64(0xC61B86C9F61EB404) void unk_0xC61B86C9F61EB404(bool p0)l
+extern _native64(0xC61B86C9F61EB404) void unk_0xC61B86C9F61EB404(bool toggle)l
 extern _native64(0x8093F23ABACCC7D4) void set_cutscene_fade_values(bool p0, bool p1, bool p2, bool p3)l
 extern _native64(0x20746F7B1032A3C7) void unk_0x20746F7B1032A3C7(bool p0, bool p1, bool p2, bool p3)l
 extern _native64(0x06EE9048FD080382) void unk_0x06EE9048FD080382(bool p0)l
@@ -2543,8 +2543,8 @@ extern _native64(0xC3981DCE61D9E13F) Cam create_cam(const char* camName, bool p1
 extern _native64(0xB51194800B257161) Cam create_cam_with_params(const char* camName, vector3 pos, vector3 rot, float fov, bool p8, int p9)l
 extern _native64(0x5E3CF89C6BCCA67D) Cam create_camera(Hash camHash, bool p1)l
 extern _native64(0x6ABFA3E16460F22D) Cam create_camera_with_params(Hash camHash, vector3 pos, vector3 rot, float fov, bool p8, any p9)l
-extern _native64(0x865908C81A2C22E9) void destroy_cam(Cam cam, bool destroy)l
-extern _native64(0x8E5FB15663F79120) void destroy_all_cams(bool destroy)l
+extern _native64(0x865908C81A2C22E9) void destroy_cam(Cam cam, bool thisScriptCheck)l
+extern _native64(0x8E5FB15663F79120) void destroy_all_cams(bool thisScriptCheck)l
 extern _native64(0xA7A932170592B50E) bool does_cam_exist(Cam cam)l
 extern _native64(0x026FB97D0A425F84) void set_cam_active(Cam cam, bool active)l
 extern _native64(0xDFB2B516207D3534) bool is_cam_active(Cam cam)l
@@ -2731,8 +2731,8 @@ extern _native64(0xADFF1B2A555F5FBA) void _disable_vehicle_first_person_cam_this
 extern _native64(0x62ECFCFDEE7885D6) void unk_0x62ECFCFDEE7885D6()l
 extern _native64(0x9E4CFFF989258472) void unk_0x9E4CFFF989258472()l
 extern _native64(0xF4F2C0D4EE209E20) void unk_0xF4F2C0D4EE209E20()l
-extern _native64(0xCA9D2AA3E326D720) any unk_0xCA9D2AA3E326D720()l
-extern _native64(0x4F32C0D5A90A9B40) any unk_0x4F32C0D5A90A9B40()l
+extern _native64(0xCA9D2AA3E326D720) bool unk_0xCA9D2AA3E326D720()l
+extern _native64(0x4F32C0D5A90A9B40) bool _is_in_vehicle_cam_disabled()l
 extern _native64(0x741B0129D4560F31) void create_cinematic_shot(any p0, int p1, any p2, Entity entity)l
 extern _native64(0xCC9F3371A7C28BC9) bool is_cinematic_shot_active(any p0)l
 extern _native64(0x7660C6E75D3A078E) void stop_cinematic_shot(any p0)l
@@ -2994,7 +2994,7 @@ extern _native64(0x8A1C8B1738FFE87E) Hash get_hash_of_this_script_name()l
 extern _native64(0x5F92A689A06620AA) int get_number_of_events(bool p0)l
 extern _native64(0x936E6168A9BCEDB5) bool get_event_exists(bool p0, int p1)l
 extern _native64(0xD8F66A3A60C62153) int get_event_at_index(bool p0, int p1)l
-extern _native64(0x2902843FCD2B2D79) bool get_event_data(bool p0, int p1, int* p2, int p3)l
+extern _native64(0x2902843FCD2B2D79) bool get_event_data(bool p0, int p1, const void* p2, int p3)l
 extern _native64(0x5AE99C571D5BBE5D) void trigger_script_event(bool p0, const void* args, int argCount, int bitset)l
 extern _native64(0x078EBE9809CCD637) void shutdown_loading_screen()l
 extern _native64(0x5262CC1995D07E09) void set_no_loading_screen(bool toggle)l
@@ -3065,10 +3065,10 @@ extern _native64(0x853648FD1063A213) void begin_text_command_is_message_displaye
 extern _native64(0x8A9BA1AB3E237613) bool end_text_command_is_message_displayed()l
 extern _native64(0x25FBB336DF1804CB) void begin_text_command_display_text(const char* text)l
 extern _native64(0xCD015E5BB0D96A57) void end_text_command_display_text(vector2 vector)l
-extern _native64(0x54CE8AC98E120CAB) void _set_text_entry_for_width(const char* text)l
-extern _native64(0x85F061DA64ED2F67) float _get_text_screen_width(int font)l
-extern _native64(0x521FB041D93DD0E4) void _set_text_entry_for_line_count(const char* entry)l
-extern _native64(0x9040DFB09BE75706) int _get_text_screen_line_count(vector2 vector)l
+extern _native64(0x54CE8AC98E120CAB) void _begin_text_command_width(const char* text)l
+extern _native64(0x85F061DA64ED2F67) float _end_text_command_get_width(int font)l
+extern _native64(0x521FB041D93DD0E4) void _begin_text_command_line_count(const char* entry)l
+extern _native64(0x9040DFB09BE75706) int _end_text_command_get_line_count(vector2 vector)l
 extern _native64(0x8509B634FBE7DA11) void begin_text_command_display_help(const char* inputType)l
 extern _native64(0x238FFE5C7B0498A6) void end_text_command_display_help(any p0, bool loop, bool beep, int shape)l
 extern _native64(0x0A24DA3A41B718F5) void begin_text_command_is_this_help_message_being_displayed(const char* labelName)l
@@ -3077,8 +3077,8 @@ extern _native64(0xF9113A30DE5C6670) void begin_text_command_set_blip_name(const
 extern _native64(0xBC38B49BCB83BC9B) void end_text_command_set_blip_name(Blip blip)l
 extern _native64(0x23D69E0465570028) void _begin_text_command_objective(const char* p0)l
 extern _native64(0xCFDBDF5AE59BA0F4) void _end_text_command_objective(bool p0)l
-extern _native64(0xE124FA80A759019C) void _begin_text_command_context(const char* text)l
-extern _native64(0xFCC75460ABA29378) void _end_text_command_context()l
+extern _native64(0xE124FA80A759019C) void begin_text_command_clear_print(const char* text)l
+extern _native64(0xFCC75460ABA29378) void end_text_command_clear_print()l
 extern _native64(0x8F9EE5687F8EECCD) void _begin_text_command_timer(const char* p0)l
 extern _native64(0xA86911979638106F) void _end_text_command_timer(bool p0)l
 extern _native64(0x03B504CF259931BC) void add_text_component_integer(int value)l
@@ -3331,7 +3331,7 @@ extern _native64(0x450930E616475D0D) void reset_hud_component_values(int id)l
 extern _native64(0xAABB1F56E2A17CED) void set_hud_component_position(int id, vector2 vector)l
 extern _native64(0x223CA69A8C4417FD) vector3 get_hud_component_position(int id)l
 extern _native64(0xB57D8DD645CFA2CF) void clear_reminder_message()l
-extern _native64(0xF9904D11F1ACBEC3) any _get_screen_coord_from_world_coord(vector3 world, float* screenX, float* screenY)l
+extern _native64(0xF9904D11F1ACBEC3) bool _get_screen_coord_from_world_coord(vector3 world, float* screenX, float* screenY)l
 extern _native64(0x523A590C1A3CC0D3) void unk_0x523A590C1A3CC0D3()l
 extern _native64(0xEE4C0E6DBC6F2C6F) void unk_0xEE4C0E6DBC6F2C6F()l
 extern _native64(0x9135584D09A3437E) any unk_0x9135584D09A3437E()l
@@ -3341,22 +3341,22 @@ extern _native64(0x784BA7E0ECEB4178) void unk_0x784BA7E0ECEB4178(any p0, vector3
 extern _native64(0xB094BC1DB4018240) void unk_0xB094BC1DB4018240(any p0, any p1, float p2, float p3)l
 extern _native64(0x788E7FD431BD67F1) void unk_0x788E7FD431BD67F1(any p0, any p1, any p2, any p3, any p4, any p5)l
 extern _native64(0x50085246ABD3FEFA) void clear_floating_help(any p0, bool p1)l
-extern _native64(0x6DD05E9D83EFA4C9) void unk_0x6DD05E9D83EFA4C9(int headDisplayId, const char* username, bool pointedClanTag, bool isRockstarClan, const char* clanTag, any p5, RGB colour)l
+extern _native64(0x6DD05E9D83EFA4C9) void _create_mp_gamer_tag_color(int headDisplayId, const char* username, bool pointedClanTag, bool isRockstarClan, const char* clanTag, any p5, RGB colour)l
 extern _native64(0x6E0EB3EB47C8D7AA) bool unk_0x6E0EB3EB47C8D7AA()l
-extern _native64(0xBFEFE3321A3F5015) int _create_head_display(Ped ped, const char* username, bool pointedClanTag, bool isRockstarClan, const char* clanTag, any p5)l
-extern _native64(0x31698AA80E0223F8) void _destroy_head_display(int headDisplayId)l
-extern _native64(0x4E929E7A5796FD26) bool _has_head_display_loaded(int headDisplayId)l
-extern _native64(0x595B5178E412E199) bool add_trevor_random_modifier(int headDisplayId)l
-extern _native64(0x63BB75ABEDC1F6A0) void _set_head_display_flag(int headDisplayId, int flag, bool toggle)l
+extern _native64(0xBFEFE3321A3F5015) int _create_mp_gamer_tag(Ped ped, const char* username, bool pointedClanTag, bool isRockstarClan, const char* clanTag, any p5)l
+extern _native64(0x31698AA80E0223F8) void remove_mp_gamer_tag(int gamerTagId)l
+extern _native64(0x4E929E7A5796FD26) bool is_mp_gamer_tag_active(int gamerTagId)l
+extern _native64(0x595B5178E412E199) bool add_trevor_random_modifier(int gamerTagId)l
+extern _native64(0x63BB75ABEDC1F6A0) void set_mp_gamer_tag_visibility(int gamerTagId, int component, bool toggle)l
 extern _native64(0xEE76FF7E6A0166B0) void unk_0xEE76FF7E6A0166B0(int headDisplayId, bool p1)l
 extern _native64(0xA67F9C46D612B6F1) void unk_0xA67F9C46D612B6F1(int headDisplayId, bool p1)l
-extern _native64(0x613ED644950626AE) void _set_head_display_flag_color(int headDisplayId, int flag, int color)l
-extern _native64(0x3158C77A7E888AB4) void _set_head_display_health_bar_color(int headDisplayId, int color)l
-extern _native64(0xD48FE545CD46F857) void _set_head_display_flag_alpha(int headDisplayId, int flag, int alpha)l
-extern _native64(0xCF228E2AA03099C3) void _set_head_display_wanted(int headDisplayId, int wantedlvl)l
-extern _native64(0xDEA2B8283BAA3944) void _set_head_display_string(int headDisplayId, const char* string)l
-extern _native64(0xEB709A36958ABE0D) bool unk_0xEB709A36958ABE0D(int headDisplayId)l
-extern _native64(0x7B7723747CCB55B6) void unk_0x7B7723747CCB55B6(int headDisplayId, const char* string)l
+extern _native64(0x613ED644950626AE) void set_mp_gamer_tag_colour(int gamerTagId, int flag, int color)l
+extern _native64(0x3158C77A7E888AB4) void _set_mp_gamer_tag_health_bar_color(int headDisplayId, int color)l
+extern _native64(0xD48FE545CD46F857) void set_mp_gamer_tag_alpha(int gamerTagId, int component, int alpha)l
+extern _native64(0xCF228E2AA03099C3) void set_mp_gamer_tag_wanted_level(int gamerTagId, int wantedlvl)l
+extern _native64(0xDEA2B8283BAA3944) void set_mp_gamer_tag_name(int gamerTagId, const char* string)l
+extern _native64(0xEB709A36958ABE0D) bool unk_0xEB709A36958ABE0D(int gamerTagId)l
+extern _native64(0x7B7723747CCB55B6) void unk_0x7B7723747CCB55B6(int gamerTagId, const char* string)l
 extern _native64(0x01A358D9128B7A86) any unk_0x01A358D9128B7A86()l
 extern _native64(0x97D47996FC48CBAD) int get_current_website_id()l
 extern _native64(0xE3B05614DCE1D014) any unk_0xE3B05614DCE1D014(any p0)l
@@ -3378,7 +3378,7 @@ extern _native64(0x1121BFA1A1A522A8) any unk_0x1121BFA1A1A522A8()l
 extern _native64(0x82CEDC33687E1F50) void unk_0x82CEDC33687E1F50(bool p0)l
 extern _native64(0x211C4EF450086857) void unk_0x211C4EF450086857()l
 extern _native64(0xBF4F34A85CA2970C) void unk_0xBF4F34A85CA2970C()l
-extern _native64(0xEF01D36B9C9D0C7B) void activate_frontend_menu(Hash menuhash, bool Toggle_Pause, int p2)l
+extern _native64(0xEF01D36B9C9D0C7B) void activate_frontend_menu(Hash menuhash, bool Toggle_Pause, int component)l
 extern _native64(0x10706DC6AD2D49C0) void restart_frontend_menu(Hash menuHash, int p1)l
 extern _native64(0x2309595AD6145265) Hash _get_current_frontend_menu()l
 extern _native64(0xDF47FC56C71569CF) void set_pause_menu_active(bool toggle)l
@@ -3441,13 +3441,13 @@ extern _native64(0xB118AF58B5F332A1) bool _is_text_chat_active()l
 extern _native64(0x1AC8F4AD40E22127) void _abort_text_chat()l
 extern _native64(0x1DB21A44B09E8BA3) void _set_text_chat_unk(bool p0)l
 extern _native64(0xCEF214315D276FD1) void unk_0xCEF214315D276FD1(bool p0)l
-extern _native64(0xD30C50DF888D58B5) void unk_0xD30C50DF888D58B5(Ped ped, bool p1)l
+extern _native64(0xD30C50DF888D58B5) void _set_ped_enemy_ai_blip(int pedHandle, bool showViewCones)l
 extern _native64(0x15B8ECF844EE67ED) bool does_ped_have_ai_blip(Ped ped)l
-extern _native64(0xE52B8E7F85D39A08) void unk_0xE52B8E7F85D39A08(Ped ped, any p1)l
+extern _native64(0xE52B8E7F85D39A08) void unk_0xE52B8E7F85D39A08(Ped ped, int unk)l
 extern _native64(0x3EED80DFF7325CAA) void hide_special_ability_lockon_operation(any p0, bool p1)l
 extern _native64(0x0C4BBF625CA98C4E) void unk_0x0C4BBF625CA98C4E(Ped ped, bool p1)l
-extern _native64(0x97C65887D4B37FA9) void unk_0x97C65887D4B37FA9(Ped ped, float p1)l
-extern _native64(0x7CD934010E115C2C) any unk_0x7CD934010E115C2C(any p0)l
+extern _native64(0x97C65887D4B37FA9) void _set_ai_blip_max_distance(Ped ped, float p1)l
+extern _native64(0x7CD934010E115C2C) any* unk_0x7CD934010E115C2C(Ped ped)l
 extern _native64(0x56176892826A4FE8) Blip unk_0x56176892826A4FE8(Ped ped)l
 extern _native64(0xA277800A9EAE340E) any unk_0xA277800A9EAE340E()l
 extern _native64(0x2632482FD6B9AB87) void unk_0x2632482FD6B9AB87()l
@@ -3742,9 +3742,9 @@ extern _native64(0xE1E258829A885245) const char* sitting_tv(int scaleform)l
 extern _native64(0xC3D0841A0CC546A6) void _push_scaleform_movie_function_parameter_int(int value)l
 extern _native64(0xD69736AAE04DB51A) void _push_scaleform_movie_function_parameter_float(float value)l
 extern _native64(0xC58424BA936EB458) void _push_scaleform_movie_function_parameter_bool(bool value)l
-extern _native64(0x80338406F3475E55) void _begin_text_command_scaleform(const char* componentType)l
-extern _native64(0x362E2D3FE93A9959) void _end_text_command_scaleform()l
-extern _native64(0xAE4E8157D9ECF087) void _end_text_command_scaleform_2()l
+extern _native64(0x80338406F3475E55) void begin_text_command_scaleform_string(const char* componentType)l
+extern _native64(0x362E2D3FE93A9959) void end_text_command_scaleform_string()l
+extern _native64(0xAE4E8157D9ECF087) void _end_text_command_scaleform_string_2()l
 extern _native64(0xBA7148484BD90365) void _push_scaleform_movie_function_parameter_string(const char* value)l
 extern _native64(0xE83A3E3557A56640) void unk_0xE83A3E3557A56640(const char* p0)l
 extern _native64(0x5E657EF1099EDD65) bool unk_0x5E657EF1099EDD65(any p0)l
@@ -4437,7 +4437,7 @@ extern _native64(0x39917E1B4CB0F911) void unk_0x39917E1B4CB0F911(bool p0)l
 extern _native64(0xEF26739BCD9907D5) void network_set_transition_creator_handle(any* p0)l
 extern _native64(0xFB3272229A82C759) void network_clear_transition_creator_handle()l
 extern _native64(0x4A595C32F77DFF76) bool network_invite_gamers_to_transition(any* p0, any p1)l
-extern _native64(0xCA2C8073411ECDB6) void network_set_gamer_invited_to_transition(int networkHandle)l
+extern _native64(0xCA2C8073411ECDB6) void network_set_gamer_invited_to_transition(int* networkHandle)l
 extern _native64(0xD23A1A815D21DB19) any network_leave_transition()l
 extern _native64(0x2DCF46CB1A4F0884) any network_launch_transition()l
 extern _native64(0xA2E9C1AB8A92E8CD) void unk_0xA2E9C1AB8A92E8CD(bool p0)l
@@ -4515,7 +4515,7 @@ extern _native64(0x120364DE2845DAF8) any unk_0x120364DE2845DAF8(any* p0, any p1)
 extern _native64(0xFD8B834A8BA05048) any unk_0xFD8B834A8BA05048()l
 extern _native64(0x8DE9945BCC9AEC52) bool network_is_chatting_in_platform_party(int* networkHandle)l
 extern _native64(0x966C2BC2A7FE3F30) bool network_is_in_party()l
-extern _native64(0x676ED266AADD31E0) bool network_is_party_member(any p0)l
+extern _native64(0x676ED266AADD31E0) bool network_is_party_member(int* networkHandle)l
 extern _native64(0x2BF66D2E7414F686) any unk_0x2BF66D2E7414F686()l
 extern _native64(0x14922ED3E38761F0) any unk_0x14922ED3E38761F0()l
 extern _native64(0xFA2888E3833C8E96) void unk_0xFA2888E3833C8E96()l
@@ -4530,7 +4530,7 @@ extern _native64(0x19D8DA0E5A68045A) bool network_player_is_badsport()l
 extern _native64(0x46FB3ED415C7641C) bool unk_0x46FB3ED415C7641C(any p0, any p1, any p2)l
 extern _native64(0xEC5E3AF5289DCA81) bool bad_sport_player_left_detected(any* p0, any p1, any p2)l
 extern _native64(0xE66C690248F11150) void unk_0xE66C690248F11150(any p0, any p1)l
-extern _native64(0x1CA59E306ECB80A5) void network_set_this_script_is_network_script(int lobbySize, bool p1, int p2)l
+extern _native64(0x1CA59E306ECB80A5) void network_set_this_script_is_network_script(int lobbySize, bool p1, int playerId)l
 extern _native64(0xD1110739EEADB592) bool _network_set_this_script_marked(any p0, bool p1, any p2)l
 extern _native64(0x2910669969E9535E) bool network_get_this_script_is_network_script()l
 extern _native64(0xA6C90FBC38E395EE) int _network_get_num_participants_host()l
@@ -4569,7 +4569,7 @@ extern _native64(0x2D95C7E2D7E07307) void network_set_local_player_invincible_ti
 extern _native64(0x8A8694B48715B000) bool network_is_local_player_invincible()l
 extern _native64(0x9DD368BF06983221) void network_disable_invincible_flashing(int player, bool p1)l
 extern _native64(0x524FF0AEFF9C3973) void unk_0x524FF0AEFF9C3973(any p0)l
-extern _native64(0xB07D3185E11657A5) bool unk_0xB07D3185E11657A5(any p0)l
+extern _native64(0xB07D3185E11657A5) bool unk_0xB07D3185E11657A5(Entity p0)l
 extern _native64(0xA11700682F3AD45C) int network_get_network_id_from_entity(Entity entity)l
 extern _native64(0xCE4E5D9B0A4FF560) Entity network_get_entity_from_network_id(int netId)l
 extern _native64(0xC7827959479DCC78) bool network_get_entity_is_networked(Entity entity)l
@@ -4585,7 +4585,7 @@ extern _native64(0x870DDFD5A4A796E4) bool network_request_control_of_door(int do
 extern _native64(0x01BF60A500E28887) bool network_has_control_of_entity(Entity entity)l
 extern _native64(0x5BC9495F0B3B6FA6) bool network_has_control_of_pickup(Pickup pickup)l
 extern _native64(0xCB3C68ADB06195DF) bool network_has_control_of_door(int doorID)l
-extern _native64(0xC01E93FAC20C3346) bool _network_has_control_of_pavement_stats(int p0)l
+extern _native64(0xC01E93FAC20C3346) bool _network_has_control_of_pavement_stats(Hash hash)l
 extern _native64(0xB4C94523F023419C) int veh_to_net(Vehicle vehicle)l
 extern _native64(0x0EDEC3C276198689) int ped_to_net(Ped ped)l
 extern _native64(0x99BFDC94A603E541) int obj_to_net(Object object)l
@@ -4669,7 +4669,7 @@ extern _native64(0x9D7AFCBF21C51712) void unk_0x9D7AFCBF21C51712(bool p0)l
 extern _native64(0xF46A1E03E8755980) void unk_0xF46A1E03E8755980(bool p0)l
 extern _native64(0x6A5D89D7769A40D8) void unk_0x6A5D89D7769A40D8(bool p0)l
 extern _native64(0x3039AE5AD2C9C0C4) void network_override_chat_restrictions(Player player, bool toggle)l
-extern _native64(0x97DD4C5944CC2E6A) void unk_0x97DD4C5944CC2E6A(Player player, bool toggle)l
+extern _native64(0x97DD4C5944CC2E6A) void _network_override_send_restrictions(Player player, bool toggle)l
 extern _native64(0x57B192B4D4AD23D5) void unk_0x57B192B4D4AD23D5(bool p0)l
 extern _native64(0xDDF73E2B1FEC5AB4) void network_override_receive_restrictions(Player player, bool toggle)l
 extern _native64(0x0FF2862B61A58AF9) void unk_0x0FF2862B61A58AF9(bool p0)l
@@ -4785,10 +4785,10 @@ extern _native64(0x6274C4712850841E) void unk_0x6274C4712850841E(Entity entity, 
 extern _native64(0x5FFE9B4144F9712F) void use_player_colour_instead_of_team_colour(bool toggle)l
 extern _native64(0x21D04D7BC538C146) bool unk_0x21D04D7BC538C146(any p0)l
 extern _native64(0x77758139EC9B66C7) void unk_0x77758139EC9B66C7(bool p0)l
-extern _native64(0x7CD6BC4C2BBDD526) int network_create_synchronised_scene(vector3 vec, vector3 Rot, int p6, bool p7, bool p8, float p9,  int p10,  float p11)l
+extern _native64(0x7CD6BC4C2BBDD526) int network_create_synchronised_scene(vector3 vec, vector3 Rot, int p6, bool p7, bool p8, float p9,  int,  float)l
 extern _native64(0x742A637471BCECD9) void network_add_ped_to_synchronised_scene(Ped ped, int netScene, const char* animDict, const char* animnName, float speed, float speedMultiplier, int duration, int flag, float playbackRate, int p9)l
 extern _native64(0xF2404D68CBC855FA) void network_add_entity_to_synchronised_scene(Entity entity, int netScene, const char* animDict, const char* animName, float speed, float speedMulitiplier, int flag)l
-extern _native64(0xCF8BD3B0BD6D42D7) void unk_0xCF8BD3B0BD6D42D7(int netScene, const char* animDict, const char* animName)l
+extern _native64(0xCF8BD3B0BD6D42D7) void _network_force_local_use_of_synced_scene_camera(int netScene, const char* animDict, const char* animName)l
 extern _native64(0x478DCBD2A98B705A) void network_attach_synchronised_scene_to_entity(int netScene, Entity entity, int bone)l
 extern _native64(0x9A1B3FCDB36C8697) void network_start_synchronised_scene(int netScene)l
 extern _native64(0xC254481A4574CB2F) void network_stop_synchronised_scene(int netScene)l
@@ -5086,6 +5086,8 @@ extern _native64(0xF70EFA14FE091429) any unk_0xF70EFA14FE091429(any p0)l
 extern _native64(0xE260E0BB9CD995AC) bool unk_0xE260E0BB9CD995AC(any p0)l
 extern _native64(0xE154B48B68EF72BC) any unk_0xE154B48B68EF72BC(any p0)l
 extern _native64(0x6FCF8DDEA146C45B) any unk_0x6FCF8DDEA146C45B(any p0)l
+extern _native64(0x998E18CEB44487FC) void network_spent_purchase_clubhouse(int p0, void* p1, bool p2, bool p3)l
+extern _native64(0xFA07759E6FDDD7CF) void network_spent_vehicle_modshop(int p0, void* p1, bool p2, bool p3)l
 #pragma endregion //}
 #pragma region DLC1 //{
 extern _native64(0x278F76C3B0A8F109) int _get_num_decorations(int character)l
@@ -5146,7 +5148,7 @@ extern _native64(0x83666F9FB8FEBD4B) int timera()l
 extern _native64(0xC9D9444186B5A374) int timerb()l
 extern _native64(0xC1B1E9A034A63A62) void settimera(int value)l
 extern _native64(0x5AE11BC36633DE4E) void settimerb(int value)l
-extern _native64(0x50597EE2) float timestep()l
+extern _native64(0x0000000050597EE2) float timestep()l
 extern _native64(0x0BADBFA3B172435F) float sin(float value)l
 extern _native64(0xD0FFB162F40A139C) float cos(float value)l
 extern _native64(0x71D93B57D07F9804) float sqrt(float value)l
@@ -5161,14 +5163,15 @@ extern _native64(0xF34EE736CF047844) int floor(float value)l
 extern _native64(0x11E019C8F43ACC8A) int ceil(float value)l
 extern _native64(0xF2DB717A73826179) int round(float value)l
 extern _native64(0xBBDA792448DB5A89) float to_float(int value)l
+extern _native64(0x42B65DEEF2EDF2A1) void unk_0x42B65DEEF2EDF2A1(int p0)l
 #pragma endregion //}
 #pragma region DECORATOR //{
 extern _native64(0x95AED7B8E39ECAA4) bool decor_set_time(Entity entity, const char* propertyName, int value)l
 extern _native64(0x6B1E8E2ED1335B71) bool decor_set_bool(Entity entity, const char* propertyName, bool value)l
-extern _native64(0x211AB1DD8D0F363A) bool _decor_set_float(Entity entity, const char* propertyName, float value)l
+extern _native64(0x211AB1DD8D0F363A) bool decor_set_float(Entity entity, const char* propertyName, float value)l
 extern _native64(0x0CE3AA5E1CA19E10) bool decor_set_int(Entity entity, const char* propertyName, int value)l
 extern _native64(0xDACE671663F2F5DB) bool decor_get_bool(Entity entity, const char* propertyName)l
-extern _native64(0x6524A2F114706F43) float _decor_get_float(Entity entity, const char* propertyName)l
+extern _native64(0x6524A2F114706F43) float decor_get_float(Entity entity, const char* propertyName)l
 extern _native64(0xA06C969B02A97298) int decor_get_int(Entity entity, const char* propertyName)l
 extern _native64(0x05661B80A8C9165F) bool decor_exist_on(Entity entity, const char* propertyName)l
 extern _native64(0x00EE9F297C738720) bool decor_remove(Entity entity, const char* propertyName)l
@@ -5303,7 +5306,7 @@ extern _native64(0xF30980718C8ED876) any _network_shop_basket_add_item(any* p0, 
 extern _native64(0x27F76CC6C55AD30E) any _network_shop_basket_is_full()l
 extern _native64(0xE1A0450ED46A7812) bool _network_shop_basket_apply_server_data(any p0, any* p1)l
 extern _native64(0x39BE7CEA8D9CC8E6) bool _network_shop_checkout_start(any p0)l
-extern _native64(0x3C5FD37B5499582E) bool _network_shop_begin_service(any* p0, any p1, any p2, any p3, any p4, any p5)l
+extern _native64(0x3C5FD37B5499582E) bool _network_shop_begin_service(int* value, any p1, any p2, any p3, any p4, int p5)l
 extern _native64(0xE2A99A9B524BEFFF) bool _network_shop_end_service(any p0)l
 extern _native64(0x51F1A8E48C3D2F6D) bool unk_0x51F1A8E48C3D2F6D(any p0, bool p1, any p2)l
 extern _native64(0x0A6D923DFFC9BD89) any unk_0x0A6D923DFFC9BD89()l

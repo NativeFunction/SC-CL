@@ -1,18 +1,60 @@
+cmake_minimum_required(VERSION 2.8.10)
+
 set(LLVM_LINK_COMPONENTS support)
 set(LLVM_USED_LIBS clangTooling clangBasic clangAST)
 
-add_clang_executable(loop-convert
-  SC-CL.cpp
-  Include/Utils/Utils.cpp
-  Include/Utils/ClangUtils.cpp
-  Include/Compiler/Compiler.cpp
-  Include/Compiler/Opcode.cpp
-  Include/ClangParsing/FunctionData.cpp
-  Include/ClangParsing/Script.cpp
-  Include/ClangParsing/StaticData.cpp
-  )
-target_link_libraries(loop-convert
+set(source_list
+  "Include/Utils/Utils.cpp"
+  "Include/Utils/ClangUtils.cpp"
+  "Include/Compiler/Compiler.cpp"
+  "Include/Compiler/Opcode.cpp"
+  "Include/ClangParsing/FunctionData.cpp"
+  "Include/ClangParsing/Script.cpp"
+  "Include/ClangParsing/StaticData.cpp"
+  "Include/Crypto/aes256.c"
+)
+
+set(header_list
+  "Include/ClangParsing/FunctionData.h"
+  "Include/ClangParsing/Script.h"
+  "Include/ClangParsing/StaticData.h"
+  "Include/Compiler/BuildTarget.h"
+  "Include/Compiler/Compiler.h"
+  "Include/Compiler/Opcode.h"
+  "Include/Compiler/OpcodeConsts.h"
+  "Include/Compression/zconf.h"
+  "Include/Compression/zlib.h"
+  "Include/Crypto/aes256.h"
+  "Include/Utils/ClangUtils.h"
+  "Include/Utils/ConsoleColor.h"
+  "Include/Utils/ConstExpr.h"
+  "Include/Utils/Utils.h"
+)
+
+add_clang_executable(sc-cl
+  sc-cl.cpp
+  ${source_list}
+  ${header_list}
+)
+
+include_directories(Include)
+target_link_libraries(sc-cl
   clangTooling
   clangBasic
   clangASTMatchers
-  )
+  Include/Compression/zlib
+)
+
+foreach(source IN LISTS source_list)
+    get_filename_component(source_path "${source}" PATH)
+    string(REPLACE "Include" "Source Files" source_path_temp "${source_path}")
+    string(REPLACE "/" "\\" source_path_msvc "${source_path_temp}")
+    source_group("${source_path_msvc}" FILES "${source}")
+endforeach()
+
+foreach(header IN LISTS header_list)
+    get_filename_component(header_path "${header}" PATH)
+    string(REPLACE "Include" "Header Files" header_path_temp "${header_path}")
+    string(REPLACE "/" "\\" header_path_msvc "${header_path_temp}")
+    source_group("${header_path_msvc}" FILES "${header}")
+endforeach()

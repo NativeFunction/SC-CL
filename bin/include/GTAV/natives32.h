@@ -14,7 +14,7 @@
 
 #pragma region PLAYER //{
 extern _native Ped get_player_ped(Player player)l
-extern _native Ped get_player_ped_script_index(Player player)l
+extern _native Entity get_player_ped_script_index(Player player)l
 extern _native void set_player_model(Player player, Hash model)l
 extern _native void change_player_ped(Player player, Ped ped, bool b2, bool b3)l
 extern _native void get_player_rgb_colour(Player player, int* r, int* g, int* b)l
@@ -24,7 +24,7 @@ extern _native void set_player_team(Player player, int team)l
 extern _native const char* get_player_name(Player player)l
 extern _native float get_wanted_level_radius(Player player)l
 extern _native vector3 get_player_wanted_centre_position(Player player)l
-extern _native void set_player_wanted_centre_position(Player player, vector3 vec)l
+extern _native void set_player_wanted_centre_position(Player player, vector3* position, bool p2, bool p3)l
 extern _native int get_wanted_level_threshold(int wantedLevel)l
 extern _native void set_player_wanted_level(Player player, int wantedLevel, bool disableNoMission)l
 extern _native void set_player_wanted_level_no_drop(Player player, int wantedLevel, bool p2)l
@@ -45,20 +45,20 @@ extern _native bool is_player_playing(Player player)l
 extern _native void set_everyone_ignore_player(Player player, bool toggle)l
 extern _native void set_all_random_peds_flee(Player player, bool toggle)l
 extern _native void set_all_random_peds_flee_this_frame(Player player)l
-extern _native void set_hud_anim_stop_level(Player player, bool toggle)l
-extern _native void set_areas_generator_orientation(Player player)l
+extern _native void unk_0x274631FE(Player player, bool toggle)l
+extern _native void unk_0x02DF7AF4(Player player)l
 extern _native void set_ignore_low_priority_shocking_events(Player player, bool toggle)l
 extern _native void set_wanted_level_multiplier(float multiplier)l
 extern _native void set_wanted_level_difficulty(Player player, float difficulty)l
 extern _native void reset_wanted_level_difficulty(Player player)l
 extern _native void start_firing_amnesty(int duration)l
 extern _native void report_crime(Player player, int crimeType, int wantedLvlThresh)l
-extern _native void reserve_entity_explodes_on_high_explosion_combo(Player player, int p1)l
+extern _native32(0x59B5C2A2) void _switch_crime_type(Player player, int p1)l
 extern _native void unk_0x6B34A160(Player player)l
 extern _native any unk_0xB9FB142F(Player player)l
 extern _native any unk_0x85725848(Player player)l
 extern _native void unk_0x3A7E5FB6(Player player)l
-extern _native any unk_0xD15C4B1C(Player player)l
+extern _native void unk_0xD15C4B1C(Player player)l
 extern _native void unk_0xBF6993C7(float p0)l
 extern _native void unk_0x47CAB814()l
 extern _native bool can_player_start_mission(Player player)l
@@ -143,7 +143,7 @@ extern _native void unk_0x4136829A(Player player)l
 extern _native void special_ability_charge_small(Player player, bool p1, bool p2)l
 extern _native void special_ability_charge_medium(Player player, bool p1, bool p2)l
 extern _native void special_ability_charge_large(Player player, bool p1, bool p2)l
-extern _native void special_ability_charge_continuous(Player player, bool p1)l
+extern _native void special_ability_charge_continuous(Player player, Ped p2)l
 extern _native void special_ability_charge_absolute(Player player, int p1, bool p2)l
 extern _native void special_ability_charge_normalized(Player player, float normalizedValue, bool p2)l
 extern _native void special_ability_fill_meter(Player player, bool p1)l
@@ -167,7 +167,6 @@ extern _native float get_player_current_stealth_noise(Player player)l
 extern _native void set_player_health_recharge_multiplier(Player player, float regenRate)l
 extern _native void set_player_weapon_damage_modifier(Player player, float damageAmount)l
 extern _native void set_player_weapon_defense_modifier(Player player, float modifier)l
-extern _native void set_player_melee_weapon_damage_modifier(Player player, float modifier)l
 extern _native void set_player_melee_weapon_defense_modifier(Player player, float modifier)l
 extern _native void set_player_vehicle_damage_modifier(Player player, float damageAmount)l
 extern _native void set_player_vehicle_defense_modifier(Player player, float modifier)l
@@ -232,6 +231,7 @@ extern _native vector3 get_collision_normal_of_last_hit_for_entity(Entity entity
 extern _native void force_entity_ai_and_animation_update(Entity entity)l
 extern _native float get_entity_anim_current_time(Entity entity, const char* animDict, const char* animName)l
 extern _native float get_entity_anim_total_time(Entity entity, const char* animDict, const char* animName)l
+extern _native float get_anim_duration(const char* animDict, const char* animName)l
 extern _native Entity get_entity_attached_to(Entity entity)l
 extern _native vector3 get_entity_coords(Entity entity, bool alive)l
 extern _native vector3 get_entity_forward_vector(Entity entity)l
@@ -264,6 +264,7 @@ extern _native vector3 get_world_position_of_entity_bone(Entity entity, int bone
 extern _native Player get_nearest_player_to_entity(Entity entity)l
 extern _native Player get_nearest_player_to_entity_on_team(Entity entity, int team)l
 extern _native int get_entity_type(Entity entity)l
+extern _native int get_entity_population_type(Entity entity)l
 extern _native bool is_an_entity(int handle)l
 extern _native bool is_entity_a_ped(Entity entity)l
 extern _native bool is_entity_a_mission_entity(Entity entity)l
@@ -294,10 +295,10 @@ extern _native bool is_entity_upsidedown(Entity entity)l
 extern _native bool is_entity_visible(Entity entity)l
 extern _native bool is_entity_visible_to_script(Entity entity)l
 extern _native bool is_entity_occluded(Entity entity)l
-extern _native bool would_entity_be_occluded(Hash hash, vector3 vec, bool p4)l
+extern _native bool would_entity_be_occluded(Hash entityModelHash, vector3 vec, bool p4)l
 extern _native bool is_entity_waiting_for_world_collision(Entity entity)l
 extern _native void apply_force_to_entity_center_of_mass(Entity entity, int forceType, vector3 vec, bool p5, bool isRel, bool highForce, bool p8)l
-extern _native void apply_force_to_entity(Entity entity, int forceType, vector3 vec, vector3 Rot, int boneIndex, bool isRel, bool p10, bool highForce, bool p12, bool p13)l
+extern _native void apply_force_to_entity(Entity entity, int forceType, vector3 vec, vector3 Rot, int p8, bool isRel, bool p10, bool highForce, bool p12, bool p13)l
 extern _native void attach_entity_to_entity(Entity entity1, Entity entity2, int boneIndex, vector3 Pos, vector3 Rot, bool p9, bool useSoftPinning, bool collision, bool isPed, int vertexIndex, bool fixedRot)l
 extern _native void attach_entity_to_entity_physically(Entity entity1, Entity entity2, int boneIndex1, int boneIndex2, vector3 Pos1, vector3 Pos2, vector3 Rot, float breakForce, bool fixedRot, bool p15, bool collision, bool p17, int p18)l
 extern _native void process_entity_attachments(Entity entity)l
@@ -306,8 +307,8 @@ extern _native any clear_entity_last_damage_entity(Entity entity)l
 extern _native void delete_entity(Entity* entity)l
 extern _native void detach_entity(Entity entity, bool p1, bool collision)l
 extern _native void freeze_entity_position(Entity entity, bool toggle)l
-extern _native void unk_0xD3850671(Entity entity, bool toggle)l
-extern _native bool play_entity_anim(Entity entity, const char* animName, const char* propName, float p3, bool p4, bool p5, bool p6, float delta, any bitset)l
+extern _native32(0xD3850671) void _set_entity_register(Entity entity, bool toggle)l
+extern _native bool play_entity_anim(Entity entity, const char* animName, const char* animDict, float p3, bool loop, bool stayInAnim, bool p6, float delta, any bitset)l
 extern _native bool play_synchronized_entity_anim(Entity entity, int syncedScene, const char* animation, const char* propName, float p4, float p5, any p6, float p7)l
 extern _native bool play_synchronized_map_entity_anim(float p0, float p1, float p2, float p3, any p4, any p5, any* p6, any* p7, float p8, float p9, any p10, float p11)l
 extern _native bool stop_synchronized_map_entity_anim(float p0, float p1, float p2, float p3, any p4, float p5)l
@@ -317,15 +318,16 @@ extern _native bool has_anim_event_fired(Entity entity, Hash actionHash)l
 extern _native bool find_anim_event_phase(const char* animDictionary, const char* animName, const char* p2, any* p3, any* p4)l
 extern _native void set_entity_anim_current_time(Entity entity, const char* animDictionary, const char* animName, float time)l
 extern _native void set_entity_anim_speed(Entity entity, const char* animDictionary, const char* animName, float speedMultiplier)l
-extern _native void set_entity_as_mission_entity(Entity entity, bool p1, bool byThisScript)l
+extern _native void set_entity_as_mission_entity(Entity entity, bool p1, bool p2)l
 extern _native void set_entity_as_no_longer_needed(Entity* entity)l
 extern _native void set_ped_as_no_longer_needed(Ped* ped)l
 extern _native void set_vehicle_as_no_longer_needed(Vehicle* vehicle)l
 extern _native void set_object_as_no_longer_needed(Object* object)l
 extern _native void set_entity_can_be_damaged(Entity entity, bool toggle)l
-extern _native void set_entity_can_be_damaged_by_relationship_group(Entity entity, bool p1, any p2)l
+extern _native void set_entity_can_be_damaged_by_relationship_group(Entity entity, bool bCanBeDamaged, int relGroup)l
 extern _native void set_entity_can_be_targeted_without_los(Entity entity, bool toggle)l
 extern _native void set_entity_collision(Entity entity, bool toggle, bool keepPhysics)l
+extern _native bool get_entity_collison_disabled(Entity entity)l
 extern _native void set_entity_coords(Entity entity, vector3 Pos, bool xAxis, bool yAxis, bool zAxis, bool clearArea)l
 extern _native void set_entity_coords_no_offset(Entity entity, vector3 Pos, bool xAxis, bool yAxis, bool zAxis)l
 extern _native void set_entity_dynamic(Entity entity, bool toggle)l
@@ -361,16 +363,16 @@ extern _native void create_model_hide_excluding_script_objects(vector3 vec, floa
 extern _native void remove_model_hide(any p0, any p1, any p2, any p3, any p4, any p5)l
 extern _native void create_forced_object(vector3 vec, any p3, Hash modelHash, bool p5)l
 extern _native void remove_forced_object(any p0, any p1, any p2, any p3, any p4)l
-extern _native void set_entity_no_collision_entity(Entity entity1, Entity entity2, bool collision)l
+extern _native void set_entity_no_collision_entity(Entity entity1, Entity entity2, bool unknown)l
 extern _native void set_entity_motion_blur(Entity entity, bool toggle)l
 extern _native void unk_0x44767B31(Entity entity, bool p1)l
 extern _native void unk_0xE224A6A5(Entity entity, bool p1)l
 #pragma endregion //}
 #pragma region PED //{
-extern _native Ped create_ped(int pedType, Hash modelHash, vector3 vec, float heading, bool networkHandle, bool pedHandle)l
+extern _native Ped create_ped(int pedType, Hash modelHash, vector3 vec, float heading, bool isNetwork, bool p7)l
 extern _native void delete_ped(Ped* ped)l
-extern _native Ped clone_ped(Ped ped, float heading, bool networkHandle, bool pedHandle)l
-extern _native void clone_ped_to_target(Ped ped1, Ped ped2)l
+extern _native Ped clone_ped(Ped ped, float heading, bool isNetwork, bool p3)l
+extern _native void clone_ped_to_target(Ped ped, Ped targetPed)l
 extern _native bool is_ped_in_vehicle(Ped ped, Vehicle vehicle, bool atGetIn)l
 extern _native bool is_ped_in_model(Ped ped, Hash modelHash)l
 extern _native bool is_ped_in_any_vehicle(Ped ped, bool atGetIn)l
@@ -383,7 +385,7 @@ extern _native bool is_conversation_ped_dead(Ped ped)l
 extern _native bool is_ped_aiming_from_cover(Ped ped)l
 extern _native bool is_ped_reloading(Ped ped)l
 extern _native bool is_ped_a_player(Ped ped)l
-extern _native Ped create_ped_inside_vehicle(Vehicle vehicle, int pedType, Hash modelHash, int seat, bool networkHandle, bool pedHandle)l
+extern _native Ped create_ped_inside_vehicle(Vehicle vehicle, int pedType, Hash modelHash, int seat, bool isNetwork, bool p5)l
 extern _native void set_ped_desired_heading(Ped ped, float heading)l
 extern _native32(0x290421BE) void _freeze_ped_camera_rotation(Ped ped)l
 extern _native bool is_ped_facing_ped(Ped ped, Ped otherPed, float angle)l
@@ -411,7 +413,7 @@ extern _native void set_ped_can_be_dragged_out(Ped ped, bool toggle)l
 extern _native void unk_0x6CD58238(bool toggle)l
 extern _native bool is_ped_male(Ped ped)l
 extern _native bool is_ped_human(Ped ped)l
-extern _native Vehicle get_vehicle_ped_is_in(Ped ped, bool getLastVehicle)l
+extern _native Vehicle get_vehicle_ped_is_in(Ped ped, bool lastVehicle)l
 extern _native void reset_ped_last_vehicle(Ped ped)l
 extern _native void set_ped_density_multiplier_this_frame(float multiplier)l
 extern _native void set_scenario_ped_density_multiplier_this_frame(float p0, float p1)l
@@ -470,15 +472,15 @@ extern _native bool is_ped_diving(Ped ped)l
 extern _native bool is_ped_jumping_out_of_vehicle(Ped ped)l
 extern _native int get_ped_parachute_state(Ped ped)l
 extern _native int get_ped_parachute_landing_type(Ped ped)l
-extern _native void set_ped_parachute_tint_index(Ped ped, any tintIndex)l
-extern _native void get_ped_parachute_tint_index(Ped ped, any* outTintIndex)l
-extern _native void set_ped_reserve_parachute_tint_index(any p0, any p1)l
+extern _native void set_ped_parachute_tint_index(Ped ped, int tintIndex)l
+extern _native void get_ped_parachute_tint_index(Ped ped, int* outTintIndex)l
+extern _native void set_ped_reserve_parachute_tint_index(Ped ped, any p1)l
 extern _native void set_ped_ducking(Ped ped, bool toggle)l
 extern _native bool is_ped_ducking(Ped ped)l
 extern _native bool is_ped_in_any_taxi(Ped ped)l
 extern _native void set_ped_id_range(Ped ped, float value)l
 extern _native void unk_0x9A2180FF(Ped ped, bool p1)l
-extern _native void unk_0xF30658D2(any p0, float p1)l
+extern _native void unk_0xF30658D2(Ped ped, float unk)l
 extern _native void unk_0x43709044(any p0)l
 extern _native void set_ped_seeing_range(Ped ped, float value)l
 extern _native void set_ped_hearing_range(Ped ped, float value)l
@@ -532,7 +534,7 @@ extern _native Hash get_ped_relationship_group_hash(Ped ped)l
 extern _native int get_relationship_between_groups(Hash group1, Hash group2)l
 extern _native void set_ped_can_be_targeted_without_los(Ped ped, bool toggle)l
 extern _native void set_ped_to_inform_respected_friends(Ped ped, float radius, int maxFriends)l
-extern _native bool is_ped_responding_to_event(any p0, any p1)l
+extern _native bool is_ped_responding_to_event(Ped ped, any event)l
 extern _native void set_ped_firing_pattern(Ped ped, Hash patternHash)l
 extern _native void set_ped_shoot_rate(Ped ped, int shootRate)l
 extern _native void set_combat_float(Ped ped, int combatType, float p2)l
@@ -541,12 +543,12 @@ extern _native void get_group_size(int groupID, any* unknown, int* sizeInMembers
 extern _native bool does_group_exist(int groupId)l
 extern _native int get_ped_group_index(Ped ped)l
 extern _native bool is_ped_in_group(Ped ped)l
-extern _native Player get_player_ped_is_following(Ped Ped)l
+extern _native Player get_player_ped_is_following(Ped ped)l
 extern _native void set_group_formation(int groupId, int formationType)l
 extern _native void set_group_formation_spacing(int groupId, float p1, float p2, float p3)l
 extern _native void reset_group_formation_default_spacing(int groupHandle)l
 extern _native Vehicle get_vehicle_ped_is_using(Ped ped)l
-extern _native Vehicle set_exclusive_phone_relationships(Ped pedToCheck)l
+extern _native Vehicle set_exclusive_phone_relationships(Ped ped)l
 extern _native void set_ped_gravity(Ped ped, bool toggle)l
 extern _native void apply_damage_to_ped(Ped ped, int damageAmount, bool p2)l
 extern _native void set_ped_allowed_to_duck(Ped ped, bool toggle)l
@@ -596,11 +598,11 @@ extern _native void clear_ped_drive_by_clipset_override(Ped ped)l
 extern _native void set_ped_in_vehicle_context(Ped ped, Hash context)l
 extern _native void reset_ped_in_vehicle_context(Ped ped)l
 extern _native bool is_scripted_scenario_ped_using_conditional_anim(Ped ped, const char* animDict, const char* anim)l
-extern _native void set_ped_alternate_walk_anim(any p0, any* p1, any* p2, float p3, bool p4)l
-extern _native void clear_ped_alternate_walk_anim(any p0, float p1)l
+extern _native void set_ped_alternate_walk_anim(Ped ped, const char* animDict, const char* animName, float p3, bool p4)l
+extern _native void clear_ped_alternate_walk_anim(Ped ped, float p1)l
 extern _native void set_ped_alternate_movement_anim(Ped ped, int stance, const char* animDictionary, const char* animationName, float p4, bool p5)l
 extern _native void clear_ped_alternate_movement_anim(Ped ped, int stance, float p2)l
-extern _native void set_ped_gesture_group(Ped ped, any* p1)l
+extern _native void set_ped_gesture_group(Ped ped, const char* animGroupGesture)l
 extern _native vector3 get_anim_initial_offset_position(const char* animDict, const char* animName, vector3 vec, vector3 Rot, float p8, int p9)l
 extern _native vector3 get_anim_initial_offset_rotation(const char* animDict, const char* animName, vector3 vec, vector3 Rot, float p8, int p9)l
 extern _native int get_ped_drawable_variation(Ped ped, int componentId)l
@@ -622,7 +624,7 @@ extern _native void set_ped_head_overlay(Ped ped, int overlayID, int index, floa
 extern _native32(0xFF43C18D) int _get_num_head_overlay_values(int overlayID)l
 extern _native bool has_ped_head_blend_finished(Ped ped)l
 extern _native void unk_0x894314A4(Ped ped)l
-extern _native void unk_0x57E5B3F9(any p0, any p1, any p2, any p3, any p4)l
+extern _native void unk_0x57E5B3F9(Ped ped, RGB colour, int p4)l
 extern _native void unk_0xC6F36292(any p0)l
 extern _native32(0x211DEFEC) int _get_first_parent_id_for_ped_type(int type)l
 extern _native32(0x095D3BD8) int _get_num_parent_peds_of_type(int type)l
@@ -653,7 +655,7 @@ extern _native void set_driver_ability(Ped driver, float ability)l
 extern _native void set_driver_aggressiveness(Ped driver, float aggressiveness)l
 extern _native bool can_ped_ragdoll(Ped ped)l
 extern _native bool set_ped_to_ragdoll(Ped ped, int time1, int time2, int ragdollType, bool p4, bool p5, bool p6)l
-extern _native bool set_ped_to_ragdoll_with_fall(any p0, Player p1, any p2, any p3, any p4, any p5, any p6, any p7, any p8, any p9, any p10, any p11, any p12, any p13)l
+extern _native bool set_ped_to_ragdoll_with_fall(Ped ped, int time, int p2, int ragdollType, vector3 vec, float p7, float p8, float p9, float p10, float p11, float p12, float p13)l
 extern _native void set_ped_ragdoll_on_collision(Ped ped, bool toggle)l
 extern _native bool is_ped_ragdoll(Ped ped)l
 extern _native bool is_ped_running_ragdoll_task(Ped ped)l
@@ -662,11 +664,11 @@ extern _native void reset_ped_ragdoll_timer(Ped ped)l
 extern _native void set_ped_can_ragdoll(Ped ped, bool toggle)l
 extern _native bool is_ped_running_mobile_phone_task(Ped ped)l
 extern _native bool unk_0x97353375(Ped ped)l
-extern _native32(0x9C8F830D) void _set_ped_ragdoll_flag(Ped ped, int flag)l
-extern _native32(0x77CBA290) void _set_ped_reset_ragdoll_flag(Ped ped, int flag)l
+extern _native32(0x9C8F830D) void _set_ped_ragdoll_blocking_flags(Ped ped, int flags)l
+extern _native32(0x77CBA290) void _reset_ped_ragdoll_blocking_flags(Ped ped, int flags)l
 extern _native void set_ped_angled_defensive_area(Ped ped, float p1, float p2, float p3, float p4, float p5, float p6, float p7, bool p8, bool p9)l
 extern _native void set_ped_sphere_defensive_area(Ped ped, vector3 vec, float radius, bool p5, bool p6)l
-extern _native void set_ped_defensive_sphere_attached_to_ped(Ped ped, any p1, float p2, float p3, float p4, float p5, bool p6)l
+extern _native void set_ped_defensive_sphere_attached_to_ped(Ped ped, Ped target, vector3 Offset, float radius, bool p6)l
 extern _native void unk_0x4763B2C6(Ped ped, any p1, float p2, float p3, float p4, float p5, bool p6)l
 extern _native void set_ped_defensive_area_attached_to_ped(Ped ped, Ped attachPed, float p2, float p3, float p4, float p5, float p6, float p7, float p8, bool p9, bool p10)l
 extern _native void set_ped_defensive_area_direction(Ped ped, float p1, float p2, float p3, bool p4)l
@@ -724,8 +726,8 @@ extern _native void play_facial_anim(Ped ped, const char* animName, const char* 
 extern _native void set_facial_idle_anim_override(Ped ped, const char* animName, const char* animDict)l
 extern _native void clear_facial_idle_anim_override(Ped ped)l
 extern _native void set_ped_can_play_gesture_anims(Ped ped, bool toggle)l
-extern _native void set_ped_can_play_viseme_anims(Ped ped, bool p1, bool p2)l
-extern _native void unk_0xADB2511A(any p0, bool p1)l
+extern _native void set_ped_can_play_viseme_anims(Ped ped, bool toggle, bool p2)l
+extern _native void unk_0xADB2511A(Ped ped, bool p1)l
 extern _native void set_ped_can_play_ambient_anims(Ped ped, bool toggle)l
 extern _native void set_ped_can_play_ambient_base_anims(Ped ped, bool toggle)l
 extern _native void unk_0xB7CD0A49(Ped ped)l
@@ -733,14 +735,14 @@ extern _native void set_ped_can_arm_ik(Ped ped, bool toggle)l
 extern _native void set_ped_can_head_ik(Ped ped, bool toggle)l
 extern _native void set_ped_can_leg_ik(Ped ped, bool toggle)l
 extern _native void set_ped_can_torso_ik(Ped ped, bool toggle)l
-extern _native void unk_0x7B0040A8(any p0, bool p1)l
-extern _native void unk_0x0FDA62DE(any p0, bool p1)l
+extern _native void unk_0x7B0040A8(Ped ped, bool p1)l
+extern _native void unk_0x0FDA62DE(Ped ped, bool p1)l
 extern _native void set_ped_can_use_auto_conversation_lookat(Ped ped, bool toggle)l
 extern _native bool is_ped_headtracking_ped(Ped ped1, Ped ped2)l
 extern _native bool is_ped_headtracking_entity(Ped ped, Entity entity)l
 extern _native void set_ped_primary_lookat(Ped ped, Ped lookAt)l
 extern _native void unk_0xFC942D7C(any p0, any p1)l
-extern _native void unk_0x89EEE07B(any p0, any p1)l
+extern _native void set_ped_cloth_prone(any p0, any p1)l
 extern _native void set_ped_config_flag(Ped ped, int flagId, bool value)l
 extern _native void set_ped_reset_flag(Ped ped, int flagId, bool doReset)l
 extern _native bool get_ped_config_flag(Ped ped, int flagId, bool p2)l
@@ -762,7 +764,7 @@ extern _native void set_ped_helmet_flag(Ped ped, int helmetFlag)l
 extern _native void set_ped_helmet_prop_index(Ped ped, int propIndex)l
 extern _native void set_ped_helmet_texture_index(Ped ped, int textureIndex)l
 extern _native bool is_ped_wearing_helmet(Ped ped)l
-extern _native void unk_0x24A1284E(any p0)l
+extern _native void unk_0x24A1284E(Ped ped)l
 extern _native any unk_0x8A3A3116(any p0)l
 extern _native any unk_0x74EB662D(any p0)l
 extern _native bool unk_0xFFF149FE(any p0)l
@@ -807,7 +809,7 @@ extern _native void unk_0x187B9070(Ped ped, bool p1, bool p2)l
 extern _native bool unk_0x45037B9B(any p0, float p1, float p2, float p3, float p4)l
 extern _native void unk_0x840D24D3(any p0)l
 extern _native void get_ped_flood_invincibility(Ped ped, bool p1)l
-extern _native void unk_0x9194DB71(any p0, bool p1)l
+extern _native void unk_0x9194DB71(Ped ped, bool p1)l
 extern _native bool is_tracked_ped_visible(Ped ped)l
 extern _native any unk_0x5B1B70AA(any p0)l
 extern _native bool is_ped_tracked(Ped ped)l
@@ -832,7 +834,7 @@ extern _native void set_synchronized_scene_rate(int sceneID, float rate)l
 extern _native float get_synchronized_scene_rate(int sceneID)l
 extern _native void set_synchronized_scene_looped(int sceneID, bool toggle)l
 extern _native bool is_synchronized_scene_looped(int sceneID)l
-extern _native void unk_0x2DE48DA1(any p0, bool p1)l
+extern _native32(0x2DE48DA1) void _set_synchronized_scene_occlusion_portal(any sceneID, bool p1)l
 extern _native bool unk_0x72CF2514(any p0)l
 extern _native void attach_synchronized_scene_to_entity(int sceneID, Entity entity, int boneIndex)l
 extern _native void detach_synchronized_scene(int sceneID)l
@@ -888,10 +890,10 @@ extern _native void unk_0x4BBE5E2C(any p0, any p1, any p2, any p3, any p4)l
 extern _native void unk_0xA89A53F2(Ped ped)l
 #pragma endregion //}
 #pragma region VEHICLE //{
-extern _native Vehicle create_vehicle(Hash modelHash, vector3 vec, float heading, bool networkHandle, bool vehiclehandle)l
+extern _native Vehicle create_vehicle(Hash modelHash, vector3 vec, float heading, bool isNetwork, bool p6)l
 extern _native void delete_vehicle(Vehicle* vehicle)l
 extern _native void unk_0xBB54ECCA(Vehicle vehicle, bool p1, bool p2)l
-extern _native void set_vehicle_allow_no_passengers_lockon(Vehicle veh, bool p1)l
+extern _native void set_vehicle_allow_no_passengers_lockon(Vehicle veh, bool toggle)l
 extern _native int unk_0xFBDE9FD8(Vehicle vehicle)l
 extern _native bool is_vehicle_model(Vehicle vehicle, Hash model)l
 extern _native bool does_script_vehicle_generator_exist(int vehicleGenerator)l
@@ -903,7 +905,6 @@ extern _native void set_all_vehicle_generators_active()l
 extern _native void set_all_low_priority_vehicle_generators_active(bool active)l
 extern _native void unk_0x935A95DA(float p0, float p1, float p2, float p3)l
 extern _native void unk_0x6C73E45A()l
-extern _native bool set_vehicle_on_ground_properly(Vehicle vehicle)l
 extern _native any set_all_vehicles_spawn(Vehicle p0, bool p1, bool p2, bool p3)l
 extern _native bool is_vehicle_stuck_on_roof(Vehicle vehicle)l
 extern _native void add_vehicle_upsidedown_check(Vehicle vehicle)l
@@ -911,13 +912,13 @@ extern _native void remove_vehicle_upsidedown_check(Vehicle vehicle)l
 extern _native bool is_vehicle_stopped(Vehicle vehicle)l
 extern _native int get_vehicle_number_of_passengers(Vehicle vehicle)l
 extern _native int get_vehicle_max_number_of_passengers(Vehicle vehicle)l
-extern _native32(0x838F7BF7) int _get_vehicle_model_max_number_of_passengers(Hash modelHash)l
+extern _native int get_vehicle_model_number_of_seats(Hash modelHash)l
 extern _native bool unk_0x769E5CF2(Vehicle vehicle, bool flag)l
 extern _native void set_vehicle_density_multiplier_this_frame(float multiplier)l
 extern _native void set_random_vehicle_density_multiplier_this_frame(float multiplier)l
 extern _native void set_parked_vehicle_density_multiplier_this_frame(float multiplier)l
 extern _native void unk_0x09462665(bool toggle)l
-extern _native void unk_0xDAE2A2BE(float value)l
+extern _native32(0xDAE2A2BE) void _set_some_vehicle_density_multiplier_this_frame(float value)l
 extern _native void set_far_draw_vehicles(bool toggle)l
 extern _native any set_number_of_parked_vehicles(int value)l
 extern _native void set_vehicle_doors_locked(Vehicle vehicle, int doorLockStatus)l
@@ -931,10 +932,10 @@ extern _native void set_vehicle_doors_locked_for_team(Vehicle vehicle, int team,
 extern _native void explode_vehicle(Vehicle vehicle, bool isAudible, bool isInvisible)l
 extern _native void set_vehicle_out_of_control(Vehicle vehicle, bool killDriver, bool explodeOnImpact)l
 extern _native void set_vehicle_timed_explosion(Vehicle vehicle, Ped ped, bool toggle)l
-extern _native void unk_0x811373DE(any p0)l
+extern _native void unk_0x811373DE(Vehicle vehicle)l
 extern _native any unk_0xA4E69134()l
 extern _native void unk_0x65255524()l
-extern _native bool unk_0xE39DAF36(any p0)l
+extern _native bool unk_0xE39DAF36(Vehicle vehicle)l
 extern _native void set_taxi_lights(Vehicle vehicle, bool state)l
 extern _native bool is_taxi_light_on(Vehicle vehicle)l
 extern _native bool is_vehicle_in_garage_area(const char* garageName, Vehicle vehicle)l
@@ -949,8 +950,8 @@ extern _native void set_vehicle_custom_secondary_colour(Vehicle vehicle, RGB col
 extern _native void get_vehicle_custom_secondary_colour(Vehicle vehicle, int* r, int* g, int* b)l
 extern _native any clear_vehicle_custom_secondary_colour(Vehicle vehicle)l
 extern _native bool get_is_vehicle_secondary_colour_custom(Vehicle vehicle)l
-extern _native32(0x8332730C) void _set_vehicle_paint_fade(Vehicle veh, float fade)l
-extern _native32(0xD5F1EEE1) float _get_vehicle_paint_fade(Vehicle veh)l
+extern _native void set_vehicle_enveff_scale(Vehicle vehicle, float fade)l
+extern _native float get_vehicle_enveff_scale(Vehicle vehicle)l
 extern _native void set_can_respray_vehicle(Vehicle vehicle, bool state)l
 extern _native void unk_0x54E9EE75(Vehicle vehicle, bool p1)l
 extern _native32(0x4A46E814) void _jitter_vehicle(Vehicle vehicle, bool p1, float yaw, float pitch, float roll)l
@@ -962,7 +963,7 @@ extern _native void unk_0x35614622(Vehicle vehicle, bool p1)l
 extern _native void set_vehicle_siren(Vehicle vehicle, bool toggle)l
 extern _native bool is_vehicle_siren_on(Vehicle vehicle)l
 extern _native void set_vehicle_strong(Vehicle vehicle, bool toggle)l
-extern _native void remove_vehicle_stuck_check(any p0)l
+extern _native void remove_vehicle_stuck_check(Vehicle vehicle)l
 extern _native void get_vehicle_colours(Vehicle vehicle, int* colorPrimary, int* colorSecondary)l
 extern _native bool is_vehicle_seat_free(Vehicle vehicle, int seatIndex)l
 extern _native Ped get_ped_in_vehicle_seat(Vehicle vehicle, int index)l
@@ -974,9 +975,9 @@ extern _native32(0xCBC7D3C8) void _set_vehicle_halt(Vehicle vehicle, float dista
 extern _native void unk_0x943A6CFC(Vehicle vehicle, float p1)l
 extern _native bool set_ped_enabled_bike_ringtone(Vehicle vehicle, Entity entity)l
 extern _native bool unk_0x593143B9(Vehicle vehicle)l
-extern _native Vehicle unk_0x70DD5E25(Object object)l
-extern _native bool unk_0xFBF5536A(Vehicle vehicle, any p1)l
-extern _native void unk_0x20AB5783(Vehicle vehicle, any p1)l
+extern _native32(0x70DD5E25) Vehicle _get_vehicle_attached_to_entity(Object object)l
+extern _native bool unk_0xFBF5536A(Vehicle vehicle, Entity entity)l
+extern _native void unk_0x20AB5783(Vehicle vehicle, Entity entity)l
 extern _native void unk_0x0F11D01F(Vehicle vehicle)l
 extern _native void unk_0xAE040377(Vehicle vehicle, bool p1)l
 extern _native void unk_0x4C0E4031(Vehicle vehicle, bool p1)l
@@ -1005,11 +1006,11 @@ extern _native void set_vehicle_interiorlight(Vehicle vehicle, bool toggle)l
 extern _native void set_vehicle_light_multiplier(Vehicle vehicle, float multiplier)l
 extern _native void attach_vehicle_to_trailer(Vehicle vehicle, Vehicle trailer, float radius)l
 extern _native void unk_0x12AC1A16(Vehicle vehicle, Vehicle trailer, float p2, float p3, float p4, float p5, float p6, float p7, float p8, float p9, float p10, float p11)l
-extern _native void unk_0x40C4763F(Vehicle p0, Entity p1, float p2)l
+extern _native void unk_0x40C4763F(Vehicle vehicle, Entity p1, float p2)l
 extern _native void detach_vehicle_from_trailer(Vehicle vehicle)l
 extern _native bool is_vehicle_attached_to_trailer(Vehicle vehicle)l
-extern _native void unk_0xE74E85CE(any p0, float p1)l
-extern _native void unk_0x06C47A6F(any p0)l
+extern _native void unk_0xE74E85CE(Vehicle vehicle, float p1)l
+extern _native void unk_0x06C47A6F(Vehicle vehicle)l
 extern _native void set_vehicle_tyre_fixed(Vehicle vehicle, int tyreIndex)l
 extern _native void set_vehicle_number_plate_text(Vehicle vehicle, const char* plateText)l
 extern _native const char* get_vehicle_number_plate_text(Vehicle vehicle)l
@@ -1057,14 +1058,14 @@ extern _native void unk_0x943A58EB(Vehicle vehicle, vector3 vec, any p4)l
 extern _native void unk_0x5C9F477C(any p0, float p1, float p2, float p3)l
 extern _native void unk_0xCD83C393(any p0, float p1, float p2, float p3)l
 extern _native void unk_0x2EF8435C(any p0, bool p1)l
-extern _native void explode_vehicle_in_cutscene(Vehicle p0, bool p1)l
+extern _native void explode_vehicle_in_cutscene(Vehicle vehicle, bool p1)l
 extern _native void add_vehicle_stuck_check_with_warp(any p0, float p1, any p2, bool p3, bool p4, bool p5, any p6)l
 extern _native void set_vehicle_model_is_suppressed(Hash model, bool suppressed)l
 extern _native Vehicle get_random_vehicle_in_sphere(vector3 vec, float radius, Hash modelHash, int flags)l
 extern _native Vehicle get_random_vehicle_front_bumper_in_sphere(float p0, float p1, float p2, float p3, int p4, int p5, int p6)l
 extern _native Vehicle get_random_vehicle_back_bumper_in_sphere(float p0, float p1, float p2, float p3, int p4, int p5, int p6)l
 extern _native Vehicle get_closest_vehicle(vector3 vec, float radius, Hash modelHash, int flags)l
-extern _native Entity get_train_carriage(Vehicle train, int carriage)l
+extern _native Entity get_train_carriage(Vehicle train, int trailerNumber)l
 extern _native void delete_mission_train(Vehicle* train)l
 extern _native void set_mission_train_as_no_longer_needed(Vehicle* train, bool p1)l
 extern _native void set_mission_train_coords(Vehicle train, vector3 vec)l
@@ -1091,7 +1092,7 @@ extern _native bool is_vehicle_door_fully_open(Vehicle vehicle, int doorIndex)l
 extern _native void set_vehicle_engine_on(Vehicle vehicle, bool value, bool instantly, bool otherwise)l
 extern _native void set_vehicle_undriveable(Vehicle vehicle, bool toggle)l
 extern _native void set_vehicle_provides_cover(Vehicle vehicle, bool toggle)l
-extern _native void set_vehicle_door_control(Vehicle vehicle, int doorIndex, int p2, float angle)l
+extern _native void set_vehicle_door_control(Vehicle vehicle, int doorIndex, int speed, float angle)l
 extern _native void set_vehicle_door_latched(Vehicle vehicle, int doorIndex, bool p2, bool p3, bool p4)l
 extern _native float get_vehicle_door_angle_ratio(Vehicle vehicle, int door)l
 extern _native void set_vehicle_door_shut(Vehicle vehicle, int doorIndex, bool closeInstantly)l
@@ -1100,17 +1101,17 @@ extern _native void set_vehicle_can_break(Vehicle vehicle, bool toggle)l
 extern _native bool does_vehicle_have_roof(Vehicle vehicle)l
 extern _native bool is_big_vehicle(Vehicle vehicle)l
 extern _native int get_number_of_vehicle_colours(Vehicle vehicle)l
-extern _native void set_vehicle_colour_combination(Vehicle vehicle, int numCombos)l
+extern _native void set_vehicle_colour_combination(Vehicle vehicle, int colorCombination)l
 extern _native int get_vehicle_colour_combination(Vehicle vehicle)l
 extern _native void set_vehicle_is_considered_by_player(Vehicle vehicle, bool toggle)l
-extern _native void unk_0xA6D8D7A5(Vehicle vehicle, bool p1)l
+extern _native void unk_0xA6D8D7A5(Vehicle vehicle, bool toggle)l
 extern _native void unk_0xACAB8FF3(Vehicle vehicle, bool p1)l
 extern _native void unk_0xF0E5C41D(Vehicle vehicle, bool p1)l
 extern _native void unk_0x2F98B4B7(Vehicle vehicle, bool p1)l
 extern _native void get_random_vehicle_model_in_memory(bool p0, Hash* modelHash, int* p2)l
 extern _native int get_vehicle_door_lock_status(Vehicle vehicle)l
 extern _native bool is_vehicle_door_damaged(Vehicle veh, int doorID)l
-extern _native32(0x065B92B3) void _set_vehicle_door_breakable(Vehicle vehicle, int doorIndex, bool isBreakable)l
+extern _native32(0x065B92B3) void _set_vehicle_door_can_break(Vehicle vehicle, int doorIndex, bool isBreakable)l
 extern _native bool unk_0xB3A2CC4F(Vehicle vehicle, bool p1)l
 extern _native bool is_vehicle_bumper_broken_off(Vehicle vehicle, bool front)l
 extern _native bool is_cop_vehicle_in_area_3d(float x1, float x2, float y1, float y2, float z1, float z2)l
@@ -1133,7 +1134,7 @@ extern _native void unk_0xCBD98BA1(Vehicle vehicle, bool p1)l
 extern _native void remove_vehicles_from_generators_in_area(vector3 vec_1, vector3 vec_2, any unk)l
 extern _native void set_vehicle_steer_bias(Vehicle vehicle, float value)l
 extern _native bool is_vehicle_extra_turned_on(Vehicle vehicle, int extraId)l
-extern _native void set_vehicle_extra(Vehicle vehicle, int extraId, int toggle)l
+extern _native void set_vehicle_extra(Vehicle vehicle, int extraId, bool toggle)l
 extern _native bool does_extra_exist(Vehicle vehicle, int extraId)l
 extern _native void set_convertible_roof(Vehicle vehicle, bool p1)l
 extern _native void lower_convertible_roof(Vehicle vehicle, bool instantlyLower)l
@@ -1145,7 +1146,7 @@ extern _native void set_vehicle_damage(Vehicle vehicle, vector3 Offset, float da
 extern _native float get_vehicle_engine_health(Vehicle vehicle)l
 extern _native void set_vehicle_engine_health(Vehicle vehicle, float health)l
 extern _native float get_vehicle_petrol_tank_health(Vehicle vehicle)l
-extern _native void set_vehicle_petrol_tank_health(Vehicle vehicle, float fix)l
+extern _native void set_vehicle_petrol_tank_health(Vehicle vehicle, float health)l
 extern _native bool is_vehicle_stuck_timer_up(Vehicle vehicle, int p1, int p2)l
 extern _native void reset_vehicle_stuck_timer(Vehicle vehicle, bool nullAttributes)l
 extern _native bool is_vehicle_driveable(Vehicle vehicle, bool p1)l
@@ -1161,7 +1162,7 @@ extern _native int get_vehicle_livery(Vehicle vehicle)l
 extern _native int get_vehicle_livery_count(Vehicle vehicle)l
 extern _native bool is_vehicle_window_intact(Vehicle vehicle, int windowIndex)l
 extern _native bool are_all_vehicle_windows_intact(Vehicle vehicle)l
-extern _native32(0x648E685A) bool _is_any_vehicle_seat_empty(Vehicle vehicle)l
+extern _native bool are_any_vehicle_seats_free(Vehicle vehicle)l
 extern _native void reset_vehicle_wheels(Vehicle vehicle, bool toggle)l
 extern _native bool is_heli_part_broken(Vehicle vehicle, bool p1, bool p2, bool p3)l
 extern _native32(0xF01E2AAB) float _get_heli_main_rotor_health(Vehicle vehicle)l
@@ -1172,7 +1173,7 @@ extern _native void set_vehicle_name_debug(Vehicle vehicle, const char* name)l
 extern _native void set_vehicle_explodes_on_high_explosion_damage(Vehicle vehicle, bool toggle)l
 extern _native void unk_0xC306A9A3(Vehicle vehicle, bool p1)l
 extern _native any unk_0x95A9ACCB(Vehicle vehicle, bool p1)l
-extern _native32(0x24F873FB) void _set_vehicle_landing_gear(Vehicle vehicle, int state)l
+extern _native void control_landing_gear(Vehicle vehicle, int state)l
 extern _native int get_landing_gear_state(Vehicle vehicle)l
 extern _native bool is_any_vehicle_near_point(vector3 vec, float radius)l
 extern _native void request_vehicle_high_detail_model(Vehicle vehicle)l
@@ -1201,7 +1202,7 @@ extern _native void set_vehicle_indicator_lights(Vehicle vehicle, int turnSignal
 extern _native void set_vehicle_brake_lights(Vehicle vehicle, bool toggle)l
 extern _native void set_vehicle_handbrake(Vehicle vehicle, bool toggle)l
 extern _native void unk_0x37BC6ACB()l
-extern _native any unk_0x71D898EF()l
+extern _native bool unk_0x71D898EF()l
 extern _native void unk_0x0B0523B0(bool p0)l
 extern _native bool get_vehicle_trailer_vehicle(Vehicle vehicle, Vehicle* trailer)l
 extern _native void unk_0x0B200CE2(Vehicle vehicle, bool p1)l
@@ -1219,18 +1220,18 @@ extern _native float get_vehicle_model_acceleration(Hash modelHash)l
 extern _native float unk_0x37FBA7BC(Hash modelHash)l
 extern _native float unk_0x95BB67EB(Hash modelHash)l
 extern _native float unk_0x87C5D271(Hash modelHash)l
-extern _native float unk_0xCE67162C(any p0)l
-extern _native float get_vehicle_class_max_traction(any p0)l
-extern _native float get_vehicle_class_max_agility(any p0)l
-extern _native float get_vehicle_class_max_acceleration(any p0)l
-extern _native float get_vehicle_class_max_braking(any p0)l
+extern _native float unk_0xCE67162C(int vehicleClass)l
+extern _native float get_vehicle_class_max_traction(int vehicleClass)l
+extern _native float get_vehicle_class_max_agility(int vehicleClass)l
+extern _native float get_vehicle_class_max_acceleration(int vehicleClass)l
+extern _native float get_vehicle_class_max_braking(int vehicleClass)l
 extern _native any unk_0xD6685803(float p0, float p1, float p2, float p3, float p4, bool p5)l
 extern _native bool unk_0x0C0332A6(any p0)l
 extern _native void open_bomb_bay_doors(Vehicle vehicle)l
 extern _native void close_bomb_bay_doors(Vehicle vehicle)l
 extern _native bool is_vehicle_searchlight_on(Vehicle vehicle)l
 extern _native void set_vehicle_searchlight(Vehicle heli, bool toggle, bool canBeUsedByAI)l
-extern _native bool unk_0xAB0E79EB(any p0, any p1, any p2, bool p3, bool p4)l
+extern _native bool unk_0xAB0E79EB(Ped ped, Vehicle vehicle, bool p2, bool p3, bool p4)l
 extern _native bool can_shuffle_seat(Vehicle vehicle, any p1)l
 extern _native int get_num_mod_kits(Vehicle vehicle)l
 extern _native void set_vehicle_mod_kit(Vehicle vehicle, int modKit)l
@@ -1243,9 +1244,9 @@ extern _native void set_vehicle_mod_color_1(Vehicle vehicle, int paintType, int 
 extern _native void set_vehicle_mod_color_2(Vehicle vehicle, int paintType, int color)l
 extern _native void get_vehicle_mod_color_1(Vehicle vehicle, int* paintType, int* color, int* p3)l
 extern _native void get_vehicle_mod_color_2(Vehicle vehicle, int* paintType, int* color)l
-extern _native32(0x9A0840FD) const char* _get_vehicle_mod_color_1_text_label(Vehicle vehicle, bool p1)l
-extern _native32(0x9BDC0B49) const char* _get_vehicle_mod_color_2_text_label(Vehicle vehicle)l
-extern _native bool unk_0x112D637A(any p0)l
+extern _native const char* get_vehicle_mod_color_1_name(Vehicle vehicle, bool p1)l
+extern _native const char* get_vehicle_mod_color_2_name(Vehicle vehicle)l
+extern _native bool unk_0x112D637A(Vehicle vehicle)l
 extern _native void set_vehicle_mod(Vehicle vehicle, int modType, int modIndex, bool customTires)l
 extern _native int get_vehicle_mod(Vehicle vehicle, int modType)l
 extern _native bool get_vehicle_mod_variation(Vehicle vehicle, int modType)l
@@ -1257,7 +1258,7 @@ extern _native const char* get_mod_text_label(Vehicle vehicle, int modType, int 
 extern _native const char* get_mod_slot_name(Vehicle vehicle, int modType)l
 extern _native const char* get_livery_name(Vehicle vehicle, int liveryIndex)l
 extern _native any get_vehicle_mod_modifier_value(Vehicle vehicle, int modType, int modIndex)l
-extern _native any unk_0x94850968(any p0, any p1, any p2)l
+extern _native32(0x94850968) any _get_vehicle_mod_data(Vehicle vehicle, int modType, int modIndex)l
 extern _native void preload_vehicle_mod(any p0, any p1, any p2)l
 extern _native bool has_preload_mods_finished(any p0)l
 extern _native void release_preload_mods(Vehicle vehicle)l
@@ -1273,24 +1274,24 @@ extern _native bool get_is_left_vehicle_headlight_damaged(Vehicle vehicle)l
 extern _native bool get_is_right_vehicle_headlight_damaged(Vehicle vehicle)l
 extern _native32(0xE943B09C) void _set_vehicle_engine_power_multiplier(Vehicle vehicle, float value)l
 extern _native void unk_0xDF594D8D(Vehicle vehicle, bool toggle)l
-extern _native void unk_0x4D840FC4(any p0, bool p1)l
+extern _native void unk_0x4D840FC4(Vehicle vehicle, bool p1)l
 extern _native any unk_0x5AB26C2B(float p0, float p1, float p2, float p3, float p4, float p5, float p6)l
 extern _native void unk_0xEF05F807(any p0)l
-extern _native bool unk_0xD656E7E5(any p0)l
+extern _native32(0xD656E7E5) bool _any_passengers_rappeling(Vehicle vehicle)l
 extern _native32(0x642DA5AA) void _set_vehicle_engine_torque_multiplier(Vehicle vehicle, float value)l
 extern _native void unk_0x04F5546C(any p0, bool p1)l
 extern _native void set_vehicle_is_wanted(Vehicle vehicle, bool state)l
 extern _native void unk_0xA25CCB8C(any p0, float p1)l
 extern _native void unk_0x00966934(any p0, bool p1)l
 extern _native void unk_0x113DF5FD(any p0, bool p1)l
-extern _native float unk_0x7C8D6464(any p0)l
+extern _native float unk_0x7C8D6464(Vehicle vehicle)l
 extern _native void disable_plane_aileron(Vehicle vehicle, bool p1, bool p2)l
 extern _native bool get_is_vehicle_engine_running(Vehicle vehicle)l
 extern _native void unk_0xA03E42DF(Vehicle vehicle, bool p1)l
 extern _native32(0x15D40761) void _set_bike_lean_angle(Vehicle vehicle, vector2 vector)l
 extern _native void unk_0x1984F88D(Vehicle vehicle, bool p1)l
 extern _native void unk_0x3FBE904F(Vehicle vehicle)l
-extern _native void unk_0xD1B71A25(any p0)l
+extern _native void set_last_driven_vehicle(Vehicle vehicle)l
 extern _native Vehicle get_last_driven_vehicle()l
 extern _native void unk_0x08CD58F9(any p0, bool p1)l
 extern _native32(0x8C4B63E2) void _set_plane_min_height_above_ground(Vehicle plane, int height)l
@@ -1305,7 +1306,7 @@ extern _native void unk_0xF0E59BC1()l
 extern _native void unk_0x929801C6(float p0)l
 extern _native void set_vehicle_shoot_at_target(Ped driver, Entity entity, vector3 Target)l
 extern _native32(0x4A557117) bool _get_vehicle_owner(Vehicle vehicle, Entity* entity)l
-extern _native void unk_0xE0FC6A32(Vehicle vehicle, bool p1)l
+extern _native void set_force_hd_vehicle(Vehicle vehicle, bool toggle)l
 extern _native void unk_0x7D0DE7EA(Vehicle vehicle, float p1)l
 extern _native int get_vehicle_plate_type(Vehicle vehicle)l
 extern _native void track_vehicle_visibility(Vehicle vehicle)l
@@ -1315,27 +1316,30 @@ extern _native void unk_0xD2B8ACBD(bool p0)l
 extern _native any unk_0xA4A75FCF(any p0)l
 extern _native void unk_0x50F89338(any p0, bool p1)l
 extern _native void unk_0xEB7D7C27(any p0, bool p1)l
-extern _native bool unk_0x5EB00A6A(Vehicle vehicle)l
+extern _native32(0x5EB00A6A) bool _is_vehicle_shop_respray_allowed(Vehicle vehicle)l
 extern _native void set_vehicle_engine_can_degrade(Vehicle vehicle, bool toggle)l
 extern _native void unk_0x5BD8D82D(Vehicle vehicle, int p1, int p2)l
 extern _native void unk_0x450AD03A(any p0)l
-extern _native bool unk_0xBD085DCA(any p0)l
-extern _native bool unk_0xABBDD5C6(any p0)l
-extern _native void unk_0x9B581DE7(any p0, bool p1)l
+extern _native32(0xBD085DCA) bool _vehicle_has_landing_gear(Vehicle vehicle)l
+extern _native32(0xABBDD5C6) bool _are_propellers_undamaged(Vehicle vehicle)l
+extern _native void unk_0x9B581DE7(Vehicle vehicle, bool p1)l
 extern _native bool is_vehicle_stolen(Vehicle vehicle)l
 extern _native any set_vehicle_is_stolen(Vehicle vehicle, bool isStolen)l
-extern _native void unk_0xED159AE6(any p0, float p1)l
-extern _native bool unk_0xAF8CB3DF(any p0)l
+extern _native void unk_0xED159AE6(Vehicle vehicle, float p1)l
+extern _native bool add_a_marker_over_vehicle(Vehicle vehicle)l
 extern _native void unk_0x45F72495(Vehicle vehicle)l
 extern _native void detach_vehicle_from_cargobob(Vehicle vehicle, Vehicle cargobob)l
 extern _native bool detach_vehicle_from_any_cargobob(Vehicle vehicle)l
 extern _native bool is_vehicle_attached_to_cargobob(Vehicle cargobob, Vehicle vehicleAttached)l
 extern _native Vehicle get_vehicle_attached_to_cargobob(Vehicle cargobob)l
 extern _native void attach_vehicle_to_cargobob(Vehicle vehicle, Vehicle cargobob, int p2, vector3 vec)l
-extern _native32(0xAF769B81) bool _is_cargobob_hook_active(Vehicle cargobob)l
-extern _native32(0x4D3C9A99) void _enable_cargobob_hook(Vehicle cargobob, int state)l
-extern _native32(0xA8211EE9) void _retract_cargobob_hook(Vehicle cargobob)l
-extern _native32(0x3A8AB081) void _set_cargobob_hook_position(any p0, float p1, float p2, bool p3)l
+extern _native bool does_cargobob_have_pick_up_rope(Vehicle cargobob)l
+extern _native void create_pick_up_rope_for_cargobob(Vehicle cargobob, int state)l
+extern _native void remove_pick_up_rope_for_cargobob(Vehicle cargobob)l
+extern _native32(0x3A8AB081) void _set_cargobob_hook_position(any p0, float p1, float p2, int state)l
+extern _native bool does_cargobob_have_pickup_magnet(Vehicle cargobob)l
+extern _native void set_cargobob_pickup_magnet_active(Vehicle cargobob, bool isActive)l
+extern _native void set_cargobob_pickup_magnet_strength(Vehicle cargobob, float strength)l
 extern _native bool does_vehicle_have_weapons(Vehicle vehicle)l
 extern _native void unk_0x2EC19A8B(any p0, bool p1)l
 extern _native void disable_vehicle_weapon(bool disabled, Hash weaponHash, Vehicle vehicle, Ped owner)l
@@ -1357,15 +1361,15 @@ extern _native void set_vehicle_ceiling_height(Vehicle vehicle, float p1)l
 extern _native void unk_0xBC649C49(Vehicle vehicle, bool toggle)l
 extern _native void unk_0x8DD9AA0C(Vehicle vehicle)l
 extern _native bool does_vehicle_exist_with_decorator(const char* decorator)l
-extern _native void unk_0xAA8BD440(any p0, bool p1)l
+extern _native void set_vehicle_exclusive_driver(Vehicle vehicle, bool p1)l
 extern _native32(0xB5CC548B) void _display_distant_vehicles(bool toggle)l
 extern _native float get_vehicle_body_health(Vehicle vehicle)l
 extern _native void set_vehicle_body_health(Vehicle vehicle, float value)l
 extern _native32(0xB73A1486) float _get_vehicle_suspension_height(Vehicle vehicle)l
 #pragma endregion //}
 #pragma region OBJECT //{
-extern _native Object create_object(Hash modelHash, vector3 vec, bool networkHandle, bool createHandle, bool dynamic)l
-extern _native Object create_object_no_offset(Hash modelHash, vector3 vec, bool networkHandle, bool createHandle, bool dynamic)l
+extern _native Object create_object(Object modelHash, vector3 vec, bool isNetwork, bool p5, bool dynamic)l
+extern _native Object create_object_no_offset(Hash modelHash, vector3 vec, bool isNetwork, bool p5, bool dynamic)l
 extern _native void delete_object(Object* object)l
 extern _native bool place_object_on_ground_properly(Object object)l
 extern _native bool slide_object(Object object, vector3 to, vector3 speed, bool collision)l
@@ -1423,10 +1427,10 @@ extern _native bool is_object_visible(Object object)l
 extern _native void unk_0xF4A1A14A(any p0, bool p1)l
 extern _native void unk_0xAF016CC1(any p0, bool p1)l
 extern _native void unk_0x3A68AA46(any p0, bool p1)l
-extern _native any unk_0xA286DE96(vector3 vec, float p3, const char* p4)l
-extern _native void unk_0x21F51560(any p0, any p1)l
-extern _native any unk_0xF1B8817A(any p0)l
-extern _native bool unk_0xE08C834D(any p0)l
+extern _native32(0xA286DE96) int _get_des_object(vector3 vec, float rotation, const char* name)l
+extern _native32(0x21F51560) void _set_des_object_state(int handle, int state)l
+extern _native32(0xF1B8817A) any _get_des_object_state(int handle)l
+extern _native32(0xE08C834D) bool _does_des_object_exist(int handle)l
 extern _native float unk_0x020497DE(any p0)l
 extern _native Pickup create_pickup(Hash pickupHash, vector3 pos, int p4, int value, bool p6, Hash modelHash)l
 extern _native Pickup create_pickup_rotate(Hash pickupHash, vector3 pos, vector3 rot, int flag, int amount, any p9, bool p10, Hash modelHash)l
@@ -1435,22 +1439,22 @@ extern _native Pickup create_portable_pickup(Hash pickupHash, vector3 vec, bool 
 extern _native32(0x56A02502) Pickup _create_portable_pickup_2(Hash pickupHash, vector3 vec, bool placeOnGround, Hash modelHash)l
 extern _native void attach_portable_pickup_to_ped(Ped ped, any p1)l
 extern _native void detach_portable_pickup_from_ped(Ped ped)l
-extern _native void unk_0x7EFBA039(any p0, any p1)l
+extern _native void unk_0x7EFBA039(any p0, int p1)l
 extern _native void unk_0xA3CDF152(bool p0)l
 extern _native vector3 get_safe_pickup_coords(vector3 vec, any p3, any p4)l
-extern _native int get_pickup_coords(any p0)l
-extern _native void remove_all_pickups_of_type(any p0)l
-extern _native bool has_pickup_been_collected(any p0)l
+extern _native vector3 get_pickup_coords(Pickup pickup)l
+extern _native void remove_all_pickups_of_type(Hash pickupHash)l
+extern _native bool has_pickup_been_collected(Pickup pickup)l
 extern _native void remove_pickup(Pickup pickup)l
 extern _native void create_money_pickups(vector3 vec, int value, int amount, Hash model)l
-extern _native bool does_pickup_exist(any p0)l
-extern _native bool does_pickup_object_exist(any p0)l
-extern _native Object get_pickup_object(Object object)l
+extern _native bool does_pickup_exist(Pickup pickup)l
+extern _native bool does_pickup_object_exist(Object pickupObject)l
+extern _native Object get_pickup_object(Pickup pickup)l
 extern _native32(0xF139681B) bool _is_pickup_within_radius(Hash pickupHash, vector3 vec, float radius)l
 extern _native void set_pickup_regeneration_time(any p0, any p1)l
-extern _native void unk_0x7FADB4B9(any p0, any p1, bool p2)l
+extern _native void unk_0x7FADB4B9(Player player, Hash pickupHash, bool p2)l
 extern _native void unk_0x3A8F1BF7(Hash p0, bool p1)l
-extern _native void set_team_pickup_object(any p0, any p1, bool p2)l
+extern _native void set_team_pickup_object(Object object, any p1, bool p2)l
 extern _native void unk_0xCBB5F9B6(Object object, bool p1, bool p2)l
 extern _native void unk_0x276A7807(any p0, float p1, bool p2)l
 extern _native any unk_0x000E92DC(any p0)l
@@ -1461,7 +1465,7 @@ extern _native void unk_0xB241806C()l
 extern _native void unk_0xD1BAAFB7(any p0)l
 extern _native32(0x63B02FAD) void _highlight_placement_coords(vector3 vec, int colorIndex)l
 extern _native void unk_0x132B6D92(Object object, bool toggle)l
-extern _native Hash unk_0xEDD01937(Pickup pickupHash)l
+extern _native32(0xEDD01937) Hash _get_weapon_hash_from_pickup(Pickup pickupHash)l
 extern _native Hash unk_0x6AE36192(Pickup pickupHash)l
 extern _native void set_force_object_this_frame(any p0, any p1, any p2, any p3)l
 extern _native32(0x2048A7DD) void _mark_object_for_deletion(Object object)l
@@ -1481,7 +1485,7 @@ extern _native void task_parachute(Ped ped, bool p1)l
 extern _native void task_parachute_to_target(Ped ped, vector3 vec)l
 extern _native void set_parachute_task_target(Ped ped, vector3 vec)l
 extern _native void set_parachute_task_thrust(Ped ped, float thrust)l
-extern _native void task_rappel_from_heli(Ped ped, int p1)l
+extern _native void task_rappel_from_heli(Ped ped, int unused)l
 extern _native void task_vehicle_drive_to_coord(Ped ped, Vehicle vehicle, vector3 vec, float speed, any p6, Hash vehicleModel, int drivingMode, float stopRange, float p10)l
 extern _native void task_vehicle_drive_to_coord_longrange(Ped ped, Vehicle vehicle, vector3 vec, float speed, int driveMode, float stopRange)l
 extern _native void task_vehicle_drive_wander(Ped ped, Vehicle vehicle, float speed, int drivingStyle)l
@@ -1513,7 +1517,7 @@ extern _native void set_ped_path_prefer_to_avoid_water(Ped ped, bool avoidWater)
 extern _native void set_ped_path_avoid_fire(Ped ped, bool avoidFire)l
 extern _native void set_global_min_bird_flight_height(float height)l
 extern _native any get_navmesh_route_distance_remaining(Ped ped, any* p1, any* p2)l
-extern _native any get_navmesh_route_result(any p0)l
+extern _native int get_navmesh_route_result(Ped ped)l
 extern _native void task_go_to_coord_any_means(Ped ped, vector3 vec, float speed, any p5, bool p6, int walkingStyle, float p8)l
 extern _native void task_go_to_coord_any_means_extra_params(Ped ped, vector3 vec, float speed, any p5, bool p6, int walkingStyle, float p8, any p9, any p10, any p11)l
 extern _native void task_go_to_coord_any_means_extra_params_with_cruise_speed(Ped ped, vector3 vec, float speed, any p5, bool p6, int walkingStyle, float p8, any p9, any p10, any p11, any p12)l
@@ -1526,7 +1530,7 @@ extern _native void stop_anim_playback(Ped ped, any p1, bool p2)l
 extern _native void set_anim_weight(any p0, float p1, any p2, any p3, bool p4)l
 extern _native void set_anim_rate(any p0, float p1, any p2, bool p3)l
 extern _native void set_anim_looped(any p0, bool p1, any p2, bool p3)l
-extern _native void task_play_phone_gesture_animation(Ped p0, any* p1, any* p2, any* p3, float p4, float p5, bool p6, bool p7)l
+extern _native void task_play_phone_gesture_animation(Ped ped, const char* animDict, const char* animation, const char* boneMaskType, float p4, float p5, bool p6, bool p7)l
 extern _native bool is_playing_phone_gesture_anim(Ped ped)l
 extern _native float get_phone_gesture_anim_current_time(Ped ped)l
 extern _native float get_phone_gesture_anim_total_time(Ped ped)l
@@ -1547,7 +1551,7 @@ extern _native void task_leave_any_vehicle(Ped ped, int p1, int p2)l
 extern _native void task_aim_gun_scripted(Ped ped, Hash scriptTask, bool p2, bool p3)l
 extern _native void task_aim_gun_scripted_with_target(any p0, any p1, float p2, float p3, float p4, any p5, bool p6, bool p7)l
 extern _native void update_task_aim_gun_scripted_target(Ped p0, Ped p1, float p2, float p3, float p4, bool p5)l
-extern _native any get_clip_set_for_scripted_gun_task(any p0)l
+extern _native const char* get_clip_set_for_scripted_gun_task(int p0)l
 extern _native void task_aim_gun_at_entity(Ped ped, Entity entity, int duration, bool p3)l
 extern _native void task_turn_ped_to_face_entity(Ped ped, Entity entity, int duration)l
 extern _native void task_aim_gun_at_coord(Ped ped, vector3 vec, int time, bool p5, bool p6)l
@@ -1571,15 +1575,15 @@ extern _native void set_task_vehicle_chase_ideal_pursuit_distance(Ped ped, float
 extern _native void task_heli_chase(Ped pilot, Entity entityToFollow, vector3 vec)l
 extern _native void task_plane_chase(Ped pilot, Entity entityToFollow, vector3 vec)l
 extern _native void task_plane_land(Ped pilot, Vehicle plane, vector3 runwayStart, vector3 runwayEnd)l
-extern _native void task_heli_mission(Ped pilot, Vehicle vehicle, any p2, Ped pedToFollow, vector3 pos, int mode, float speed, float radius, float angle, int p11, int height, float p13, int p14)l
-extern _native void task_plane_mission(Ped pilot, Vehicle plane, Vehicle targetVehicle, Ped targetPed, vector3 destination, int p7, float physicsSpeed, float p9, float p10, float maxAltitude, float minAltitude)l
-extern _native void task_boat_mission(Ped pedDriver, Vehicle boat, any p2, any p3, vector3 vec, any p7, float maxSpeed, any p9, float p10, any p11)l
-extern _native void task_drive_by(Ped p0, Ped targetPed, any p2, vector3 target, float p6, any p7, bool p8, Hash firingPattern)l
-extern _native void set_driveby_task_target(any p0, any p1, any p2, float p3, float p4, float p5)l
+extern _native void task_heli_mission(Ped pilot, Vehicle vehicle, Vehicle vehicleToFollow, Ped pedToFollow, vector3 pos, int mode, float speed, float radius, float angle, int p11, int height, float p13, int p14)l
+extern _native void task_plane_mission(Ped pilot, Vehicle plane, Vehicle targetVehicle, Ped targetPed, vector3 destination, int missionType, float vehicleSpeed, float p9, float heading, float maxAltitude, float minAltitude)l
+extern _native void task_boat_mission(Ped pedDriver, Vehicle boat, any p2, any p3, vector3 vec, any p7, float maxSpeed, int drivingStyle, float p10, any p11)l
+extern _native void task_drive_by(Ped driverPed, Ped targetPed, Vehicle targetVehicle, vector3 target, float distanceToShoot, int pedAccuracy, bool p8, Hash firingPattern)l
+extern _native void set_driveby_task_target(Ped shootingPed, Ped targetPed, Vehicle targetVehicle, vector3 vec)l
 extern _native void clear_driveby_task_underneath_driving_task(Ped ped)l
 extern _native bool is_driveby_task_underneath_driving_task(Ped ped)l
 extern _native bool control_mounted_weapon(Ped ped)l
-extern _native void set_mounted_weapon_target(Ped shootingPed, Entity targetEntity, any p2, vector3 vec)l
+extern _native void set_mounted_weapon_target(Ped shootingPed, Ped targetPed, Vehicle targetVehicle, vector3 vec)l
 extern _native bool is_mounted_weapon_task_underneath_driving_task(Ped ped)l
 extern _native void task_use_mobile_phone(Ped ped, int p1)l
 extern _native void task_use_mobile_phone_timed(Ped ped, int duration)l
@@ -1590,7 +1594,7 @@ extern _native void task_climb(Ped ped, bool unused)l
 extern _native void task_climb_ladder(Ped ped, int p1)l
 extern _native void clear_ped_tasks_immediately(Ped ped)l
 extern _native void task_perform_sequence_from_progress(any p0, any p1, any p2, any p3)l
-extern _native void set_next_desired_move_state(any p0)l
+extern _native void set_next_desired_move_state(float p0)l
 extern _native void set_ped_desired_move_blend_ratio(Ped ped, float p1)l
 extern _native float get_ped_desired_move_blend_ratio(Ped ped)l
 extern _native void task_goto_entity_aiming(Ped ped, Entity target, float distanceToStopAt, float StartAimingDist)l
@@ -1605,7 +1609,7 @@ extern _native bool does_scripted_cover_point_exist_at_coords(vector3 vec)l
 extern _native vector3 get_scripted_cover_point_coords(ScrHandle coverpoint)l
 extern _native void task_combat_ped(Ped ped, Ped targetPed, int p2, int p3)l
 extern _native void task_combat_ped_timed(any p0, Ped ped, int p2, any p3)l
-extern _native void task_seek_cover_from_pos(any p0, float p1, float p2, float p3, any p4, bool p5)l
+extern _native void task_seek_cover_from_pos(Ped ped, vector3 vec, int duration, bool p5)l
 extern _native void task_seek_cover_from_ped(Ped ped, Ped target, int duration, bool p3)l
 extern _native void task_seek_cover_to_cover_point(any p0, any p1, float p2, float p3, float p4, any p5, bool p6)l
 extern _native void task_seek_cover_to_coords(Ped ped, vector3 vec_1, vector3 vec_2, any p7, bool p8)l
@@ -1623,8 +1627,8 @@ extern _native void set_drive_task_driving_style(Ped ped, int drivingStyle)l
 extern _native void add_cover_blocking_area(vector3 player, vector3 radius, bool p6, bool p7, bool p8, bool p9)l
 extern _native void remove_all_cover_blocking_areas()l
 extern _native void task_start_scenario_in_place(Ped ped, const char* scenarioName, int unkDelay, bool playEnterAnim)l
-extern _native void task_start_scenario_at_position(Ped ped, const char* scenarioName, vector3 vec, float heading, any p6, bool p7, bool p8)l
-extern _native void task_use_nearest_scenario_to_coord(any p0, float p1, float p2, float p3, float p4, any p5)l
+extern _native void task_start_scenario_at_position(Ped ped, const char* scenarioName, vector3 vec, float heading, int duration, bool sittingScenario, bool teleport)l
+extern _native void task_use_nearest_scenario_to_coord(Ped ped, vector3 vec, float distance, int duration)l
 extern _native void task_use_nearest_scenario_to_coord_warp(Ped ped, vector3 vec, float radius, any p5)l
 extern _native void task_use_nearest_scenario_chain_to_coord(any p0, float p1, float p2, float p3, float p4, any p5)l
 extern _native void task_use_nearest_scenario_chain_to_coord_warp(any p0, float p1, float p2, float p3, float p4, any p5)l
@@ -1646,9 +1650,9 @@ extern _native bool is_ped_active_in_scenario(Ped ped)l
 extern _native void task_combat_hated_targets_in_area(Ped ped, vector3 vec, float radius, any p5)l
 extern _native void task_combat_hated_targets_around_ped(Ped ped, float radius, int p2)l
 extern _native void task_combat_hated_targets_around_ped_timed(any p0, float p1, any p2, any p3)l
-extern _native void task_throw_projectile(any p0, vector3 vec)l
+extern _native void task_throw_projectile(int ped, vector3 vec)l
 extern _native void task_swap_weapon(Ped ped, bool p1)l
-extern _native void task_reload_weapon(Ped ped, bool doReload)l
+extern _native void task_reload_weapon(Ped ped, bool unused)l
 extern _native bool is_ped_getting_up(Ped ped)l
 extern _native void task_writhe(Ped ped, Ped target, int time, int p3)l
 extern _native bool is_ped_in_writhe(Ped ped)l
@@ -1664,28 +1668,28 @@ extern _native void add_vehicle_subtask_attack_coord(Ped ped, vector3 vec)l
 extern _native void add_vehicle_subtask_attack_ped(Ped ped, Ped ped2)l
 extern _native void task_vehicle_shoot_at_ped(Ped ped, Ped target, float p2)l
 extern _native void task_vehicle_aim_at_ped(Ped ped, Ped target)l
-extern _native void task_vehicle_shoot_at_coord(Vehicle vehicle, vector3 vec, float p4)l
-extern _native void task_vehicle_aim_at_coord(Vehicle vehicle, vector3 vec)l
+extern _native void task_vehicle_shoot_at_coord(Ped ped, vector3 vec, float p4)l
+extern _native void task_vehicle_aim_at_coord(Ped ped, vector3 vec)l
 extern _native void task_vehicle_goto_navmesh(Ped ped, Vehicle vehicle, vector3 vec, float speed, int behaviorFlag, float stoppingRange)l
 extern _native void task_go_to_coord_while_aiming_at_coord(Ped ped, vector3 vec, vector3 aimAt, float moveSpeed, bool p8, float p9, float p10, bool p11, any flags, bool p13, Hash firingPattern)l
 extern _native void task_go_to_coord_while_aiming_at_entity(any p0, float p1, float p2, float p3, any p4, float p5, bool p6, float p7, float p8, bool p9, any p10, bool p11, any p12, any p13)l
-extern _native void task_go_to_coord_and_aim_at_hated_entities_near_coord(Ped ped, vector3 goTo, vector3 aimNear, float speed, bool shoot, float unknown1, float unknown2, bool unkTrue, int unknown3, bool heading, Hash firingPattern)l
+extern _native void task_go_to_coord_and_aim_at_hated_entities_near_coord(Ped pedHandle, vector3 goToLocation, vector3 focusLocation, float speed, bool shootAtEnemies, float distanceToStopAt, float noRoadsDistance, bool unkTrue, int unkFlag, int aimingFlag, Hash firingPattern)l
 extern _native void task_go_to_entity_while_aiming_at_coord(any p0, any p1, float p2, float p3, float p4, float p5, bool p6, float p7, float p8, bool p9, bool p10, any p11)l
 extern _native void task_go_to_entity_while_aiming_at_entity(Ped ped, Entity entityToWalkTo, Entity entityToAimAt, float speed, bool shootatEntity, float p5, float p6, bool p7, bool p8, Hash firingPattern)l
 extern _native void set_high_fall_task(Ped ped, any p1, any p2, any p3)l
 extern _native void request_waypoint_recording(const char* name)l
 extern _native bool get_is_waypoint_recording_loaded(const char* name)l
 extern _native void remove_waypoint_recording(const char* name)l
-extern _native bool waypoint_recording_get_num_points(any* p0, any* p1)l
-extern _native any waypoint_recording_get_coord(any p0, any p1, any p2)l
-extern _native float waypoint_recording_get_speed_at_point(any* p0, any p1)l
-extern _native bool waypoint_recording_get_closest_waypoint(any* p0, float p1, float p2, float p3, any* p4)l
+extern _native bool waypoint_recording_get_num_points(const char* name, int* points)l
+extern _native bool waypoint_recording_get_coord(const char* name, int point, vector3* coord)l
+extern _native float waypoint_recording_get_speed_at_point(const char* name, int point)l
+extern _native bool waypoint_recording_get_closest_waypoint(const char* name, vector3 vec, int* point)l
 extern _native void task_follow_waypoint_recording(any p0, any p1, any p2, any p3, any p4)l
 extern _native bool is_waypoint_playback_going_on_for_ped(any p0)l
 extern _native any get_ped_waypoint_progress(any p0)l
 extern _native float get_ped_waypoint_distance(any p0)l
 extern _native any set_ped_waypoint_route_offset(any p0, any p1, any p2, any p3)l
-extern _native float get_waypoint_distance_along_route(any* p0, any p1)l
+extern _native float get_waypoint_distance_along_route(const char* p0, int p1)l
 extern _native bool waypoint_playback_get_is_paused(any p0)l
 extern _native void waypoint_playback_pause(any p0, bool p1, bool p2)l
 extern _native void waypoint_playback_resume(any p0, bool p1, any p2, any p3)l
@@ -1716,7 +1720,7 @@ extern _native32(0x71A5C5DB) void _task_move_network_advanced(Ped ped, const cha
 extern _native bool unk_0x902656EB(int PlayerID)l
 extern _native bool unk_0x92FDBAE6(any p0)l
 extern _native any unk_0x885724DE(Ped ped, const char* p1)l
-extern _native const char* unk_0x96C0277B(Entity entity)l
+extern _native const char* unk_0x96C0277B(Ped ped)l
 extern _native void unk_0xA79BE783(Ped p0, const char* p1, float p2)l
 extern _native void unk_0xF3538041(Ped p0, any* p1, bool p2)l
 extern _native bool unk_0x1EBB6F3D(any p0, const char* p1)l
@@ -1752,8 +1756,8 @@ extern _native void set_random_event_flag(bool p0)l
 extern _native any get_random_event_flag()l
 extern _native void unk_0x8B2DE971(bool p0)l
 extern _native void unk_0xE77199F7(const char* p0)l
-extern _native32(0xA8171E9E) Hash _get_current_weather_type()l
-extern _native32(0x353E8056) Hash _get_next_weather_type()l
+extern _native Hash get_prev_weather_type_hash_name()l
+extern _native Hash get_next_weather_type_hash_name()l
 extern _native bool is_prev_weather_type(const char* weatherType)l
 extern _native bool is_next_weather_type(const char* weatherType)l
 extern _native void set_weather_type_persist(const char* weatherType)l
@@ -1763,7 +1767,7 @@ extern _native32(0x386F0D25) void _set_weather_type_over_time(const char* weathe
 extern _native void set_random_weather_type()l
 extern _native void clear_weather_type_persist()l
 extern _native32(0x9A5C1D56) void _get_weather_type_transition(any* p0, any* p1, float* progress_or_time)l
-extern _native32(0x5CA74040) void _set_weather_type_transition(Hash sourceWeather, Hash targetWeather, float transitionTime)l
+extern _native32(0x5CA74040) void _set_weather_type_transition(Hash weatherType1, Hash weatherType2, float percentWeather2)l
 extern _native void set_override_weather(const char* weatherType)l
 extern _native void clear_override_weather()l
 extern _native void unk_0x625181DC(float p0)l
@@ -1780,7 +1784,7 @@ extern _native void unk_0x4671AC2E(float p0)l
 extern _native void unk_0xDA02F415(float p0)l
 extern _native void unk_0x5F3DDEC0(float p0)l
 extern _native void unk_0x63A89684(float p0)l
-extern _native void set_wind(float p0)l
+extern _native void set_wind(float speed)l
 extern _native void set_wind_speed(float speed)l
 extern _native float get_wind_speed()l
 extern _native void set_wind_direction(float direction)l
@@ -1788,7 +1792,6 @@ extern _native vector3 get_wind_direction()l
 extern _native any get_rain_level()l
 extern _native any get_snow_level()l
 extern _native32(0xDF38165E) void _create_lightning_thunder()l
-extern _native void unk_0xAA10752D(const char* p0)l
 extern _native void unk_0x8727A4C5(const char* p0)l
 extern _native32(0xED88FC61) void _set_cloud_hat_transition(const char* type, float transitionTime)l
 extern _native void unk_0xC9FA6E07(const char* p0, float p1)l
@@ -1816,7 +1819,7 @@ extern _native void clear_bit(int* address, int offset)l
 extern _native Hash get_hash_key(const char* value)l
 extern _native void unk_0x87B92190(float p0, float p1, float p2, float p3, float p4, float p5, float p6, float p7, float p8, any* p9, any* p10, any* p11, any* p12)l
 extern _native bool is_area_occupied(float p0, float p1, float p2, float p3, float p4, float p5, bool p6, bool p7, bool p8, bool p9, bool p10, any p11, bool p12)l
-extern _native bool is_position_occupied(float p0, float p1, float p2, float p3, bool p4, bool p5, bool p6, bool p7, bool p8, any p9, bool p10)l
+extern _native bool is_position_occupied(vector3 vec, float range, bool p4, bool p5, bool p6, bool p7, bool p8, any p9, bool p10)l
 extern _native bool is_point_obscured_by_a_mission_entity(float p0, float p1, float p2, float p3, float p4, float p5, any p6)l
 extern _native void clear_area(vector3 vec, float radius, bool p4, bool ignoreCopCars, bool ignoreObjects, bool p7)l
 extern _native32(0x20E4FFD9) void _clear_area_of_everything(vector3 vec, float radius, bool p4, bool p5, bool p6, bool p7)l
@@ -1889,12 +1892,12 @@ extern _native bool is_projectile_type_in_area(vector3 vec_1, vector3 vec_2, int
 extern _native bool is_projectile_type_in_angled_area(float p0, float p1, float p2, float p3, float p4, float p5, float p6, any p7, bool p8)l
 extern _native bool unk_0xBE81F1E2(float p0, float p1, float p2, any p3, float p4, bool p5)l
 extern _native any unk_0x1A40454B(any p0, any p1, any p2, any p3, any p4, any p5, any p6, any p7, any p8)l
-extern _native any unk_0x6BDE5CE4(any p0, any p1, any p2, any p3, any p4)l
-extern _native any unk_0x507BC6F7(Ped ped, Hash weaponhash, float p2, float p3, float p4, float p5)l
+extern _native bool unk_0x6BDE5CE4(Ped ped, Hash weaponHash, float radius, Entity* entity, bool p4)l
+extern _native any unk_0x507BC6F7(Ped ped, Hash weaponhash, float p2, float p3, float p4, bool p5)l
 extern _native bool is_bullet_in_angled_area(float p0, float p1, float p2, float p3, float p4, float p5, float p6, bool p7)l
 extern _native bool is_bullet_in_area(float p0, float p1, float p2, float p3, bool p4)l
 extern _native bool is_bullet_in_box(float p0, float p1, float p2, float p3, float p4, float p5, bool p6)l
-extern _native bool has_bullet_impacted_in_area(float p0, float p1, float p2, float p3, bool p4, bool p5)l
+extern _native bool has_bullet_impacted_in_area(vector3 vec, float p3, bool p4, bool p5)l
 extern _native bool has_bullet_impacted_in_box(float p0, float p1, float p2, float p3, float p4, float p5, bool p6, bool p7)l
 extern _native bool is_orbis_version()l
 extern _native bool is_durango_version()l
@@ -1914,7 +1917,7 @@ extern _native void enable_stunt_jump_set(int p0)l
 extern _native void disable_stunt_jump_set(int p0)l
 extern _native void unk_0x3C806A2D(bool p0)l
 extern _native bool is_stunt_jump_in_progress()l
-extern _native bool unk_0x021636EE()l
+extern _native bool is_stunt_jump_message_showing()l
 extern _native any unk_0x006F9BA2()l
 extern _native void cancel_stunt_jump()l
 extern _native void set_game_paused(bool toggle)l
@@ -1944,12 +1947,12 @@ extern _native void stop_save_struct()l
 extern _native32(0x893A342C) void _start_save_array(any* p0, int p1, const char* arrayName)l
 extern _native void stop_save_array()l
 extern _native void enable_dispatch_service(int dispatchType, bool toggle)l
-extern _native void unk_0xE0F0684F(any p0, any p1)l
+extern _native void unk_0xE0F0684F(int type, bool toggle)l
 extern _native int unk_0x3CE5BF6B(int p0)l
-extern _native bool create_incident(int p0, float p2, float p3, float p4, int p5, float p6, int* outIncident)l
-extern _native bool create_incident_with_entity(int p0, Entity p1, int p2, float p3, int* outIncident)l
-extern _native void delete_incident(int* incidentId)l
-extern _native bool is_incident_valid(int* incidentId)l
+extern _native bool create_incident(int incidentType, vector3 vec, int p5, float radius, int* outIncidentID)l
+extern _native bool create_incident_with_entity(int incidentType, Ped ped, int amountOfPeople, float radius, int* outIncidentID)l
+extern _native void delete_incident(int incidentId)l
+extern _native bool is_incident_valid(int incidentId)l
 extern _native void unk_0x0242D88E(any p0, any p1, any p2)l
 extern _native void unk_0x1F38102E(any p0, float p1)l
 extern _native bool find_spawn_point_in_direction(vector3 vec_1, vector3 vec_2, float distance, vector3* spawnPoint)l
@@ -1975,7 +1978,7 @@ extern _native void unk_0xA0D8C749(any p0, any p1)l
 extern _native void unk_0x24A4E0B2(any p0, any p1, any p2)l
 extern _native void unk_0x66C3C59C()l
 extern _native void unk_0xD9660339(bool p0)l
-extern _native void unk_0xD2688412(int p0, const char* windowTitle, any* p2, const char* defaultText, const char* defaultConcat1, const char* defaultConcat2, const char* defaultConcat3, const char* defaultConcat4, const char* defaultConcat5, const char* defaultConcat6, const char* defaultConcat7, int maxInputLength)l
+extern _native32(0xD2688412) void _display_onscreen_keyboard_2(int p0, const char* windowTitle, any* p2, const char* defaultText, const char* defaultConcat1, const char* defaultConcat2, const char* defaultConcat3, const char* defaultConcat4, const char* defaultConcat5, const char* defaultConcat6, const char* defaultConcat7, int maxInputLength)l
 extern _native void display_onscreen_keyboard(int p0, const char* windowTitle, const char* p2, const char* defaultText, const char* defaultConcat1, const char* defaultConcat2, const char* defaultConcat3, int maxInputLength)l
 extern _native int update_onscreen_keyboard()l
 extern _native const char* get_onscreen_keyboard_result()l
@@ -2002,8 +2005,8 @@ extern _native void stop_ped_ringtone(Ped ped)l
 extern _native bool is_mobile_phone_call_ongoing()l
 extern _native any unk_0x16FB88B5()l
 extern _native void create_new_scripted_conversation()l
-extern _native void add_line_to_conversation(any p0, any* p1, any* p2, any p3, any p4, bool p5, bool p6, bool p7, bool p8, any p9, bool p10, bool p11, bool p12)l
-extern _native void add_ped_to_conversation(any p0, any p1, const char* p2)l
+extern _native void add_line_to_conversation(int p0, const char* p1, const char* p2, int p3, int p4, bool p5, bool p6, bool p7, bool p8, int p9, bool p10, bool p11, bool p12)l
+extern _native void add_ped_to_conversation(any p0, any ped, const char* p2)l
 extern _native void unk_0x73C6F979(any p0, float p1, float p2, float p3)l
 extern _native void unk_0x88203DDA(any p0, any p1)l
 extern _native void set_microphone_position(bool p0, vector3 vec_1, vector3 vec_2, vector3 vec_3)l
@@ -2038,18 +2041,18 @@ extern _native void release_script_audio_bank()l
 extern _native void unk_0xA58BBF4F()l
 extern _native int get_sound_id()l
 extern _native void release_sound_id(int soundId)l
-extern _native void play_sound(int soundId, const char* audioName, const char* audioRef, bool p3, any p4, bool p5)l
-extern _native void play_sound_frontend(int soundId, const char* audioName, const char* audioRef)l
+extern _native void play_sound(Player soundId, const char* audioName, const char* audioRef, bool p3, any p4, bool p5)l
+extern _native void play_sound_frontend(int soundId, const char* audioName, const char* audioRef, bool p3)l
 extern _native void unk_0xC70E6CFA(const char* p0, const char* soundset)l
 extern _native void play_sound_from_entity(int soundId, const char* audioName, Entity entity, const char* audioRef, bool p4, any p5)l
-extern _native void play_sound_from_coord(int soundId, const char* audioName, vector3 vec, const char* audioRef, bool p6, any p7, bool p8)l
+extern _native void play_sound_from_coord(int soundId, const char* audioName, vector3 vec, const char* audioRef, bool p6, int range, bool p8)l
 extern _native void stop_sound(int soundId)l
 extern _native int get_network_id_from_sound_id(int soundId)l
 extern _native int get_sound_id_from_network_id(int netId)l
 extern _native void set_variable_on_sound(int soundId, any* p1, float p2)l
 extern _native void set_variable_on_stream(const char* p0, float p1)l
 extern _native void override_underwater_stream(any* p0, bool p1)l
-extern _native void unk_0x62D026BE(any* p0, float p1)l
+extern _native void unk_0x62D026BE(const char* name, float p1)l
 extern _native bool has_sound_finished(int soundId)l
 extern _native32(0x5C57B85D) void _play_ambient_speech1(Ped ped, const char* speechName, const char* speechParam)l
 extern _native32(0x444180DB) void _play_ambient_speech2(Ped ped, const char* speechName, const char* speechParam)l
@@ -2058,20 +2061,20 @@ extern _native32(0xA1A1402E) void _play_ambient_speech_at_coords(const char* p0,
 extern _native void override_trevor_rage(any* p0)l
 extern _native void reset_trevor_rage()l
 extern _native void set_player_angry(Ped playerPed, bool disabled)l
-extern _native void play_pain(int painID, float p1, int p2)l
+extern _native void play_pain(Ped ped, int painID, int p1)l
 extern _native void unk_0x59A3A17D(any* p0)l
 extern _native void unk_0x0E387BFE(any* p0)l
 extern _native void set_ambient_voice_name(Ped ped, const char* name)l
-extern _native void stop_current_playing_ambient_speech(Ped p0)l
+extern _native void stop_current_playing_ambient_speech(Ped ped)l
 extern _native bool is_ambient_speech_playing(Ped p0)l
 extern _native bool is_scripted_speech_playing(any p0)l
 extern _native bool is_any_speech_playing(Ped ped)l
-extern _native bool unk_0x8BD5F11E(any p0, any* p1, bool p2)l
+extern _native bool unk_0x8BD5F11E(Ped ped, const char* speechName, bool unk)l
 extern _native bool is_ped_in_current_conversation(Ped ped)l
 extern _native void set_ped_is_drunk(Ped ped, bool toggle)l
 extern _native void unk_0x498849F3(any p0, any p1, any* p2)l
 extern _native bool unk_0x0CBAF2EF(any p0)l
-extern _native void set_animal_mood(any p0, any p1)l
+extern _native void set_animal_mood(Ped animal, int mood)l
 extern _native bool is_mobile_phone_radio_active()l
 extern _native void set_mobile_phone_radio_state(bool state)l
 extern _native int get_player_radio_station_index()l
@@ -2095,15 +2098,15 @@ extern _native void play_end_credits_music(bool play)l
 extern _native void skip_radio_forward()l
 extern _native void freeze_radio_station(const char* radioStation)l
 extern _native void unfreeze_radio_station(const char* radioStation)l
-extern _native void set_radio_auto_unfreeze(bool p0)l
+extern _native void set_radio_auto_unfreeze(bool toggle)l
 extern _native void set_initial_player_station(const char* radioStation)l
-extern _native void set_user_radio_control_enabled(bool p0)l
+extern _native void set_user_radio_control_enabled(bool toggle)l
 extern _native void set_radio_track(const char* radioStation, const char* radioTrack)l
 extern _native void set_vehicle_radio_loud(Vehicle vehicle, bool toggle)l
 extern _native32(0xCBA99F4A) bool _is_vehicle_radio_loud(Vehicle vehicle)l
 extern _native void set_mobile_radio_enabled_during_gameplay(bool Toggle)l
 extern _native bool unk_0x46B0C696()l
-extern _native bool unk_0x2A3E5E8B()l
+extern _native32(0x2A3E5E8B) bool _is_player_vehicle_radio_enabled()l
 extern _native void set_vehicle_radio_enabled(Vehicle vehicle, bool toggle)l
 extern _native void unk_0x128C3873(const char* radioStation, const char* p1, bool p2)l
 extern _native void unk_0x1D766976(const char* radioStation)l
@@ -2114,7 +2117,7 @@ extern _native void unk_0xC8B514E2(float p0)l
 extern _native void unk_0xBE998184(const char* radioStation, const char* p1)l
 extern _native void unk_0x8AFC488D(any p0, bool p1)l
 extern _native void set_ambient_zone_state(any* p0, bool p1, bool p2)l
-extern _native void clear_ambient_zone_state(any* p0, bool p1)l
+extern _native void clear_ambient_zone_state(const char* zoneName, bool p1)l
 extern _native void set_ambient_zone_list_state(any* p0, bool p1, bool p2)l
 extern _native void clear_ambient_zone_list_state(any* p0, bool p1)l
 extern _native void set_ambient_zone_state_persistent(const char* ambientZone, bool p1, bool p2)l
@@ -2142,7 +2145,7 @@ extern _native void stop_stream()l
 extern _native void stop_ped_speaking(Ped ped, bool shaking)l
 extern _native void disable_ped_pain_audio(Ped ped, bool toggle)l
 extern _native bool is_ambient_speech_disabled(Ped ped)l
-extern _native void set_siren_with_no_driver(Vehicle vehicle, bool set)l
+extern _native void set_siren_with_no_driver(Vehicle vehicle, bool toggle)l
 extern _native32(0xDE8BA3CD) void _sound_vehicle_horn_this_frame(Vehicle vehicle)l
 extern _native void set_horn_enabled(Vehicle vehicle, bool toggle)l
 extern _native void set_audio_vehicle_priority(Vehicle vehicle, any p1)l
@@ -2150,7 +2153,7 @@ extern _native void unk_0x2F0A16D1(any p0, float p1)l
 extern _native void use_siren_as_horn(Vehicle vehicle, bool toggle)l
 extern _native32(0x33B0B007) void _set_vehicle_audio(Vehicle vehicle, const char* audioName)l
 extern _native void unk_0x1C0C5E4C(any p0, const char* p1, const char* p2)l
-extern _native bool unk_0x6E660D3F(any p0)l
+extern _native bool unk_0x6E660D3F(Vehicle vehicle)l
 extern _native void unk_0x23BE6432(any p0, float p1)l
 extern _native void unk_0xE81FAC68(any p0, float p1)l
 extern _native void unk_0x9365E042(any p0, bool p1)l
@@ -2167,13 +2170,13 @@ extern _native void play_mission_complete_audio(const char* audioName)l
 extern _native bool is_mission_complete_playing()l
 extern _native any unk_0xCBE09AEC()l
 extern _native void unk_0xD2858D8A(bool p0)l
-extern _native bool start_audio_scene(const char* sceneName)l
+extern _native bool start_audio_scene(const char* scene)l
 extern _native void stop_audio_scene(const char* scene)l
 extern _native void stop_audio_scenes()l
 extern _native bool is_audio_scene_active(const char* scene)l
-extern _native void set_audio_scene_variable(any* p0, any* p1, float p2)l
+extern _native void set_audio_scene_variable(const char* scene, const char* variable, float value)l
 extern _native void unk_0xE812925D(any p0)l
-extern _native void unk_0x2BC93264(Entity p0, const char* p1, float p2)l
+extern _native32(0x2BC93264) void _dynamic_mixer_related_fn(Entity p0, const char* p1, float p2)l
 extern _native void unk_0x308ED0EC(any p0, float p1)l
 extern _native any audio_is_scripted_music_playing()l
 extern _native bool prepare_music_event(const char* eventName)l
@@ -2191,12 +2194,12 @@ extern _native void start_alarm(const char* alarmName, bool p2)l
 extern _native void stop_alarm(const char* alarmName, bool toggle)l
 extern _native void stop_all_alarms(bool stop)l
 extern _native bool is_alarm_playing(const char* alarmName)l
-extern _native Hash get_vehicle_default_horn(Vehicle veh)l
-extern _native any unk_0xFD4B5B3B(any p0)l
+extern _native Hash get_vehicle_default_horn(Vehicle vehicle)l
+extern _native Hash unk_0xFD4B5B3B(Vehicle vehicle)l
 extern _native void reset_ped_audio_flags(any p0)l
 extern _native void unk_0xC307D531(any p0, bool p1)l
 extern _native32(0x13EB5861) void _force_ambient_siren(bool value)l
-extern _native void unk_0x7BED1872(any p0, bool p1)l
+extern _native void unk_0x7BED1872(Vehicle vehicle, bool p1)l
 extern _native void set_audio_flag(const char* flagName, bool toggle)l
 extern _native any prepare_synchronized_audio_event(const char* p0, any p1)l
 extern _native bool prepare_synchronized_audio_event_for_scene(any p0, any* p1)l
@@ -2215,19 +2218,19 @@ extern _native void unk_0xE0047BFD(bool p0)l
 #pragma endregion //}
 #pragma region CUTSCENE //{
 extern _native void request_cutscene(const char* cutsceneName, int p1)l
-extern _native32(0xD98F656A) void _request_cutscene_2(const char* cutsceneName, int p1, int p2)l
+extern _native32(0xD98F656A) void _request_cutscene_ex(const char* cutsceneName, int p1, int p2)l
 extern _native void remove_cutscene()l
 extern _native bool has_cutscene_loaded()l
 extern _native bool has_this_cutscene_loaded(const char* cutsceneName)l
 extern _native void unk_0x25A2CABC(int p0)l
 extern _native bool unk_0xDD8878E9()l
-extern _native bool unk_0x7B93CDAA(any p0)l
+extern _native bool unk_0x7B93CDAA(int p0)l
 extern _native void unk_0x47DB08A9(const char* p0, any p1, any p2)l
 extern _native void start_cutscene(int p0)l
 extern _native void start_cutscene_at_coords(vector3 vec, int p3)l
 extern _native void stop_cutscene(bool p0)l
 extern _native void stop_cutscene_immediately()l
-extern _native void set_cutscene_origin(any p0, any p1, any p2, any p3, any p4)l
+extern _native void set_cutscene_origin(vector3 vec, float p3, int p4)l
 extern _native int get_cutscene_time()l
 extern _native int get_cutscene_total_duration()l
 extern _native bool was_cutscene_skipped()l
@@ -2243,7 +2246,7 @@ extern _native void set_cutscene_trigger_area(float p0, float p1, float p2, floa
 extern _native bool can_set_enter_state_for_registered_entity(const char* cutsceneEntName, Hash modelHash)l
 extern _native bool can_set_exit_state_for_registered_entity(const char* cutsceneEntName, Hash modelHash)l
 extern _native bool can_set_exit_state_for_camera(bool p0)l
-extern _native void unk_0x35721A08(bool p0)l
+extern _native void unk_0x35721A08(bool toggle)l
 extern _native void set_cutscene_fade_values(bool p0, bool p1, bool p2, bool p3)l
 extern _native void unk_0x8338DA1D(bool p0)l
 extern _native void unk_0x04377C10(bool p0)l
@@ -2293,27 +2296,27 @@ extern _native void unk_0x5EF9C5C2(bool toggle)l
 #pragma endregion //}
 #pragma region CAM //{
 extern _native void render_script_cams(bool render, bool ease, int easeTime, bool p3, bool p4)l
-extern _native void unk_0xD3C08183(any p0, any p1, any p2)l
+extern _native void unk_0xD3C08183(bool render, any p1, any p2)l
 extern _native Cam create_cam(const char* camName, bool p1)l
 extern _native Cam create_cam_with_params(const char* camName, vector3 pos, vector3 rot, float fov, bool p8, int p9)l
 extern _native Cam create_camera(Hash camHash, bool p1)l
 extern _native Cam create_camera_with_params(Hash camHash, vector3 pos, vector3 rot, float fov, bool p8, any p9)l
-extern _native void destroy_cam(Cam cam, bool destroy)l
-extern _native void destroy_all_cams(bool destroy)l
+extern _native void destroy_cam(Cam cam, bool thisScriptCheck)l
+extern _native void destroy_all_cams(bool thisScriptCheck)l
 extern _native bool does_cam_exist(Cam cam)l
 extern _native void set_cam_active(Cam cam, bool active)l
 extern _native bool is_cam_active(Cam cam)l
 extern _native bool is_cam_rendering(Cam cam)l
 extern _native Cam get_rendering_cam()l
 extern _native vector3 get_cam_coord(Cam cam)l
-extern _native vector3 get_cam_rot(Cam cam, any p1)l
+extern _native vector3 get_cam_rot(Cam cam, int rotationOrder)l
 extern _native float get_cam_fov(Cam cam)l
 extern _native float get_cam_near_clip(Cam cam)l
 extern _native float get_cam_far_clip(Cam cam)l
 extern _native float get_cam_far_dof(Cam cam)l
-extern _native void set_cam_params(Cam cam, float p1, float p2, float p3, float p4, float p5, float p6, float p7, any p8, any p9, any p10, any p11)l
+extern _native void set_cam_params(Cam cam, vector3 pos, vector3 rot, float fieldOfView, any p8, int p9, int p10, int p11)l
 extern _native void set_cam_coord(Cam cam, vector3 pos)l
-extern _native void set_cam_rot(Cam cam, vector3 rot, int p4)l
+extern _native void set_cam_rot(Cam cam, vector3 rot, int rotationOrder)l
 extern _native void set_cam_fov(Cam cam, float fieldOfView)l
 extern _native void set_cam_near_clip(Cam cam, float nearClip)l
 extern _native void set_cam_far_clip(Cam cam, float farClip)l
@@ -2336,20 +2339,20 @@ extern _native void set_cam_affects_aiming(Cam cam, bool toggle)l
 extern _native void unk_0xE1A0B2F1(any p0, bool p1)l
 extern _native void unk_0x43220969(any p0, bool p1)l
 extern _native void set_cam_debug_name(Cam camera, const char* name)l
-extern _native void add_cam_spline_node(int camera, vector3 vec, vector3 Rot, int length, int p8, int p9)l
+extern _native void add_cam_spline_node(Cam camera, vector3 vec, vector3 Rot, int length, int p8, int p9)l
 extern _native void unk_0x30510511(any p0, any p1, any p2, any p3)l
 extern _native void unk_0xBA6C085B(any p0, any p1, any p2, any p3)l
 extern _native void unk_0xB4737F03(any p0, any p1, any p2)l
-extern _native void set_cam_spline_phase(int cam, float p1)l
+extern _native void set_cam_spline_phase(Cam cam, float p1)l
 extern _native float get_cam_spline_phase(Cam cam)l
-extern _native float get_cam_spline_node_phase(any p0)l
+extern _native float get_cam_spline_node_phase(Cam cam)l
 extern _native void set_cam_spline_duration(int cam, int timeDuration)l
 extern _native void unk_0x15E141CE(any p0, any p1)l
-extern _native bool get_cam_spline_node_index(int cam)l
+extern _native bool get_cam_spline_node_index(Cam cam)l
 extern _native void unk_0x21D275DA(any p0, any p1, any p2, float p3)l
 extern _native void unk_0xA3BD9E94(any p0, any p1, float p2)l
-extern _native void override_cam_spline_velocity(int cam, int p1, float p2, float p3)l
-extern _native void override_cam_spline_motion_blur(any p0, any p1, float p2, float p3)l
+extern _native void override_cam_spline_velocity(Cam cam, int p1, float p2, float p3)l
+extern _native void override_cam_spline_motion_blur(Cam cam, int p1, float p2, float p3)l
 extern _native void unk_0xC90B2DDC(any p0, any p1, any p2)l
 extern _native bool is_cam_spline_paused(any p0)l
 extern _native void set_cam_active_with_interp(Cam camTo, Cam camFrom, int duration, int easeLocation, int easeRotation)l
@@ -2361,15 +2364,15 @@ extern _native void set_cam_shake_amplitude(Cam cam, float amplitude)l
 extern _native void stop_cam_shaking(Cam cam, bool p1)l
 extern _native void unk_0x2B0F05CD(const char* p0, float p1)l
 extern _native void unk_0xCB75BD9C(const char* p0, const char* p1, const char* p2, float p3)l
-extern _native bool unk_0x6AEFE6A5()l
-extern _native void unk_0x26FCFB96(bool p0)l
+extern _native bool is_script_global_shaking()l
+extern _native void stop_script_global_shaking(bool p0)l
 extern _native bool play_cam_anim(Cam cam, const char* animName, const char* animDictionary, vector3 vec, vector3 Rot, bool p9, int p10)l
 extern _native bool is_cam_playing_anim(Cam cam, const char* animName, const char* animDictionary)l
 extern _native void set_cam_anim_current_phase(Cam cam, float phase)l
 extern _native float get_cam_anim_current_phase(Cam cam)l
 extern _native bool play_synchronized_cam_anim(any p0, any p1, const char* animName, const char* animDictionary)l
 extern _native void unk_0x56F9ED27(any p0, float p1, float p2, float p3)l
-extern _native void unk_0x71570DBA(any p0, float p1)l
+extern _native32(0x71570DBA) void _set_camera_range(Cam cam, float range)l
 extern _native void unk_0x60B345DE(any p0, float p1, float p2, float p3)l
 extern _native void unk_0x44473EFC(Cam p0)l
 extern _native bool unk_0xDA931D65(any p0)l
@@ -2381,9 +2384,9 @@ extern _native void do_screen_fade_in(int duration)l
 extern _native void do_screen_fade_out(int duration)l
 extern _native any set_widescreen_borders(bool p0, int p1)l
 extern _native vector3 get_gameplay_cam_coord()l
-extern _native vector3 get_gameplay_cam_rot(int p0)l
+extern _native vector3 get_gameplay_cam_rot(int rotationOrder)l
 extern _native float get_gameplay_cam_fov()l
-extern _native void unk_0xA6E73135(float p0)l
+extern _native void custom_menu_coordinates(float p0)l
 extern _native void unk_0x1126E37C(float p0)l
 extern _native float get_gameplay_cam_relative_heading()l
 extern _native void set_gameplay_cam_relative_heading(float heading)l
@@ -2400,8 +2403,8 @@ extern _native bool unk_0x60C23785()l
 extern _native void unk_0x20BFF6E5(bool p0)l
 extern _native32(0xA61FF9AC) void _enable_crosshair_this_frame()l
 extern _native bool is_gameplay_cam_looking_behind()l
-extern _native void unk_0x2701A9AD(Entity p0)l
-extern _native void unk_0xC4736ED3(any p0)l
+extern _native void unk_0x2701A9AD(Entity entity)l
+extern _native void unk_0xC4736ED3(Entity entity)l
 extern _native void unk_0x6B0E9D57()l
 extern _native bool is_sphere_visible(vector3 vec, float radius)l
 extern _native bool is_follow_ped_cam_active()l
@@ -2425,7 +2428,7 @@ extern _native void set_follow_vehicle_cam_view_mode(int viewMode)l
 extern _native any unk_0xF3B148A6(any p0)l
 extern _native void unk_0x1DEBCB45(any p0, any p1)l
 extern _native bool is_aim_cam_active()l
-extern _native any unk_0x8F320DE4()l
+extern _native bool unk_0x8F320DE4()l
 extern _native bool is_first_person_aim_cam_active()l
 extern _native void disable_aim_cam_this_update()l
 extern _native32(0x33951005) float _get_gameplay_cam_zoom()l
@@ -2437,15 +2440,15 @@ extern _native void unk_0x0E21069D(float p0)l
 extern _native void unk_0x71E9C63E(float p0)l
 extern _native void unk_0xD1EEBC45(bool p0)l
 extern _native32(0x9C84BDA0) vector3 _get_gameplay_cam_coords()l
-extern _native32(0x1FFBEFC5) vector3 _get_gameplay_cam_rot(int p0)l
+extern _native32(0x1FFBEFC5) vector3 _get_gameplay_cam_rot(int rotationOrder)l
 extern _native int unk_0xACADF916(any p0, any p1)l
-extern _native any unk_0x721B763B()l
+extern _native float unk_0x721B763B()l
 extern _native float unk_0x23E3F106(any p0)l
-extern _native any unk_0x457AE195()l
-extern _native any unk_0x46CB3A49()l
-extern _native any unk_0x19297A7A()l
-extern _native any unk_0xF24777CA()l
-extern _native any unk_0x38992E83()l
+extern _native float unk_0x457AE195()l
+extern _native float unk_0x46CB3A49()l
+extern _native float unk_0x19297A7A()l
+extern _native float unk_0xF24777CA()l
+extern _native float unk_0x38992E83()l
 extern _native void set_gameplay_coord_hint(float p0, float p1, float p2, any p3, any p4, any p5, any p6)l
 extern _native void set_gameplay_ped_hint(Ped p0, vector3 vec_1, bool p4, any p5, any p6, any p7)l
 extern _native void set_gameplay_vehicle_hint(any p0, float p1, float p2, float p3, bool p4, any p5, any p6, any p7)l
@@ -2470,7 +2473,7 @@ extern _native32(0x5AC6DAC9) void _disable_vehicle_first_person_cam_this_frame()
 extern _native void unk_0x837F8581()l
 extern _native void unk_0x65DDE8AF()l
 extern _native void unk_0xD75CDD75()l
-extern _native any unk_0x96A07066()l
+extern _native bool unk_0x96A07066()l
 extern _native void create_cinematic_shot(any p0, int p1, any p2, Entity entity)l
 extern _native bool is_cinematic_shot_active(any p0)l
 extern _native void stop_cinematic_shot(any p0)l
@@ -2480,7 +2483,7 @@ extern _native void set_cinematic_mode_active(bool p0)l
 extern _native any unk_0x6739AD55()l
 extern _native void stop_cutscene_cam_shaking()l
 extern _native void unk_0x067BA6F5(float p0)l
-extern _native any unk_0xFD99BE2B(float p0, any p1, float p2, float p3, float p4, float p5, float p6, any p7, any p8)l
+extern _native Entity unk_0xFD99BE2B(float p0, int p1, float p2, float p3, float p4, float p5, float p6, int p7, int p8)l
 extern _native void unk_0xE206C450()l
 extern _native32(0xB06CCD38) void _set_cam_effect(int p0)l
 #pragma endregion //}
@@ -2508,7 +2511,7 @@ extern _native void set_ped_infinite_ammo(Ped ped, bool toggle, Hash weaponHash)
 extern _native void set_ped_infinite_ammo_clip(Ped ped, bool toggle)l
 extern _native void give_weapon_to_ped(Ped ped, Hash weaponHash, int ammoCount, bool isHidden, bool equipNow)l
 extern _native void give_delayed_weapon_to_ped(Ped ped, Hash weaponHash, int time, bool equipNow)l
-extern _native void remove_all_ped_weapons(Ped ped, bool toggle)l
+extern _native void remove_all_ped_weapons(Ped ped, bool p1)l
 extern _native void remove_weapon_from_ped(Ped ped, Hash weaponHash)l
 extern _native void hide_ped_weapon_for_scripted_cutscene(Ped ped, bool toggle)l
 extern _native void set_ped_current_weapon_visible(Ped ped, bool visible, bool deselectWeapon, bool p3, bool p4)l
@@ -2536,12 +2539,12 @@ extern _native void explode_projectiles(Ped ped, Hash weaponHash, bool p2)l
 extern _native void remove_all_projectiles_of_type(Hash weaponHash, bool p1)l
 extern _native32(0x3612110D) float _get_lockon_range_of_current_ped_weapon(Ped ped)l
 extern _native float get_max_range_of_current_ped_weapon(Ped ped)l
-extern _native bool has_vehicle_got_projectile_attached(Ped driver, Vehicle vehicle, Hash weapon, any p3)l
+extern _native bool has_vehicle_got_projectile_attached(Ped driver, Vehicle vehicle, Hash weaponHash, any p3)l
 extern _native void give_weapon_component_to_ped(Ped ped, Hash weaponHash, Hash componentHash)l
 extern _native void remove_weapon_component_from_ped(Ped ped, Hash weaponHash, Hash componentHash)l
 extern _native bool has_ped_got_weapon_component(Ped ped, Hash weaponHash, Hash componentHash)l
 extern _native bool is_ped_weapon_component_active(Ped ped, Hash weaponHash, Hash componentHash)l
-extern _native32(0x82EEAF0F) bool _is_ped_reloading(Ped ped)l
+extern _native32(0x82EEAF0F) bool _ped_skip_next_reloading(Ped ped)l
 extern _native bool make_ped_reload(Ped ped)l
 extern _native void request_weapon_asset(Hash weaponHash, int p1, int p2)l
 extern _native bool has_weapon_asset_loaded(Hash weaponHash)l
@@ -2553,13 +2556,13 @@ extern _native bool has_weapon_got_weapon_component(Object weapon, Hash addonHas
 extern _native void give_weapon_object_to_ped(Object weaponObject, Ped ped)l
 extern _native bool does_weapon_take_weapon_component(Hash weaponHash, Hash componentHash)l
 extern _native Object get_weapon_object_from_ped(Ped ped, bool p1)l
-extern _native void set_ped_weapon_tint_index(Ped ped, Hash weaponHash, int colorIndex)l
+extern _native void set_ped_weapon_tint_index(Ped ped, Hash weaponHash, int tintIndex)l
 extern _native int get_ped_weapon_tint_index(Ped ped, Hash weaponHash)l
-extern _native void set_weapon_object_tint_index(Entity weapon, int tint)l
-extern _native int get_weapon_object_tint_index(Entity weapon)l
+extern _native void set_weapon_object_tint_index(Object weapon, int tintIndex)l
+extern _native int get_weapon_object_tint_index(Object weapon)l
 extern _native int get_weapon_tint_count(Hash weaponHash)l
-extern _native bool get_weapon_hud_stats(any p0, any* p1)l
-extern _native bool get_weapon_component_hud_stats(any p0, any* p1)l
+extern _native bool get_weapon_hud_stats(Hash weaponHash, int* outData)l
+extern _native bool get_weapon_component_hud_stats(Hash componentHash, int* outData)l
 extern _native int get_weapon_clip_size(Hash weaponHash)l
 extern _native void set_ped_chance_of_firing_blanks(Ped ped, vector2 Bias)l
 extern _native Entity unk_0xEC2E5304(Ped ped, float p1)l
@@ -2591,7 +2594,7 @@ extern _native void network_stop_load_scene()l
 extern _native bool is_network_loading_scene()l
 extern _native void set_interior_active(int interiorID, bool toggle)l
 extern _native void request_model(Hash model)l
-extern _native32(0x48CEB6B4) void _request_model_2(Hash model)l
+extern _native void request_menu_ped_model(Hash model)l
 extern _native bool has_model_loaded(Hash model)l
 extern _native void unk_0x939243FB(int interiorID, const char* roomName)l
 extern _native void set_model_as_no_longer_needed(Hash model)l
@@ -2634,7 +2637,7 @@ extern _native void set_focus_entity(Entity entity)l
 extern _native bool is_entity_focus(Entity entity)l
 extern _native void unk_0x403CD434(const char* p0, bool p1)l
 extern _native void unk_0xA07BAEB9(any p0)l
-extern _native32(0x10B6AB36) any _set_unk_camera_settings(vector3 vec, float rad, any p4, any p5)l
+extern _native any format_focus_heading(vector3 vec, float rad, any p4, any p5)l
 extern _native any unk_0x72344191(float p0, float p1, float p2, float p3, float p4, float p5, float p6, any p7, any p8)l
 extern _native any unk_0xC0157255(float p0, float p1, float p2, float p3, float p4, float p5, any p6)l
 extern _native void unk_0xE80F8ABE(any p0)l
@@ -2642,7 +2645,7 @@ extern _native any unk_0x1B3521F4(any p0)l
 extern _native any unk_0x42CFE9C0(any p0)l
 extern _native any unk_0x56253356()l
 extern _native bool new_load_scene_start(float p0, float p1, float p2, float p3, float p4, float p5, float p6, any p7)l
-extern _native32(0xFA037FEB) bool _new_load_scene_start_safe(float p0, float p1, float p2, float p3, any p4)l
+extern _native bool new_load_scene_start_sphere(float p0, float p1, float p2, float p3, any p4)l
 extern _native void new_load_scene_stop()l
 extern _native bool is_new_load_scene_active()l
 extern _native bool is_new_load_scene_loaded()l
@@ -2656,7 +2659,7 @@ extern _native int get_player_switch_state()l
 extern _native int get_player_short_switch_state()l
 extern _native void unk_0xF0BD420D(int p0)l
 extern _native any unk_0x02BA7AC2()l
-extern _native32(0x47352E14) void _set_player_switch_location(float p0, float p1, float p2, float p3, float p4, float p5, float p6, float p7, any p8)l
+extern _native void set_player_switch_outro(float p0, float p1, float p2, float p3, float p4, float p5, float p6, float p7, any p8)l
 extern _native void unk_0x279077B0(any* p0)l
 extern _native void unk_0x55CB21F9()l
 extern _native void unk_0x1084F2F4()l
@@ -2666,7 +2669,7 @@ extern _native any unk_0x408F7148()l
 extern _native32(0xFB4D062D) void _switch_out_player(Ped ped, int flags, int unknown)l
 extern _native void unk_0x2349373B(any p0)l
 extern _native any unk_0x74C16879()l
-extern _native any set_player_inverted_up()l
+extern _native int set_player_inverted_up()l
 extern _native any unk_0xC7A3D279()l
 extern _native any destroy_player_in_pause_menu()l
 extern _native any unk_0x7154B6FD()l
@@ -2692,7 +2695,7 @@ extern _native void set_hd_area(vector3 vec, float ground)l
 extern _native void clear_hd_area()l
 extern _native void unk_0xE243B2AF()l
 extern _native void shutdown_creator_budget()l
-extern _native bool unk_0xC0E83320(any p0)l
+extern _native bool unk_0xC0E83320(Hash modelHash)l
 extern _native void unk_0x1C576388(any p0)l
 extern _native any unk_0x3E9C4CBE()l
 #pragma endregion //}
@@ -2701,24 +2704,23 @@ extern _native void request_script(const char* scriptName)l
 extern _native void set_script_as_no_longer_needed(const char* scriptName)l
 extern _native bool has_script_loaded(const char* scriptName)l
 extern _native bool does_script_exist(const char* scriptName)l
-extern _native32(0x1C68D9DC) void _request_streamed_script(Hash scriptHash)l
-extern _native32(0x96C26F66) void _set_streamed_script_as_no_longer_needed(Hash scriptHash)l
-extern _native32(0x06674818) bool _has_streamed_script_loaded(Hash scriptHash)l
+extern _native void request_script_with_name_hash(Hash scriptHash)l
+extern _native void set_script_with_name_hash_as_no_longer_needed(Hash scriptHash)l
+extern _native bool has_script_with_name_hash_loaded(Hash scriptHash)l
 extern _native void terminate_thread(int threadId)l
 extern _native bool is_thread_active(int threadId)l
-extern _native32(0xBE7ACD89) const char* _get_thread_name(int threadId)l
+extern _native32(0xBE7ACD89) const char* _get_name_of_thread(int threadId)l
 extern _native32(0xBB4E2F66) void _begin_enumerating_threads()l
 extern _native32(0x1E28B28F) int _get_id_of_next_thread_in_enumeration()l
 extern _native int get_id_of_this_thread()l
 extern _native void terminate_this_thread()l
-extern _native32(0x029D3841) int _get_number_of_instances_of_streamed_script(Hash scriptHash)l
+extern _native32(0x029D3841) int _get_number_of_instances_of_script_with_name_hash(Hash scriptHash)l
 extern _native const char* get_this_script_name()l
-extern _native32(0x2BEE1F45) Hash _get_this_script_hash()l
-extern _native int get_number_of_events(int p0)l
-extern _native bool get_event_exists(int p0, int eventIndex)l
-extern _native int get_event_at_index(int p0, int eventIndex)l
-extern _native bool get_event_data(int p0, int eventIndex, int* eventData, int p3)l
-extern _native void trigger_script_event(int p0, any* argsStruct, int argsStructSize, int bitset)l
+extern _native Hash get_hash_of_this_script_name()l
+extern _native int get_number_of_events(bool p0)l
+extern _native bool get_event_exists(bool p0, int p1)l
+extern _native int get_event_at_index(bool p0, int p1)l
+extern _native bool get_event_data(bool p0, int p1, int* p2, int p3)l
 extern _native void shutdown_loading_screen()l
 extern _native void set_no_loading_screen(bool toggle)l
 extern _native void unk_0xB03BCCDF()l
@@ -2733,7 +2735,7 @@ extern _native void unk_0xA7C8594B(bool p0)l
 extern _native void unk_0x1DA7E41A(float p0)l
 extern _native void unk_0x1E63088A()l
 extern _native void unk_0x5205C6F5()l
-extern _native32(0xECA8ACB9) void _remove_notification(int notifactionId)l
+extern _native32(0xECA8ACB9) void _remove_notification(int notificationId)l
 extern _native void unk_0x520FCB6D()l
 extern _native void unk_0xC8BAB2F2()l
 extern _native void unk_0x4D0449C6()l
@@ -2751,56 +2753,56 @@ extern _native void unk_0xA4524B23()l
 extern _native void unk_0xAFA1148B()l
 extern _native void unk_0x3CD4307C()l
 extern _native32(0x574EE85C) void _set_notification_text_entry(const char* type)l
-extern _native int unk_0xED130FA1(const char* p0, int p1, int p2, int p3, bool p4, const char* picName1, const char* picName2)l
+extern _native32(0xED130FA1) int _set_notification_message_2(const char* p0, int p1, int p2, int p3, bool p4, const char* picName1, const char* picName2)l
 extern _native32(0xE7E3C98B) int _set_notification_message(const char* picName1, const char* picName2, bool flash, int iconType, const char* sender, const char* subject)l
-extern _native int unk_0x0EB382B7(const char* picName1, const char* picName2, bool flash, int iconType, const char* sender, const char* subject, float duration)l
+extern _native32(0x0EB382B7) int _set_notification_message_4(const char* picName1, const char* picName2, bool flash, int iconType, const char* sender, const char* subject, float duration)l
 extern _native32(0x3E807FE3) int _set_notification_message_clan_tag(const char* picName1, const char* picName2, bool flash, int iconType, const char* sender, const char* subject, float duration, const char* clanTag)l
 extern _native32(0xDEB491C8) int _set_notification_message_clan_tag_2(const char* picName1, const char* picName2, bool flash, int iconType1, const char* sender, const char* subject, float duration, const char* clanTag, int iconType2, int p9)l
 extern _native32(0x08F7AF78) int _draw_notification(bool blink, bool p1)l
 extern _native32(0x57B8D0D4) int _draw_notification_2(bool blink, bool p1)l
 extern _native32(0x02BCAF9B) int _draw_notification_3(bool blink, bool p1)l
-extern _native int unk_0x02DED2B8(const char* p0, const char* p1, int p2, int p3, const char* p4)l
-extern _native any unk_0xA9CCEF66(bool p0, bool p1, any* p2, any p3, bool p4, bool p5, any p6, any p7, any p8, any p9)l
-extern _native int unk_0x88B9B909(bool p0, bool p1, any* p2, any p3, bool p4, bool unk0, any p6, const char* playerName, any p8, any p9, any p10)l
+extern _native32(0x02DED2B8) int _draw_notification_icon(const char* p0, const char* p1, int p2, int p3, const char* p4)l
+extern _native32(0xA9CCEF66) int _notification_send_apartment_invite(bool p0, bool p1, int* p2, int p3, bool isLeader, bool unk0, int clanDesc, RGB colour)l
+extern _native32(0x88B9B909) int _notification_send_clan_invite(bool p0, bool p1, int* p2, int p3, bool isLeader, bool unk0, int clanDesc, const char* playerName, RGB colour)l
 extern _native any unk_0xE05E7052(any p0, any p1, any p2)l
 extern _native any unk_0x4FA43BA4(any p0, any p1, any p2, any p3)l
 extern _native any unk_0x8C90D22F(any p0, any p1, any p2, any p3, any p4, any p5)l
 extern _native32(0x8E319AB8) int _draw_notification_4(bool blink, bool p1)l
 extern _native any unk_0x5E93FBFA(any* p0, any* p1, any p2, any* p3, any* p4, any p5)l
-extern _native32(0xF42C43C7) void _set_text_entry_2(const char* p0)l
-extern _native32(0x38F82261) void _draw_subtitle_timed(int time, bool p1)l
-extern _native void unk_0xDD524A11(any* p0)l
-extern _native bool unk_0x672EFB45()l
-extern _native32(0x3E35563E) void _set_text_entry(const char* text)l
-extern _native32(0x6F8350CE) void _draw_text(vector2 vector)l
-extern _native32(0x51E7A037) void _set_text_entry_for_width(const char* text)l
-extern _native32(0xD12A643A) float _get_text_screen_width(bool p0)l
-extern _native32(0x94B82066) void _set_text_gxt_entry(const char* entry)l
-extern _native32(0xAA318785) int _get_text_screen_line_count(vector2 screenPos)l
-extern _native32(0xB245FC10) void _set_text_component_format(const char* inputType)l
-extern _native32(0xB59B530D) void _display_help_text_from_string_label(any p0, bool loop, bool beep, int shape)l
-extern _native void unk_0x00E20F2D(const char* p0)l
-extern _native bool unk_0xF63A13EC(int p0)l
+extern _native void begin_text_command_print(const char* GxtEntry)l
+extern _native void end_text_command_print(int duration, bool drawImmediately)l
+extern _native void begin_text_command_is_message_displayed(const char* text)l
+extern _native bool end_text_command_is_message_displayed()l
+extern _native void begin_text_command_display_text(const char* text)l
+extern _native void end_text_command_display_text(vector2 vector)l
+extern _native32(0x51E7A037) void _begin_text_command_width(const char* text)l
+extern _native32(0xD12A643A) float _end_text_command_get_width(int font)l
+extern _native32(0x94B82066) void _begin_text_command_line_count(const char* entry)l
+extern _native32(0xAA318785) int _end_text_command_get_line_count(vector2 vector)l
+extern _native void begin_text_command_display_help(const char* inputType)l
+extern _native void end_text_command_display_help(any p0, bool loop, bool beep, int shape)l
+extern _native void begin_text_command_is_this_help_message_being_displayed(const char* labelName)l
+extern _native bool end_text_command_is_this_help_message_being_displayed(int p0)l
 extern _native void begin_text_command_set_blip_name(const char* gxtentry)l
 extern _native void end_text_command_set_blip_name(Blip blip)l
-extern _native void unk_0x0E103475(const char* p0)l
-extern _native void unk_0x2944A6C5(bool p0)l
-extern _native void unk_0x550665AE(const char* p0)l
-extern _native void unk_0x67785AF2()l
-extern _native void unk_0xBF855650(const char* p0)l
-extern _native void unk_0x6E7FDA1C(bool p0)l
+extern _native32(0x0E103475) void _begin_text_command_objective(const char* p0)l
+extern _native32(0x2944A6C5) void _end_text_command_objective(bool p0)l
+extern _native void begin_text_command_clear_print(const char* text)l
+extern _native void end_text_command_clear_print()l
+extern _native32(0xBF855650) void _begin_text_command_timer(const char* p0)l
+extern _native32(0x6E7FDA1C) void _end_text_command_timer(bool p0)l
 extern _native void add_text_component_integer(int value)l
 extern _native void add_text_component_float(float value, int decimalPlaces)l
-extern _native32(0xDCE05406) void _add_text_component_item_string(const char* labelName)l
-extern _native32(0x150E03B6) void _add_text_component_substring_localized(Hash gxtEntryHash)l
+extern _native void add_text_component_substring_text_label(const char* labelName)l
+extern _native void add_text_component_substring_text_label_hash_key(Hash gxtEntryHash)l
 extern _native void add_text_component_substring_blip_name(Blip blip)l
 extern _native void add_text_component_substring_player_name(const char* text)l
 extern _native void add_text_component_substring_time(int timestamp, int flags)l
-extern _native32(0x12929BDF) void _add_text_component_substring_cash(int cashAmount, bool p1)l
-extern _native void unk_0x65E1D404(const char* p0, int p1)l
+extern _native void add_text_component_formatted_integer(int value, bool commaSeparated)l
+extern _native32(0x65E1D404) void _add_text_component_app_title(const char* p0, int p1)l
 extern _native void add_text_component_substring_website(const char* website)l
-extern _native void unk_0x0829A799(const char* p0)l
-extern _native void unk_0x6F1A1901(int p0)l
+extern _native32(0x0829A799) void _add_text_component_scaleform(const char* p0)l
+extern _native32(0x6F1A1901) void _set_notification_color_next(int p0)l
 extern _native32(0x34A396EE) const char* _get_text_substring(const char* text, int position, int length)l
 extern _native32(0x0183A66C) const char* _get_text_substring_safe(const char* text, int position, int length, int maxLength)l
 extern _native32(0xFA6373BB) const char* _get_text_substring_slice(const char* text, int startPosition, int endPosition)l
@@ -2821,7 +2823,7 @@ extern _native bool is_message_being_displayed()l
 extern _native bool does_text_label_exist(const char* gxt)l
 extern _native int get_length_of_string_with_this_text_label(const char* gxt)l
 extern _native int get_length_of_literal_string(const char* string)l
-extern _native int unk_0x7DBC0764(const char* p0)l
+extern _native32(0x7DBC0764) int _get_length_of_string(const char* p0)l
 extern _native const char* get_street_name_from_hash_key(Hash hash)l
 extern _native bool is_hud_preference_switched_on()l
 extern _native bool is_radar_preference_switched_on()l
@@ -2841,12 +2843,12 @@ extern _native void set_radar_zoom(int zoomLevel)l
 extern _native void unk_0x25EC28C0(any p0, float p1)l
 extern _native32(0x09CF1CE5) void _set_radar_zoom_level_this_frame(float zoomLevel)l
 extern _native void unk_0xE8D3A910()l
-extern _native void get_hud_colour(int hudIndex, int* r, int* g, int* b, int* a)l
+extern _native void get_hud_colour(int hudColorIndex, int* r, int* g, int* b, int* a)l
 extern _native void unk_0x0E41E45C(RGBA colour)l
 extern _native void unk_0x6BE3ACA8(RGBA colour)l
-extern _native32(0x3B216749) void _set_hud_colours_switch(int hudIndex, int hudIndex2)l
-extern _native32(0xF6E7E92B) void _set_hud_colour(int hudIndex, RGBA colour)l
-extern _native void flash_ability_bar(any p0)l
+extern _native32(0x3B216749) void _set_hud_colours_switch(int hudColorIndex, int hudColorIndex2)l
+extern _native32(0xF6E7E92B) void _set_hud_colour(int hudColorIndex, RGBA colour)l
+extern _native void flash_ability_bar(bool toggle)l
 extern _native void set_ability_bar_value(float p0, float p1)l
 extern _native any flash_wanted_display(bool p0)l
 extern _native32(0x3330175B) float _get_text_scale_height(float size, int font)l
@@ -2879,9 +2881,9 @@ extern _native bool is_help_message_fading_out()l
 extern _native bool unk_0x87871CE0()l
 extern _native32(0xB9827942) int _get_blip_info_id_iterator()l
 extern _native int get_number_of_active_blips()l
-extern _native Blip get_next_blip_info_id(Blip blip)l
-extern _native Blip get_first_blip_info_id(Blip blip)l
-extern _native vector3 get_blip_info_id_coord(int p0)l
+extern _native Blip get_next_blip_info_id(int blipSprite)l
+extern _native Blip get_first_blip_info_id(int blipSprite)l
+extern _native vector3 get_blip_info_id_coord(Blip blip)l
 extern _native int get_blip_info_id_display(Blip blip)l
 extern _native int get_blip_info_id_type(Blip blip)l
 extern _native Entity get_blip_info_id_entity_index(Blip blip)l
@@ -2934,12 +2936,12 @@ extern _native void show_number_on_blip(Blip blip, int number)l
 extern _native void hide_number_on_blip(Blip blip)l
 extern _native void unk_0x1D99F676(any p0, bool p1)l
 extern _native32(0x3DCF0092) void _set_blip_checked(Blip blip, bool toggle)l
-extern _native32(0xD1C3D71B) void _set_blip_show_heading_indicator(Blip blip, bool toggle)l
+extern _native void show_heading_indicator_on_blip(Blip blip, bool toggle)l
 extern _native32(0x8DE82C15) void _set_blip_friendly(Blip blip, bool toggle)l
 extern _native32(0x4C8F02B4) void _set_blip_friend(Blip blip, bool toggle)l
 extern _native void unk_0xABBE1E45(any p0, bool p1)l
 extern _native void unk_0x6AA6A1CC(any p0, bool p1)l
-extern _native void unk_0xC575F0BC(Blip blip, bool toggle)l
+extern _native32(0xC575F0BC) void _set_blip_shrink(Blip blip, bool toggle)l
 extern _native void unk_0x40E25DB8(any p0, bool p1)l
 extern _native bool does_blip_exist(Blip blip)l
 extern _native void set_waypoint_off()l
@@ -2953,7 +2955,7 @@ extern _native void unk_0x41B0D022(Ped ped)l
 extern _native any set_minimap_component(int p0, bool p1, int p2)l
 extern _native Blip get_main_player_blip_id()l
 extern _native void hide_loading_on_fade_this_frame()l
-extern _native void set_radar_as_interior_this_frame(Hash interior, vector2 vector, int z, int p4)l
+extern _native void set_radar_as_interior_this_frame(Hash interior, vector2 vector, int z, int zoom)l
 extern _native void set_radar_as_exterior_this_frame()l
 extern _native32(0x54E75C7D) void _set_player_blip_position_this_frame(vector2 vector)l
 extern _native any unk_0x199DED14()l
@@ -2978,7 +2980,7 @@ extern _native void display_help_text_this_frame(const char* message, bool p1)l
 extern _native32(0x1EFFB02A) void _show_weapon_wheel(bool forcedShow)l
 extern _native void unk_0xB26FED2B()l
 extern _native Hash unk_0x22E9F555()l
-extern _native void unk_0x83B608A0(any p0)l
+extern _native void unk_0x83B608A0(Hash weaponHash)l
 extern _native void unk_0xE70D1F43(bool p0)l
 extern _native void set_gps_flags(int p0, float p1)l
 extern _native void clear_gps_flags()l
@@ -3002,7 +3004,7 @@ extern _native void set_mission_name(bool p0, const char* name)l
 extern _native void unk_0x8D9A1734(bool p0, any* p1)l
 extern _native void unk_0xD2161E77(bool p0, any* p1, any* p2, any* p3, any* p4, any* p5, any* p6, any* p7, any* p8)l
 extern _native void set_minimap_block_waypoint(bool toggle)l
-extern _native32(0x02F5F1D1) void _set_minimap_visible(bool toggle)l
+extern _native32(0x02F5F1D1) void _set_north_yankton_map(bool toggle)l
 extern _native32(0xD8D77733) void _set_minimap_revealed(bool toggle)l
 extern _native float unk_0xA4098ACC()l
 extern _native32(0x65B705F6) bool _is_minimap_area_revealed(vector2 vector, float radius)l
@@ -3027,10 +3029,10 @@ extern _native void show_hud_component_this_frame(int id)l
 extern _native void unk_0x52746FE1()l
 extern _native void reset_reticule_values()l
 extern _native void reset_hud_component_values(int id)l
-extern _native void set_hud_component_position(int id, float p1, float p2)l
-extern _native int get_hud_component_position(any p0)l
-extern _native void unk_0x5BBCC934()l
-extern _native any unk_0xFE9A39F8(vector3 vec, any* p3, any* p4)l
+extern _native void set_hud_component_position(int id, vector2 vector)l
+extern _native vector3 get_hud_component_position(int id)l
+extern _native void clear_reminder_message()l
+extern _native32(0xFE9A39F8) bool _get_screen_coord_from_world_coord(vector3 world, float* screenX, float* screenY)l
 extern _native void unk_0x10DE5150()l
 extern _native void unk_0x67649EE0()l
 extern _native any unk_0x9D2C94FA()l
@@ -3040,22 +3042,22 @@ extern _native void unk_0x93045157(any p0, vector3 vec)l
 extern _native void unk_0x18B012B7(any p0, any p1, float p2, float p3)l
 extern _native void unk_0x97852A82(any p0, any p1, any p2, any p3, any p4, any p5)l
 extern _native void clear_floating_help(any p0, bool p1)l
-extern _native void unk_0xC969F2D0(int headDisplayId, const char* username, bool pointedClanTag, bool isRockstarClan, const char* clanTag, any p5, any p6, any p7, any p8)l
+extern _native32(0xC969F2D0) void _create_mp_gamer_tag_color(int headDisplayId, const char* username, bool pointedClanTag, bool isRockstarClan, const char* clanTag, any p5, RGB colour)l
 extern _native bool unk_0xEFD2564A()l
-extern _native32(0xF5CD2AA4) int _create_head_display(Ped ped, const char* username, bool pointedClanTag, bool isRockstarClan, const char* clanTag, any p5)l
-extern _native void unk_0x3D081FE4(int headDisplayId)l
-extern _native32(0x60118951) bool _has_head_display_loaded(int headDisplayId)l
-extern _native bool add_trevor_random_modifier(int headDisplayId)l
-extern _native32(0xD41DF479) void _set_head_display_flag(int headDisplayId, int sprite, bool toggle)l
+extern _native32(0xF5CD2AA4) int _create_mp_gamer_tag(Ped ped, const char* username, bool pointedClanTag, bool isRockstarClan, const char* clanTag, any p5)l
+extern _native void remove_mp_gamer_tag(int gamerTagId)l
+extern _native bool is_mp_gamer_tag_active(int gamerTagId)l
+extern _native bool add_trevor_random_modifier(int gamerTagId)l
+extern _native void set_mp_gamer_tag_visibility(int gamerTagId, int component, bool toggle)l
 extern _native void unk_0x767DED29(int headDisplayId, bool p1)l
 extern _native void unk_0xB01A5434(int headDisplayId, bool p1)l
-extern _native void unk_0x7E3AA40A(int headDisplayId, any p1, int flag)l
-extern _native void unk_0x5777EC77(int headDisplayId, any p1)l
-extern _native void unk_0xF4418611(int headDisplayId, any p1, any p2)l
-extern _native32(0x0EBB003F) void _set_head_display_wanted(int headDisplayId, int wantedlvl)l
-extern _native32(0x627A559B) void _set_head_display_string(int headDisplayId, const char* string)l
-extern _native bool unk_0xF11414C4(int headDisplayId)l
-extern _native void unk_0x939218AB(int headDisplayId, const char* string)l
+extern _native void set_mp_gamer_tag_colour(int gamerTagId, int flag, int color)l
+extern _native32(0x5777EC77) void _set_mp_gamer_tag_health_bar_color(int headDisplayId, int color)l
+extern _native void set_mp_gamer_tag_alpha(int gamerTagId, int component, int alpha)l
+extern _native void set_mp_gamer_tag_wanted_level(int gamerTagId, int wantedlvl)l
+extern _native void set_mp_gamer_tag_name(int gamerTagId, const char* string)l
+extern _native bool unk_0xF11414C4(int gamerTagId)l
+extern _native void unk_0x939218AB(int gamerTagId, const char* string)l
 extern _native any unk_0xAB5B7C18()l
 extern _native int get_current_website_id()l
 extern _native any unk_0xD217EE7E(any p0)l
@@ -3064,7 +3066,7 @@ extern _native32(0x2DB9EAB5) void _set_warning_message_2(const char* entryHeader
 extern _native32(0x749929D3) void _set_warning_message_3(const char* entryHeader, const char* entryLine1, any instructionalKey, const char* entryLine2, bool p4, any p5, any p6, any* p7, any* p8, bool p9)l
 extern _native bool is_warning_message_active()l
 extern _native void unk_0x2F9A309C()l
-extern _native void unk_0xE4FD20D8(bool p0)l
+extern _native32(0xE4FD20D8) void _set_map_full_screen(bool toggle)l
 extern _native void unk_0x13E7A5A9(any p0)l
 extern _native any unk_0x786CA0A2(float p0, float p1, float p2)l
 extern _native void unk_0xCBEC9369()l
@@ -3072,9 +3074,9 @@ extern _native any unk_0x3F4AFB13()l
 extern _native void unk_0x2F28F0A6(bool p0)l
 extern _native void unk_0x801D0D86()l
 extern _native void unk_0x317775DF()l
-extern _native void activate_frontend_menu(Hash menuhash, bool Toggle_Pause, int p2)l
+extern _native void activate_frontend_menu(Hash menuhash, bool Toggle_Pause, int component)l
 extern _native void restart_frontend_menu(Hash menuHash, int p1)l
-extern _native Hash unk_0x33D6868F()l
+extern _native32(0x33D6868F) Hash _get_current_frontend_menu()l
 extern _native void set_pause_menu_active(bool toggle)l
 extern _native void disable_frontend_this_frame()l
 extern _native void unk_0x7F349900()l
@@ -3087,7 +3089,7 @@ extern _native bool is_pause_menu_restarting()l
 extern _native32(0x2DFD35C7) void _log_debug_info(const char* p0)l
 extern _native void unk_0x0A89336C(any p0)l
 extern _native void unk_0xC84BE309()l
-extern _native void unk_0x9FE8FD5E(Hash hash)l
+extern _native32(0x9FE8FD5E) void _add_frontend_menu_context(Hash hash)l
 extern _native void object_decal_toggle(Hash hash)l
 extern _native bool unk_0xC51BC42F(Hash hash)l
 extern _native any unk_0x016D7AF9()l
@@ -3115,19 +3117,19 @@ extern _native void unk_0x127310EB(bool p0)l
 extern _native void unk_0x8F45D327(bool p0)l
 extern _native32(0x19FCBBB2) void _show_social_club_legal_screen()l
 extern _native any unk_0x850690FF()l
-extern _native any unk_0x9D4934F4()l
+extern _native int unk_0x9D4934F4()l
 extern _native void unk_0x57218529()l
 extern _native void unk_0x5F86AA39()l
 extern _native void unk_0x7AD67C95(const char* p0)l
-extern _native any unk_0xD4DA14EF()l
+extern _native bool is_social_club_active()l
 extern _native void unk_0xFF06772A(bool p0)l
-extern _native void unk_0x96C4C4DD(Ped ped, bool p1)l
+extern _native32(0x96C4C4DD) void _set_ped_enemy_ai_blip(int pedHandle, bool showViewCones)l
 extern _native bool does_ped_have_ai_blip(Ped ped)l
-extern _native void unk_0xD8E31B1A(Ped ped, any p1)l
+extern _native void unk_0xD8E31B1A(Ped ped, int unk)l
 extern _native void hide_special_ability_lockon_operation(any p0, bool p1)l
 extern _native void unk_0xFFDF46F0(Ped ped, bool p1)l
-extern _native void unk_0xF9DC2AF7(Ped ped, float p1)l
-extern _native any unk_0x06349065(any p0)l
+extern _native32(0xF9DC2AF7) void _set_ai_blip_max_distance(Ped ped, float p1)l
+extern _native any* unk_0x06349065(Ped ped)l
 extern _native Blip unk_0xCA52CF43(Ped ped)l
 #pragma endregion //}
 #pragma region GRAPHICS //{
@@ -3162,13 +3164,13 @@ extern _native void unk_0x108F36CC()l
 extern _native void unk_0xE9F2B68F(bool p0, bool p1)l
 extern _native int get_maximum_number_of_photos()l
 extern _native any unk_0x239272BD()l
-extern _native any unk_0x21DBF0C9()l
+extern _native int unk_0x21DBF0C9()l
 extern _native any unk_0x199FABF0(any p0)l
 extern _native any unk_0x596B900D(any p0)l
 extern _native void unk_0xC9EF81ED()l
 extern _native any unk_0x9D84554C(any p0)l
 extern _native any unk_0x9C106AD9(any p0)l
-extern _native any unk_0x762E5C5F(any p0)l
+extern _native32(0x762E5C5F) int _return_two(any p0)l
 extern _native void draw_light_with_range(vector3 pos, RGB color, float range, float intensity)l
 extern _native void draw_spot_light(vector3 pos, vector3 dir, RGB color, float distance, float brightness, float roundness, float radius, float falloff)l
 extern _native32(0x32BF9598) void _draw_spot_light_with_shadow(vector3 pos, vector3 dir, RGB color, float distance, float brightness, float roundness, float radius, float falloff, float shadow)l
@@ -3194,7 +3196,7 @@ extern _native32(0x228A2598) void _set_screen_draw_position(int x, int y)l
 extern _native32(0x3FE33BD6) void _screen_draw_position_end()l
 extern _native32(0x76C641E4) void _screen_draw_position_ratio(vector2 vector, float p2, float p3)l
 extern _native float get_safe_zone_size()l
-extern _native void draw_sprite(const char* textureDict, const char* textureName, vector2 screen, Size scale, float heading, RGBA colour)l
+extern _native void draw_sprite(const char* textureDict, const char* textureName, vector2 screen, Size size, float heading, RGBA colour)l
 extern _native any add_entity_icon(Entity entity, const char* icon)l
 extern _native void set_entity_icon_visibility(Entity entity, bool toggle)l
 extern _native void set_entity_icon_color(Entity entity, RGBA colour)l
@@ -3212,7 +3214,7 @@ extern _native void set_nightvision(bool toggle)l
 extern _native32(0x62619061) bool _is_nightvision_inactive()l
 extern _native void set_noiseoveride(bool toggle)l
 extern _native void set_noisinessoveride(float value)l
-extern _native32(0x1F950E4B) bool _world3d_to_screen2d(vector3 world, float* screenX, float* screenY)l
+extern _native bool get_screen_coord_from_world_coord(vector3 world, float* screenX, float* screenY)l
 extern _native vector3 get_texture_resolution(const char* textureDict, const char* textureName)l
 extern _native void unk_0x455F1084(float p0)l
 extern _native void set_flash(float p0, float p1, float fadeIn, float duration, float fadeOut)l
@@ -3262,7 +3264,7 @@ extern _native void unk_0x513D444B(bool p0, bool p1, float p2, float p3, float p
 extern _native bool unk_0xB2410EAB(bool p0)l
 extern _native any unk_0x5AB94128()l
 extern _native bool unk_0xD63FCB3E(const char* textureDict, bool p1)l
-extern _native bool start_particle_fx_non_looped_at_coord(const char* effectName, vector3 Pos, vector3 Rot, float scale, bool xAxis, bool yAxis, bool zAxis)l
+extern _native int start_particle_fx_non_looped_at_coord(const char* effectName, vector3 Pos, vector3 Rot, float scale, bool xAxis, bool yAxis, bool zAxis)l
 extern _native32(0x633F8C48) bool _start_particle_fx_non_looped_at_coord_2(const char* effectName, vector3 Pos, vector3 Rot, float scale, bool xAxis, bool yAxis, bool zAxis)l
 extern _native bool start_particle_fx_non_looped_on_ped_bone(const char* effectName, Ped ped, vector3 offset, vector3 rot, int boneIndex, float scale, bool axisX, bool axisY, bool axisZ)l
 extern _native32(0x161780C1) bool _start_particle_fx_non_looped_on_ped_bone_2(const char* effectName, Ped ped, vector3 offset, vector3 rot, int boneIndex, float scale, bool axisX, bool axisY, bool axisZ)l
@@ -3289,8 +3291,8 @@ extern _native void set_particle_fx_cam_inside_nonplayer_vehicle(any p0, bool p1
 extern _native void set_particle_fx_shootout_boat(any p0)l
 extern _native void set_particle_fx_blood_scale(bool p0)l
 extern _native void enable_clown_blood_vfx(bool toggle)l
-extern _native void enable_alien_blood_vfx(bool toggle)l
-extern _native32(0x9C720B61) void _set_ptfx_asset_next_call(const char* name)l
+extern _native void enable_alien_blood_vfx(bool Toggle)l
+extern _native32(0x9C720B61) void _use_particle_fx_asset_next_call(const char* name)l
 extern _native void wash_decals_in_range(any p0, any p1, any p2, any p3, any p4)l
 extern _native void wash_decals_from_vehicle(Vehicle vehicle, float p1)l
 extern _native void fade_decals_in_range(any p0, any p1, any p2, any p3, any p4)l
@@ -3298,7 +3300,7 @@ extern _native void remove_decals_in_range(vector3 vec, float range)l
 extern _native void remove_decals_from_object(Object obj)l
 extern _native void remove_decals_from_object_facing(Object obj, vector3 vec)l
 extern _native void remove_decals_from_vehicle(Vehicle vehicle)l
-extern _native int add_decal(any p0, float p1, float p2, float p3, float p4, float p5, float p6, float p7, float p8, float p9, float p10, float p11, float p12, float p13, float p14, float p15, float p16, bool p17, bool p18, bool p19)l
+extern _native int add_decal(int decalType, vector3 pos, float p4, float p5, float p6, float p7, float p8, float p9, Size size, FloatRGB Coef, float opacity, float timeout, bool p17, bool p18, bool p19)l
 extern _native any add_petrol_decal(vector3 vec, float groundLvl, float width, float transparency)l
 extern _native void unk_0xE3938B0B(float p0)l
 extern _native void unk_0xBAEC6ADD(any p0, any p1, any p2, any p3)l
@@ -3325,8 +3327,6 @@ extern _native void unk_0xD87CC710(float p0)l
 extern _native void unk_0xE29EE145()l
 extern _native void disable_vehicle_distantlights(bool toggle)l
 extern _native void unk_0x60F72371(bool p0)l
-extern _native32(0xC53576CA) void _set_force_ped_footsteps_tracks(bool toggle)l
-extern _native32(0x7158B1EA) void _set_force_vehicle_trails(bool toggle)l
 extern _native void set_timecycle_modifier(const char* modifierName)l
 extern _native void set_timecycle_modifier_strength(float strength)l
 extern _native void set_transition_timecycle_modifier(const char* modifierName, float transition)l
@@ -3338,7 +3338,7 @@ extern _native void push_timecycle_modifier()l
 extern _native void pop_timecycle_modifier()l
 extern _native void unk_0x85BA15A4(const char* p0)l
 extern _native void unk_0x9559BB38(float p0)l
-extern _native void unk_0x554BA16E(any* p0)l
+extern _native void unk_0x554BA16E(const char* p0)l
 extern _native void unk_0xE8F538B5(any* p0, any* p1)l
 extern _native void unk_0x805BAB08(any p0)l
 extern _native void unk_0x908A335E(any* p0)l
@@ -3349,8 +3349,8 @@ extern _native bool has_scaleform_movie_loaded(int scaleformHandle)l
 extern _native bool has_scaleform_container_movie_loaded_into_parent(int scaleformHandle)l
 extern _native void set_scaleform_movie_as_no_longer_needed(int* scaleformHandle)l
 extern _native void set_scaleform_movie_to_use_system_time(int scaleform, bool toggle)l
-extern _native void draw_scaleform_movie(int scaleformHandle, vector2 vector, Size size, RGBA colour, int p9)l
-extern _native void draw_scaleform_movie_fullscreen(int scaleform, RGBA colour)l
+extern _native void draw_scaleform_movie(int scaleformHandle, vector2 vector, Size size, RGBA colour, int unk)l
+extern _native void draw_scaleform_movie_fullscreen(int scaleform, RGBA colour, int unk)l
 extern _native void draw_scaleform_movie_fullscreen_masked(int scaleform1, int scaleform2, RGBA colour)l
 extern _native void draw_scaleform_movie_3d(int scaleform, vector3 pos, vector3 rot, float p7, float p8, float p9, vector3 scale, any p13)l
 extern _native32(0x899933C8) void _draw_scaleform_movie_3d_non_additive(int scaleform, vector3 pos, vector3 rot, float p7, float p8, float p9, vector3 scale, any p13)l
@@ -3370,9 +3370,9 @@ extern _native const char* sitting_tv(int scaleform)l
 extern _native32(0x716777CB) void _push_scaleform_movie_function_parameter_int(int value)l
 extern _native32(0x9A01FFDA) void _push_scaleform_movie_function_parameter_float(float value)l
 extern _native32(0x0D4AE8CB) void _push_scaleform_movie_function_parameter_bool(bool value)l
-extern _native32(0x3AC9CB55) void _begin_text_component(const char* componentType)l
-extern _native32(0x386CE0B8) void _end_text_component()l
-extern _native void unk_0x2E80DB52()l
+extern _native void begin_text_command_scaleform_string(const char* componentType)l
+extern _native void end_text_command_scaleform_string()l
+extern _native32(0x2E80DB52) void _end_text_command_scaleform_string_2()l
 extern _native32(0x4DAAD55B) void _push_scaleform_movie_function_parameter_string(const char* value)l
 extern _native void unk_0xCCBF0334(const char* p0)l
 extern _native bool unk_0x91A081A1(any p0)l
@@ -3387,7 +3387,7 @@ extern _native void set_tv_volume(float volume)l
 extern _native float get_tv_volume()l
 extern _native void draw_tv_channel(vector2 Pos, Size Scale, float rotation, RGBA colour)l
 extern _native void unk_0xB262DE67(int p0, const char* p1, bool p2)l
-extern _native void unk_0x78C4DCBE(any p0, any* p1, any p2)l
+extern _native void unk_0x78C4DCBE(any p0, const char* p1, any p2)l
 extern _native void unk_0xCBE7068F(any p0)l
 extern _native32(0x4D1EB0FB) bool _load_tv_channel(Hash tvChannel)l
 extern _native void unk_0x796DE696(bool p0)l
@@ -3403,7 +3403,7 @@ extern _native void unk_0x3B637AA7(float p0, float p1, float p2, float p3, float
 extern _native void unk_0xDF552973(int p0, int p1, int p2, int p3, int p4, int p5, int p6, int p7, int p8, int p9, int p10, int p11)l
 extern _native32(0x1D980479) void _start_screen_effect(const char* effectName, int duration, bool looped)l
 extern _native32(0x06BB5CDA) void _stop_screen_effect(const char* effectName)l
-extern _native32(0x089D5921) int _get_screen_effect_is_active(const char* effectName)l
+extern _native32(0x089D5921) bool _get_screen_effect_is_active(const char* effectName)l
 extern _native32(0x4E6D875B) void _stop_all_screen_effects()l
 #pragma endregion //}
 #pragma region STATS //{
@@ -3456,10 +3456,10 @@ extern _native int stat_get_number_of_seconds(Hash statName)l
 extern _native32(0x24DD4929) void _stat_set_profile_setting(int profileSetting, int value)l
 extern _native int unk_0xDFC25D66(int p0)l
 extern _native int unk_0xCA160BCC(int p0)l
-extern _native Hash unk_0xB5BF87B2(int p0, bool p1, bool p2, any p3)l
-extern _native Hash unk_0x1F938864(int p0, bool p1, bool p2, any p3)l
-extern _native Hash unk_0x3F8E893B(int p0, bool p1, bool p2, any p3)l
-extern _native Hash unk_0xFB93C5A2(int p0, bool p1, bool p2, any p3)l
+extern _native32(0xB5BF87B2) Hash _get_pstat_bool_hash(int index, bool spStat, bool charStat, int character)l
+extern _native32(0x1F938864) Hash _get_pstat_int_hash(int index, bool spStat, bool charStat, int character)l
+extern _native32(0x3F8E893B) Hash _get_tupstat_bool_hash(int index, bool spStat, bool charStat, int character)l
+extern _native32(0xFB93C5A2) Hash _get_tupstat_int_hash(int index, bool spStat, bool charStat, int character)l
 extern _native bool stat_get_bool_masked(Hash statName, int mask, int p2)l
 extern _native bool stat_set_bool_masked(Hash statName, bool value, int mask, bool save)l
 extern _native void unk_0x61ECC465(const char* p0, any p1)l
@@ -3494,7 +3494,7 @@ extern _native void playstats_cheat_applied(const char* cheat)l
 extern _native void unk_0x04181752(any* p0, any* p1, any* p2, any* p3)l
 extern _native void unk_0x31002201(any* p0, any* p1, any* p2, any* p3)l
 extern _native void unk_0xDDD1F1F3(any* p0, any* p1, any* p2, any* p3)l
-extern _native void unk_0x66FEB701(any p0, any* p1)l
+extern _native void unk_0x66FEB701(int p0, const char* p1)l
 extern _native void unk_0x9E2B9522(int time)l
 extern _native any leaderboards_get_number_of_columns(any p0, any p1)l
 extern _native any leaderboards_get_column_id(any p0, any p1, any p2)l
@@ -3547,7 +3547,7 @@ extern _native any unk_0xE3F0D62D(any* p0)l
 #pragma endregion //}
 #pragma region BRAIN //{
 extern _native void add_script_to_random_ped(const char* name, Hash model, float p2, float p3)l
-extern _native void register_object_script_brain(const char* scriptName, Hash p1, int p2, float p3, int p4, int p5)l
+extern _native void register_object_script_brain(const char* scriptName, Hash objectName, int p2, float p3, int p4, int p5)l
 extern _native bool is_object_within_brain_activation_range(Object object)l
 extern _native void register_world_point_script_brain(any* p0, float p1, any p2)l
 extern _native bool is_world_point_within_brain_activation_range()l
@@ -3569,8 +3569,8 @@ extern _native void get_mobile_phone_position(vector3* position)l
 extern _native void script_is_moving_mobile_phone_offscreen(bool toggle)l
 extern _native bool can_phone_be_seen_on_screen()l
 extern _native void cell_cam_activate(bool p0, bool p1)l
-extern _native void unk_0x4479B304(bool phoneKeyEnabled)l
-extern _native void unk_0xC273BB4D(bool toggle)l
+extern _native32(0x4479B304) void _disable_phone_this_frame(bool toggle)l
+extern _native void unk_0xC273BB4D(int* toggle)l
 extern _native void unk_0x66DCD9D2(float p0)l
 extern _native bool cell_cam_is_char_visible_no_face_check(Entity entity)l
 extern _native void get_mobile_phone_render_id(int* renderId)l
@@ -3634,14 +3634,14 @@ extern _native bool load_all_path_nodes(bool keepInMemory)l
 extern _native void unk_0xD6A3B458(bool p0)l
 extern _native bool unk_0x86E80A17(float p0, float p1, float p2, float p3)l
 extern _native bool unk_0x2CDA5012(float p0, float p1, float p2, float p3)l
-extern _native void set_roads_back_to_original(any p0, any p1, any p2, any p3, any p4, any p5)l
+extern _native void set_roads_back_to_original(float p0, float p1, float p2, float p3, float p4, float p5)l
 extern _native void set_roads_back_to_original_in_angled_area(vector3 vec_1, vector3 vec_2, float p6)l
 extern _native void unk_0x3C5085E4(float p0)l
 extern _native void unk_0xD0F51299(any p0, any p1, any p2, any p3, any p4, any p5, any p6)l
 extern _native void set_ped_paths_back_to_original(any p0, any p1, any p2, any p3, any p4, any p5)l
 extern _native bool get_random_vehicle_node(vector3 vec, float radius, bool p4, bool p5, bool p6, vector3* outPosition, float* heading)l
 extern _native void get_street_name_at_coord(vector3 vec, Hash* streetName, Hash* crossingRoad)l
-extern _native any generate_directions_to_coord(vector3 vec, any p3, int* p4, Vehicle* vehicle, float* p6)l
+extern _native int generate_directions_to_coord(vector3 vec, bool p3, float* direction, float* p5, float* distToNxJunction)l
 extern _native void set_ignore_no_gps_flag(bool ignore)l
 extern _native any unk_0x90DF7A4C(bool p0)l
 extern _native void set_gps_disabled_zone(any p0, any p1, any p2, any p3, any p4, any p5)l
@@ -3657,7 +3657,7 @@ extern _native bool is_navmesh_loaded_in_area(vector3 vec_1, vector3 vec_2)l
 extern _native any add_navmesh_blocking_object(float p0, float p1, float p2, float p3, float p4, float p5, float p6, bool p7, any p8)l
 extern _native void update_navmesh_blocking_object(any p0, float p1, float p2, float p3, float p4, float p5, float p6, float p7, any p8)l
 extern _native void remove_navmesh_blocking_object(any p0)l
-extern _native bool unk_0x4B67D7EE(any p0)l
+extern _native bool does_navmesh_blocking_object_exist(any p0)l
 extern _native float unk_0x3FE8C5A0(float p0, float p1)l
 extern _native float unk_0x3ED21C90(float p0, float p1, float p2, float p3)l
 extern _native float unk_0xA07C5B7D(float left, float right)l
@@ -3679,7 +3679,7 @@ extern _native bool is_disabled_control_just_released(int inputGroup, int contro
 extern _native float get_disabled_control_normal(int inputGroup, int control)l
 extern _native float unk_0xF2A65A4C(int inputGroup, int control)l
 extern _native int unk_0x0E8EF929(int p0)l
-extern _native32(0x3551727A) const char* _get_control_action_name(int inputGroup, int control, bool p2)l
+extern _native const char* get_control_instructional_button(int inputGroup, int control, bool p2)l
 extern _native const char* unk_0x3EE71F6A(int inputGroup, int control, bool p2)l
 extern _native void set_pad_shake(int p0, int duration, int frequency)l
 extern _native void stop_pad_shake(any p0)l
@@ -3688,8 +3688,8 @@ extern _native bool is_look_inverted()l
 extern _native int get_local_player_aim_state()l
 extern _native void set_playerpad_shakes_when_controller_disabled(bool toggle)l
 extern _native void set_input_exclusive(int inputGroup, int control)l
-extern _native void disable_control_action(int inputGroup, int control)l
-extern _native void enable_control_action(int inputGroup, int control)l
+extern _native void disable_control_action(int inputGroup, int control, bool disable)l
+extern _native void enable_control_action(int inputGroup, int control, bool enable)l
 extern _native void disable_all_control_actions(int inputGroup)l
 extern _native void enable_all_control_actions(int inputGroup)l
 extern _native bool unk_0xD2C80B2E(const char* p0)l
@@ -3715,10 +3715,10 @@ extern _native void datafile_create()l
 extern _native void datafile_delete()l
 extern _native void unk_0x4E03F632()l
 extern _native void unk_0xF11F956F()l
-extern _native32(0x86DDF9C2) any* _get_root_object()l
+extern _native const char* datafile_get_file_dict()l
 extern _native bool unk_0x768CBB35(const char* filename)l
 extern _native bool unk_0x0B4087F7(bool* p0)l
-extern _native bool unk_0x5DCD0796()l
+extern _native bool datafile_is_save_pending()l
 extern _native32(0x9B29D99B) void _object_value_add_boolean(any* objectData, const char* key, bool value)l
 extern _native32(0xEFCF554A) void _object_value_add_integer(any* objectData, const char* key, int value)l
 extern _native32(0xE972CACF) void _object_value_add_float(any* objectData, const char* key, float value)l
@@ -3758,9 +3758,8 @@ extern _native bool is_entity_on_fire(Entity entity)l
 extern _native int get_number_of_fires_in_range(vector3 vec, float radius)l
 extern _native void stop_fire_in_range(vector3 vec, float radius)l
 extern _native bool get_closest_fire_pos(vector3* outPosition, vector3 vec)l
-extern _native void add_explosion(vector3 vec, int explosionType, float damageScale, bool isAudible, bool isInvisible, float cameraShake)l
 extern _native void add_owned_explosion(Ped ped, vector3 vec, int explosionType, float damageScale, bool isAudible, bool isInvisible, float cameraShake)l
-extern _native32(0xCF358946) void _add_specfx_explosion(vector3 vec, int explosionType, Hash explosionFx, float damageScale, bool isAudible, bool isInvisible, float cameraShake)l
+extern _native void add_explosion_with_user_vfx(vector3 vec, int explosionType, Hash explosionFx, float damageScale, bool isAudible, bool isInvisible, float cameraShake)l
 extern _native bool is_explosion_in_area(int explosionType, vector3 vec_1, vector3 vec_2)l
 extern _native bool is_explosion_in_sphere(int explosionType, vector3 vec, float radius)l
 extern _native bool is_explosion_in_angled_area(int explosionType, vector3 vec_1, vector3 vec_2, float angle)l
@@ -3838,21 +3837,21 @@ extern _native void set_disable_frag_damage(Object object, bool toggle)l
 #pragma region WATER //{
 extern _native bool get_water_height(vector3 vec, float* height)l
 extern _native bool get_water_height_no_waves(vector3 vec, float* height)l
-extern _native bool test_probe_against_water(any p0, any p1, any p2, any p3, any p4, any p5, any p6)l
+extern _native bool test_probe_against_water(vector3 vec_1, vector3 vec_2, vector3* result)l
 extern _native bool test_probe_against_all_water(any p0, any p1, any p2, any p3, any p4, any p5, any p6, any p7)l
 extern _native bool test_vertical_probe_against_all_water(vector3 vec, any p3, any* p4)l
 extern _native void modify_water(vector2 vector, float radius, float height)l
 #pragma endregion //}
 #pragma region WORLDPROBE //{
 extern _native int start_shape_test_los_probe(vector3 vec_1, vector3 vec_2, int flags, Entity entity, int p8)l
-extern _native32(0x8251485D) int _cast_ray_point_to_point(vector3 vec_1, vector3 vec_2, int flags, Entity entity, int p8)l
-extern _native any start_shape_test_bounding_box(Entity entity, int flags1, int flags2)l
-extern _native any start_shape_test_box(vector3 vec, float x1, float y2, float z2, vector3 rot, any p9, any p10, any entity, any p12)l
-extern _native any start_shape_test_bound(Entity entity, int flags1, int flags2)l
+extern _native32(0x8251485D) int _start_shape_test_ray(vector3 vec_1, vector3 vec_2, int flags, Entity entity, int p8)l
+extern _native int start_shape_test_bounding_box(Entity entity, int flags1, int flags2)l
+extern _native int start_shape_test_box(vector3 vec, float x1, float y2, float z2, vector3 rot, any p9, any p10, any entity, any p12)l
+extern _native int start_shape_test_bound(Entity entity, int flags1, int flags2)l
 extern _native int start_shape_test_capsule(vector3 vec_1, vector3 vec_2, float radius, int flags, Entity entity, int p9)l
 extern _native int unk_0x4559460A(vector3 vec_1, vector3 vec_2, float radius, int flags, Entity entity, any p9)l
 extern _native int get_shape_test_result(int rayHandle, bool* hit, vector3* endCoords, vector3* surfaceNormal, Entity* entityHit)l
-extern _native32(0x4301E10C) int _get_shape_test_result_ex(int rayHandle, bool* hit, vector3* endCoords, vector3* surfaceNormal, Hash* _materialHash, Entity* entityHit)l
+extern _native32(0x4301E10C) int _get_shape_test_result_ex(int rayHandle, bool* hit, vector3* endCoords, vector3* surfaceNormal, Hash* materialHash, Entity* entityHit)l
 extern _native void unk_0xEC2AAF06(Entity p0)l
 #pragma endregion //}
 #pragma region NETWORK //{
@@ -3860,7 +3859,7 @@ extern _native bool network_is_signed_in()l
 extern _native bool network_is_signed_online()l
 extern _native32(0x3FB40673) bool _network_are_ros_available()l
 extern _native bool network_is_cloud_available()l
-extern _native any unk_0x66EC713F()l
+extern _native bool unk_0x66EC713F()l
 extern _native any unk_0x358D1D77()l
 extern _native bool network_is_host()l
 extern _native bool network_have_online_privileges()l
@@ -3870,26 +3869,26 @@ extern _native bool unk_0xBB54AA3D(any p0, any p1, bool p2)l
 extern _native bool network_can_bail()l
 extern _native void network_bail()l
 extern _native void unk_0x96E28FE2()l
-extern _native32(0xA520B982) bool _get_mp_loading_state(int* loadingState)l
+extern _native bool network_can_access_multiplayer(int* loadingState)l
 extern _native bool network_is_multiplayer_disabled()l
 extern _native bool network_can_enter_multiplayer()l
-extern _native any network_session_enter(any p0, any p1, any p2, any p3, any p4, any p5)l
-extern _native bool unk_0x4E53202A(int p0, int p1, int maxPlayers, bool p3)l
-extern _native bool unk_0xD7624E6B(int p0, int p1, int p2, int maxPlayers, bool p4)l
-extern _native bool unk_0x3F75CC38(any p0, any p1, any p2, any p3)l
+extern _native any network_session_enter(any p0, any p1, any p2, int maxPlayers, any p4, any p5)l
+extern _native bool network_session_friend_matchmaking(int p0, int p1, int maxPlayers, bool p3)l
+extern _native bool network_session_crew_matchmaking(int p0, int p1, int p2, int maxPlayers, bool p4)l
+extern _native bool network_session_activity_quickmatch(any p0, any p1, any p2, any p3)l
 extern _native bool network_session_host(int p0, int maxPlayers, bool p2)l
 extern _native bool network_session_host_closed(int p0, int maxPlayers)l
 extern _native bool network_session_host_friends_only(int p0, int maxPlayers)l
-extern _native bool unk_0x56E75FE4()l
-extern _native bool unk_0xA95299B9()l
-extern _native bool unk_0x3D2C1916()l
-extern _native bool unk_0xDB67785D()l
+extern _native bool network_session_is_closed_friends()l
+extern _native bool network_session_is_closed_crew()l
+extern _native bool network_session_is_solo()l
+extern _native bool network_session_is_private()l
 extern _native bool network_session_end(bool p0, bool p1)l
 extern _native void network_session_kick_player(Player player)l
-extern _native32(0x8A559D26) bool _network_session_are_players_voting_to_kick(Player player)l
+extern _native32(0x8A559D26) bool _network_session_is_player_voted_to_kick(Player player)l
 extern _native void unk_0x3C3E2AB6(int p0)l
-extern _native void unk_0x5F29A7E0(any p0, any p1)l
-extern _native any unk_0x36EAD960(any p0)l
+extern _native32(0x5F29A7E0) void _network_session_set_max_players(int playerType, int playerCount)l
+extern _native32(0x36EAD960) int _network_session_get_unk(int p0)l
 extern _native void unk_0x5BE529F7(any p0)l
 extern _native void unk_0x454C7B67(any p0)l
 extern _native void unk_0xE5961511(any p0)l
@@ -3898,13 +3897,13 @@ extern _native void unk_0x913FD7D6(any p0)l
 extern _native void unk_0xB3D9A67F(bool p0)l
 extern _native void unk_0x6CC062FC(any p0)l
 extern _native void unk_0x57F9BC83()l
-extern _native void unk_0xF3768F90(bool p0)l
+extern _native32(0xF3768F90) void _network_session_hosted(bool p0)l
 extern _native void network_add_followers(int* p0, int p1)l
 extern _native void network_clear_followers()l
 extern _native32(0x74E8C53E) void _network_get_server_time(int* hours, int* minutes, int* seconds)l
 extern _native void unk_0x959E43A3(any p0)l
-extern _native bool unk_0x7771AB83(any p0)l
-extern _native bool unk_0xA13045D4(any p0, float p1, float p2, float p3)l
+extern _native bool network_x_affects_gamers(any p0)l
+extern _native bool network_find_matched_gamers(any p0, float p1, float p2, float p3)l
 extern _native bool network_is_finding_gamers()l
 extern _native any unk_0xBEDC4503()l
 extern _native int network_get_num_found_gamers()l
@@ -3918,17 +3917,17 @@ extern _native bool unk_0xB5ABC4B4(any* p0, any p1)l
 extern _native void unk_0x3F7EDBBD()l
 extern _native void network_is_player_animation_drawing_synchronized()l
 extern _native void network_session_cancel_invite()l
-extern _native void unk_0x3FD49D3B()l
+extern _native void network_session_force_cancel_invite()l
 extern _native bool network_has_pending_invite()l
 extern _native any unk_0xFBBAC350()l
 extern _native any unk_0x0907A6BF()l
-extern _native any unk_0x6A0BEA60()l
+extern _native bool network_session_was_invited()l
 extern _native void network_session_get_inviter(int* networkHandle)l
 extern _native any unk_0x3EA9D44C()l
 extern _native void network_suppress_invite(bool toggle)l
 extern _native void network_block_invites(bool toggle)l
 extern _native void unk_0x32B7A076()l
-extern _native void unk_0x0FCE995D(bool p0)l
+extern _native32(0x0FCE995D) void _network_block_kicked_players(bool p0)l
 extern _native void unk_0xA639DCA2(bool p0)l
 extern _native any unk_0x70ED476A()l
 extern _native void unk_0x50507BED()l
@@ -3940,109 +3939,108 @@ extern _native bool network_is_in_session()l
 extern _native bool network_is_session_started()l
 extern _native bool network_is_session_busy()l
 extern _native bool network_can_session_end()l
-extern _native void unk_0x7017257D(bool p0)l
-extern _native any unk_0x4977AC28()l
-extern _native void unk_0xE6EEF8AF(bool p0)l
-extern _native void enable_cormorant_ros_cheater(int p0, bool p1)l
+extern _native void network_session_mark_visible(bool p0)l
+extern _native any network_session_is_visible()l
+extern _native void network_session_block_join_requests(bool p0)l
+extern _native void network_session_change_slots(int p0, bool p1)l
 extern _native void network_session_voice_host()l
 extern _native void network_session_voice_leave()l
 extern _native void unk_0x9DFD89E6(any* globalPtr)l
 extern _native void network_set_keep_focuspoint(bool p0, any p1)l
 extern _native void unk_0x6EFC2FD0(any p0)l
-extern _native any unk_0x60AA4AA1()l
+extern _native bool unk_0x60AA4AA1()l
 extern _native bool unk_0x132CA01E()l
-extern _native any network_send_text_message(const char* message, int* networkHandle)l
 extern _native void network_set_activity_spectator(bool toggle)l
 extern _native any network_is_activity_spectator()l
-extern _native void network_set_activity_spectator_max(any p0)l
+extern _native void network_set_activity_spectator_max(int maxSpectators)l
 extern _native int network_get_activity_player_num(bool p0)l
-extern _native bool network_is_activity_spectator_from_handle(Player* networkHandle)l
+extern _native bool network_is_activity_spectator_from_handle(int* networkHandle)l
 extern _native any network_host_transition(any p0, any p1, any p2, any p3, any p4, any p5)l
 extern _native bool network_do_transition_quickmatch(any p0, any p1, any p2, any p3)l
-extern _native bool unk_0x47D61C99(any p0, any p1, any p2, any p3)l
+extern _native bool network_do_transition_quickmatch_async(any p0, any p1, any p2, any p3)l
 extern _native bool network_do_transition_quickmatch_with_group(any p0, any p1, any p2, any p3, any* p4, any p5)l
-extern _native any unk_0x0D7E5CF9()l
+extern _native any network_join_group_activity()l
 extern _native void unk_0x36A5F2DA()l
 extern _native void unk_0x7EF353E1(bool p0)l
 extern _native void unk_0xF60986FC(bool p0)l
 extern _native void network_set_transition_creator_handle(any* p0)l
 extern _native void network_clear_transition_creator_handle()l
 extern _native bool network_invite_gamers_to_transition(any* p0, any p1)l
-extern _native void network_set_gamer_invited_to_transition(any* p0)l
+extern _native void network_set_gamer_invited_to_transition(int* networkHandle)l
 extern _native any network_leave_transition()l
 extern _native any network_launch_transition()l
 extern _native void network_bail_transition()l
 extern _native bool network_do_transition_to_game(bool p0, int maxPlayers)l
 extern _native bool network_do_transition_to_new_game(bool p0, int maxPlayers, bool p2)l
 extern _native bool network_do_transition_to_freemode(any* p0, any p1, bool p2, int players, bool p4)l
-extern _native bool network_do_transition_to_new_freemode(any* p0, any p1, any p2, bool p3, bool p4, bool p5)l
+extern _native bool network_do_transition_to_new_freemode(any* p0, any* p1, int players, bool p3, bool p4, bool p5)l
 extern _native any network_is_transition_to_game()l
 extern _native any network_get_transition_members(any* p0, any p1)l
-extern _native void unk_0xCEE79711(any p0, any p1)l
+extern _native void network_apply_transition_parameter(any p0, any p1)l
 extern _native void unk_0xE0C28DB5(any p0, const char* p1, bool p2)l
-extern _native bool network_send_transition_gamer_instruction(int* netHandle, const char* p1, int p2, int p3, bool p4)l
+extern _native bool network_send_transition_gamer_instruction(int* networkHandle, const char* p1, int p2, int p3, bool p4)l
 extern _native bool network_mark_transition_gamer_as_fully_joined(any* p0)l
 extern _native any network_is_transition_host()l
-extern _native bool network_is_transition_host_from_handle(int* netHandle)l
-extern _native bool network_get_transition_host(int* netHandle)l
+extern _native bool network_is_transition_host_from_handle(int* networkHandle)l
+extern _native bool network_get_transition_host(int* networkHandle)l
 extern _native bool network_is_in_transition()l
 extern _native bool network_is_transition_started()l
-extern _native bool network_is_transition_busy()l
-extern _native any unk_0x8262C70E()l
-extern _native void unk_0xC71E607B()l
-extern _native void unk_0x82D32D07()l
+extern _native any network_is_transition_busy()l
+extern _native any network_is_transition_matchmaking()l
+extern _native void network_open_transition_matchmaking()l
+extern _native void network_close_transition_matchmaking()l
 extern _native any unk_0xC901AA9F()l
-extern _native void unk_0xCCA9C022(any p0)l
-extern _native void unk_0x1E5F6AEF(any p0, any p1)l
+extern _native void network_set_transition_activity_id(any p0)l
+extern _native void network_change_transition_slots(any p0, any p1)l
 extern _native void unk_0x0532DDD2(bool p0)l
 extern _native bool network_has_player_started_transition(Player player)l
-extern _native32(0xCDEBCCE7) bool _is_transition_joinable(Player player)l
+extern _native bool network_are_transition_details_valid(any p0)l
 extern _native bool network_join_transition(Player player)l
 extern _native bool network_has_invited_gamer_to_transition(any* p0)l
-extern _native any network_is_activity_session()l
+extern _native bool network_is_activity_session()l
 extern _native void unk_0x18F03AFD(any p0)l
-extern _native32(0x8B99B72B) bool _network_send_presence_invite(any* p0, any* p1, any p2, any p3)l
-extern _native bool unk_0x877C0E1C(any* p0, any* p1, any p2, any p3)l
+extern _native32(0x8B99B72B) bool _network_send_presence_invite(int* networkHandle, any* p1, any p2, any p3)l
+extern _native32(0x877C0E1C) bool _network_send_presence_transition_invite(any* p0, any* p1, any p2, any p3)l
 extern _native any unk_0x5E832444(any p0)l
-extern _native any unk_0x3FDA00F3()l
+extern _native int network_get_num_presence_invites()l
 extern _native bool network_accept_presence_invite(any p0)l
 extern _native bool network_remove_presence_invite(any p0)l
 extern _native any network_get_presence_invite_id(any p0)l
 extern _native any network_get_presence_invite_inviter(any p0)l
 extern _native bool network_get_presence_invite_handle(any p0, any* p1)l
-extern _native any unk_0xC5E0C989(any p0)l
+extern _native any network_get_presence_invite_session_id(any p0)l
 extern _native any unk_0xA4302183(any p0)l
 extern _native any unk_0x51B2D848(any p0)l
 extern _native any unk_0x4677C656(any p0)l
 extern _native bool unk_0xF5E3401C(any p0)l
 extern _native bool unk_0x7D593B4C(any p0)l
-extern _native any unk_0xE96CFE7D()l
-extern _native any unk_0xAB969F00()l
-extern _native any unk_0x3242F952()l
+extern _native bool network_has_follow_invite()l
+extern _native any network_action_follow_invite()l
+extern _native any network_clear_follow_invite()l
 extern _native void unk_0x9773F36A()l
 extern _native void network_remove_transition_invite(any* p0)l
-extern _native void unk_0xF7134E73()l
+extern _native void network_remove_all_transition_invite()l
 extern _native void unk_0xC47352E7()l
 extern _native bool network_invite_gamers(any* p0, any p1, any* p2, any* p3)l
 extern _native bool network_has_invited_gamer(any* p0)l
 extern _native bool network_get_currently_selected_gamer_handle_from_invite_menu(any* p0)l
 extern _native bool network_set_currently_selected_gamer_handle_from_invite_menu(any* p0)l
 extern _native void unk_0x0808D4CC(any* p0, any* p1)l
-extern _native bool fillout_pm_player_list(any* p0, any p1, any p2)l
+extern _native bool fillout_pm_player_list(int* networkHandle, any p1, any p2)l
 extern _native bool fillout_pm_player_list_with_names(any* p0, any* p1, any p2, any p3)l
 extern _native bool using_network_weapontype(any p0)l
 extern _native any unk_0xA812B6CB()l
 extern _native any unk_0xF30E5814(any* p0, any p1)l
 extern _native any unk_0xC6609191()l
-extern _native bool network_is_chatting_in_platform_party(Player* networkHandle)l
+extern _native bool network_is_chatting_in_platform_party(int* networkHandle)l
 extern _native bool network_is_in_party()l
-extern _native bool network_is_party_member(any p0)l
+extern _native bool network_is_party_member(int* networkHandle)l
 extern _native any unk_0x9156EFC0()l
 extern _native any unk_0x8FA6EE0E()l
 extern _native void unk_0x7F70C15A()l
 extern _native void unk_0x8179C48A(any p0)l
 extern _native void unk_0x41702C8A(any p0)l
-extern _native any unk_0x208DD848()l
+extern _native int network_get_random_int()l
 extern _native32(0xF9B6426D) int _network_get_random_int_in_range(int rangeStart, int rangeEnd)l
 extern _native bool network_player_is_cheater()l
 extern _native any unk_0x1720ABA6()l
@@ -4050,7 +4048,7 @@ extern _native bool network_player_is_badsport()l
 extern _native bool unk_0xF9A51B92(any p0, any p1, any p2)l
 extern _native bool bad_sport_player_left_detected(any* p0, any p1, any p2)l
 extern _native void unk_0x4818ACD0(any p0, any p1)l
-extern _native void network_set_this_script_is_network_script(int lobbySize, bool p1, int p2)l
+extern _native void network_set_this_script_is_network_script(int lobbySize, bool p1, int playerId)l
 extern _native bool network_get_this_script_is_network_script()l
 extern _native32(0xCCD8C02D) int _network_get_num_participants_host()l
 extern _native int network_get_num_participants()l
@@ -4061,7 +4059,7 @@ extern _native void unk_0xA71A1D2A()l
 extern _native bool unk_0x0B739F53()l
 extern _native int network_get_player_index(Player player)l
 extern _native int network_get_participant_index(int index)l
-extern _native32(0x40DBF464) Player _network_get_ped_player(Ped ped)l
+extern _native Player network_get_player_index_from_ped(Ped ped)l
 extern _native int network_get_num_connected_players()l
 extern _native bool network_is_player_connected(Player player)l
 extern _native int unk_0xF4F13B06()l
@@ -4070,30 +4068,30 @@ extern _native bool network_is_player_active(Player player)l
 extern _native bool network_is_player_a_participant(any p0)l
 extern _native bool network_is_host_of_this_script()l
 extern _native any network_get_host_of_this_script()l
-extern _native int network_get_host_of_script(const char* scriptName, int p1, any p2)l
+extern _native int network_get_host_of_script(const char* scriptName, int p1, int p2)l
 extern _native void network_set_mission_finished()l
 extern _native bool network_is_script_active(const char* scriptName, any p1, bool p2, any p3)l
-extern _native any unk_0x8F7D9F46(any* p0, any p1, any p2)l
+extern _native int network_get_num_script_participants(any* p0, any p1, any p2)l
 extern _native any unk_0xDB8B5D71()l
-extern _native bool unk_0xCEA55F4C(any p0, any* p1, any p2)l
+extern _native bool unk_0xCEA55F4C(Player p0, any* p1, any p2)l
 extern _native void unk_0x8DCFE77D()l
 extern _native void unk_0x331D9A27()l
 extern _native Player participant_id()l
 extern _native int participant_id_to_int()l
 extern _native int network_get_destroyer_of_network_id(int netId, Hash* weaponHash)l
-extern _native bool unk_0x28A45454(any p0, any p1, any* p2)l
+extern _native32(0x28A45454) bool _network_get_desroyer_of_entity(any p0, any p1, Hash* p2)l
 extern _native Entity network_get_entity_killer_of_player(Player player, Hash* weaponHash)l
-extern _native void network_resurrect_local_player(vector3 vec, float heading, any p4, any p5)l
+extern _native void network_resurrect_local_player(vector3 vec, float heading, bool unk, bool changetime)l
 extern _native void network_set_local_player_invincible_time(int time)l
 extern _native bool network_is_local_player_invincible()l
-extern _native void unk_0x8D27280E(int participantID, bool p1)l
+extern _native void network_disable_invincible_flashing(int player, bool p1)l
 extern _native void unk_0xB72F086D(any p0)l
-extern _native bool unk_0xEDA68956(any p0)l
+extern _native bool unk_0xEDA68956(Entity p0)l
 extern _native int network_get_network_id_from_entity(Entity entity)l
 extern _native Entity network_get_entity_from_network_id(int netId)l
-extern _native bool unk_0xD7F934F4(Entity entity)l
+extern _native bool network_get_entity_is_networked(Entity entity)l
 extern _native bool network_get_entity_is_local(Entity entity)l
-extern _native void unk_0x31A630A4(Entity entity)l
+extern _native void network_register_entity_as_networked(Entity entity)l
 extern _native void network_unregister_networked_entity(Entity entity)l
 extern _native bool network_does_network_id_exist(int netID)l
 extern _native bool network_does_entity_exist_with_network_id(Entity entity)l
@@ -4111,33 +4109,18 @@ extern _native Vehicle net_to_veh(int netHandle)l
 extern _native Ped net_to_ped(int netHandle)l
 extern _native Object net_to_obj(int netHandle)l
 extern _native Entity net_to_ent(int netHandle)l
-extern _native void network_get_local_handle(int* networkHandle, int bufferSize)l
-extern _native void network_handle_from_user_id(const char* userId, int* networkHandle, int bufferSize)l
-extern _native void network_handle_from_member_id(const char* memberId, int* networkHandle, int bufferSize)l
-extern _native void network_handle_from_player(Player player, int* networkHandle, int bufferSize)l
-extern _native void network_handle_from_friend(Player friendIndex, int* networkHandle, int bufferSize)l
-extern _native bool network_gamertag_from_handle_start(int* networkHandle)l
 extern _native bool network_gamertag_from_handle_pending()l
 extern _native bool network_gamertag_from_handle_succeeded()l
-extern _native const char* network_get_gamertag_from_handle(int* networkHandle)l
-extern _native bool network_are_handles_the_same(int* netHandle1, int* netHandle2)l
-extern _native bool network_is_handle_valid(int* networkHandle, int bufferSize)l
-extern _native Player network_get_player_from_gamer_handle(int* networkHandle)l
-extern _native const char* network_member_id_from_gamer_handle(int* networkHandle)l
-extern _native bool network_is_gamer_in_my_session(int* networkHandle)l
 extern _native void network_show_profile_ui(int* networkHandle)l
 extern _native const char* network_player_get_name(Player player)l
-extern _native32(0x4EC0D983) const char* _network_player_get_user_id(Player player, int* userID)l
+extern _native const char* network_player_get_userid(Player player, int* userID)l
 extern _native bool network_player_is_rockstar_dev(Player player)l
 extern _native bool unk_0xD265B049(any p0)l
 extern _native bool network_is_inactive_profile(any* p0)l
 extern _native int network_get_max_friends()l
 extern _native int network_get_friend_count()l
 extern _native const char* network_get_friend_name(Player player)l
-extern _native bool network_is_friend_online(any* p0)l
-extern _native bool network_is_friend_in_same_title(int* networkHandle)l
-extern _native bool network_is_friend_in_multiplayer(int* networkHandle)l
-extern _native bool network_is_friend(int* networkHandle)l
+extern _native bool network_is_friend_online(const char* name)l
 extern _native any network_is_pending_friend(any p0)l
 extern _native any network_is_adding_friend()l
 extern _native bool network_add_friend(any* p0, const char* p1)l
@@ -4149,7 +4132,6 @@ extern _native any unk_0x9A176B6E()l
 extern _native bool network_has_headset()l
 extern _native void unk_0x5C05B7E1(bool p0)l
 extern _native bool network_gamer_has_headset(any* p0)l
-extern _native bool network_is_local_talking()l
 extern _native bool network_is_gamer_talking(int* p0)l
 extern _native bool network_can_communicate_with_gamer(int* player)l
 extern _native bool network_is_gamer_muted_by_me(int* p0)l
@@ -4167,20 +4149,20 @@ extern _native void network_set_talker_proximity(float p0)l
 extern _native any network_get_talker_proximity()l
 extern _native void network_set_voice_active(bool toggle)l
 extern _native void unk_0x1A3EA6CD(bool p0)l
-extern _native void unk_0xCAB21090(bool p0)l
+extern _native void network_override_transition_chat(bool p0)l
 extern _native void network_set_team_only_chat(bool toggle)l
 extern _native void unk_0xC8CC9E75(int team, bool toggle)l
 extern _native void network_set_override_spectator_mode(bool toggle)l
 extern _native void unk_0xC9DDA85B(bool p0)l
 extern _native void unk_0xD33AFF79(bool p0)l
 extern _native void unk_0x4FFEFE43(bool p0)l
-extern _native void unk_0x74EE2D8B(any p0, bool p1)l
+extern _native void network_override_chat_restrictions(Player player, bool toggle)l
 extern _native void unk_0x2F98B405(bool p0)l
-extern _native void unk_0x95F1C60D(any p0, any p1)l
+extern _native void network_override_receive_restrictions(Player player, bool toggle)l
 extern _native void unk_0x1BCD3DDF(bool p0)l
 extern _native void network_set_voice_channel(any p0)l
-extern _native void unk_0x9ECF722A()l
-extern _native bool is_network_vehicle_been_damaged_by_any_object(any p0, any p1, any p2)l
+extern _native void network_clear_voice_channel()l
+extern _native bool is_network_vehicle_been_damaged_by_any_object(vector3 vec)l
 extern _native void unk_0x7F9B9052()l
 extern _native void unk_0x7BBEA8CF(any p0)l
 extern _native void unk_0xE797A4B6(any p0)l
@@ -4189,43 +4171,39 @@ extern _native void shutdown_and_launch_single_player_game()l
 extern _native void network_set_friendly_fire_option(bool toggle)l
 extern _native void network_set_rich_presence(any p0, any p1, any p2, any p3)l
 extern _native void unk_0x017E6777(any p0, any p1)l
-extern _native any unk_0xE1F86C6A()l
+extern _native int network_get_timeout_time()l
 extern _native void unk_0xBE6A30C3(Player player, vector3 vec, bool p4, bool p5)l
 extern _native void unk_0x22E03AD0(Player player, bool p1)l
 extern _native void unk_0xCEAE5AFC(Entity entity)l
 extern _native32(0xF5F4BD95) bool _network_player_is_in_clan()l
-extern _native bool network_clan_player_is_active(int* netHandle)l
-extern _native bool network_clan_player_get_desc(ScrHandle* desc, int p1, int* netHandle)l
-extern _native bool unk_0x54E79E9C(ScrHandle* desc, int p1)l
-extern _native void unk_0xF633805A(ScrHandle* desc, int p1, any* p2)l
-extern _native int unk_0x807B3450()l
-extern _native bool network_clan_get_membership_desc(ScrHandle* memberDesc, any p1)l
-extern _native bool network_clan_download_membership(int* netHandle)l
+extern _native bool unk_0x54E79E9C(int* clanDesc, int bufferSize)l
+extern _native32(0x807B3450) int _get_num_membership_desc()l
+extern _native bool network_clan_get_membership_desc(int* memberDesc, int p1)l
 extern _native bool network_clan_download_membership_pending(any* p0)l
-extern _native any unk_0x83ED8E08()l
-extern _native bool network_clan_remote_memberships_are_in_cache(any* p0)l
-extern _native int network_clan_get_membership_count(any* p0)l
-extern _native bool network_clan_get_membership_valid(any* p0, any p1)l
-extern _native bool network_clan_get_membership(any* p0, any* p1, any p2)l
-extern _native bool network_clan_join(int clanHandle)l
-extern _native bool unk_0xBDA90BAC(const char* animDict, const char* animCrew)l
+extern _native32(0x83ED8E08) bool _network_is_clan_membership_finished_downloading()l
+extern _native bool network_clan_remote_memberships_are_in_cache(int* p0)l
+extern _native int network_clan_get_membership_count(int* p0)l
+extern _native bool network_clan_get_membership_valid(int* p0, any p1)l
+extern _native bool network_clan_get_membership(int* p0, int* clanMembership, int p2)l
+extern _native bool network_clan_join(int clanDesc)l
+extern _native32(0xBDA90BAC) bool _network_clan_animation(const char* animDict, const char* animName)l
 extern _native bool unk_0x8E952B12(int p0, const char* p1)l
 extern _native any unk_0x966C90FD()l
 extern _native bool unk_0xBA672146(any* p0, any* p1)l
 extern _native bool unk_0x7963FA4D(any p0)l
 extern _native bool unk_0x88B13CDC(any p0, any* p1)l
 extern _native void unk_0xD6E3D5EA(any p0)l
-extern _native any unk_0xE22445DA()l
-extern _native void unk_0x455DDF5C()l
+extern _native any network_get_primary_clan_data_clear()l
+extern _native void network_get_primary_clan_data_cancel()l
 extern _native bool network_get_primary_clan_data_start(any* p0, any p1)l
-extern _native any unk_0xA4EF02F3()l
-extern _native any unk_0x068A054E()l
+extern _native any network_get_primary_clan_data_pending()l
+extern _native any network_get_primary_clan_data_success()l
 extern _native bool network_get_primary_clan_data_new(any* p0, any* p1)l
 extern _native void set_network_id_can_migrate(int netId, bool toggle)l
 extern _native void set_network_id_exists_on_all_machines(int netId, bool toggle)l
 extern _native32(0x4D15FDB1) void _set_network_id_sync_to_player(int netId, Player player, bool toggle)l
 extern _native void network_set_entity_can_blend(Entity entity, bool toggle)l
-extern _native void unk_0x09CBC4B0(Entity entity, bool toggle)l
+extern _native32(0x09CBC4B0) void _network_set_entity_visible_to_network(Entity entity, bool toggle)l
 extern _native void set_network_id_visible_in_cutscene(int netId, bool p1, bool p2)l
 extern _native void unk_0x00AE4E17(int netId, bool state)l
 extern _native bool unk_0xEA5176C0(int netId)l
@@ -4236,7 +4214,6 @@ extern _native void set_player_invisible_locally(Player player, bool toggle)l
 extern _native void set_player_visible_locally(Player player, bool toggle)l
 extern _native void fade_out_local_player(bool p0)l
 extern _native void network_fade_out_entity(Entity entity, bool normal, bool slow)l
-extern _native void network_fade_in_entity(Entity entity, bool state)l
 extern _native bool is_player_in_cutscene(Player player)l
 extern _native void set_entity_visible_in_cutscene(any p0, bool p1, bool p2)l
 extern _native void set_entity_locally_invisible(Entity entity)l
@@ -4248,32 +4225,32 @@ extern _native bool is_sphere_visible_to_player(any p0, float p1, float p2, floa
 extern _native void reserve_network_mission_objects(int p0)l
 extern _native void reserve_network_mission_peds(int p0)l
 extern _native void reserve_network_mission_vehicles(int p0)l
-extern _native bool can_register_mission_objects(any p0)l
-extern _native bool can_register_mission_peds(any p0)l
-extern _native bool can_register_mission_vehicles(bool p0)l
-extern _native bool can_register_mission_entities(bool p0, any p1, any p2, any p3)l
+extern _native bool can_register_mission_objects(int p0)l
+extern _native bool can_register_mission_peds(int p0)l
+extern _native bool can_register_mission_vehicles(int p0)l
+extern _native bool can_register_mission_entities(int p0, any p1, any p2, any p3)l
 extern _native int get_num_reserved_mission_objects(bool p0)l
 extern _native int get_num_reserved_mission_peds(bool p0)l
 extern _native int get_num_reserved_mission_vehicles(bool p0)l
-extern _native any unk_0x603FA104(bool p0)l
-extern _native any unk_0xD8FEC4F8(bool p0)l
-extern _native any unk_0x20527695(bool p0)l
+extern _native int unk_0x603FA104(bool p0)l
+extern _native int unk_0xD8FEC4F8(bool p0)l
+extern _native int unk_0x20527695(bool p0)l
 extern _native any unk_0x8687E285()l
 extern _native any unk_0x744AC008()l
 extern _native any unk_0xC3A12135()l
 extern _native any unk_0x6A036061()l
 extern _native int get_network_time()l
 extern _native int unk_0x98AA48E5()l
-extern _native any unk_0x4538C4A2()l
+extern _native bool has_network_time_started()l
 extern _native int get_time_offset(int timeA, int timeB)l
 extern _native bool is_time_less_than(int timeA, int timeB)l
 extern _native bool is_time_more_than(int timeA, int timeB)l
 extern _native bool is_time_equal_to(int timeA, int timeB)l
 extern _native int get_time_difference(int timeA, int timeB)l
-extern _native32(0x8218944E) const char* _format_time(int time)l
+extern _native const char* get_time_as_string(int time)l
 extern _native32(0xF2FDF2E0) int _get_posix_time()l
 extern _native32(0xBB7CCE49) void _get_date_and_time_from_unix_epoch(int unixEpoch, any* timeStructure)l
-extern _native void network_set_in_spectator_mode(bool active, Player playerPed)l
+extern _native void network_set_in_spectator_mode(bool toggle, Ped playerPed)l
 extern _native void unk_0x54058F5F(bool p0, any p1, bool p2)l
 extern _native void unk_0xA7E36020(bool p0)l
 extern _native void unk_0x64235620(bool p0, any p1)l
@@ -4284,10 +4261,8 @@ extern _native bool network_is_player_in_mp_cutscene(Player player)l
 extern _native void set_network_vehicle_respot_timer(int netId, any p1)l
 extern _native void unk_0xEA235081(Entity entity, bool p1)l
 extern _native void use_player_colour_instead_of_team_colour(bool toggle)l
-extern _native int network_create_synchronised_scene(vector3 vec, vector3 Rot, int p6, int p7, int p8, float p9)l
-extern _native void network_add_ped_to_synchronised_scene(Ped ped, int netScene, const char* animDict, const char* animnName, float speed, float speedMultiplier, int duration, int flag, float playbackRate, any p9)l
 extern _native void network_add_entity_to_synchronised_scene(Entity entity, int netScene, const char* animDict, const char* animName, float speed, float speedMulitiplier, int flag)l
-extern _native void unk_0xBFFE8B5C(int netScene, const char* animDict, const char* animName)l
+extern _native32(0xBFFE8B5C) void _network_force_local_use_of_synced_scene_camera(int netScene, const char* animDict, const char* animName)l
 extern _native void network_attach_synchronised_scene_to_entity(int netScene, Entity entity, int bone)l
 extern _native void network_start_synchronised_scene(int netScene)l
 extern _native void network_stop_synchronised_scene(int netScene)l
@@ -4297,7 +4272,7 @@ extern _native bool unk_0xC62E77B3(Player player, float p1, float p2, float p3, 
 extern _native bool unk_0x74D6B13C(Player player, float p1, float p2, float p3, float p4, float p5, float p6, float p7, float p8, float p9, float p10, int flags)l
 extern _native any unk_0x90700C7D(any* p0)l
 extern _native void unk_0x44BFB619()l
-extern _native void network_get_respawn_result(any p0, int* p1, int* p2)l
+extern _native void network_get_respawn_result(int randomInt, vector3* coordinates, float* heading)l
 extern _native any unk_0x03287FD2(any p0)l
 extern _native void unk_0x408A9436()l
 extern _native void unk_0xFFB2ADA1(any p0, any p1)l
@@ -4306,21 +4281,21 @@ extern _native any network_is_in_tutorial_session()l
 extern _native any unk_0x755A2B3E()l
 extern _native any unk_0xA003C40B()l
 extern _native any unk_0x5E1020CC(any p0)l
-extern _native bool unk_0xE66A0B40(Player player, int p1)l
+extern _native32(0xE66A0B40) bool _network_is_player_equal_to_index(Player player, int index)l
 extern _native void unk_0x72052DB3(any p0, bool p1)l
 extern _native bool unk_0xB0313590(any p0)l
 extern _native void network_override_clock_time(int Hours, int Minutes, int Seconds)l
 extern _native void unk_0xC4AEAF49()l
-extern _native bool unk_0x2465296D()l
+extern _native any unk_0x2465296D()l
 extern _native any network_add_entity_area(float p0, float p1, float p2, float p3, float p4, float p5)l
 extern _native any unk_0x4C2C2B12(float p0, float p1, float p2, float p3, float p4, float p5)l
 extern _native bool network_remove_entity_area(any p0)l
 extern _native bool unk_0x69956127(any p0)l
 extern _native bool unk_0xCB1CD6D3(any p0)l
 extern _native bool unk_0xC6D53AA0(any p0)l
-extern _native void unk_0x155465EE(any p0, bool p1)l
-extern _native32(0x29532731) bool _download_bg_script_rpf()l
-extern _native32(0xD760CAD5) void _download_tunables()l
+extern _native32(0x155465EE) void _network_set_network_id_dynamic(int netID, bool toggle)l
+extern _native32(0x29532731) bool _network_request_cloud_background_scripts()l
+extern _native void network_request_cloud_tunables()l
 extern _native any unk_0x231CFD12()l
 extern _native bool network_does_tunable_exist(const char* tunableContext, const char* tunableName)l
 extern _native bool network_access_tunable_int(const char* tunableContext, const char* tunableName, int* value)l
@@ -4336,7 +4311,7 @@ extern _native any network_explode_vehicle(Vehicle vehicle, bool isAudible, bool
 extern _native void unk_0xBC54371B(Entity entity)l
 extern _native void unk_0x644141C5(Ped ped, vector3 vec, float p4)l
 extern _native void network_set_property_id(any p0)l
-extern _native void unk_0x38BC35C8()l
+extern _native void network_clear_property_id()l
 extern _native void unk_0x53C9563C(int p0)l
 extern _native void unk_0x6B97075B(bool p0)l
 extern _native any unk_0x965EA007()l
@@ -4361,9 +4336,9 @@ extern _native any unk_0x70F6D3AD()l
 extern _native any unk_0x2B7B57B3(any* p0)l
 extern _native bool unk_0xBAF52DD8(any p0)l
 extern _native bool unk_0x9B9AFFF1(any p0)l
-extern _native void unk_0xC38E9DB0()l
+extern _native32(0xC38E9DB0) void _download_check()l
 extern _native any unk_0x32A4EB22()l
-extern _native any unk_0x9262744C()l
+extern _native any network_enable_motion_drugged()l
 extern _native bool unk_0x08243B79(any* p0, any* p1)l
 extern _native any unk_0x798D6C27()l
 extern _native any unk_0xE69E8D0D()l
@@ -4454,7 +4429,7 @@ extern _native bool texture_download_has_failed(int p0)l
 extern _native const char* texture_download_get_name(int p0)l
 extern _native any unk_0x03225BA3(any p0)l
 extern _native any unk_0x4DEBC227()l
-extern _native any unk_0x5C065D55()l
+extern _native bool network_is_cable_connected()l
 extern _native any unk_0x0CA1167F()l
 extern _native any unk_0x424C6E27()l
 extern _native32(0xD3BBE42F) bool _is_rockstar_banned()l
@@ -4471,38 +4446,38 @@ extern _native void unk_0xBB2D33D3(any p0, bool p1)l
 #pragma region NETWORKCASH //{
 extern _native void network_initialize_cash(int p0, int p1)l
 extern _native void network_delete_character(int characterIndex, bool p1, bool p2)l
-extern _native void unk_0x19F0C471(any p0)l
-extern _native void network_give_player_jobshare_cash(int amount, Player* player)l
-extern _native void network_receive_player_jobshare_cash(int amount, Player* player)l
+extern _native void network_clear_character_wallet(any p0)l
+extern _native void network_give_player_jobshare_cash(int amount, int* networkHandle)l
+extern _native void network_receive_player_jobshare_cash(int value, int* networkHandle)l
 extern _native any unk_0xA27B9FE8()l
 extern _native void network_refund_cash(int index, const char* context, const char* reason, bool unk)l
-extern _native bool unk_0x8474E6F0(any p0, bool p1, bool p2)l
+extern _native bool network_money_can_bet(any p0, bool p1, bool p2)l
 extern _native bool network_can_bet(any p0)l
 extern _native any network_earn_from_pickup(int amount)l
-extern _native void unk_0x33C20BC4(int amount)l
-extern _native32(0x30B3EC0A) void _network_earn_from_bag(int amount)l
-extern _native32(0xEAF04923) void _network_earn_from_crate_drop(int amount)l
+extern _native32(0x33C20BC4) void _network_earn_from_gang_pickup(int amount)l
+extern _native32(0x30B3EC0A) void _network_earn_from_armour_truck(int amount)l
+extern _native void network_earn_from_crate_drop(int amount)l
 extern _native void network_earn_from_betting(int amount, const char* p1)l
 extern _native void network_earn_from_job(int amount, const char* p1)l
-extern _native void unk_0x5E81F55C(any p0, any* p1)l
-extern _native void unk_0x2BEFB6C4(any p0, any* p1, bool p2)l
-extern _native void network_earn_from_bounty(int amount, int* playerHandle, any* p2, any p3)l
+extern _native void network_earn_from_mission_h(int amount, const char* heistHash)l
+extern _native void network_earn_from_challenge_win(any p0, any* p1, bool p2)l
+extern _native void network_earn_from_bounty(int amount, int* networkHandle, any* p2, any p3)l
 extern _native void network_earn_from_import_export(any p0, any p1)l
 extern _native void network_earn_from_holdups(int amount)l
 extern _native void network_earn_from_property(int amount, Hash propertyName)l
-extern _native void unk_0x866004A8(any p0, any p1)l
-extern _native void unk_0xCC068380(int amount)l
+extern _native void network_earn_from_ai_target_kill(any p0, any p1)l
+extern _native void network_earn_from_not_badsport(int amount)l
 extern _native void network_earn_from_rockstar(int amount)l
 extern _native void network_earn_from_vehicle(any p0, any p1, any p2, any p3, any p4, any p5, any p6, any p7)l
-extern _native void unk_0x96B8BEE8(any p0, any p1, any p2, any p3, any p4, any p5, any p6, any p7, any p8)l
-extern _native32(0x5AA379D9) bool _has_item_been_unlocked(any p0, bool p1, bool p2, bool p3, any p4)l
+extern _native void network_earn_from_personal_vehicle(any p0, any p1, any p2, any p3, any p4, any p5, any p6, any p7, any p8)l
+extern _native bool network_can_spend_money(any p0, bool p1, bool p2, bool p3, any p4)l
 extern _native void network_buy_item(Ped player, Hash item, any p2, any p3, bool p4, const char* item_name, any p6, any p7, any p8, bool p9)l
 extern _native void network_spent_taxi(int amount, bool p1, bool p2)l
-extern _native void unk_0xBE70849B(any p0, bool p1, bool p2)l
-extern _native void unk_0x451A2644(any p0, bool p1, bool p2)l
-extern _native void unk_0x224A3488(any p0, any* p1, bool p2, bool p3)l
+extern _native void network_pay_employee_wage(any p0, bool p1, bool p2)l
+extern _native void network_pay_utility_bill(any p0, bool p1, bool p2)l
+extern _native void network_pay_match_entry_fee(int value, int* p1, bool p2, bool p3)l
 extern _native void network_spent_betting(any p0, any p1, any* p2, bool p3, bool p4)l
-extern _native void unk_0x8957038E(any p0, bool p1, any p2, bool p3)l
+extern _native void network_spent_in_stripclub(any p0, bool p1, any p2, bool p3)l
 extern _native void network_buy_healthcare(int cost, bool p1, bool p2)l
 extern _native void network_buy_airstrike(int cost, bool p1, bool p2)l
 extern _native void network_buy_heli_strike(int cost, bool p1, bool p2)l
@@ -4514,7 +4489,7 @@ extern _native void network_spent_boat_pickup(any p0, bool p1, bool p2)l
 extern _native void network_spent_bull_shark(any p0, bool p1, bool p2)l
 extern _native void network_spent_cash_drop(any p0, bool p1, bool p2)l
 extern _native void network_spent_hire_mugger(any p0, bool p1, bool p2)l
-extern _native void unk_0xE6AAA0D5(any p0, bool p1, bool p2)l
+extern _native void network_spent_robbed_by_mugger(int amount, bool p1, bool p2)l
 extern _native void network_spent_hire_mercenary(any p0, bool p1, bool p2)l
 extern _native void network_spent_buy_wantedlevel(any p0, any* p1, bool p2, bool p3)l
 extern _native void network_spent_buy_offtheradar(any p0, bool p1, bool p2)l
@@ -4526,18 +4501,18 @@ extern _native void network_spent_holdups(any p0, bool p1, bool p2)l
 extern _native void network_spent_buy_passive_mode(any p0, bool p1, bool p2)l
 extern _native void network_spent_prostitutes(any p0, bool p1, bool p2)l
 extern _native void network_spent_arrest_bail(any p0, bool p1, bool p2)l
-extern _native void network_spent_pay_vehicle_insurance_premium(any p0, Hash VehicleModel, any* p2, bool p3, bool p4)l
+extern _native void network_spent_pay_vehicle_insurance_premium(int amount, Hash vehicleModel, int* networkHandle, bool notBankrupt, bool hasTheMoney)l
 extern _native void network_spent_call_player(any p0, any* p1, bool p2, bool p3)l
 extern _native void network_spent_bounty(any p0, bool p1, bool p2)l
-extern _native void unk_0x54198922(any p0, bool p1, bool p2)l
-extern _native any process_cash_gift(any p0, any p1, any p2)l
-extern _native void unk_0x3D96A21C(any p0, any p1, bool p2, bool p3)l
-extern _native void unk_0x2E51C61C(any p0, bool p1, bool p2)l
-extern _native void unk_0xD57A5125(any p0, bool p1, bool p2)l
-extern _native void unk_0xD9622D64(any p0, any p1, bool p2, bool p3)l
-extern _native32(0x16184FB5) int _get_bank_balance()l
-extern _native32(0x4F5B781C) int _wallet_balance(int player)l
-extern _native any unk_0xADF8F882()l
+extern _native void network_spent_from_rockstar(int bank, bool p1, bool p2)l
+extern _native const char* process_cash_gift(int* p0, int* p1, const char* p2)l
+extern _native void network_spent_player_healthcare(any p0, any p1, bool p2, bool p3)l
+extern _native void network_spent_no_cops(any p0, bool p1, bool p2)l
+extern _native void network_spent_request_job(any p0, bool p1, bool p2)l
+extern _native void network_buy_fairground_ride(int amountSpent, any p1, bool p2, bool p3)l
+extern _native int network_get_vc_bank_balance()l
+extern _native int network_get_vc_wallet_balance(int character)l
+extern _native int network_get_vc_balance()l
 extern _native bool network_can_receive_player_cash(any p0, any p1, any p2, any p3)l
 extern _native any unk_0x8B755993(any p0)l
 extern _native bool unk_0x8F266745(any p0)l
@@ -4545,14 +4520,14 @@ extern _native any unk_0x531E4892(any p0)l
 extern _native any unk_0xB96C7ABE(any p0)l
 #pragma endregion //}
 #pragma region DLC1 //{
-extern _native int unk_0x71D0CF3E(int character)l
+extern _native32(0x71D0CF3E) int _get_num_decorations(int character)l
 extern _native bool unk_0x2E9D628C(int p0, int p1, int* outComponent)l
 extern _native void init_shop_ped_component(int* outComponent)l
 extern _native void init_shop_ped_prop(int* outProp)l
 extern _native int unk_0xC937FF3D(int p0, int p1, int p2, int p3)l
 extern _native32(0x594E862C) int _get_num_props_from_outfit(int character, int p1, int p2, bool p3, int p4, int componentId)l
 extern _native void get_shop_ped_query_component(int componentId, int* outComponent)l
-extern _native void get_shop_ped_component(any p0, any* p1)l
+extern _native void get_shop_ped_component(Hash p0, any* p1)l
 extern _native void get_shop_ped_query_prop(any p0, any* p1)l
 extern _native Hash get_hash_name_for_component(Entity entity, int componentId, int drawableVariant, int textureVariant)l
 extern _native Hash get_hash_name_for_prop(Entity entity, int componentId, int propIndex, int propTextureIndex)l
@@ -4564,23 +4539,23 @@ extern _native bool unk_0x8E2C7FD5(Hash componentHash, Hash drawableSlotHash, bo
 extern _native int unk_0x1ECD23E7(int character, bool p1)l
 extern _native void get_shop_ped_query_outfit(any p0, any* outfit)l
 extern _native void get_shop_ped_outfit(any p0, any* p1)l
-extern _native any unk_0x2798F56F(any p0)l
+extern _native any get_shop_ped_outfit_locate(any p0)l
 extern _native bool unk_0x6641A864(any p0, any p1, any* p2)l
 extern _native32(0x818534AC) bool _get_prop_from_outfit(any outfit, int slot, any* item)l
 extern _native int get_num_dlc_vehicles()l
 extern _native Hash get_dlc_vehicle_model(int dlcVehicleIndex)l
-extern _native bool get_dlc_vehicle_data(int dlcVehicleIndex, any* outData)l
-extern _native int get_dlc_vehicle_flags(int p0)l
+extern _native bool get_dlc_vehicle_data(int dlcVehicleIndex, int* outData)l
+extern _native int get_dlc_vehicle_flags(int dlcVehicleIndex)l
 extern _native int get_num_dlc_weapons()l
-extern _native bool get_dlc_weapon_data(int dlcWeaponIndex, any* outData)l
+extern _native bool get_dlc_weapon_data(int dlcWeaponIndex, int* outData)l
 extern _native int get_num_dlc_weapon_components(int dlcWeaponIndex)l
-extern _native bool get_dlc_weapon_component_data(any p0, any p1, any* ComponentDataPtr)l
+extern _native bool get_dlc_weapon_component_data(int dlcWeaponIndex, int dlcWeapCompIndex, int* ComponentDataPtr)l
 extern _native32(0x06396058) bool _is_dlc_data_empty(int dlcData)l
-extern _native bool unk_0x35BCA844(any p0)l
-extern _native any unk_0x59352658(any p0)l
+extern _native bool is_dlc_vehicle_mod(int modData)l
+extern _native int unk_0x59352658(int modData)l
 #pragma endregion //}
 #pragma region DLC2 //{
-extern _native bool is_dlc_present(Hash DlcHash)l
+extern _native bool is_dlc_present(Hash dlcHash)l
 extern _native bool unk_0x881B1FDB()l
 extern _native any unk_0xC2169164()l
 extern _native any unk_0xF79A97F5()l
@@ -4592,8 +4567,8 @@ extern _native32(0x6087C10C) bool _nullify(any* variable, any unused)l
 extern _native void wait(int ms)l
 extern _native int start_new_script(const char* scriptName, int stackSize)l
 extern _native int start_new_script_with_args(const char* scriptName, any* args, int argCount, int stackSize)l
-extern _native32(0x8D15BE5D) int _start_new_streamed_script(Hash scriptHash, int stackSize)l
-extern _native32(0xE38A3AD4) int _start_new_streamed_script_with_args(Hash scriptHash, any* args, int argCount, int stackSize)l
+extern _native int start_new_script_with_name_hash(Hash scriptHash, int stackSize)l
+extern _native int start_new_script_with_name_hash_and_args(Hash scriptHash, any* args, int argCount, int stackSize)l
 extern _native int timera()l
 extern _native int timerb()l
 extern _native void settimera(int value)l
@@ -4603,8 +4578,8 @@ extern _native float sin(float value)l
 extern _native float cos(float value)l
 extern _native float sqrt(float value)l
 extern _native float pow(float base, float exponent)l
-extern _native float vmag(float p0, float p1, float p2)l
-extern _native float vmag2(float p0, float p1, float p2)l
+extern _native float vmag(vector3 vec)l
+extern _native float vmag2(vector3 vec)l
 extern _native float vdist(vector3 vec_1, vector3 vec_2)l
 extern _native float vdist2(vector3 vec_1, vector3 vec_2)l
 extern _native int shift_left(int value, int bitShift)l
@@ -4617,8 +4592,10 @@ extern _native float to_float(int value)l
 #pragma region DECORATOR //{
 extern _native bool decor_set_time(Entity entity, const char* propertyName, int value)l
 extern _native bool decor_set_bool(Entity entity, const char* propertyName, bool value)l
+extern _native bool decor_set_float(Entity entity, const char* propertyName, float value)l
 extern _native bool decor_set_int(Entity entity, const char* propertyName, int value)l
 extern _native bool decor_get_bool(Entity entity, const char* propertyName)l
+extern _native float decor_get_float(Entity entity, const char* propertyName)l
 extern _native int decor_get_int(Entity entity, const char* propertyName)l
 extern _native bool decor_exist_on(Entity entity, const char* propertyName)l
 extern _native bool decor_remove(Entity entity, const char* propertyName)l
@@ -4627,21 +4604,21 @@ extern _native bool decor_is_registered_as_type(const char* propertyName, int ty
 extern _native void decor_register_lock()l
 #pragma endregion //}
 #pragma region SOCIALCLUB //{
-extern _native any unk_0x6BE5DF29()l
-extern _native Hash unk_0x5ECF955D(int p0)l
-extern _native bool unk_0xD1ED1D48(any p0)l
-extern _native bool unk_0x19EE0CCB(any p0)l
-extern _native bool sc_inbox_message_get_data_int(any p0, any* p1, any* p2)l
-extern _native bool sc_inbox_message_get_data_string(any p0, any* p1, any* p2)l
-extern _native bool unk_0xEBE420A4(any p0)l
-extern _native any unk_0x2C959AF9(any p0)l
+extern _native32(0x6BE5DF29) int _get_total_sc_inbox_ids()l
+extern _native32(0x5ECF955D) Hash _sc_inbox_message_init(int p0)l
+extern _native32(0xD1ED1D48) bool _is_sc_inbox_valid(int p0)l
+extern _native32(0x19EE0CCB) bool _sc_inbox_message_pop(int p0)l
+extern _native bool sc_inbox_message_get_data_int(int p0, const char* context, int* out)l
+extern _native bool sc_inbox_message_get_data_string(int p0, const char* context, const char* out)l
+extern _native32(0xEBE420A4) bool _sc_inbox_message_push(int p0)l
+extern _native32(0x2C959AF9) const char* _sc_inbox_message_get_string(int p0)l
 extern _native void unk_0x0B9A3512(int* p0)l
 extern _native void unk_0x75324674(const char* p0)l
 extern _native bool sc_inbox_message_get_ugcdata(any p0, any* p1)l
 extern _native bool unk_0x628F489B(const char* p0)l
 extern _native bool unk_0xAB3346B5(any p0, int* p1)l
 extern _native void sc_email_message_push_gamer_to_recip_list(Player* player)l
-extern _native void unk_0xD094F11A()l
+extern _native void sc_email_message_clear_recip_list()l
 extern _native void unk_0xAF3C081B(const char* p0)l
 extern _native void unk_0x2FB9F53C(bool p0)l
 extern _native any unk_0x6C5738AB()l
@@ -4649,10 +4626,10 @@ extern _native any unk_0x468668F0()l
 extern _native bool unk_0x90C74343(any p0, any p1)l
 extern _native bool unk_0x3ACE6D6B(any p0, any* p1)l
 extern _native bool unk_0x579B4510(any p0, float p1)l
-extern _native bool unk_0xDF45B2A7(any* p0)l
-extern _native bool unk_0xDF084A6B(const char* p0, any* p1)l
-extern _native bool unk_0xFFED3676(any p0)l
-extern _native any unk_0xA796D7A7(any p0)l
+extern _native bool unk_0xDF45B2A7(const char* p0)l
+extern _native32(0xDF084A6B) bool _sc_start_check_string_task(const char* string, int* taskHandle)l
+extern _native32(0xFFED3676) bool _sc_has_check_string_task_completed(int taskHandle)l
+extern _native32(0xA796D7A7) int _sc_get_check_string_status(int taskHandle)l
 extern _native any unk_0x09497F31(any p0)l
 extern _native int unk_0x4D8A6521(any p0)l
 extern _native bool unk_0x7AA36406(const char* p0, int* p1)l
@@ -4673,16 +4650,21 @@ extern _native void unk_0x486867E6()l
 #pragma region UNK //{
 extern _native int unk_0x106C8317()l
 extern _native bool unk_0xD87F3A9E()l
-extern _native32(0xC0B971EA) void _get_broadcast_finshed_los_sound(bool p0)l
+extern _native void unk_0xC0B971EA(bool p0)l
 extern _native any unk_0x94BCAC7C()l
 extern _native void unk_0x7D90EEE5(bool p0)l
 extern _native32(0x734CFEDA) bool _is_ui_loading_multiplayer()l
 extern _native void unk_0x8C227332(bool p0)l
 extern _native void unk_0x5C350D78(bool p0)l
 #pragma endregion //}
+#pragma region UNK1 //{
+#pragma endregion //}
+#pragma region UNK2 //{
+#pragma endregion //}
+#pragma region UNK3 //{
+#pragma endregion //}
 
-
-
+	
 /************ Undocumented Console Only Natives ************
 sc_inbox_message_get_data_float
 network_is_local_talking
