@@ -3349,7 +3349,7 @@ public:
 		else if (isa<GCCAsmStmt>(s))
 		{
 			GCCAsmStmt *asmstmt = cast<GCCAsmStmt>(s);
-			Throw("Coding in assembley isnt supported", TheRewriter, s->getSourceRange());//throw an error as the new method of compiling wont support this
+			Throw("GCCAsmStmt isnt supported", TheRewriter, s->getSourceRange());//throw an error as the new method of compiling wont support this
 			if (scriptData.getInlineCount())
 			{
 				Warn("Using a __asm__ statement in an inlined function may lead to undesireable effects\r\nConsider marking the function as __attribute__((__noinline__))", TheRewriter, asmstmt->getSourceRange());
@@ -3977,7 +3977,7 @@ public:
 		}
 		else if (isa<ParenExpr>(e)) {
 			const ParenExpr *parenExpr = cast<const ParenExpr>(e);
-			parseExpression(parenExpr->getSubExpr(), isAddr, isLtoRValue);
+			parseExpression(parenExpr->getSubExpr(), isAddr, isLtoRValue, false, isAssign, isArrToPtrDecay);
 		}
 		else if (isa<UnaryOperator>(e)) {
 			const UnaryOperator *op = cast<const UnaryOperator>(e);
