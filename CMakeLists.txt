@@ -37,18 +37,18 @@ set(resource_list
   "contributors.txt"
 )
 
-add_clang_executable(sc-cl
-  sc-cl.cpp
+add_clang_executable(SC-CL
+  SC-CL.cpp
   ${source_list}
   ${header_list}
 )
 
 include_directories(Include)
-target_link_libraries(sc-cl
+target_link_libraries(SC-CL
   clangTooling
   clangBasic
   clangASTMatchers
-  lib/zlib
+  Include/Compression/zlib
 )
 
 foreach(source IN LISTS source_list)
