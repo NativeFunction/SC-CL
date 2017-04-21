@@ -236,6 +236,13 @@ void FunctionData::pushComment(const string& comment)
 	}
 #endif
 }
+void FunctionData::pushCommentNewLine(const string& comment)
+{
+	#ifdef _DEBUG
+	Instructions.push_back(new Opcode(OK_Null));
+	Instructions.back()->setComment(comment);
+	#endif
+}
 
 void FunctionData::addOpIsNotZero()
 {

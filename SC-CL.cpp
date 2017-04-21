@@ -4093,6 +4093,26 @@ public:
 					parseExpression(icast->getSubExpr(), isAddr, isLtoRValue);//clang does check to make sure this is valid	
 					break;
 				}
+				case clang::CK_ToVoid:
+				{
+					Expr::EvalResult result;
+
+					if (!isAddr && icast->getSubExpr()->EvaluateAsRValue(result, context) && !result.HasSideEffects)
+					{
+						if (result.Val.isInt())
+							scriptData.getCurrentFunction()->pushCommentNewLine("(Void Cast) Literal NO-OP Value: " + to_string(result.Val.getInt().getSExtValue()));
+						else
+							scriptData.getCurrentFunction()->pushCommentNewLine("(Void Cast) Literal non int NO-OP");
+						//no-op cast
+						return true;
+					}
+					else
+					{
+						parseExpression(icast->getSubExpr(), false, isLtoRValue);
+
+					}
+					break;
+				}
 				default:
 				Throw("Unhandled cast (CK) of type " + string(icast->getCastKindName()), TheRewriter, e->getSourceRange());
 

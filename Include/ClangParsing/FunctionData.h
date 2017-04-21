@@ -63,6 +63,7 @@ public:
 	}
 	~FunctionData();
 	void pushComment(const std::string& comment);
+	void pushCommentNewLine(const std::string& comment);
 	void AddSimpleOp(OpcodeKind operation);
 	bool endsWithReturn() const{ return Instructions.size() && Instructions.back()->getKind() == OK_Return; }//this will get confused by if else having a return, but it will just return false when there actually is a return so no harm
 	bool endsWithInlineReturn(const std::string& position) const;
