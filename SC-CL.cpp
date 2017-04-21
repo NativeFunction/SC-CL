@@ -4308,9 +4308,10 @@ public:
 			}
 
 			int pMult = 1;
-			if ((op->isPrefix() || op->isPostfix()) && isa<PointerType>(subE->getType()))
+			if ((op->isPrefix() || op->isPostfix()) && subE->getType().getTypePtr()->isAnyPointerType())
 			{
 				const Type* pTypePtr = subE->getType().getTypePtr()->getPointeeType().getTypePtr();
+				
 				int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 				pMult = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 			}
@@ -5149,9 +5150,11 @@ public:
 				{
 					if (isLtoRValue)
 					{
+						bool isLeftPtr = bOp->getLHS()->getType().getTypePtr()->isAnyPointerType();
+						bool isRightPtr = bOp->getRHS()->getType().getTypePtr()->isAnyPointerType();
 
 						//c allows same type pointer to pointer subtraction to obtain the logical difference. 
-						if (isa<PointerType>(bOp->getLHS()->getType()) && isa<PointerType>(bOp->getRHS()->getType()))
+						if (isLeftPtr && isRightPtr)
 						{
 							parseExpression(bOp->getLHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
 							parseExpression(bOp->getRHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
@@ -5172,7 +5175,7 @@ public:
 								return -1;
 							}
 						}
-						else if (isa<PointerType>(bOp->getLHS()->getType()))
+						else if (isLeftPtr)
 						{
 							//we need to parse left as an addr if its an array else its a pointer val
 							parseExpression(bOp->getLHS(), bOp->getLHS()->getType().getTypePtr()->isArrayType(), true);
@@ -5186,7 +5189,7 @@ public:
 								AddInstructionConditionally(pSize > 1, MultImm, pSize);
 							}
 						}
-						else if (isa<PointerType>(bOp->getRHS()->getType()))
+						else if (isRightPtr)
 						{
 							//we need to parse right as an addr if its an array else its a pointer val
 							parseExpression(bOp->getLHS(), false, true);
