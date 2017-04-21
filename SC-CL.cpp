@@ -1137,6 +1137,21 @@ public:
 			} BadIntrin
 		};
 
+		auto getSafeIntrinSize = [&](const Expr* expression) {
+			if (auto implicit = dyn_cast<ImplicitCastExpr>(expression)) {
+				if (implicit->getCastKind() == CK_ArrayToPointerDecay) {
+					if (auto arrayType = dyn_cast<ConstantArrayType>(implicit->getSubExpr()->getType().getTypePtr())) {
+						auto size = arrayType->getSize().getSExtValue();
+						if (size > 0 && size < 256) {
+							return size;
+						}
+						Throw("Char array size for safe intrinsics must be between 1 and 255", TheRewriter, expression->getSourceRange());
+					}
+				}
+			}
+			Throw("First param for safe string intrinsics must be a char array", TheRewriter, expression->getSourceRange());
+			return -1LL;
+		};
 
 		switch (JoaatCased(const_cast<char*>(funcName.c_str())))
 		{
@@ -1376,11 +1391,14 @@ public:
 				ChkHashCol("strcpy");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType() && argArray[2]->getType()->isIntegerType())
 				{
-					parseExpression(argArray[1], false, true);
-					if (isPushString(argArray[0]))
-					{
-						Throw("strcpy called with string literal as destination index", TheRewriter, argArray[0]->getSourceRange());
+					auto firstArgPointee = argArray[0]->getType().getTypePtr()->getPointeeType();
+					if (!firstArgPointee.getTypePtr()->isCharType()) {
+						Throw("First parameter of strcpy must be a char type pointer", TheRewriter, argArray[0]->getSourceRange());
 					}
+					if (firstArgPointee.isConstQualified()){
+						Throw("First parameter of strcpy cannot be a const qualified", TheRewriter, argArray[0]->getSourceRange());
+					}
+					parseExpression(argArray[1], false, true);
 					parseExpression(argArray[0], false, true);
 
 					llvm::APSInt result;
@@ -1400,8 +1418,29 @@ public:
 						Throw("Expected integer constant for string max length argument in strcpy", TheRewriter, argArray[2]->getSourceRange());
 				}
 				else
-					Throw("strcpy must have signature \"extern __intrinsic void strcpy(char* dst, char* src, const byte len);\"", TheRewriter, callee->getSourceRange());
+					Throw("strcpy must have signature \"extern __intrinsic void strcpy(char* dst, const char* src, const byte len);\"", TheRewriter, callee->getSourceRange());
 
+				return false;
+			} break;
+			case JoaatCasedConst("strcpy_s"): {
+				ChkHashCol("strcpy_s");
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType())
+				{
+					auto firstArgPointee = argArray[0]->getType().getTypePtr()->getPointeeType();
+					if (!firstArgPointee.getTypePtr()->isCharType()) {
+						Throw("First parameter of strcpy must be a char type pointer", TheRewriter, argArray[0]->getSourceRange());
+					}
+					if (firstArgPointee.isConstQualified()) {
+						Throw("First parameter of strcpy cannot be a const qualified", TheRewriter, argArray[0]->getSourceRange());
+					}
+					auto size = getSafeIntrinSize(argArray[0]);
+					parseExpression(argArray[1], false, true);
+					parseExpression(argArray[0], false, true);
+					AddInstruction(StrCopy, size);
+					return true;
+				}
+				else
+					Throw("strcpy_s must have signature \"extern __intrinsic void strcpy_s(char* dst, const char* src);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("stradd"):{
@@ -1435,6 +1474,27 @@ public:
 
 				return false;
 			} break;
+			case JoaatCasedConst("stradd_s"): {
+				ChkHashCol("stradd_s");
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isPointerType())
+				{
+					auto firstArgPointee = argArray[0]->getType().getTypePtr()->getPointeeType();
+					if (!firstArgPointee.getTypePtr()->isCharType()) {
+						Throw("First parameter of stradd_s must be a char type pointer", TheRewriter, argArray[0]->getSourceRange());
+					}
+					if (firstArgPointee.isConstQualified()) {
+						Throw("First parameter of stradd_s cannot be a const qualified", TheRewriter, argArray[0]->getSourceRange());
+					}
+					auto size = getSafeIntrinSize(argArray[0]);
+					parseExpression(argArray[1], false, true);
+					parseExpression(argArray[0], false, true);
+					AddInstruction(StrAdd, size);
+					return true;
+				}
+				else
+					Throw("stradd_s must have signature \"extern __intrinsic void stradd_s(char* dst, const char* src);\"", TheRewriter, callee->getSourceRange());
+				return false;
+			} break;
 			case JoaatCasedConst("straddi"):{
 				ChkHashCol("straddi");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
@@ -1466,6 +1526,27 @@ public:
 
 				return false;
 			} break;
+			case JoaatCasedConst("straddi_s"): {
+				ChkHashCol("straddi_s");
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType())
+				{
+					auto firstArgPointee = argArray[0]->getType().getTypePtr()->getPointeeType();
+					if (!firstArgPointee.getTypePtr()->isCharType()) {
+						Throw("First parameter of straddi_s must be a char type pointer", TheRewriter, argArray[0]->getSourceRange());
+					}
+					if (firstArgPointee.isConstQualified()) {
+						Throw("First parameter of straddi_s cannot be a const qualified", TheRewriter, argArray[0]->getSourceRange());
+					}
+					auto size = getSafeIntrinSize(argArray[0]);
+					parseExpression(argArray[1], false, true);
+					parseExpression(argArray[0], false, true);
+					AddInstruction(StrAddI, size);
+					return true;
+				}
+				else
+					Throw("straddi_s must have signature \"extern __intrinsic void straddi_s(char* dst, int value);\"", TheRewriter, callee->getSourceRange());
+				return false;
+			} break;
 			case JoaatCasedConst("itos"):{
 				ChkHashCol("itos");
 				if (argCount == 3 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType() && argArray[2]->getType()->isIntegerType())
@@ -1495,6 +1576,27 @@ public:
 				else
 					Throw("itos must have signature \"extern __intrinsic void itos(char* dst, int value, const byte len);\"", TheRewriter, callee->getSourceRange());
 
+				return false;
+			} break;
+			case JoaatCasedConst("itos_s"): {
+				ChkHashCol("itos_s");
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[1]->getType()->isIntegerType())
+				{
+					auto firstArgPointee = argArray[0]->getType().getTypePtr()->getPointeeType();
+					if (!firstArgPointee.getTypePtr()->isCharType()) {
+						Throw("First parameter of itos_s must be a char type pointer", TheRewriter, argArray[0]->getSourceRange());
+					}
+					if (firstArgPointee.isConstQualified()) {
+						Throw("First parameter of itos_s cannot be a const qualified", TheRewriter, argArray[0]->getSourceRange());
+					}
+					auto size = getSafeIntrinSize(argArray[0]);
+					parseExpression(argArray[1], false, true);
+					parseExpression(argArray[0], false, true);
+					AddInstruction(ItoS, size);
+					return true;
+				}
+				else
+					Throw("itos_s must have signature \"extern __intrinsic void itos_s(char* dst, int value);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("getHashKey"): {
