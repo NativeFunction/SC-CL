@@ -31,14 +31,20 @@ set(header_list
   "Include/Utils/Utils.h"
 )
 
-add_clang_executable(sc-cl
-  sc-cl.cpp
+set(resource_list
+  "CMakeLists.txt"
+  ".gitignore"
+  "contributors.txt"
+)
+
+add_clang_executable(SC-CL
+  SC-CL.cpp
   ${source_list}
   ${header_list}
 )
 
 include_directories(Include)
-target_link_libraries(sc-cl
+target_link_libraries(SC-CL
   clangTooling
   clangBasic
   clangASTMatchers
@@ -57,4 +63,9 @@ foreach(header IN LISTS header_list)
     string(REPLACE "Include" "Header Files" header_path_temp "${header_path}")
     string(REPLACE "/" "\\" header_path_msvc "${header_path_temp}")
     source_group("${header_path_msvc}" FILES "${header}")
+endforeach()
+
+foreach(resource IN LISTS resource_list)
+    get_filename_component(resource_path "${resource}" PATH)
+    source_group("Resource Files\\${resource_path}" FILES "${resource}")
 endforeach()
