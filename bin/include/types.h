@@ -5,6 +5,7 @@
 #define noinline __attribute((noinline))
 #define unsafe __attribute((unsafe))
 #else
+#define _Generic(x) 0
 #define global(index)
 #define noinline
 #define unsafe

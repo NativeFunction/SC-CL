@@ -112,7 +112,7 @@ extern _native void unk_0x7E4A92CF(int pram0, int pram1)l
 extern _native void ui_set_money(int pram0, int pram1, int pram2)l
 extern _native const char* unk_0x47EF426D(const char* pram0)l
 extern _native int net_get_playmode()l
-extern _native const char* ui_get_string(char* entry)l
+extern _native const char* ui_get_string(const char* GXTEntry)l
 extern _native void save_soft_save(int pram0)l
 extern _native int unk_0x82F63365(int pram0)l
 extern _native void set_player_control_rumble(int pram0, int pram1)l
@@ -122,7 +122,7 @@ extern _native int get_profile_time()l
 extern _native void unk_0xB9D95B4C()l
 extern _native int unk_0x5C8DD257(int pram0)l
 extern _native Time get_time_of_day()l
-extern _native int get_hour(int pram0)l
+extern _native int get_hour(Time T)l
 extern _native int hud_is_faded()l
 extern _native int hud_is_fading()l
 extern _native void unk_0x2E5F186B()l
@@ -202,7 +202,7 @@ extern _native int unk_0xA8040D70(int pram0)l
 extern _native int unk_0xCCE4A339(int pram0)l
 extern _native32(0x0ADC17E9) bool _is_actor_player(Actor actorId)l
 extern _native Actor get_player_actor(int PlayerId)l
-extern _native int get_day(int pram0)l
+extern _native int get_day(Time T)l
 extern _native int fabs(int pram0)l
 extern _native int unk_0x6CC9CCE7()l
 extern _native int get_item_count(int pram0, int pram1)l
@@ -317,7 +317,7 @@ extern _native Camera get_game_camera()l
 extern _native void get_camera_direction(Camera Cam, vector3* OutDirection)l
 extern _native void get_camera_position(Camera Cam, vector3* OutPosition)l
 extern _native void vscale(vector3* Vector, float Scale)l
-extern _native int get_actorenum_from_string(const char* ActorName)l
+extern _native int get_actorenum_from_string(const char* ActorName)l //case sensitive
 extern _native void streaming_request_actor(int pram0, int pram1, int pram2)l
 extern _native int streaming_is_actor_loaded(int pram0, int pram1)l
 extern _native int unk_0x4A2063EC(int pram0)l
@@ -336,7 +336,7 @@ extern _native Object create_prop_in_layout(Layout Layout, const char* PropName,
 extern _native int find_object_in_object(int pram0, int pram1)l
 extern _native int in_targetting_posse(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8)l
 extern _native int snap_actor_to_gringo(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5)l
-extern _native void audio_music_force_track(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6)l
+extern _native void audio_music_force_track(const char* SongName, const char* Mood, int pram2, int pram3, int pram4, float pram5, int pram6)l
 extern _native int unk_0x6A9CFA2A(int pram0)l
 extern _native int ai_ignore_actor(int pram0)l
 extern _native void unk_0x4DF3C5D1()l
@@ -434,8 +434,8 @@ extern _native int unk_0x243AF970(int pram0, int pram1, int pram2)l
 extern _native void unk_0x598815BD(int pram0)l
 extern _native32(0xE42A8278) void _print_help(char* txt, float time, bool isStringLiteral, int pram3, int pram4, int pram5, int pram6, int pram7)l
 extern _native int unk_0x9C9529D8(int pram0, int pram1)l
-extern _native int get_minute(int pram0)l
-extern _native int get_second(int pram0)l
+extern _native int get_minute(Time T)l
+extern _native int get_second(Time T)l
 extern _native int is_objectset_valid(int pram0)l
 extern _native int get_objectset_size(int pram0)l
 extern _native void clean_objectset(int pram0)l
@@ -565,7 +565,7 @@ extern _native int unk_0xC426D16F(int pram0, int pram1, int pram2, int pram3, in
 extern _native void load_audio_bank(const char* RefName, const char* BankPath)l
 extern _native32(0x98CD7340) bool _is_audio_bank_loading(const char* RefName, const char* BankPath)l
 extern _native void unk_0x176E921C(const char* pram0)l
-extern _native int request_mission_audio_bank(int pram0)l
+extern _native int request_mission_audio_bank(const char* pram0)l
 extern _native void unk_0xA82D893C(int pram0, int pram1)l
 extern _native void destroy_volume(int pram0)l
 extern _native void unk_0xBFD6D55F(int pram0, int pram1)l
@@ -759,7 +759,7 @@ extern _native void unk_0x05D69EA6(int pram0, int pram1)l
 extern _native int unk_0xCC277C0A(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8)l
 extern _native int unk_0x3DD1DC3F(int pram0, int pram1)l
 extern _native int unk_0x9C40E671(int pram0)l
-extern _native int unk_0x5AB0BBA6(int pram0, int pram1, int pram2, int pram3)l
+extern _native int set_object_position_on_ground(Object Obj, vector3 Position)l
 extern _native int unk_0x7A6146DB(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5)l
 extern _native void set_camera_focus_prompt_text(int pram0, int pram1)l
 extern _native void unk_0x601FC9F4(int pram0, int pram1)l
@@ -839,8 +839,8 @@ extern _native32(0xCBC97619) bool _is_key_pressed(eKey KeyCode)l
 extern _native int gui_make_text(int GUIHandle, SizedArray Position, const char* MenuTitle, const char* GXTText, float pram4)l
 extern _native int gui_set_text_color(int TextHandle, float* ColorArea)l
 extern _native32(0x524F6981) Controller _get_actor_controller(int ActorId)l
-extern _native32(0x7C6D41A4) float get_stick_y(Controller Controller, bool IsRightStick, int unk1)l
-extern _native32(0x9AAF7E28) float get_stick_x(Controller Controller, bool IsRightStick, int unk1)l
+extern _native float get_stick_y(Controller Controller, bool IsRightStick, int unk1)l
+extern _native float get_stick_x(Controller Controller, bool IsRightStick, int unk1)l
 extern _native void unk_0x3C2D93C1(float x, float y, const char* Text, float r, float g, float b, float a)l
 extern _native int gui_set_text_justify(int TextHandle, int JustifyType)l
 extern _native int get_task_status(int pram0, int pram1)l
@@ -1111,7 +1111,7 @@ extern _native int unk_0x430207A4(int pram0)l
 extern _native int unk_0x55842354(int pram0)l
 extern _native int unk_0x91C6AC0E(int pram0, int pram1, int pram2)l
 extern _native int add_formation_location(int pram0, int pram1)l
-extern _native int is_slot_valid(int pram0)l
+extern _native int is_slot_valid(int SlotID)l
 extern _native void memory_report_position(int pram0, int pram1, int pram2)l
 extern _native int get_lasso_target(int pram0)l
 extern _native int unk_0xEB40C2FC(int pram0)l
@@ -1193,7 +1193,7 @@ extern _native void close_door_fast(int pram0)l
 extern _native void actor_disable_weapon_render(int pram0, int pram1, int pram2)l
 extern _native void set_pers_char_enabled(int pram0, int pram1)l
 extern _native void set_day(int pram0)l
-extern _native void teleport_actor_with_heading(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7)l
+extern _native void teleport_actor_with_heading(Actor Actor, vector3 Position, float Heading, bool Unk1, bool _Unk1, bool __Unk1)l
 extern _native int set_object_orientation(int pram0, int pram1, int pram2, int pram3)l
 extern _native void open_door_fast(int pram0, int pram1)l
 extern _native int unk_0x76FBF412()l
@@ -1249,7 +1249,7 @@ extern _native void task_sequence_perform_repeatedly(int pram0, int pram1, int p
 extern _native void animal_actor_set_domestication(Actor Actor, bool Domestication)l
 extern _native void animal_tuning_set_attrib_bool(int pram0, int pram1, int pram2)l
 extern _native int unk_0x9A4CD54B(int pram0)l
-extern _native void audio_music_set_mood(int pram0, int pram1, int pram2, int pram3)l
+extern _native void audio_music_set_mood(const char* Mood, int pram1, int pram2, int pram3)l
 extern _native int is_weapon_drawn(int pram0)l
 extern _native int unk_0x09950C1B(int pram0, int pram1)l
 extern _native void open_door_direction(int pram0, int pram1)l
@@ -1653,7 +1653,7 @@ extern _native int unk_0x8EFDFE89(int pram0)l
 extern _native int unk_0x7609A328(int pram0)l
 extern _native void unk_0x1105FB64(int pram0, int pram1)l
 extern _native int unk_0x9D20BDC4(int pram0)l
-extern _native32(0x03568B83) int _ui_get_flash_int(const char* scaleformName, const char* scaleformVarName)l
+extern _native int flash_get_int(const char* scaleformName, const char* scaleformVarName)l
 extern _native void unk_0x8266C617(int pram0, int pram1, int pram2)l
 extern _native int unk_0xAB2D8A68(int pram0, int pram1, int pram2)l
 extern _native void unk_0x3E8E7D7B(int pram0)l
@@ -1700,7 +1700,7 @@ extern _native void unk_0xC78B7436()l
 extern _native void unk_0x49053A94(int pram0, int pram1)l
 extern _native void ui_unfocus(const char* uiLayer)l
 extern _native int unk_0xBA89F5EA(int pram0)l
-extern _native int get_slot_name(int pram0)l
+extern _native const char* get_slot_name(int SlotID)l
 extern _native int unk_0xC0FC4B57()l
 extern _native int net_is_host_of_this_script()l
 extern _native void unk_0x2547029C(int pram0, int pram1)l
@@ -1938,7 +1938,7 @@ extern _native void at_fired_last(int pram0, int pram1, int pram2)l
 extern _native void unk_0x1182C34F(int pram0)l
 extern _native void unk_0xD0FB6AF0(int pram0, int pram1, int pram2, int pram3)l
 extern _native void unk_0xDF50D8DE(int pram0, int pram1)l
-extern _native32(0x4778A580) int _ui_set_flash_int(const char* scaleformName, const char* scaleformVarName, int value)l
+extern _native int flash_set_int(const char* scaleformName, const char* scaleformVarName, int value)l
 extern _native int unk_0x554CF528(int pram0)l
 extern _native int set_object_animator_node(int pram0, int pram1)l
 extern _native void unk_0xC00F8181(int pram0)l
@@ -1974,7 +1974,7 @@ extern _native void ui_set_prompt_icon(int pram0, int pram1)l
 extern _native int unk_0x0627DDEC(int pram0, int pram1)l
 extern _native int unk_0x9BC05C90(int pram0, int pram1)l
 extern _native int set_panim_phase(int pram0, int pram1)l
-extern _native32(0x9E31EEA7) int _ui_set_flash_string(const char* scaleformName, const char* scaleformVarName, int pram2, int pram3)l
+extern _native int flash_set_string(const char* scaleformName, const char* scaleformVarName, int pram2, int pram3)l
 extern _native int unk_0x54A417F3(int pram0, int pram1)l
 extern _native void set_camerashot_targetdof_fixed_distance(int pram0, int pram1)l
 extern _native int add_camera_shot_transition_ease_in_out(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5)l
@@ -2581,7 +2581,7 @@ extern _native void add_persistent_script(int pram0)l
 extern _native void remove_persistent_script(int pram0)l
 extern _native int is_game_paused()l
 extern _native32(0xBC58F1EA) IterationSet _get_iteration_set(int SetId)l
-extern _native int ui_get_selected_index(const char* MenuID, int UNK0)l
+extern _native int ui_get_selected_index(const char* MenuID, bool UNK0)l
 extern _native void ui_transition_to(int pram0)l
 extern _native void unk_0x7BD7A465(int pram0, int pram1)l
 extern _native int unk_0xFD91BE0D(int pram0)l
@@ -3384,11 +3384,8 @@ ui_label_set_value
 get_corpse_actor_enum
 get_blip_on_actor
 fire_set_max_flames
-flash_set_int
 flash_set_bool
 flash_set_float
-flash_set_string
-flash_get_int
 flash_get_bool
 flash_get_float
 flash_set_array_int
@@ -3438,7 +3435,9 @@ set_actor_base_score
 set_actor_allow_disarm
 
 
+
 */
 
 #undef _native
 #undef _native32
+#undef l

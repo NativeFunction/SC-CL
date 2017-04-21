@@ -3519,14 +3519,58 @@ public:
 			{
 				const Expr * const*argArray = call->getArgs();
 				std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
+				const FunctionDecl* CallFunc = call->getCalleeDecl()->getAsFunction();
+				size_t VariadicSize = 0, VariadicPCount = 0;
 
 				for (uint32_t i = 0; i < call->getNumArgs(); i++)
 				{
+					
+					if (CallFunc->isVariadic() && i >= CallFunc->getNumParams())
+					{
+						VariadicSize += getSizeFromBytes(getSizeOfType(argArray[i]->getType().getTypePtr()));
+						VariadicPCount++;
+					}
+
 					parseExpression(argArray[i], false, true);
 					const Type* type = argArray[i]->getType().getTypePtr();
 					if (type->isCharType() || type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 					{
 						AddInstruction(SetConv, scriptData, getSizeOfType(type));
+					}
+
+					
+				}
+				if (CallFunc->isVariadic())
+				{
+					if (!VariadicSize)
+					{
+						int index = LocalVariables.addDecl("", 1);
+						AddInstruction(PushInt, 0);
+						AddInstruction(SetFrame, index);
+						AddInstructionComment(GetFrameP, "__builtin_va_list", index);
+						AddInstructionComment(PushInt, "__builtin_va_pcount", 0);
+						AddInstructionComment(PushInt, "__builtin_va_scount", 0);
+					}
+					else
+					{
+						int index = LocalVariables.addDecl("", VariadicSize);
+						if (VariadicSize > 1)
+						{
+							AddInstructionComment(PushInt, "Type Size (va list)", VariadicSize);
+							AddInstruction(GetFrameP, index);
+							AddInstruction(FromStack);
+							AddInstructionComment(GetFrameP, "__builtin_va_list", index);
+
+							AddInstructionComment(PushInt, "__builtin_va_pcount", VariadicPCount);
+							AddInstructionComment(PushInt, "__builtin_va_scount", VariadicSize);
+						}
+						else
+						{
+							AddInstruction(SetFrame, index);
+							AddInstructionComment(GetFrameP, "__builtin_va_list", index);
+							AddInstructionComment(PushInt, "__builtin_va_pcount", 1);
+							AddInstructionComment(PushInt, "__builtin_va_scount", 1);
+						}
 					}
 				}
 
@@ -5954,10 +5998,13 @@ public:
 			int32_t paramSize = 0;
 			for (uint32_t i = 0; i < f->getNumParams(); i++)
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
+
 			if (isa<CXXMethodDecl>(f))
 				paramSize++;
-			
 
+			if (f->isVariadic())
+				paramSize+=3;
+			
 			FunctionData* func = scriptData.createFunction(getNameForFunc(f), paramSize, getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), true);
 			if (f->hasAttr<MinSizeAttr>()){
 				func->setDontObfuscate();
@@ -5979,6 +6026,13 @@ public:
 
 			for (uint32_t i = 0; i<f->getNumParams(); i++)
 				handleParmVarDecl(f->getParamDecl(i));
+
+			if (f->isVariadic())
+			{
+				LocalVariables.addDecl("__builtin_va_list", 1);
+				LocalVariables.addDecl("__builtin_va_pcount", 1);
+				LocalVariables.addDecl("__builtin_va_scount", 1);
+			}
 
 			LocalVariables.addDecl("", 2);//base pointer and return address
 			parseStatement(FuncBody, "", "");
@@ -6041,6 +6095,8 @@ public:
 			for (uint32_t i = 0; i < f->getNumParams(); i++)
 				paramSize += getSizeFromBytes(getSizeOfType(f->getParamDecl(i)->getType().getTypePtr()));
 
+			if (f->isVariadic())
+				paramSize+=3;
 			
 			scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), false, true);
 
