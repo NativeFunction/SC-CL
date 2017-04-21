@@ -1,9 +1,5 @@
 *
 !.gitignore
-!SC-CL.sln
-!SC-CL.vcxproj
-!SC-CL.vcxproj.user
-!SC-CL.vcxproj.filters
 !BuildTarget.h
 !CMakeLists.txt
 !Include/
@@ -40,7 +36,6 @@
 !bin/
 !Debug/
 !include/
-!varargs.h
 !Release/
 !projects/
 !testing/
@@ -75,6 +70,3 @@ bin/projects/MenuBase/*.db
 bin/projects/MenuBase/*.opendb
 bin/projects/MenuBase/*.TMP
 *.exe
-*.sln
-*.vcxproj
-*.vcxproj.filters
