@@ -37,7 +37,8 @@ extern __intrinsic int getHashKey(const char* str);
 #pragma endregion //}
 
 #pragma region Misc_Opcodes //{
-extern __intrinsic const uint __varIndex(const char* varName);///Gets a var's index by name
+//Gets a var's index by name
+extern __intrinsic const uint __varIndex(const char* varName);
 #pragma endregion //}
 
 #pragma region Math/Conversions //{
@@ -78,7 +79,7 @@ extern __intrinsic void* getPtrFromArrayIndex(const void* array, int index, cons
 extern __intrinsic void* getPtrImmIndex(const void* pointer, const int immIndex);
 #pragma endregion //}
 
-#ifdef __YSC__
+#if PTRWIDTH == 64
 #pragma region YSC_Specific //{
 extern __intrinsic void setLoDWord(void* addr, int value);
 extern __intrinsic void setHiDWord(void* addr, int value);
@@ -87,30 +88,51 @@ extern __intrinsic int getHiDWord(void* addr);
 #pragma endregion //}
 #endif
 
-#ifdef __GTAV__
+#if TARGET == TARGET_GTAV
 extern __intrinsic unsigned char getByte(void* addr);
 extern __intrinsic void setByte(void* addr, unsigned char value);
 #endif
 
 #pragma region Custom_ASM //{
-// These perform the operation on the item(or vector) on top of the stack
-// This can lead to dangerous behaviour if you arent sure what is currently on the stack
-extern __unsafeIntrinsic void __popMult(const uint count);///Pops multiple items off the stack
-extern __unsafeIntrinsic void __pushV(vector3 value);///Pushes a vector3 on the stack
-extern __unsafeIntrinsic void __pushStruct(void* structure);///Pushes a struct on the stack
-extern __unsafeIntrinsic void __popStruct(void* structure);///Pops a struct off the stack
-extern __unsafeIntrinsic void __rev(const int numItems);///Reverses items on stack
-extern __unsafeIntrinsic void __exch(const int structStackSize);///Exchanges a struct on the stack
-extern __unsafeIntrinsic int __popI();///Gets top int on stack
-extern __unsafeIntrinsic float __popF();///Gets top float on stack
-extern __unsafeIntrinsic vector3 __popV();///Gets top vector3 on stack
-extern __unsafeIntrinsic void __ptrToStack(const void* address, int count);///pushes count amount of items from the specified pointer to the stack
-extern __unsafeIntrinsic void __ptrFromStack(const void* address, int count);///pushes count amount of items from the stack to the specified pointer
+/*************************************************************************
+*	These perform the operation on the item(or vector) on top of the stack
+*	This can lead to dangerous behaviour if you aren't sure what is currently on the stack
+*************************************************************************/
+
+//Pops multiple items off the stack
+extern __unsafeIntrinsic void __popMult(const uint count);
+//Pushes a vector3 on the stack
+extern __unsafeIntrinsic void __pushV(vector3 value);
+//Pushes a struct on the stack
+extern __unsafeIntrinsic void __pushStruct(void* structure);
+//Pops a struct off the stack
+extern __unsafeIntrinsic void __popStruct(void* structure);
+//Reverses items on the stack
+extern __unsafeIntrinsic void __rev(const int numItems);
+//Exchanges a struct on the stack
+extern __unsafeIntrinsic void __exch(const int structStackSize);
+//Gets the top item on the stack as a int
+extern __unsafeIntrinsic int __popI();
+//Gets the top item on the stack as a float
+extern __unsafeIntrinsic float __popF();
+//Gets the top item on the stack as a vector3
+extern __unsafeIntrinsic vector3 __popV();
+//Pushes count amount of items from the specified pointer to the stack
+extern __unsafeIntrinsic void __ptrToStack(const void* address, int count);
+//Pushes count amount of items from the stack to the specified pointer
+extern __unsafeIntrinsic void __ptrFromStack(const void* address, int count);
 #pragma endregion //}
 
 #pragma region ASM //{
-// These perform the operation on the item(or vector) on top of the stack
-// This can lead to dangerous behaviour if you arent sure what is currently on the stack
+/*************************************************************************
+*	These perform the operation on the item(or vector) on top of the stack
+*	This can lead to dangerous behaviour if you aren't sure what is currently on the stack
+*************************************************************************/
+
+/*************************************************************************
+	Adds specified amount of nops to the script
+	Note: Nops on GTAIV exit the script
+*************************************************************************/
 extern __intrinsic       void __nop(const uint count);
 extern __unsafeIntrinsic void __add();
 extern __unsafeIntrinsic void __sub();

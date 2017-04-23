@@ -12,12 +12,6 @@
 #ifndef _VARARGS_H_
 #define _VARARGS_H_
 
-/*
-* I was told that Win NT likes this.
-*/
-#ifndef _VA_LIST_DEFINED
-#define _VA_LIST_DEFINED
-#endif
 
 #ifndef	_VA_LIST
 #define _VA_LIST

@@ -195,9 +195,9 @@ typedef enum eButton
 	BUTTON_B = 5,
 	BUTTON_A = 6,
 	BUTTON_X = 
-	#ifdef __X360__
+	#if PLATFORM == PLATFORM_X360
 	7,
-	#elif defined(__PS3__)
+	#elif PLATFORM == PLATFORM_PS3
 	6
 	#endif
 	BUTTON_BACK = 8,

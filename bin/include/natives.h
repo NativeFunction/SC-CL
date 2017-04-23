@@ -1,27 +1,23 @@
 #pragma once
 
-#ifdef __RDR__
+#if TARGET == TARGET_RDR
 
-	#include "RDR/natives32.h"
+#include "RDR/natives32.h"
 
-#elif defined(__GTAV__)
+#elif TARGET == TARGET_GTAV
 
-	#ifdef __YSC__
-		#include "GTAV/natives64.h"
-	#else
-		#include "GTAV/natives32.h"
-	#endif
+#if PTRWIDTH == 64
+#include "GTAV/natives64.h"
+#else
+#include "GTAV/natives32.h"
+#endif
 
-#elif defined(__GTAIV__)
+#elif TARGET == TARGET_GTAIV
 
-	#define _NewNatives 0
-
-	#if _NewNatives == 1
-		#include "GTAIV/natives32.h"//1.0.7.0
-	#else
-		#include "GTAIV/natives32Old.h"//1.0.4.0
-	#endif
-
-	#undef _NewNatives
+#if PLATFORM == PLATFORM_X360 || PLATFORM_PS3
+#include "GTAIV/natives32Old.h"//1.0.4.0
+#else
+#include "GTAIV/natives32.h"//1.0.7.0
+#endif
 
 #endif

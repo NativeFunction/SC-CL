@@ -11,19 +11,19 @@
 
 #define PI 3.14159265
 
-#ifdef __RDR__
+#if TARGET == TARGET_RDR
 
 #include "RDR/consts32.h"
 
-#elif defined(__GTAV__)
+#elif TARGET == TARGET_GTAV
 	#include "GTAV/constsShared.h"
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 		#include "GTAV/consts64.h"
 	#else
 		#include "GTAV/consts32.h"
 	#endif
 
-#elif defined(__GTAIV__)
+#elif TARGET == TARGET_GTAIV
 	#include "GTAIV/consts32.h"
 #endif

@@ -1,42 +1,57 @@
 #pragma once
 #include "types.h"
+#include "varargs.h"
 
 #define SwapEndian(x) _Generic((x),\
 short int: SwapEndian16(x), unsigned short int: SwapEndian16(x),\
 default: SwapEndian32(x))
 
+#define SafeDiv(x, y) _Generic((x),\
+float: DivFloat(x, y), double: DivFloat(x, y),\
+default: DivInt(x, y))
+
 #define SwapEndian32Const(value)  ((((value) & 0xff000000) >> 24) | (((value) & 0x00ff0000) >>  8) | (((value) & 0x0000ff00) <<  8) | (((value) & 0x000000ff) << 24))
 #define DegreesToRadians(degrees) (degrees * (PI / 180.0f))
 #define RadiansToDegrees(radians) (radians * (180.0f / PI))
 
+#if TARGET == TARGET_RDR
+#define ftos(flt, precision) _float_to_string(flt, 3, precision)
+#else
+#define ftos(flt, precision) 
+#endif
 
 void print(const char* str, int ms);
+void vsprintf(char* buffer, const char* format, va_list va);
+void sprintf(char* buffer, const char* format, ...);
+void printf(const char* format, ...);
 const char* strcatGlobal(const char* str1, const char* str2);
 const char* straddiGlobal(const char* str1, int i);
 const char* itosGlobal(int i);
 void Throw(const char* str);
 void Warn(const char* str);
+void Error(const char* str);
 int SwapEndian32(int value);
 short SwapEndian16(short value);
 int CeilDivInt(uint a, uint b);
 int DivInt(int a, int b);
 float DivFloat(float a, float b);
-const char* IntToHex(int val);
+const char* IntToHex(int val, bool isLowercase);
 int HexToInt(const char* hex);
+int IntToBase(int n, int b);
 void SetBitAtIndex(int* value, uint index, bool bit);
 int ModNegitive(int value1, int value2);
 quaternion EulerToQuaternion(vector3 euler);
 vector3 RotationLookAtPoint(vector3 pos, vector3 endpos);
-#ifndef __GTAV__
+#if TARGET == TARGET_RDR
 #ifdef _MSC_VER
 #define acos(number) acosMSC(number)
-float acosMSC(float number);
+float acosMSC(float number) {};
 #else
 float acos(float number);
 #endif
 #ifdef _MSC_VER
 #define asin(number) asinMSC(number)
-float asinMSC(float number);
+float asinMSC(float number) {};
 #else
 float asin(float number);
 #endif

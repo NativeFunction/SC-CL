@@ -7290,42 +7290,78 @@ public:
 	{
 		string preDefines = PP.getPredefines();
 
+		preDefines += 
+			"\n#define ENDIAN_BIG 0"
+			"\n#define ENDIAN_LITTLE 1"
+
+			"\n#define PLATFORM_X360 0"
+			"\n#define PLATFORM_PS3 1"
+			"\n#define PLATFORM_PC 2"
+
+			"\n#define TARGET_GTAIV 0"
+			"\n#define TARGET_GTAV 1"
+			"\n#define TARGET_RDR 2"
+
+			"\n#define FILETYPE_XSC 0"
+			"\n#define FILETYPE_YSC 1"
+			"\n#define FILETYPE_CSC 2"
+			"\n#define FILETYPE_SCO 3"
+
+			"\n#define SUBTARGET_TBOGT 0"
+			"\n#define SUBTARGET_TLAD 1"
+			"\n#define PTRWIDTH 32";
+
 		switch (scriptData->getBuildPlatform())
 		{
 			case P_X360:
-			preDefines += "\n#define __X360__";
+			preDefines += 
+				"\n#define PLATFORM PLATFORM_X360"
+				"\n#define ENDIAN ENDIAN_BIG";
 			break;
 			case P_PS3:
-			preDefines += "\n#define __PS3__";
+			preDefines += 
+				"\n#define PLATFORM PLATFORM_PS3"
+				"\n#define ENDIAN ENDIAN_BIG";
 			break;
 			case P_PC:
-			preDefines += "\n#define __PC__";
+			preDefines += 
+				"\n#define PLATFORM PLATFORM_PC"
+				"\n#define ENDIAN ENDIAN_LITTLE";
 			break;
 		}
 		switch (scriptData->getBuildType())
 		{
 			case BT_GTAIV_TLAD:
-				preDefines += "\n#define __TLAD__";
-				preDefines += "\n#define __GTAIV__";
-				preDefines += "\n#define __SCO__";
+				preDefines += 
+					"\n#define SUBTARGET SUBTARGET_TLAD"
+					"\n#define TARGET TARGET_GTAIV"
+					"\n#define FILETYPE FILETYPE_SCO";
 				break;
 			case BT_GTAIV_TBOGT:
-				preDefines += "\n#define __TBOGT__";
+				preDefines += 
+					"\n#define SUBTARGET SUBTARGET_TBOGT";
 			case BT_GTAIV:
-				preDefines += "\n#define __GTAIV__";
-				preDefines += "\n#define __SCO__";
+				preDefines += 
+					"\n#define TARGET TARGET_GTAIV"
+					"\n#define FILETYPE FILETYPE_SCO";
 				break;
 			case BT_RDR_XSC:
-				preDefines += "\n#define __RDR__"; 
-				preDefines += "\n#define __" + scriptData->getPlatformAbvUpper() + string("SC__");
+				preDefines += 
+					"\n#define TARGET TARGET_RDR"
+					"\n#define FILETYPE FILETYPE_" + scriptData->getPlatformAbvUpper() + string("SC");
 				break;
 			case BT_RDR_SCO:
-				preDefines += "\n#define __RDR__";
-				preDefines += "\n#define __SCO__";
+				preDefines += 
+					"\n#define TARGET TARGET_RDR"
+					"\n#define FILETYPE FILETYPE_SCO";
 				break;
 			case BT_GTAV:
-				preDefines += "\n#define __GTAV__";
-				preDefines += "\n#define __" + scriptData->getPlatformAbvUpper() + string("SC__");
+				preDefines += 
+					"\n#define TARGET TARGET_GTAV"
+					"\n#define FILETYPE FILETYPE_" + scriptData->getPlatformAbvUpper() + string("SC");
+				if(scriptData->getBuildPlatform() == P_PC)
+					preDefines += "\n#define PTRWIDTH 64";
+
 				break;
 		}
 		preDefines += "\n#undef _MSC_VER";
