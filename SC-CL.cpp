@@ -3627,7 +3627,7 @@ public:
 				for (uint32_t i = 0; i < call->getNumArgs(); i++)
 				{
 					
-					if (CallFunc->isVariadic() && i >= CallFunc->getNumParams())
+					if (CallFunc && CallFunc->isVariadic() && i >= CallFunc->getNumParams())
 					{
 						VariadicSize += getSizeFromBytes(getSizeOfType(argArray[i]->getType().getTypePtr()));
 						VariadicPCount++;
@@ -3642,7 +3642,7 @@ public:
 
 					
 				}
-				if (CallFunc->isVariadic())
+				if (CallFunc && CallFunc->isVariadic())
 				{
 					if (!VariadicSize)
 					{
@@ -7308,8 +7308,7 @@ public:
 			"\n#define FILETYPE_SCO 3"
 
 			"\n#define SUBTARGET_TBOGT 0"
-			"\n#define SUBTARGET_TLAD 1"
-			"\n#define PTRWIDTH 32";
+			"\n#define SUBTARGET_TLAD 1";
 
 		switch (scriptData->getBuildPlatform())
 		{
@@ -7335,7 +7334,8 @@ public:
 				preDefines += 
 					"\n#define SUBTARGET SUBTARGET_TLAD"
 					"\n#define TARGET TARGET_GTAIV"
-					"\n#define FILETYPE FILETYPE_SCO";
+					"\n#define FILETYPE FILETYPE_SCO"
+					"\n#define PTRWIDTH 32";
 				break;
 			case BT_GTAIV_TBOGT:
 				preDefines += 
@@ -7343,16 +7343,19 @@ public:
 			case BT_GTAIV:
 				preDefines += 
 					"\n#define TARGET TARGET_GTAIV"
-					"\n#define FILETYPE FILETYPE_SCO";
+					"\n#define FILETYPE FILETYPE_SCO"
+					"\n#define PTRWIDTH 32";
 				break;
 			case BT_RDR_XSC:
 				preDefines += 
 					"\n#define TARGET TARGET_RDR"
+					"\n#define PTRWIDTH 32"
 					"\n#define FILETYPE FILETYPE_" + scriptData->getPlatformAbvUpper() + string("SC");
 				break;
 			case BT_RDR_SCO:
 				preDefines += 
 					"\n#define TARGET TARGET_RDR"
+					"\n#define PTRWIDTH 32"
 					"\n#define FILETYPE FILETYPE_SCO";
 				break;
 			case BT_GTAV:
@@ -7361,6 +7364,8 @@ public:
 					"\n#define FILETYPE FILETYPE_" + scriptData->getPlatformAbvUpper() + string("SC");
 				if(scriptData->getBuildPlatform() == P_PC)
 					preDefines += "\n#define PTRWIDTH 64";
+				else
+					preDefines += "\n#define PTRWIDTH 32";
 
 				break;
 		}
