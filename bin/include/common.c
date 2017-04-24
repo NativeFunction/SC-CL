@@ -12,9 +12,9 @@ char* GlobalCharBuffer = GlobalCharBufferD;//256
 void print(const char* str, int ms)
 {
 	#if TARGET == TARGET_GTAV
-	_set_text_entry_2("STRING");
+	begin_text_command_print("STRING");
 	add_text_component_substring_player_name(str);
-	_draw_subtitle_timed(ms, 1);
+	end_text_command_print(ms, 1);
 	#elif TARGET == TARGET_RDR
 	_clear_prints();
 	_print_subtitle(str, ms != 0 ? (float)ms / 1000.0f : 0, true, 2, 1, 0, 0, 0);
@@ -135,6 +135,7 @@ static int __finite(rtype f)
 
 static int __finite(float d)
 {
+	
 	#if ENDIAN == ENDIAN_LITTLE
 	struct IEEEdp
 	{
@@ -152,6 +153,7 @@ static int __finite(float d)
 		unsigned int manl : 32;
 	} *ip;
 	#endif
+
 
 	ip = (struct IEEEdp *)&d;
 	return (ip->exp != 0xff);
@@ -555,7 +557,11 @@ void vsprintf(char* buffer, const char* format, va_list va)
 				break;
 				case 'f':
 				case 'F':
-				stradd(buffer, _float_to_string(va_arg(va, float), 3, 4), 255);
+				{
+					char b[255];
+					dtoa(b, va_arg(va, float), 'f', 0, 0);
+					stradd(buffer, b, 255);
+				}
 				break;
 				case 'c':
 				TempBuffer[0] = va_arg(va, char);
@@ -587,6 +593,15 @@ end_sprintf:;
 
 void sprintf(char* buffer, const char* format, ...)
 {
+	struct IEEEdd
+	{
+		int a;
+		int b;
+		int c;
+	} *bp;
+	bp->a = 0;
+	bp->b = 0;
+	bp->c = 0;
 	va_list va;
 	va_start(va, format);
 	vsprintf(buffer, format, va);

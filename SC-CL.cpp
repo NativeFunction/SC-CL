@@ -55,7 +55,8 @@ using namespace llvm;
 
 #pragma region Global_Decls
 string globalDirectory;
-const string Version = "0.9.3";
+//version string can only have one number per point
+const string Version = "0.9.5";
 #pragma endregion
 
 #pragma region Global_Misc_Clang_Decls
@@ -300,6 +301,7 @@ public:
 }LocalVariables;
 #pragma endregion
 
+
 #pragma region Global_Size_Functions
 uint32_t getSizeOfType(const Type* type);
 uint32_t getSizeFromBytes(uint64_t bytes) {
@@ -307,7 +309,6 @@ uint32_t getSizeFromBytes(uint64_t bytes) {
 	return size;
 }
 uint32_t getLiteralSizeOfType(const Type* type) {
-
 	if (isa<ConstantArrayType>(type)) {
 		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
 		return getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue();
@@ -323,6 +324,11 @@ uint32_t getLiteralSizeOfType(const Type* type) {
 
 			uint32_t size = 0;
 			for (const auto *CS : rd->fields()) {
+				if (CS->isBitField())
+				{
+					Throw("Bit fields aren't yet supported", *rewriter, CS->getSourceRange());
+				}
+
 				const Type* type = CS->getType().getTypePtr();
 
 				size += getSizeOfType(type);
@@ -341,6 +347,10 @@ uint32_t getLiteralSizeOfType(const Type* type) {
 
 			uint32_t size = 0;
 			for (const auto *CS : rd->fields()) {
+				if (CS->isBitField())
+				{
+					Throw("Bit fields aren't yet supported", *rewriter, CS->getSourceRange());
+				}
 				const Type* type = CS->getType().getTypePtr();
 
 				uint32_t sz = getSizeOfType(type);
@@ -368,6 +378,31 @@ uint32_t getLiteralSizeOfType(const Type* type) {
 }
 uint32_t getSizeOfType(const Type* type) {
 
+	//Type* ntype = (Type*)type;
+	//for (int i = 0; i < 100 && ntype->isPointerType(); i++)
+	//{
+	//	ntype = (Type*)ntype->getPointeeType().getTypePtr();
+	//	if (ntype->isStructureType() || ntype->isUnionType())
+	//	{
+	//		RecordType *record = ntype->isStructureType() ? (RecordType *)ntype->getAsStructureType() : (RecordType *)ntype->isUnionType();
+	//
+	//		if (record == (RecordType *)0x1)
+	//			continue;
+	//
+	//		if (RecordDecl *rd = record->getDecl())
+	//		{
+	//			for (const auto *CS : rd->fields())
+	//			{
+	//				if (CS->isBitField())
+	//				{
+	//					Throw("Bit fields aren't yet supported", *rewriter, CS->getSourceRange());
+	//				}
+	//			}
+	//		}
+	//
+	//	}
+	//}
+
 	if (isa<ConstantArrayType>(type)) {
 		const ConstantArrayType *arrType = cast<const ConstantArrayType>(type);
 		return ((getSizeOfType(type->getArrayElementTypeNoTypeQual()) * (arrType->getSize()).getSExtValue()) + stackWidth - 1) & ~(stackWidth-1);
@@ -385,7 +420,7 @@ uint32_t getSizeOfType(const Type* type) {
 			for (const auto *CS : rd->fields()) {
 				if (CS->isBitField())
 				{
-					Throw("Bit fileds aren't yet supported", *rewriter, CS->getSourceRange());
+					Throw("Bit fields aren't yet supported", *rewriter, CS->getSourceRange());
 				}
 				const Type* type = CS->getType().getTypePtr();
 
@@ -405,6 +440,10 @@ uint32_t getSizeOfType(const Type* type) {
 
 			uint32_t size = 0;
 			for (const auto *CS : rd->fields()) {
+				if (CS->isBitField())
+				{
+					Throw("Bit fields aren't yet supported", *rewriter, CS->getSourceRange());
+				}
 				const Type* type = CS->getType().getTypePtr();
 
 				uint32_t sz = (getSizeOfType(type) + stackWidth - 1) & ~(stackWidth-1);
@@ -427,6 +466,7 @@ uint32_t getSizeOfType(const Type* type) {
 		return 0;
 	else if (type->isAnyComplexType())
 		return 2 * stackWidth;
+	
 
 	return 0;
 }
@@ -976,6 +1016,31 @@ public:
 	#pragma endregion
 
 	#pragma region Parse/Visit_Functions
+	void parseCallProto(const CallExpr* call, bool& isVariadic, uint32_t& NumParams)
+	{
+		const Decl* calleeDecl = call->getCalleeDecl();
+		if (isa<FunctionDecl>(calleeDecl))
+		{
+			const FunctionDecl* FD = cast<FunctionDecl>(calleeDecl);
+			isVariadic = FD->isVariadic();
+			NumParams = FD->getNumParams();
+		}
+		else if (calleeDecl->getFunctionType()->isFunctionProtoType())
+		{
+			FunctionProtoType* FPT = (FunctionProtoType*)cast<FunctionProtoType>(calleeDecl->getFunctionType());
+			isVariadic = FPT->isVariadic();
+			NumParams = FPT->getNumParams();
+		}
+		else if (calleeDecl->getFunctionType()->isFunctionNoProtoType())
+		{
+			isVariadic = false;
+			NumParams = 0;
+		}
+		else
+			Warn("Unknown Call Proto of type: " + string(calleeDecl->getFunctionType()->getTypeClassName()), TheRewriter, call->getSourceRange());
+
+	}
+
 	bool isPushString(const Expr* e)
 	{
 		const CastExpr *cast;
@@ -3620,14 +3685,18 @@ public:
 			else if (isa<CastExpr>(callee))
 			{
 				const Expr * const*argArray = call->getArgs();
-				std::string funcName = parseCast(cast<const CastExpr>(call->getCallee()));
-				const FunctionDecl* CallFunc = call->getCalleeDecl()->getAsFunction();
+				std::string funcName = parseCast(cast<const CastExpr>(callee));
+
 				size_t VariadicSize = 0, VariadicPCount = 0;
+				bool isVariadic = 0;
+				uint32_t NumParams = 0;
+
+				parseCallProto(call, isVariadic, NumParams);
 
 				for (uint32_t i = 0; i < call->getNumArgs(); i++)
 				{
 					
-					if (CallFunc->isVariadic() && i >= CallFunc->getNumParams())
+					if (isVariadic && i >= NumParams)
 					{
 						VariadicSize += getSizeFromBytes(getSizeOfType(argArray[i]->getType().getTypePtr()));
 						VariadicPCount++;
@@ -3642,7 +3711,9 @@ public:
 
 					
 				}
-				if (CallFunc->isVariadic())
+				
+				
+				if (isVariadic)
 				{
 					if (!VariadicSize)
 					{
@@ -7289,8 +7360,14 @@ public:
 	void AddDefines(Preprocessor &PP)
 	{
 		string preDefines = PP.getPredefines();
+	  
+		//int major = 0, minor = 0, revision = 0;
+		//sscanf(Version.c_str(), "%d.%d.%d", &major, &minor, &revision);
+		//preDefines += "\n#define SCCL_VERSION " + to_string(major) + to_string(minor) + to_string(revision);
 
 		preDefines += 
+			"\n#define __SCCL__"
+
 			"\n#define ENDIAN_BIG 0"
 			"\n#define ENDIAN_LITTLE 1"
 
