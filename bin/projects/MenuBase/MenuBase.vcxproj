@@ -275,7 +275,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__XSC__;__X360__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_GTAV;FILETYPE=FILETYPE_XSC;PLATFORM=PLATFORM_X360;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -300,7 +300,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAIV__;__SCO__;__X360__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_GTAIV;FILETYPE=FILETYPE_SCO;PLATFORM=PLATFORM_X360;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -325,7 +325,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAIV__;__TBOGT__;__SCO__;__X360__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_GTAIV;SUBTARGET SUBTARGET_TBOGT;FILETYPE=FILETYPE_SCO;PLATFORM=PLATFORM_X360;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -350,7 +350,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAIV__;__TLAD__;__SCO__;__X360__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_GTAIV;SUBTARGET SUBTARGET_TLAD;FILETYPE=FILETYPE_SCO;PLATFORM=PLATFORM_X360;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -373,9 +373,9 @@
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>"../../include/";Include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__RDR__;__XSC__;__X360__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_RDR;FILETYPE=FILETYPE_XSC;PLATFORM=PLATFORM_X360;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -400,7 +400,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__RDR__;__SCO__;__X360__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_RDR;FILETYPE=FILETYPE_SCO;PLATFORM=PLATFORM_X360;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -425,7 +425,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__CSC__;__PS3__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_GTAV;FILETYPE=FILETYPE_CSC;PLATFORM=PLATFORM_PS3;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -450,7 +450,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAIV__;__SCO__;__PS3__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_GTAIV;FILETYPE=FILETYPE_SCO;PLATFORM=PLATFORM_PS3;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -475,7 +475,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAIV__;__TBOGT__;__SCO__;__PS3__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_GTAIV;SUBTARGET SUBTARGET_TBOGT;FILETYPE=FILETYPE_SCO;PLATFORM=PLATFORM_PS3;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -500,7 +500,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAIV__;__TLAD__;__SCO__;__PS3__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_GTAIV;SUBTARGET SUBTARGET_TLAD;FILETYPE=FILETYPE_SCO;PLATFORM=PLATFORM_PS3;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -523,9 +523,9 @@
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>"../../include/";Include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__RDR__;__CSC__;__PS3__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_RDR;__CSC__;PLATFORM=PLATFORM_PS3;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -550,7 +550,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__RDR__;__SCO__;__PS3__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=32;TARGET=TARGET_RDR;FILETYPE=FILETYPE_SCO;PLATFORM=PLATFORM_PS3;ENDIAN=ENDIAN_BIG</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -575,7 +575,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__YSC__;__PC__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=64;TARGET=TARGET_GTAV;FILETYPE=FILETYPE_YSC;PLATFORM=PLATFORM_PC;ENDIAN=ENDIAN_LITTLE</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -600,7 +600,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAIV__;__SCO__;__PC__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=64;TARGET=TARGET_GTAIV;FILETYPE=FILETYPE_SCO;PLATFORM=PLATFORM_PC;ENDIAN=ENDIAN_LITTLE</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -625,7 +625,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAIV__;__TBOGT__;__YSC__;__PC__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=64;TARGET=TARGET_GTAIV;SUBTARGET SUBTARGET_TBOGT;FILETYPE=FILETYPE_YSC;PLATFORM=PLATFORM_PC;ENDIAN=ENDIAN_LITTLE</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -650,7 +650,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAIV__;__TLAD__;__YSC__;__PC__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=64;TARGET=TARGET_GTAIV;SUBTARGET SUBTARGET_TLAD;FILETYPE=FILETYPE_YSC;PLATFORM=PLATFORM_PC;ENDIAN=ENDIAN_LITTLE</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -673,9 +673,9 @@
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>"../../include/";Include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__RDR__;__YSC__;__PC__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=64;TARGET=TARGET_RDR;FILETYPE=FILETYPE_YSC;PLATFORM=PLATFORM_PC;ENDIAN=ENDIAN_LITTLE</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -700,7 +700,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>"../../include/";"Include/Utilities/";"Include/Menu Internals/"</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4391;4392;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__GTAV__;__SCO__;__PC__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);ENDIAN_BIG=0;ENDIAN_LITTLE=1;PLATFORM_X360=0;PLATFORM_PS3=1;PLATFORM_PC=2;TARGET_GTAIV=0;TARGET_GTAV=1;TARGET_RDR=2;FILETYPE_XSC=0;FILETYPE_YSC=1;FILETYPE_CSC=2;FILETYPE_SCO=3;SUBTARGET_TBOGT=0;SUBTARGET_TLAD=1;PTRWIDTH=64;TARGET=TARGET_GTAV;FILETYPE=FILETYPE_SCO;PLATFORM=PLATFORM_PC;ENDIAN=ENDIAN_LITTLE</PreprocessorDefinitions>
       <AdditionalOptions>
       </AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>

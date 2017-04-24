@@ -18,13 +18,13 @@ int* GetVehicleMetaAddress(VehicleHash Hash)
 }
 int* GetExecutableAddress()
 {
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 		#define ExeBaseToStringDist 31273176
 		return Sub64P((int*)_get_online_version(), ExeBaseToStringDist, 0);
 		#undef ExeBaseToStringDist
-	#elif defined(__XSC__)
+	#elif PLATFORM == PLATFORM_XBOX
 		return (int*)0x82000000;
-	#elif defined(__CSC__)
+	#elif PLATFORM == PLATFORM_PS3
 		return (int*)0x00010000;
 	#endif
 }

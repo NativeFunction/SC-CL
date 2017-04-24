@@ -268,7 +268,7 @@ void Option_SetVehicleType()
 		*Add64P(MetaAddress, VMI_HandlingId, 0) = HANDLING_INDEX_LAZER;
 		break;
 		case VEHICLE_TYPE_QUADBIKE:
-		#ifdef __YSC__
+		#if PLATFORM == PLATFORM_PC
 		case VEHICLE_TYPE_AMPHIBIOUS_AUTOMOBILE:
 		*Add64P(MetaAddress, VMI_HandlingId, 0) = 397;//technical aqua
 		break;
@@ -562,7 +562,7 @@ void Menu__VehicleList_Options_ChangeType()
 	AddItemWithParam("Car", VEHICLE_TYPE_CAR, Option_SetVehicleType);
 	AddItemWithParam("Plane", VEHICLE_TYPE_PLANE, Option_SetVehicleType);
 	AddItemWithParam("Quadbike", VEHICLE_TYPE_QUADBIKE, Option_SetVehicleType);
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	AddItemWithParam("Amphibious Automobile", VEHICLE_TYPE_AMPHIBIOUS_AUTOMOBILE, Option_SetVehicleType);
 	AddItemWithParam("Amphibious Quadbike", VEHICLE_TYPE_AMPHIBIOUS_QUADBIKE, Option_SetVehicleType);
 	#endif
@@ -623,7 +623,7 @@ void Menu__VehicleList_Sports()
 		AddItemVehicle(hashof("kuruma2"), Menu__VehicleList_Options);
 	}
 	
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_spUpgrade))
 	{
 		AddItemVehicle(VEHICLE_BLISTA2, Menu__VehicleList_Options);
@@ -678,7 +678,7 @@ void Menu__VehicleList_Super()
 	AddItemVehicle(hashof("osiris"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("t20"), Menu__VehicleList_Options);
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_mpJanuary2016))
 	{
 		AddItemVehicle(VEHICLE_SULTANRS, Menu__VehicleList_Options);
@@ -729,7 +729,7 @@ void Menu__VehicleList_Coupes()
 	AddItemVehicle(hashof("windsor"), Menu__VehicleList_Options);
 
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_mpExecutive))
 	{
 		AddItemVehicle(VEHICLE_WINDSOR2, Menu__VehicleList_Options);
@@ -748,7 +748,7 @@ void Menu__VehicleList_Compacts()
 	AddItemVehicle(hashof("rhapsody"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("panto"), Menu__VehicleList_Options);
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_mpStunt))
 	{
 		AddItemVehicle(VEHICLE_BRIOSO, Menu__VehicleList_Options);
@@ -785,7 +785,7 @@ void Menu__VehicleList_Sedans()
 	AddItemVehicle(hashof("glendale"), Menu__VehicleList_Options);
 
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_mpLowrider))
 	{
 		AddItemVehicle(VEHICLE_PRIMO2, Menu__VehicleList_Options);
@@ -823,7 +823,7 @@ void Menu__VehicleList_SportsClassic()
 	AddItemVehicle(hashof("casco"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("feltzer3"), Menu__VehicleList_Options);
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_mpHalloween))
 		AddItemVehicle(VEHICLE_BTYPE2, Menu__VehicleList_Options);
 	if (is_dlc_present(Update_mpApartment))
@@ -860,7 +860,7 @@ void Menu__VehicleList_Muscle()
 	AddItemVehicle(hashof("coquette3"), Menu__VehicleList_Options);
 
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_spUpgrade))
 	{
 		AddItemVehicle(VEHICLE_DUKES, Menu__VehicleList_Options);
@@ -931,7 +931,7 @@ void Menu__VehicleList_Suv()
 	AddItemVehicle(hashof("serrano"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("huntley"), Menu__VehicleList_Options);
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_mpApartment))
 	{
 		AddItemVehicle(VEHICLE_BALLER3, Menu__VehicleList_Options);
@@ -983,7 +983,7 @@ void Menu__VehicleList_Van()
 	AddItemMenuWithParamAdvanced("Boxville (Post OP)", false, nullptr, false, false, true, hashof("boxville4"), Menu__VehicleList_Options);
 	AddItemMenuWithParamAdvanced("Gang Burrito (No Livery)", false, nullptr, false, false, true, hashof("gburrito2"), Menu__VehicleList_Options);
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_mpLowrider2))
 	{
 		AddItemVehicle(VEHICLE_MINIVAN2, Menu__VehicleList_Options);
@@ -1028,7 +1028,7 @@ void Menu__VehicleList_Offroad()
 	AddItemVehicle(hashof("brawler"), Menu__VehicleList_Options);
 
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_spUpgrade))
 	{
 		AddItemVehicle(VEHICLE_MARSHALL, Menu__VehicleList_Options);
@@ -1065,7 +1065,7 @@ void Menu__VehicleList_Commercial()
 	AddItemVehicle(hashof("stockade"), Menu__VehicleList_Options);
 	AddItemMenuWithParamAdvanced("Stockade (Snowy)", false, nullptr, false, false, true, hashof("stockade3"), Menu__VehicleList_Options);
 	AddItemMenuWithParamAdvanced("Mule (No Livery)", false, nullptr, false, false, true, hashof("mule3"), Menu__VehicleList_Options);
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_mpImportExport))
 	{
 		AddItemVehicle(VEHICLE_PHANTOM2, Menu__VehicleList_Options);
@@ -1083,7 +1083,7 @@ void Menu__VehicleList_Service()
 	AddItemVehicle(hashof("trash"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("tourbus"), Menu__VehicleList_Options);
 	AddItemMenuWithParamAdvanced("Trashmaster (Rusty)", false, nullptr, false, false, true, hashof("trash2"), Menu__VehicleList_Options);
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_mpExecutive))
 	{
 		AddItemVehicle(VEHICLE_BRICKADE, Menu__VehicleList_Options);
@@ -1119,7 +1119,7 @@ void Menu__VehicleList_Utility()
 	AddItemMenuWithParamAdvanced("Basket Truck", false, nullptr, false, false, true, hashof("utillitruck"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("utillitruck2"), Menu__VehicleList_Options);
 	AddItemMenuWithParamAdvanced("Utility Pick-up Truck", false, nullptr, false, false, true, hashof("utillitruck3"), Menu__VehicleList_Options);
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 
 	#endif
 }
@@ -1137,7 +1137,7 @@ void Menu__VehicleList_Industrial()
 	AddItemMenuWithParamAdvanced("Tipper (6-Wheeler)", false, nullptr, false, false, true, hashof("tiptruck"), Menu__VehicleList_Options);
 	AddItemMenuWithParamAdvanced("Tipper (10-Wheeler)", false, nullptr, false, false, true, hashof("tiptruck2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("guardian"), Menu__VehicleList_Options);
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 
 	#endif
 }
@@ -1162,7 +1162,7 @@ void Menu__VehicleList_Emergency()
 	AddItemVehicle(hashof("sheriff"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("sheriff2"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("policeb"), Menu__VehicleList_Options);
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 
 	#endif
 }
@@ -1174,7 +1174,7 @@ void Menu__VehicleList_Military()
 	AddItemVehicle(hashof("crusader"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("rhino"), Menu__VehicleList_Options);
 	AddItemMenuWithParamAdvanced("Barracks (Dark Camo)", false, nullptr, false, false, true, hashof("barracks3"), Menu__VehicleList_Options);
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 
 	#endif
 }
@@ -1204,7 +1204,7 @@ void Menu__VehicleList_Motorcycle()
 	AddItemVehicle(hashof("lectro"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("vindicator"), Menu__VehicleList_Options);
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_mpStunt))
 	{
 		AddItemVehicle(VEHICLE_GARGOYLE, Menu__VehicleList_Options);
@@ -1250,7 +1250,7 @@ void Menu__VehicleList_Bicycle()
 	AddItemVehicle(hashof("fixter"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("cruiser"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("BMX"), Menu__VehicleList_Options);
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 
 	#endif
 }
@@ -1277,7 +1277,7 @@ void Menu__VehicleList_Plane()
 	AddItemVehicle(hashof("luxor2"), Menu__VehicleList_Options);
 
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_spUpgrade))
 	{
 		AddItemVehicle(VEHICLE_DODO, Menu__VehicleList_Options);
@@ -1307,7 +1307,7 @@ void Menu__VehicleList_Helicopter()
 	AddItemVehicle(hashof("savage"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("valkyrie"), Menu__VehicleList_Options);
 	AddItemVehicle(hashof("swift2"), Menu__VehicleList_Options);
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_mpApartment))
 	{
 		AddItemMenuWithParamAdvanced("Cargobob 2-Seater", false, nullptr, false, false, true, VEHICLE_CARGOBOB4, Menu__VehicleList_Options);
@@ -1340,7 +1340,7 @@ void Menu__VehicleList_Boat()
 	AddItemVehicle(hashof("toro"), Menu__VehicleList_Options);
 
 
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 	if (is_dlc_present(Update_spUpgrade))
 	{
 		AddItemVehicle(VEHICLE_SUBMERSIBLE2, Menu__VehicleList_Options);
@@ -1384,7 +1384,7 @@ void Menu__VehicleList_Trailer()
 	AddItemMenuWithParamAdvanced("Flatbed", false, nullptr, false, false, true, hashof("trflat"), Menu__VehicleList_Options);
 	AddItemMenuWithParamAdvanced("Small Construction Trailer", false, nullptr, false, false, true, hashof("trailersmall"), Menu__VehicleList_Options);
 	AddItemMenuWithParamAdvanced("Tanker (No Livery)", false, nullptr, false, false, true, hashof("tanker2"), Menu__VehicleList_Options);
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 
 	#endif
 }
@@ -1399,7 +1399,7 @@ void Menu__VehicleList_Rail()
 	AddItemMenuWithParamAdvanced("Train Boxcar", false, nullptr, false, false, true, hashof("freightgrain"), Menu__VehicleList_Options);
 	AddItemMenuWithParamAdvanced("Train Fuel Tank Car", false, nullptr, false, false, true, hashof("tankercar"), Menu__VehicleList_Options);
 	AddItemMenuWithParamAdvanced("Metro Train", false, nullptr, false, false, true, hashof("metrotrain"), Menu__VehicleList_Options);
-	#ifdef __YSC__
+	#if PLATFORM == PLATFORM_PC
 
 	#endif
 }
@@ -1477,8 +1477,8 @@ inline void MainMenu()
 #pragma region LoopedOptions
 void FlyMod(Player CurrentPlayerPed)
 {
-	DisableControl(2, INPUT_VEH_LOOK_BEHIND);
-	DisableControl(2, INPUT_LOOK_BEHIND);
+	disable_control_action(2, INPUT_VEH_LOOK_BEHIND, true);
+	disable_control_action(2, INPUT_LOOK_BEHIND, true);
 	set_input_exclusive(2, INPUT_FRONTEND_X);
 	set_input_exclusive(2, INPUT_FRONTEND_LS);
 	Entity CurrentEntity = GetCurrentVehicle();
@@ -1522,8 +1522,8 @@ void FlyModController(Player CurrentPlayerPed)
 {
 	if (is_control_pressed(2, INPUT_FRONTEND_X) && is_control_just_pressed(2, INPUT_FRONTEND_LS))
 	{
-		DisableControl(2, INPUT_VEH_LOOK_BEHIND);
-		DisableControl(2, INPUT_LOOK_BEHIND);
+		disable_control_action(2, INPUT_VEH_LOOK_BEHIND, true);
+		disable_control_action(2, INPUT_LOOK_BEHIND, true);
 		set_input_exclusive(2, INPUT_FRONTEND_X);
 		set_input_exclusive(2, INPUT_FRONTEND_LS);
 
@@ -1609,7 +1609,7 @@ inline void LoopedOptions()
 	else
 	{
 		//XBOX TU27 Search "XMAS" Addr = IsNetworkGame function call
-		#ifdef __X360__
+		#if PLATFORM == PLATFORM_X360
 		*(int*)0x8274B3D0 = 0x60000000;
 		*(int*)(0x8274B3D0 + 4) = 0x39200001;
 		
