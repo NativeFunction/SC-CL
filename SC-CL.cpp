@@ -12,6 +12,7 @@
 #include "Utils/ConstExpr.h"
 #include "ClangParsing/Script.h"
 #include "Compiler/Compiler.h"
+#include "Version/Version.h"
 
 #pragma region Global_Defines
 #undef ReplaceText//(commdlg.h)
@@ -55,8 +56,6 @@ using namespace llvm;
 
 #pragma region Global_Decls
 string globalDirectory;
-//version string can only have one number per point
-const string Version = "0.9.5";
 #pragma endregion
 
 #pragma region Global_Misc_Clang_Decls
@@ -1016,7 +1015,7 @@ public:
 	#pragma endregion
 
 	#pragma region Parse/Visit_Functions
-	void parseCallProto(const CallExpr* call, bool& isVariadic, uint32_t& NumParams)
+	void parseCallProto(const CallExpr* call, bool& isVariadic, size_t& NumParams)
 	{
 		const Decl* calleeDecl = call->getCalleeDecl();
 		if (isa<FunctionDecl>(calleeDecl))
@@ -3687,9 +3686,8 @@ public:
 				const Expr * const*argArray = call->getArgs();
 				std::string funcName = parseCast(cast<const CastExpr>(callee));
 
-				size_t VariadicSize = 0, VariadicPCount = 0;
+				size_t VariadicSize = 0, VariadicPCount = 0, NumParams = 0;
 				bool isVariadic = 0;
-				uint32_t NumParams = 0;
 
 				parseCallProto(call, isVariadic, NumParams);
 
@@ -7361,12 +7359,15 @@ public:
 	{
 		string preDefines = PP.getPredefines();
 	  
-		//int major = 0, minor = 0, revision = 0;
-		//sscanf(Version.c_str(), "%d.%d.%d", &major, &minor, &revision);
-		//preDefines += "\n#define SCCL_VERSION " + to_string(major) + to_string(minor) + to_string(revision);
+		int major = 0, minor = 0, revision = 0, patchlevel = 0;
+		sscanf(VERSION, "%d.%d.%d.%d", &major, &minor, &revision, &patchlevel);
+		preDefines += "\n#define __SCCL_major__ " + to_string(major);
+		preDefines += "\n#define __SCCL_minor__ " + to_string(minor);
+		preDefines += "\n#define __SCCL_revision__ " + to_string(revision);
+		preDefines += "\n#define __SCCL_patchlevel__ " + to_string(patchlevel);
 
 		preDefines += 
-			"\n#define __SCCL__"
+			"\n#define __SCCL__ 1"
 
 			"\n#define ENDIAN_BIG 0"
 			"\n#define ENDIAN_LITTLE 1"
@@ -7610,7 +7611,7 @@ string GetDir(const string &Dir)
 }
 void PrintVersion()
 {
-	cout << "Version: " << Version << endl;
+	cout << "Version: " << VERSION << endl;
 }
 
 int ProcessFiles(ClangTool &Tool)
@@ -7682,7 +7683,7 @@ void ParseCommandLine(int argc, const char **argv, const char* Overview, unique_
 }
 int main(int argc, const char **argv)
 {
-	llvm::errs() << "Starting SC-CL " << Version << " running Clang 3.8.1\n";
+	llvm::errs() << "Starting SC-CL " << VERSION << " running Clang 3.8.1\n";
 
 	globalDirectory = GetDir(string(argv[0]));
 	cl::SetVersionPrinter(PrintVersion);
