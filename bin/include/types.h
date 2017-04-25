@@ -11,7 +11,7 @@
 #define unsafe
 #endif
 
-#if PTRWIDTH == 64
+#ifdef __YSC__
 #define int long long
 #define float double
 #endif
