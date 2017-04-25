@@ -3433,7 +3433,14 @@ turn_actor_into_zombie
 set_door_lock_visible
 set_actor_base_score
 set_actor_allow_disarm
-
+ambient_audio_bank_no_longer_needed
+dynamicmixer_triggerstate
+dynamicmixer_detriggerstate
+rand_set_seed
+rand_int_range
+rand_int_range_different
+rand_float_gaussian
+net_gamer_set_title
 
 
 */

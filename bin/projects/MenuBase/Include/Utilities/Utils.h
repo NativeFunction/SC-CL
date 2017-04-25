@@ -21,20 +21,5 @@ void Assert(const char* File, int Line, const char* Expression);
 //TODO: create ui for assert because print cant hold the amount of text you need to print
 #define assert(expression) do { if (!(expression)) { Assert(__FILE__, __LINE__, #expression); } } while (false)
 
-
-#pragma region PlatformHelpers
-
-#ifdef __YSC__
-#define DisableControl(InputGroup, InputType) disable_control_action(InputGroup, InputType, true)
-#define EnableControl(InputGroup, InputType) enable_control_action(InputGroup, InputType, true)
 #define PlayMenuSound(SoundName) play_sound_frontend(-1, SoundName, "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
-#define DrawScaleformMovie(Scaleform, Color) draw_scaleform_movie_fullscreen(Scaleform, Color, false)
-#else
-#define DisableControl(InputGroup, InputType) disable_control_action(InputGroup, InputType)
-#define EnableControl(InputGroup, InputType) enable_control_action(InputGroup, InputType)
-#define PlayMenuSound(SoundName) play_sound_frontend(-1, SoundName, "HUD_FRONTEND_DEFAULT_SOUNDSET")
-#define DrawScaleformMovie(Scaleform, Color) draw_scaleform_movie_fullscreen(Scaleform, Color)
-#endif
 
-
-#pragma endregion

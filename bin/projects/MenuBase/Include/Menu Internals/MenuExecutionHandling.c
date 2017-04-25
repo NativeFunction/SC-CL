@@ -982,7 +982,7 @@ inline void EssentialScriptLoopSettings()
 		setGlobalAtIndex(TUNEABLE_BASE + TUNEABLE_IDLEKICK_WARNING3, 0x7FFFFFFF);
 		setGlobalAtIndex(TUNEABLE_BASE + TUNEABLE_IDLEKICK_KICK, 0x7FFFFFFF);
 
-		#ifdef __YSC__
+		#if PLATFORM == PLATFORM_PC
 		//Enable duke2 in mp
 		setGlobalAtIndex(TUNEABLE_BASE + TUNEABLE_ENABLE_DUKES2_MP, false);//tuneableprocessing hash = 857589231
 		#endif
@@ -991,7 +991,7 @@ inline void EssentialScriptLoopSettings()
 	}
 	else
 	{
-		#ifdef __YSC__
+		#if PLATFORM == PLATFORM_PC
 		//Enable MP cars in SP
 		setGlobalAtIndex(2593910, true);//shop_controller (search  "!= 999" first instance ret false)
 		#endif

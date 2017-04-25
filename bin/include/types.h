@@ -11,7 +11,7 @@
 #define unsafe
 #endif
 
-#ifdef __YSC__
+#if PLATFORM == PLATFORM_PC
 #define int long long
 #define float double
 #endif

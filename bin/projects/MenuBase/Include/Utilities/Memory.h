@@ -255,7 +255,7 @@ enum HandlingIndexes
 
 };
 
-#ifdef __YSC__
+#if PLATFORM == PLATFORM_PC
 enum VehicleMetaIndexes
 {
 	VMI_TotalSize = 1376,

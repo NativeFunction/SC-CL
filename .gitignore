@@ -9,6 +9,8 @@
 !ASM Compiler/
 !Utils/
 !ClangParsing/
+!Version/
+!Version.h
 !zconf.h
 !zlib.h
 !zlib.lib
@@ -70,3 +72,4 @@ bin/projects/MenuBase/*.db
 bin/projects/MenuBase/*.opendb
 bin/projects/MenuBase/*.TMP
 *.exe
+!SC-CL_Version_Selector.exe

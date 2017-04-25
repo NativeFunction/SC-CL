@@ -4664,7 +4664,9 @@ extern _native void unk_0x5C350D78(bool p0)l
 #pragma region UNK3 //{
 #pragma endregion //}
 
-	
+/************ Console Only Natives ************/
+extern _native bool network_is_local_talking();
+
 /************ Undocumented Console Only Natives ************
 sc_inbox_message_get_data_float
 network_is_local_talking

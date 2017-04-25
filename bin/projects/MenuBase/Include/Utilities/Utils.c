@@ -68,37 +68,37 @@ Size GetSizeFromResolution(vector2 Resolution)
 }
 float GetFloatWidth(float Value, Font FontType, float Scale)
 {
-	_set_text_entry_for_width("NUMBER");
+	_begin_text_command_width("NUMBER");
 	add_text_component_float(Value, 4);
 	set_text_font(FontType);
 	set_text_scale(1.0f, Scale);
-	return _get_text_screen_width(true);
+	return _end_text_command_get_width(true);
 }
 float GetIntWidth(int Value, Font FontType, float Scale)
 {
-	_set_text_entry_for_width("NUMBER");
+	_begin_text_command_width("NUMBER");
 	add_text_component_integer(Value);
 	set_text_font(FontType);
 	set_text_scale(1.0f, Scale);
-	return _get_text_screen_width(true);
+	return _end_text_command_get_width(true);
 }
 float GetStringWidth(const char* Value, Font FontType, float Scale)
 {
-	_set_text_entry_for_width("STRING");
+	_begin_text_command_width("STRING");
 	add_text_component_substring_player_name(Value);
 	set_text_font(FontType);
 	set_text_scale(1.0f, Scale);
-	return _get_text_screen_width(true);
+	return _end_text_command_get_width(true);
 }
 float GetStringHeight(const char* Value, Font FontType, float Scale, float Wrap, vector2 Pos)
 {
 	set_text_font(FontType);
 	set_text_wrap(0.0f, Wrap);
 	set_text_scale(1.0f, Scale);
-	_set_text_gxt_entry("STRING");
+	_begin_text_command_line_count("STRING");
 	add_text_component_substring_player_name(Value);
 
-	return _get_text_scale_height(Scale, FontType) * (float)_get_text_screen_line_count(Pos);
+	return _get_text_scale_height(Scale, FontType) * (float)_end_text_command_get_line_count(Pos);
 }
 void Break(const char* str)
 {
@@ -123,7 +123,7 @@ void Notify(const char* str)
 }
 void PrintMult(const char* StrArr[10], int ms)
 {
-	_set_text_entry_2("CELL_EMAIL_BCON");
+	begin_text_command_print("CELL_EMAIL_BCON");
 	for (int i = 0; i < 10; i++)
 	{
 		if (StrArr[i])
@@ -131,7 +131,7 @@ void PrintMult(const char* StrArr[10], int ms)
 		else
 			break;
 	}
-	_draw_subtitle_timed(ms, 1);
+	end_text_command_print(ms, 1);
 }
 bool IsPlayerInGame(int PlayerIndex)
 {
@@ -170,7 +170,7 @@ void Assert(const char* File, int Line, const char* Expression)
 	while (!is_disabled_control_just_pressed(2, INPUT_FRONTEND_ACCEPT))
 	{
 		set_text_centre(true);
-		_set_text_entry("CELL_EMAIL_BCON");
+		begin_text_command_display_text("CELL_EMAIL_BCON");
 		add_text_component_substring_player_name("Assertion failed!~n~~n~File: ");
 
 
@@ -183,7 +183,7 @@ void Assert(const char* File, int Line, const char* Expression)
 		for (int i = 0; i < ExprEndPos; i += 99)
 			add_text_component_substring_player_name(Expression + i);
 
-		_draw_text(Vector2(0.5f, 0.5f));
+		end_text_command_display_text(Vector2(0.5f, 0.5f));
 		wait(0);
 	}
 	wait(0);

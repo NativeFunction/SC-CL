@@ -50,7 +50,7 @@ bool HasPlayerOpenedMenu()
 	if (is_disabled_control_pressed(2, INPUT_SCRIPT_RB))
 	{
 		set_input_exclusive(2, INPUT_FRONTEND_X);
-		DisableControl(0, INPUT_JUMP);
+		disable_control_action(0, INPUT_JUMP, true);
 		return is_disabled_control_just_pressed(2, INPUT_FRONTEND_X);
 	}
 	return false;
@@ -85,13 +85,13 @@ void DisableUnusedInputs()
 	//this disables hidden controls that are difficult to disable
 	disable_all_control_actions(0);
 	for (int i = 0; i < 338; i++)
-		EnableControl(0, i);
+		enable_control_action(0, i, true);
 
-	DisableControl(2, INPUT_NEXT_CAMERA);
-	DisableControl(0, INPUT_NEXT_CAMERA);
-	DisableControl(0, INPUT_VEH_SELECT_NEXT_WEAPON);
-	DisableControl(2, INPUT_VEH_CIN_CAM);
-	DisableControl(0, INPUT_HUD_SPECIAL);
+	disable_control_action(2, INPUT_NEXT_CAMERA, true);
+	disable_control_action(0, INPUT_NEXT_CAMERA, true);
+	disable_control_action(0, INPUT_VEH_SELECT_NEXT_WEAPON, true);
+	disable_control_action(2, INPUT_VEH_CIN_CAM, true);
+	disable_control_action(0, INPUT_HUD_SPECIAL, true);
 
 	set_input_exclusive(2, INPUT_FRONTEND_ACCEPT);
 	set_input_exclusive(2, INPUT_FRONTEND_CANCEL);
@@ -101,34 +101,34 @@ void DisableUnusedInputs()
 	set_input_exclusive(2, INPUT_FRONTEND_RIGHT);
 	set_input_exclusive(2, INPUT_FRONTEND_X);
 
-	DisableControl(2, INPUT_FRONTEND_ACCEPT);
-	DisableControl(2, INPUT_FRONTEND_CANCEL);
-	DisableControl(2, INPUT_FRONTEND_UP);
-	DisableControl(2, INPUT_FRONTEND_DOWN);
-	DisableControl(2, INPUT_FRONTEND_LEFT);
-	DisableControl(2, INPUT_FRONTEND_RIGHT);
+	disable_control_action(2, INPUT_FRONTEND_ACCEPT, true);
+	disable_control_action(2, INPUT_FRONTEND_CANCEL, true);
+	disable_control_action(2, INPUT_FRONTEND_UP, true);
+	disable_control_action(2, INPUT_FRONTEND_DOWN, true);
+	disable_control_action(2, INPUT_FRONTEND_LEFT, true);
+	disable_control_action(2, INPUT_FRONTEND_RIGHT, true);
 
-	DisableControl(0, INPUT_WEAPON_WHEEL_NEXT);
-	DisableControl(0, INPUT_WEAPON_WHEEL_PREV);
-	DisableControl(0, INPUT_WEAPON_SPECIAL);
-	DisableControl(0, INPUT_WEAPON_SPECIAL_TWO);
-	DisableControl(0, INPUT_MELEE_ATTACK_LIGHT);
-	DisableControl(0, INPUT_MELEE_ATTACK_HEAVY);
-	DisableControl(0, INPUT_MELEE_BLOCK);
-	DisableControl(0, INPUT_DETONATE);
-	DisableControl(0, INPUT_VEH_HEADLIGHT);
-	DisableControl(0, INPUT_VEH_RADIO_WHEEL);
-	DisableControl(0, INPUT_CONTEXT);
-	DisableControl(0, INPUT_RELOAD);
-	DisableControl(0, INPUT_DIVE);
-	DisableControl(0, INPUT_VEH_SELECT_NEXT_WEAPON);
-	DisableControl(0, INPUT_VEH_FLY_SELECT_NEXT_WEAPON);
-	DisableControl(0, INPUT_SELECT_CHARACTER_FRANKLIN);
-	DisableControl(0, INPUT_SELECT_CHARACTER_MICHAEL);
-	DisableControl(0, INPUT_SELECT_CHARACTER_TREVOR);
-	DisableControl(0, INPUT_SELECT_CHARACTER_MULTIPLAYER);
-	DisableControl(0, INPUT_CHARACTER_WHEEL);
-	DisableControl(0, INPUT_COVER);
+	disable_control_action(0, INPUT_WEAPON_WHEEL_NEXT, true);
+	disable_control_action(0, INPUT_WEAPON_WHEEL_PREV, true);
+	disable_control_action(0, INPUT_WEAPON_SPECIAL, true);
+	disable_control_action(0, INPUT_WEAPON_SPECIAL_TWO, true);
+	disable_control_action(0, INPUT_MELEE_ATTACK_LIGHT, true);
+	disable_control_action(0, INPUT_MELEE_ATTACK_HEAVY, true);
+	disable_control_action(0, INPUT_MELEE_BLOCK, true);
+	disable_control_action(0, INPUT_DETONATE, true);
+	disable_control_action(0, INPUT_VEH_HEADLIGHT, true);
+	disable_control_action(0, INPUT_VEH_RADIO_WHEEL, true);
+	disable_control_action(0, INPUT_CONTEXT, true);
+	disable_control_action(0, INPUT_RELOAD, true);
+	disable_control_action(0, INPUT_DIVE, true);
+	disable_control_action(0, INPUT_VEH_SELECT_NEXT_WEAPON, true);
+	disable_control_action(0, INPUT_VEH_FLY_SELECT_NEXT_WEAPON, true);
+	disable_control_action(0, INPUT_SELECT_CHARACTER_FRANKLIN, true);
+	disable_control_action(0, INPUT_SELECT_CHARACTER_MICHAEL, true);
+	disable_control_action(0, INPUT_SELECT_CHARACTER_TREVOR, true);
+	disable_control_action(0, INPUT_SELECT_CHARACTER_MULTIPLAYER, true);
+	disable_control_action(0, INPUT_CHARACTER_WHEEL, true);
+	disable_control_action(0, INPUT_COVER, true);
 
 }
 Page* GetMenuContainer()
@@ -147,9 +147,9 @@ void SetMenuLoading(bool IsLoading)
 		_pop_scaleform_movie_function_void();
 		_push_scaleform_movie_function(Container.Ui.MenuControlSFID2, "SET_SAVING_TEXT");
 		_push_scaleform_movie_function_parameter_int(SFS_LOADING_CIRCLE_RIGHT);
-		_begin_text_component("STRING");
+		begin_text_command_scaleform_string("STRING");
 		add_text_component_substring_player_name("Loading");
-		_end_text_component();
+		end_text_command_scaleform_string();
 		_pop_scaleform_movie_function_void();
 	}
 	else
@@ -170,21 +170,21 @@ void SetDataSlot(int SlotIndex, ScaleformButton ButtonId, const char* ItemText, 
 	{
 		if (does_text_label_exist(ItemText))
 		{
-			_begin_text_component(ItemText);
+			begin_text_command_scaleform_string(ItemText);
 		}
 		else
 		{
-			_begin_text_component("STRING");
+			begin_text_command_scaleform_string("STRING");
 			add_text_component_substring_player_name("INVALID_GXT");
 		}
 	}
 	else
 	{
-		_begin_text_component("STRING");
+		begin_text_command_scaleform_string("STRING");
 		add_text_component_substring_player_name(ItemText);
 	}
 
-	_end_text_component();
+	end_text_command_scaleform_string();
 	_pop_scaleform_movie_function_void();
 }
 void UpdateMenuControls()
@@ -251,7 +251,7 @@ void UpdateMenuControls()
 	_pop_scaleform_movie_function_void();
 
 
-	DrawScaleformMovie(Container.Ui.MenuControlSFID, Container.Ui.UnselectedTextColor);
+	draw_scaleform_movie_fullscreen(Container.Ui.MenuControlSFID, Container.Ui.UnselectedTextColor, false);
 }
 bool UpdateDynamicCursor(int Id, int Range)
 {
@@ -753,28 +753,28 @@ void DrawText(const char* str, vector2 pos, bool IsGtxText) {
 	{
 		if (does_text_label_exist(str))
 		{
-			_set_text_entry(str);
-			_draw_text(pos);
+			begin_text_command_display_text(str);
+			end_text_command_display_text(pos);
 			return;
 		}
 		else
 			str = "INVALID_GXT";
 	}
-	_set_text_entry("STRING");
+	begin_text_command_display_text("STRING");
 	add_text_component_substring_player_name(str);
-	_draw_text(pos);
+	end_text_command_display_text(pos);
 }
 void DrawFloat(float value, vector2 pos) {
 
-	_set_text_entry("NUMBER");
+	begin_text_command_display_text("NUMBER");
 	add_text_component_float(value, 4);
-	_draw_text(pos);
+	end_text_command_display_text(pos);
 }
 void DrawInt(int value, vector2 pos) {
 
-	_set_text_entry("NUMBER");
+	begin_text_command_display_text("NUMBER");
 	add_text_component_integer(value);
-	_draw_text(pos);
+	end_text_command_display_text(pos);
 }
 void DrawBackgroundAndHeader()
 {
@@ -912,10 +912,10 @@ void DrawInfoBox()
 			  - 0.01//sub to get number pos from right of menu
 			  , 0.35f, false, true, false, false, Container.Ui.HeaderTextColor);
 
-	_set_text_entry("CM_ITEM_COUNT");
+	begin_text_command_display_text("CM_ITEM_COUNT");
 	add_text_component_integer(Container.CursorIndex + 1);
 	add_text_component_integer(Container.TotalItemCount);
-	_draw_text(Vector2(0.0f, InfoBoxStart.y + 0.017f));//padding for small footer and space 
+	end_text_command_display_text(Vector2(0.0f, InfoBoxStart.y + 0.017f));//padding for small footer and space 
 	#pragma endregion
 
 
@@ -1074,13 +1074,13 @@ void DrawMenuPlayer(int i, float CurrentYIndex, RGBA CurrentColor)
 {
 	//TODO: find a better way to detect host
 	bool IsPlayerLocal = Container.Item[i].Selection.Value.Int == player_id();
-	bool IsPlayerHost = IsPlayerLocal && !network_is_game_in_progress() ? true : network_get_host_of_script("freemode", -1, Any(0)) == Container.Item[i].Selection.Value.Int;
+	bool IsPlayerHost = IsPlayerLocal && !network_is_game_in_progress() ? true : network_get_host_of_script("freemode", -1, 0) == Container.Item[i].Selection.Value.Int;
 	bool DoesPlayerHaveHeadset = IsPlayerLocal ? network_has_headset() : network_player_has_headset(Container.Item[i].Selection.Value.Int);
 
 	if (DoesPlayerHaveHeadset)
 	{
 		//TODO: find network_is_local_talking equivalent on pc
-		#ifdef __YSC__
+		#if PLATFORM == PLATFORM_PC
 		bool IsPlayerTalking = network_is_player_talking(Container.Item[i].Selection.Value.Int);
 		#else
 		bool IsPlayerTalking = IsPlayerLocal ? network_is_local_talking() : network_is_player_talking(Container.Item[i].Selection.Value.Int);
@@ -1272,8 +1272,8 @@ inline void DisableControlsOnExit()
 {
 	if (Container.DisableMenuOpenControls > 0)
 	{
-		DisableControl(0, INPUT_VEH_CIN_CAM);
-		DisableControl(0, INPUT_COVER);
+		disable_control_action(0, INPUT_VEH_CIN_CAM, true);
+		disable_control_action(0, INPUT_COVER, true);
 		Container.DisableMenuOpenControls--;
 	}
 }
@@ -1351,7 +1351,7 @@ void HandleMenuUi()
 	if (bit_test(Container.BitSet, PB_IsMenuOpen) || Container.Loading.FramesToLoad >= 5)
 	{
 		UpdateMenuControls();
-		DrawScaleformMovie(Container.Ui.MenuControlSFID2, Container.Ui.UnselectedTextColor);
+		draw_scaleform_movie_fullscreen(Container.Ui.MenuControlSFID2, Container.Ui.UnselectedTextColor, false);
 	}
 }
 
