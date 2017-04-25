@@ -4548,7 +4548,7 @@ extern _native64(0x93DC1BE4E1ABE9D1) bool network_is_player_connected(Player pla
 extern _native64(0xCF61D4B4702EE9EB) int unk_0xCF61D4B4702EE9EB()l
 extern _native64(0x6FF8FF40B6357D45) bool network_is_participant_active(any p0)l
 extern _native64(0xB8DFD30D6973E135) bool network_is_player_active(Player player)l
-extern _native64(0x3CA58F6CB7CBD784) bool network_is_player_a_participant(any p0)l
+extern _native64(0x3CA58F6CB7CBD784) bool network_is_player_a_participant(Player p0)l
 extern _native64(0x83CD99A1E6061AB5) bool network_is_host_of_this_script()l
 extern _native64(0xC7B4D79B01FA7A5C) any network_get_host_of_this_script()l
 extern _native64(0x1D6A14F1F9A736FC) int network_get_host_of_script(const char* scriptName, int p1, int p2)l
