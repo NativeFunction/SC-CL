@@ -828,7 +828,9 @@ void CompileBase::WriteCodePagesNoPadding()
 };
 void CompileBase::Write16384CodePages()
 {
-	SavedOffsets.CodePagePointers.resize(CodePageData->getPageCount());
+	if (!SavedOffsets.CodePagePointers.size())
+		SavedOffsets.CodePagePointers.resize(CodePageData->getPageCount());
+
 	for (uint32_t i = 0; i < CodePageData->getPageCount() - 1; i++)
 	{
 
@@ -851,6 +853,10 @@ void CompileBase::Write16384CodePages()
 void CompileBase::WriteFinalCodePage()
 {
 	const uint32_t LastCodePageSize = CodePageData->getTotalSize() % 16384;
+
+	if(!SavedOffsets.CodePagePointers.size())
+		SavedOffsets.CodePagePointers.resize(CodePageData->getPageCount());
+
 	SavedOffsets.CodePagePointers[CodePageData->getPageCount() - 1] = BuildBuffer.size();
 	BuildBuffer.resize(BuildBuffer.size() + LastCodePageSize);
 	memcpy(BuildBuffer.data() + BuildBuffer.size() - LastCodePageSize, CodePageData->getPageAddress(CodePageData->getPageCount() - 1), LastCodePageSize);
@@ -1568,41 +1574,47 @@ void CompileRDR::fixFunctionJumps()
 #pragma endregion
 
 #pragma region RSC85Parsing
-uint32_t CompileRDR::GetHeaderFormatFromFlag(uint32_t val)
+vector<size_t> CompileRDR::GetPageSizes(size_t& size)
 {
-	uint8_t flags = val >> 24;
-	switch (flags)
-	{
-		///header is at a multiple of 4096 (in rockstar scripts that is always the last 4096)
-		case (int)Rsc85Flags::F4096:
-		return 4096;
-		///header is at a multiple of 65536 (in rockstar scripts that is always 0 because any other 65536 would yield the same result)
-		case (int)Rsc85Flags::F65536:
-		return 0;
-		///header is at a multiple of 16384 (in rockstar scripts that is always the last 16384)
-		case (int)Rsc85Flags::F16384:
-		return 16384;
-		///header is at a multiple of 8192 (in rockstar scripts that is always the last 8192)
-		case (int)Rsc85Flags::F8192:
-		return 8192;
-	}
-	return 0xFFFFFFFF;
-}
-uint32_t CompileRDR::GetFlagFromReadbuffer(uint32_t buffer)
-{
-	switch (buffer)
-	{
-		case 4096:
-		return (int)Rsc85Flags::Fi4096;
-		case 65536:
-		return (int)Rsc85Flags::Fi65536;
-		case 16384:
-		return (int)Rsc85Flags::Fi16384;
-		case 8192:
-		return (int)Rsc85Flags::Fi8192;
+	int rem = size % 4096;
+	if (rem != 0)
+		size += 4096 - rem;
 
+	std::vector<size_t> RetData;
+
+	uint32_t dwPageCounts[4] = { 0, 0, 0, 0x7FFFFFFF };
+
+	uint32_t dwPageSize = 0x80000; // largest possible page size
+	uint32_t dwTotalSize = 0;
+	uint32_t dwLeft = size;
+	for (uint32_t i = 0; i < 4; i++)
+	{
+		for (uint32_t j = 0; j < dwPageCounts[i] && dwLeft; j++)
+		{
+			while (dwPageSize > dwLeft)
+				dwPageSize >>= 1;
+
+			assert(dwPageSize && "PageSize = 0");
+
+			dwTotalSize += dwPageSize;
+			dwLeft -= dwPageSize;
+
+			RetData.push_back(dwPageSize);
+		}
+		dwPageSize >>= 1;
 	}
-	return 0xFFFFFFFF;
+	return RetData;
+}
+size_t CompileRDR::GetHeaderPageIndex(const vector<size_t>& DataSizePages)
+{
+	size_t SmallestSize = DataSizePages[DataSizePages.size() - 1];
+	for (uint32_t i = 0; i < DataSizePages.size(); i++)
+	{
+		if (DataSizePages[i] == SmallestSize)
+			return i;
+	}
+	assert(false && "HeaderStartIndex == NULL");
+	return -1;
 }
 #pragma endregion
 
@@ -1762,6 +1774,15 @@ void CompileRDR::AddJumpTable()
 #pragma endregion
 
 #pragma region Write_Functions
+void CompileRDR::CheckPad4096(uint32_t& value)
+{
+	if (value > 4096)
+	{
+		uint32_t rem = value % 4096;
+		if (rem != 0)
+			value += 4096 - rem;
+	}
+}
 void CompileRDR::WriteHeader()
 {
 	headerLocation = BuildBuffer.size();
@@ -1779,7 +1800,7 @@ void CompileRDR::WriteHeader()
 }
 void CompileRDR::WritePointers()
 {
-	//write unk1
+	//write PageMap ptrs
 
 	if (GetSpaceLeft(16384) < 4)
 		FillPageDynamic(16384);
@@ -1802,43 +1823,6 @@ void CompileRDR::WritePointers()
 
 	Pad();
 }
-bool CompileRDR::WriteNormal(uint32_t datasize, uint32_t bufferflag)
-{
-	if (datasize < bufferflag)
-	{
-		headerFlag = GetFlagFromReadbuffer(bufferflag);
-		if (headerFlag == 0xFFFFFFFF)
-			Throw("Invalid Read Buffer");
-		Write16384CodePages();
-		WriteFinalCodePage();
-		FillPageDynamic(bufferflag);
-		WriteHeader();
-		WriteNatives();
-		WriteStatics();
-		WritePointers();
-		FillPageDynamic(bufferflag);
-		return true;
-	}
-	return false;
-}
-bool CompileRDR::WriteSmall(uint32_t datasize, uint32_t bufferflag)
-{
-	if (datasize < bufferflag)
-	{
-		headerFlag = GetFlagFromReadbuffer(bufferflag);
-		if (headerFlag == 0xFFFFFFFF)
-			Throw("Invalid Read Buffer");
-		Write16384CodePages();
-		WriteHeader();
-		WriteFinalCodePage();
-		WriteNatives();
-		WriteStatics();
-		WritePointers();
-		FillPageDynamic(bufferflag);
-		return true;
-	}
-	return false;
-};
 void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 {
 	FilePadding = 0xCD;
@@ -1846,54 +1830,177 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 
 	#pragma region Write_Pages_and_header
 
-	const uint32_t CodePagePtrsSize = CodePageData->getPageCount() * 4;
+	
+	const uint32_t HeaderSize = GetPadExpectedAmount(40);
+	uint32_t NativesSize = GetPadExpectedAmount(NativeHashMap.size() * 4);
+	uint32_t StaticsSize = GetPadExpectedAmount(HLData->getStaticCount() * 4);
+	const uint32_t CodePagePtrsSizeS = CodePageData->getPageCount() * 4;
+	const uint32_t CodePagePtrsSize = GetPadExpectedAmount(CodePagePtrsSizeS);
+	const uint32_t PageMapPtrsSize = GetPadExpectedAmount(CodePagePtrsSizeS + 16);//PageMap 4 but set as 16 (padded) to avoid miscalculating the pad size
 
-	uint32_t TotalData = GetPadExpectedAmount(NativeHashMap.size() * 4) +
-		GetPadExpectedAmount(HLData->getStaticCount() * 4) +
-		GetPadExpectedAmount(16 + CodePagePtrsSize) + //unk1 4 but set as 16 (padded) to avoid miscalculating the pad size
-		GetPadExpectedAmount(40) + //header
-		GetPadExpectedAmount(CodePagePtrsSize);//code page pointers
-
+	const uint32_t MaxSizeCodePageSize = GetPadExpectedAmount((CodePageData->getPageCount() - 1) * 16384);
 	uint32_t LastCodePageSize = GetPadExpectedAmount(CodePageData->getTotalSize() % 16384);//code page pointers * padding for unk1
 
-	//cout << "Natives: " << GetPadExpectedAmount(NativeHashMap.size() * 4) << '\n';
-	//cout << "Statics: " << GetPadExpectedAmount(HLData->getStaticSize() * 4) << '\n';
-	//cout << "Unk1: " << GetPadExpectedAmount(16 + CodePagePtrsSize) << '\n';
-	//cout << "Header: " << GetPadExpectedAmount(40) << '\n';
-	//cout << "Codepage Ptrs: " << GetPadExpectedAmount(CodePagePtrsSize) << '\n';
-	//cout << "Last Codepage: " << GetPadExpectedAmount(LastCodePageSize) << '\n';
-	//cout << "Total: "  << LastCodePageSize + TotalData << "\n";
-	//if(LastCodePageSize +  TotalData > 16384) then write normal but maybe place somethings under last code page if possible
-	//else include last code page in header
+	CheckPad4096(LastCodePageSize);
+	CheckPad4096(NativesSize);
+	CheckPad4096(StaticsSize);
 
-	if (LastCodePageSize + TotalData > 16384)
+	uint32_t TotalData =
+		NativesSize +
+		StaticsSize +
+		PageMapPtrsSize +
+		HeaderSize + //header
+		CodePagePtrsSize +//code page pointers
+		MaxSizeCodePageSize +
+		LastCodePageSize;
+
+	vector<size_t> DataSizePages = GetPageSizes(TotalData);
+	assert(DataSizePages.size() && "DataSizePages == 0");
+
+	uint32_t HeaderStartIndex = GetHeaderPageIndex(DataSizePages);
+
+	
+	//cout << "Natives: " << NativesSize << '\n';
+	//cout << "Statics: " << StaticsSize << '\n';
+	//cout << "PageMap: " << PageMapPtrsSize << '\n';
+	//cout << "Header: " << HeaderSize << '\n';
+	//cout << "Codepage Ptrs: " << CodePagePtrsSize << '\n';
+	//cout << "Last Codepage: " << LastCodePageSize << '\n';
+	//cout << "Total Codepages: " << GetPadExpectedAmount(CodePageData->getTotalSize()) << '\n';
+	//cout << "Total: "  << TotalData << "\n";
+	//cout << "HeaderStartIndex: " << HeaderStartIndex << "\n";
+	//Pause();
+
+	const vector<uint32_t> DynamicValues = { LastCodePageSize, NativesSize, StaticsSize, PageMapPtrsSize + CodePagePtrsSize };
+	const vector<const char*> DynamicValuesStr = { "c", "n", "s", "p" };
+	vector<Utils::DataConversion::NamedUint32> OrderStr = Utils::DataConversion::ReorderUint32Vector(DynamicValues, DynamicValuesStr, false);
+
+	if (!HeaderStartIndex)
+		OrderStr.push_back({ "m", 0 });
+	else
+		OrderStr.insert(OrderStr.begin(), { "m", 0 });
+
+
+	union
 	{
-		if (WriteNormal(TotalData, 4096));
-		else if (WriteNormal(TotalData, 8192));
-		else if (WriteNormal(TotalData, 16384));
-		else
+		int Status;
+		struct
 		{
-			headerFlag = (int)Rsc85Flags::Fi65536;
+			unsigned int Header : 1;
+			unsigned int Natives : 1;
+			unsigned int Statics : 1;
+			unsigned int Pointers : 1;
+			unsigned int MaxSizeCodePages : 1;
+			unsigned int FinalCodePage : 1;
+		};
+	} WriteStatus = { 0 };
+
+
+	if (!MaxSizeCodePageSize)
+		WriteStatus.MaxSizeCodePages = true;
+
+	for (uint32_t i = 0; i < DataSizePages.size(); i++)
+	{
+		const size_t CurrentSize = BuildBuffer.size();
+		#define SizeLeft (DataSizePages[i] - (BuildBuffer.size() - CurrentSize))
+
+
+		//Write Header
+		if (!WriteStatus.Header && i == HeaderStartIndex)
+		{
 			WriteHeader();
-			WriteNatives();
-			WriteStatics();
-			WritePointers();
-			FillPageDynamic(65536);
-			Write16384CodePages();
-			WriteFinalCodePage();
-			FillPageDynamic(65536);
+			WriteStatus.Header = true;
+			assert(SizeLeft >= 0 && "Header wrote more then the available page size");
 		}
 
+		//calculate order
+		for (uint32_t j = 0; j < OrderStr.size(); j++)
+		{
+			switch (*OrderStr[j].str)
+			{
+				case 'm':
+					//Write MaxSizeCodePages
+					if (!WriteStatus.MaxSizeCodePages && DataSizePages[i] == SizeLeft || WriteStatus.Status == 0b00000000000000000000000000101111)
+					{
+						if (WriteStatus.Status == 0b00000000000000000000000000101111)
+							FillPageDynamic(16384);
+
+						size_t Size = 0;
+
+						//writes on the assumption that first pages will divisible 16384
+						Write16384CodePages();
+						WriteStatus.MaxSizeCodePages = true;
+
+						//account for MaxSizeCodePages possibly going over a data page
+						//however max code page pages should be divisible by 16384
+						for (; i < DataSizePages.size(); i++)
+						{
+							Size += DataSizePages[i];
+							if (Size >= MaxSizeCodePageSize)
+								break;
+						}
+
+						//operation timed out
+						if (i >= DataSizePages.size())
+						{
+							if (Size < MaxSizeCodePageSize)
+								Throw("Page Size too small for MaxSizeCodePageSizes");
+							//else catch on page not written error
+							break;
+						}
+					}
+					break;
+				case 'c':
+					//Write FinalCodePage
+					if (!WriteStatus.FinalCodePage && LastCodePageSize <= SizeLeft)
+					{
+						WriteFinalCodePage();
+						WriteStatus.FinalCodePage = true;
+						assert(SizeLeft >= 0 && "FinalCodePage wrote more then the available page size");
+					}
+					break;
+				case 'n':
+					//Write Natives
+					if (!WriteStatus.Natives && NativesSize <= SizeLeft)
+					{
+						WriteNatives();
+						WriteStatus.Natives = true;
+						assert(SizeLeft >= 0 && "Natives wrote more then the available page size");
+					}
+					break;
+				case 's':
+					//Write Statics
+					if (!WriteStatus.Statics && StaticsSize <= SizeLeft)
+					{
+						WriteStatics();
+						WriteStatus.Statics = true;
+						assert(SizeLeft >= 0 && "Statics wrote more then the available page size");
+					}
+					break;
+				case 'p':
+					//Write Pointers
+					if (!WriteStatus.Pointers && (PageMapPtrsSize + CodePagePtrsSize <= SizeLeft))
+					{
+						WritePointers();
+						WriteStatus.Pointers = true;
+						assert(SizeLeft >= 0 && "Pointers wrote more then the available page size");
+					}
+					break;
+			}
+		}
+		
+		BuildBuffer.resize(BuildBuffer.size() + SizeLeft, FilePadding);
+
+		#undef SizeLeft
 	}
-	else
-	{
-		TotalData += LastCodePageSize;
-		if (WriteSmall(TotalData, 4096));
-		else if (WriteSmall(TotalData, 8192));
-		else if (WriteSmall(TotalData, 16384));
-		else
-			Throw("Total Data is Less Then and Greater Then 16384. Impossible.");
-	}
+	if (WriteStatus.Status != 0b00000000000000000000000000111111)
+		Throw("A page was not written");
+
+	if (BuildBuffer.size() < TotalData)
+		BuildBuffer.resize(TotalData, FilePadding);
+	else if (BuildBuffer.size() > TotalData)
+		Throw("Written data too large");
+
 
 	#pragma endregion
 
@@ -1960,18 +2067,30 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 		if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedLen, RDREncryptionKey))
 			Throw("Encryption Failed");
 
-		const vector<uint32_t> CSR_Header =
+
+		struct
 		{
-			SwapEndian(HLData->getBuildPlatform() == Platform::P_X360 ? 0x85435352u : 0x86435352u),//.CSR
-			SwapEndian(0x00000002u),//Resource Type Script
-			SwapEndian(0x80000000u),//unk int max val (flags1)
-			SwapEndian(GetFullFlagWithSize(BuildBuffer.size(), headerFlag))//size (flags2)
+			uint32_t ID;
+			uint32_t ResourceType;
+			RSCFlag Flags;
+		} CSR_Header =
+		{
+			SwapEndian(HLData->getBuildPlatform() == Platform::P_X360 ? 0x85435352u : 0x86435352u),
+			SwapEndian(0x00000002u)
 		};
+		CSR_Header.Flags.bResource = true;
+
+		CSR_Header.Flags.bUseExtSize = true;
+		CSR_Header.Flags.TotalVSize = BuildBuffer.size() >> 12;//platform dependent? (currently xbox)
+		CSR_Header.Flags.ObjectStartPage = ObjectStartPageSizeToFlag(DataSizePages[HeaderStartIndex]);
+		CSR_Header.Flags.Flag[0] = SwapEndian(CSR_Header.Flags.Flag[0]);
+		CSR_Header.Flags.Flag[1] = SwapEndian(CSR_Header.Flags.Flag[1]);
+
 
 		FILE* file = fopen(path, "wb");
 		if (Utils::IO::CheckFopenFile(path, file))
 		{
-			fwrite(CSR_Header.data(), 1, 16, file);//encrypted data
+			fwrite(&CSR_Header, 1, 16, file);//encrypted data
 			fwrite(CompressedData.data(), 1, CompressedLen, file);//encrypted data
 			fclose(file);
 		}

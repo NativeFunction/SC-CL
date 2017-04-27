@@ -135,7 +135,29 @@ static int __finite(rtype f)
 
 static int __finite(float d)
 {
-	
+	//struct
+	//{
+	//	int start;
+	//	int Invulnerability : 1;
+	//	int InfiniteDeadeye : 8;
+	//	int FlyMod : 1;
+	//	int BlazingGuns : 1;
+	//	int InfiniteHorseStamina : 1;
+	//	int ExplosiveWeapons : 1;
+	//	int endi : 19;// 20;
+	//	int end;
+	//} MenuToggles;
+	//
+	//
+	//MenuToggles.Invulnerability = ~MenuToggles.FlyMod;
+	//MenuToggles.InfiniteDeadeye = MenuToggles.InfiniteDeadeye;
+	//MenuToggles.BlazingGuns = true;
+	//MenuToggles.InfiniteHorseStamina = false;
+	//MenuToggles.start = 0;
+	//MenuToggles.end = 0;
+	//MenuToggles.endi = 0;
+
+
 	#if ENDIAN == ENDIAN_LITTLE
 	struct IEEEdp
 	{
@@ -485,8 +507,6 @@ static char* exponent(char *p, int exp, int fmtch)
 	return (p);
 }
 
-
-
 void vsprintf(char* buffer, const char* format, va_list va)
 {
 
@@ -588,30 +608,14 @@ void vsprintf(char* buffer, const char* format, va_list va)
 	}
 end_sprintf:;
 }
-
-
-
 void sprintf(char* buffer, const char* format, ...)
 {
-	struct IEEEdd
-	{
-		int a;
-		int b;
-		int c;
-	} *bp;
-	bp->a = 0;
-	bp->b = 0;
-	bp->c = 0;
 	va_list va;
 	va_start(va, format);
 	vsprintf(buffer, format, va);
 }
 void printf(const char* format, ...)
 {
-	char b[255];
-	float n = 3.6;
-	dtoa(b, n, 'f', 0, 0);
-
 	va_list va;
 	va_start(va, format);
 	vsprintf(GlobalCharBuffer, format, va);
@@ -816,6 +820,7 @@ float asin(float number)
 }
 
 #endif
+
 
 float StringToFloat(const char* str)
 {

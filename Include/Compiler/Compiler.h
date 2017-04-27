@@ -946,17 +946,27 @@ private:
 	const OpCodes RDROpcodes = { RO_Nop, RO_Add, RO_Sub, RO_Mult, RO_Div, RO_Mod, RO_Not, RO_Neg, RO_CmpEq, RO_CmpNe, RO_CmpGt, RO_CmpGe, RO_CmpLt, RO_CmpLe, RO_fAdd, RO_fSub, RO_fMult, RO_fDiv, RO_fMod, RO_fNeg, RO_fCmpEq, RO_fCmpNe, RO_fCmpGt, RO_fCmpGe, RO_fCmpLt, RO_fCmpLe, RO_vAdd, RO_vSub, RO_vMult, RO_vDiv, RO_vNeg, RO_And, RO_Or, RO_Xor, RO_ItoF, RO_FtoI, RO_FtoV, RO_PushB, RO_PushB2, RO_PushB3, RO_Push, RO_PushF, RO_Dup, RO_Drop, RO_CallNative, RO_Function, RO_Return, RO_pGet, RO_pSet, RO_pPeekSet, RO_ToStack, RO_FromStack, RO_GetArrayP1, RO_GetArray1, RO_SetArray1, RO_GetFrameP1, RO_GetFrame1, RO_SetFrame1, RO_GetStaticP1, RO_GetStatic1, RO_SetStatic1, RO_Add1, RO_Mult1, RO_GetImm1, RO_SetImm1, RO_PushS, RO_Add2, RO_Mult2, RO_GetImm2, RO_SetImm2, RO_GetArrayP2, RO_GetArray2, RO_SetArray2, RO_GetFrameP2, RO_GetFrame2, RO_SetFrame2, RO_GetStaticP2, RO_GetStatic2, RO_SetStatic2, RO_GetGlobalP2, RO_GetGlobal2, RO_SetGlobal2, RO_Jump, RO_JumpFalse, RO_JumpNE, RO_JumpEQ, RO_JumpLE, RO_JumpLT, RO_JumpGE, RO_JumpGT, RO_Nop, RO_GetGlobalP3, RO_GetGlobal3, RO_SetGlobal3, RO_PushI24, RO_Switch, RO_PushString, RO_StrCopy, RO_ItoS, RO_StrAdd, RO_StrAddi, RO_MemCopy, RO_Catch, RO_Throw, RO_pCall, RO_Push_Neg1, RO_Push_0, RO_Push_1, RO_Push_2, RO_Push_3, RO_Push_4, RO_Push_5, RO_Push_6, RO_Push_7, RO_PushF_Neg1, RO_PushF_0, RO_PushF_1, RO_PushF_2, RO_PushF_3, RO_PushF_4, RO_PushF_5, RO_PushF_6, RO_PushF_7, RO_Nop, RO_Nop, RO_Nop, RO_Nop, RO_Call2, RO_Call2h1, RO_Call2h2, RO_Call2h3, RO_Call2h4, RO_Call2h5, RO_Call2h6, RO_Call2h7, RO_Call2h8, RO_Call2h9, RO_Call2hA, RO_Call2hB, RO_Call2hC, RO_Call2hD, RO_Call2hE, RO_Call2hF, RO_PushArrayP, RO_ReturnP0R0, RO_ReturnP0R1, RO_ReturnP0R2, RO_ReturnP0R3, RO_ReturnP1R0, RO_ReturnP1R1, RO_ReturnP1R2, RO_ReturnP1R3, RO_ReturnP2R0, RO_ReturnP2R1, RO_ReturnP2R2, RO_ReturnP2R3, RO_ReturnP3R0, RO_ReturnP3R1, RO_ReturnP3R2, RO_ReturnP3R3, RO_PushStringNull };
 	
 	#pragma region Type_Defines
-	enum class Rsc85Flags
+	typedef union
 	{
-		F4096 = 0x80
-		, F65536 = 0xC0
-		, F16384 = 0xA0
-		, F8192 = 0x90
-		, Fi4096 = (int32_t)0x80000000
-		, Fi65536 = (int32_t)0xC0000000
-		, Fi16384 = (int32_t)0xA0000000
-		, Fi8192 = (int32_t)0x90000000
-	};
+		uint32_t Flag[2];
+		struct
+		{
+			DWORD VPage2 : 8;
+			DWORD VPage1 : 6;
+			DWORD VPage0 : 2;
+			DWORD PPage2 : 8;
+			DWORD PPage1 : 4;
+			DWORD PPage0 : 3;
+			DWORD bResource : 1;//true
+
+
+			DWORD TotalVSize : 14; // TotalVSize (size = TotalVSize * 4096)
+			DWORD TotalPSize : 14; // TotalPSize (size = TotalPSize * 4096)
+			DWORD ObjectStartPage : 3; // resource starts at the 1st page with size = (0x1000 << ObjectStartPage)
+			DWORD bUseExtSize : 1; //true
+		};
+		
+	} RSCFlag;
 	#pragma endregion
 
 	#pragma region CallParsing
@@ -985,11 +995,16 @@ private:
 	}
 	#pragma endregion
 	#pragma region RSC85Parsing
-	uint32_t GetHeaderFormatFromFlag(uint32_t val);
-	uint32_t GetFlagFromReadbuffer(uint32_t buffer);
-	uint32_t GetFullFlagWithSize(const uint32_t size, const uint32_t flag)
+	std::vector<size_t> GetPageSizes(size_t& size);
+	size_t GetHeaderPageIndex(const std::vector<size_t>& DataSizePages);
+	uint32_t ObjectStartPageSizeToFlag(size_t value)
 	{
-		return flag | (size >> 12 & 0xFF) | (size >> 12 & 0xFF00) | (size >> 12 & 0xFF0000);
+		//4096 = 1 << 12;
+		//2048 = 1 << 11
+		//The -12 should be platform dependent, if the PageShift is different on PS3 then it might be 11
+		DWORD r = 0;
+		_BitScanReverse(&r, value);
+		return r - 12;
 	}
 	#pragma endregion
 	
@@ -1011,10 +1026,9 @@ private:
 	#pragma endregion
 
 	#pragma region Write_Functions
+	void CheckPad4096(uint32_t& value);
 	void WriteHeader() override;
 	void WritePointers() override;
-	bool WriteNormal(uint32_t datasize, uint32_t bufferflag);
-	bool WriteSmall(uint32_t datasize, uint32_t bufferflag);
 	void XSCWrite(const char* path, bool CompressAndEncrypt = true);
 	void SCOWrite(const char* path, bool CompressAndEncrypt = true);
 	#pragma endregion

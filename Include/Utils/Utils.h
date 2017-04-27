@@ -55,7 +55,7 @@ namespace Utils {
 			uint32_t val;
 		};
 
-		std::vector<NamedUint32> ReorderUint32Vector_SmallToBig(std::vector<uint32_t> vec, std::vector<const char*> name);
+		std::vector<NamedUint32> ReorderUint32Vector(std::vector<uint32_t> vec, std::vector<const char*> name, bool isSmallToBig);
 		void ArrayReverse(std::vector<uint8_t> InArr, std::vector<uint8_t>& OutArr);
 
 	}
@@ -69,6 +69,8 @@ namespace Utils {
 		inline uint32_t SwapEndian(uint32_t x) { return __builtin_bswap32(x); }
 		inline uint64_t SwapEndian(uint64_t x) { return __builtin_bswap64(x); }
 		uint32_t Flip2BytesIn4(uint32_t value);
+		inline int GMask(int firstBitindex, int lastBitIndex) { return (1 << lastBitIndex) - (1 << firstBitindex); }
+		inline int ExtractBitsAtIndex(int num, int index, int count) { return (GMask(index, index + count) & num) >> index; }
 	}
 	namespace IO
 	{

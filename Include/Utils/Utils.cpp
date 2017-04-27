@@ -2,7 +2,6 @@
 #include <vector>
 #include <stdio.h>
 #include <cstring>
-#include <algorithm>
 #include <string>
 #include <fstream>
 #include <algorithm>
@@ -73,7 +72,7 @@ namespace Utils {
 	namespace DataConversion
 	{
 
-		vector<NamedUint32> ReorderUint32Vector_SmallToBig(vector<uint32_t> vec, vector<const char*> name)
+		vector<NamedUint32> ReorderUint32Vector(vector<uint32_t> vec, vector<const char*> name, bool isSmallToBig)
 		{
 			vector<NamedUint32> ret;
 			ret.reserve(vec.size() + name.size());
@@ -81,7 +80,7 @@ namespace Utils {
 
 			for (uint32_t i = 0; vec.size() != 0; i++)
 			{
-				uint32_t index = -(vec.begin() - min_element(vec.begin(), vec.end()));
+				uint32_t index = -(vec.begin() - (isSmallToBig ? min_element(vec.begin(), vec.end()) : max_element(vec.begin(), vec.end())));
 				if (index > vec.size())
 					Throw("ReorderUint32Vector Out Of Bounds");
 
