@@ -1,6 +1,7 @@
 #pragma once
 #include "Compiler/Opcode.h"
 #include "ClangParsing/StaticData.h"
+#include "Utils\ConstExpr.h"
 
 #define SimpleOpCheck(Op, OpName) if (getOptLevel() > OptimisationLevel::OL_None){ \
 	int i1, i2; \
@@ -170,6 +171,10 @@ public:
 	void addOpShiftLeft(uint8_t shiftCount)
 	{
 		assert(shiftCount >= 0 && shiftCount <= 31 && "shiftCount must be between 0 and 31");
+		if (getOptLevel() >= OptimisationLevel::OL_Trivial)
+			if (!shiftCount)
+				return;
+
 		addOpPushInt(shiftCount);
 		Instructions.push_back(new Opcode(OK_ShiftLeft));
 	}
@@ -177,8 +182,155 @@ public:
 	void addOpShiftRight(uint8_t shiftCount)
 	{
 		assert(shiftCount >= 0 && shiftCount <= 31 && "shiftCount must be between 0 and 31");
+		if (getOptLevel() >= OptimisationLevel::OL_Trivial)
+			if (!shiftCount)
+				return;
+
 		addOpPushInt(shiftCount);
 		Instructions.push_back(new Opcode(OK_ShiftRight));
+	}
+	/*
+	stack setup
+	-------------------
+	0: value to set (true/false)
+	1: pointer to var
+	-------------------
+	NOTE: this function should be in its own scope
+	*/
+	void addOpSetBitStack(uint8_t bitIndex, size_t storageIndex)
+	{
+		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
+		assert(Instructions.size() && "cannot add bitset to empty instruction stack");
+
+		
+		addOpSetFrame(storageIndex);
+		pushComment("__bitset_set_temp_ptr");
+		
+		addOpPushInt(0);
+		Instructions.push_back(new Opcode(OK_CmpNe));
+		
+		addOpNeg();
+		addOpGetFrame(storageIndex);
+		pushComment("__bitset_set_temp_ptr");
+		Instructions.push_back(new Opcode(OK_PGet));
+		Instructions.push_back(new Opcode(OK_Xor));
+		Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 1 << bitIndex));
+		Instructions.push_back(new Opcode(OK_And));
+		addOpGetFrame(storageIndex);
+		pushComment("__bitset_set_temp_ptr");
+		Instructions.push_back(new Opcode(OK_PGet));
+		Instructions.push_back(new Opcode(OK_Xor));
+		addOpGetFrame(storageIndex);
+		pushComment("__bitset_set_temp_ptr");
+		Instructions.push_back(new Opcode(OK_PSet));
+
+	}
+	/*
+	stack setup
+	-------------------
+	1: var value
+	-------------------
+	*/
+	void addOpGetBitField(uint32_t bitIndex, uint32_t bitCount, int buildType)
+	{
+		assert(bitIndex + bitCount >= 1 && bitIndex + bitCount <= 32 && "bitindex + bitCount must be between 1 and 32");
+		assert(Instructions.size() && "cannot add bitset to empty instruction stack");
+		
+		if (buildType == BT_GTAIV_TLAD || buildType == BT_GTAIV_TBOGT || buildType == BT_GTAIV || buildType == BT_GTAV)
+		{
+			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, bitIndex));
+			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, Utils::Bitwise::bitCountToIntEnd(bitIndex, bitCount)));
+			addOpNative(JoaatConst("get_bits_in_range"), 3, 1);
+		}
+		else
+		{
+			uint32_t rangeEnd = Utils::Bitwise::bitCountToIntEnd(bitIndex, bitCount);
+			if ((int32_t)bitIndex > (int32_t)rangeEnd || bitIndex > 31 || rangeEnd > 31)
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 0));
+			else
+			{
+				addOpShiftRight(bitIndex);
+				Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, (uint32_t)((1 << (rangeEnd - bitIndex + 1)) - 1)));
+				Instructions.push_back(new Opcode(OK_And));
+			}
+		}
+	}
+	/*
+	stack setup
+	-------------------
+	0: value to set (true/false)
+	1: pointer to var
+	-------------------
+	NOTE: this function should be in its own scope
+	*/
+	void addOpSetBitField(int bitIndex, int bitCount, size_t storageIndex[2], int buildType)
+	{
+		assert(bitCount < 32 && "set_bits_in_range is only valid for 31 bits");
+		assert(bitIndex + bitCount >= 1 && bitIndex + bitCount <= 32 && "bitindex + bitCount must be between 1 and 31");
+		assert(Instructions.size() >= 2 && "cannot add bitset to empty instruction stack");
+
+		addOpSetFrame(storageIndex[0]);//ptr
+		pushComment("__bitset_set_temp_ptr");
+		addOpSetFrame(storageIndex[1]);//value
+
+		if (buildType == BT_GTAIV_TLAD || buildType == BT_GTAIV_TBOGT || buildType == BT_GTAIV || buildType == BT_GTAV)
+		{
+			addOpGetFrame(storageIndex[0]);
+			pushComment("__bitset_set_temp_ptr");
+			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, bitIndex));
+			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, Utils::Bitwise::bitCountToIntEnd(bitIndex, bitCount)));
+			addOpGetFrame(storageIndex[1]);
+			pushComment("__bitset_set_temp_val");
+			addOpNative(JoaatConst("set_bits_in_range"), 4, 0);
+		}
+		else
+		{
+			static uint32_t bitfield_set_compatibility_counter = 0;
+			std::string bitfield_set_compatibility_label = "__bitfield_set_compatibility" + std::to_string(bitfield_set_compatibility_counter);
+			uint32_t rangeEnd = Utils::Bitwise::bitCountToIntEnd(bitIndex, bitCount);
+
+			addOpGetFrame(storageIndex[1]);
+			pushComment("__bitset_set_temp_val");
+			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, 0));
+			Instructions.push_back(new Opcode(OK_CmpGe));
+			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, ((int32_t)bitIndex <= (int32_t)rangeEnd && bitIndex <= 31 && rangeEnd <= 31)));
+			Instructions.push_back(new Opcode(OK_And));
+			addOpJumpFalse(bitfield_set_compatibility_label);
+			addOpGetFrame(storageIndex[1]);
+			pushComment("__bitset_set_temp_val");
+			addOpShiftLeft(bitIndex);
+			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, (uint32_t)~(((1 << (rangeEnd - bitIndex + 1)) - 1) << bitIndex)));
+			addOpGetFrame(storageIndex[0]);
+			pushComment("__bitset_set_temp_ptr");
+			Instructions.push_back(new Opcode(OK_PGet));
+			Instructions.push_back(new Opcode(OK_And));
+			Instructions.push_back(new Opcode(OK_Or));
+			addOpGetFrame(storageIndex[0]);
+			pushComment("__bitset_set_temp_ptr");
+			Instructions.push_back(new Opcode(OK_PSet));
+			addOpLabel(bitfield_set_compatibility_label);
+			bitfield_set_compatibility_counter++;
+
+		}
+
+	}
+	/*
+	stack setup
+	-------------------
+	0: bitfield value
+	1: value to be added by or
+	-------------------
+	*/
+	void addOpAddBitField(int bitIndex, int bitCount)
+	{
+		assert(bitIndex + bitCount >= 1 && bitIndex + bitCount <= 32 && "bitindex + bitCount must be between 1 and 32");
+		assert(Instructions.size() >= 2 && "cannot add bitset to empty instruction stack");
+
+		Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, Utils::Bitwise::revbitmask(bitCount)));
+		Instructions.push_back(new Opcode(OK_And));
+		addOpShiftLeft(bitIndex);
+		Instructions.push_back(new Opcode(OK_Or));
+
 	}
 	void addOpIsBitSet(uint8_t bitIndex)
 	{

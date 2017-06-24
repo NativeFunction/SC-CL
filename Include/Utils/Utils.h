@@ -69,8 +69,12 @@ namespace Utils {
 		inline uint32_t SwapEndian(uint32_t x) { return __builtin_bswap32(x); }
 		inline uint64_t SwapEndian(uint64_t x) { return __builtin_bswap64(x); }
 		uint32_t Flip2BytesIn4(uint32_t value);
-		inline int GMask(int firstBitindex, int lastBitIndex) { return (1 << lastBitIndex) - (1 << firstBitindex); }
+		inline int GMask(int rangeStart, int rangeEnd) { return (1 << rangeEnd) - (1 << rangeStart); }
 		inline int ExtractBitsAtIndex(int num, int index, int count) { return (GMask(index, index + count) & num) >> index; }
+		int32_t __fastcall set_bits_in_range(uint32_t *varToSet, uint32_t rangeStart, uint32_t rangeEnd, int32_t sourceNum);
+		int32_t __fastcall get_bits_in_range(int32_t value, uint32_t rangeStart, uint32_t rangeEnd);
+		uint32_t revbitmask(uint32_t index);
+		uint32_t bitCountToIntEnd(uint32_t rangeStart, uint32_t count);
 	}
 	namespace IO
 	{

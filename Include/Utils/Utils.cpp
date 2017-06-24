@@ -5,6 +5,7 @@
 #include <string>
 #include <fstream>
 #include <algorithm>
+#include <cassert>
 #include "Utils/Utils.h"
 
 
@@ -174,6 +175,53 @@ namespace Utils {
 			short ret[2] = { ptr[1], ptr[0] };
 			return *(uint32_t*)ret;
 		}
+		/**
+		Copys bits from source num at start 0 into varToSet at index rangeStart until rangeEnd.
+		Notes:-----------------------------------------------
+		Total range can't be larger then 31 bits
+		rangeStart can be from 0 - 31
+		rangeEnd can be from 0 - 31
+		rangeStart must be less then or equal to rangeEnd
+		sign bit on sourceNum cannot be set
+		*/
+		int32_t __fastcall set_bits_in_range(uint32_t *varToSet, uint32_t rangeStart, uint32_t rangeEnd, int32_t sourceNum)
+		{
+			int32_t result = 0;
+			if (sourceNum >= 0 && (int32_t)rangeStart <= (int32_t)rangeEnd && rangeStart <= 31 && rangeEnd <= 31)
+			{
+				result = (sourceNum << rangeStart) | *varToSet & (uint32_t)~(((1 << (rangeEnd - rangeStart + 1)) - 1) << rangeStart);
+				*varToSet = result;
+			}
+			return result;
+		}
+		int32_t __fastcall get_bits_in_range(int32_t value, uint32_t rangeStart, uint32_t rangeEnd)
+		{
+			int32_t result;
+			if ((int32_t)rangeStart > (int32_t)rangeEnd || rangeStart > 31 || rangeEnd > 31)
+				result = 0;
+			else
+				result = (value >> rangeStart) & (uint32_t)((1 << (rangeEnd - rangeStart + 1)) - 1);
+			return result;
+		}
+		uint32_t revbitmask(uint32_t index)
+		{
+			if (!(index % 32))
+				return -1;
+			return ~(-1 << index);
+		}
+		uint32_t bitCountToIntEnd(uint32_t rangeStart, uint32_t count)
+		{
+			assert(count && "count cannot be 0");
+			assert(count < 32 && "count too large");
+			uint32_t endIndex = rangeStart + count;
+			if (count == 1)
+				return rangeStart;
+			else if (endIndex >= 32)
+				return 31;
+			else
+				return endIndex - 1;
+		}
+
 	}
 
 	namespace Compression

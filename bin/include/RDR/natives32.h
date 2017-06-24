@@ -203,7 +203,7 @@ extern _native int unk_0xCCE4A339(int pram0)l
 extern _native32(0x0ADC17E9) bool _is_actor_player(Actor actorId)l
 extern _native Actor get_player_actor(int PlayerId)l
 extern _native int get_day(Time T)l
-extern _native int fabs(int pram0)l
+extern _native float fabs(float f)l
 extern _native int unk_0x6CC9CCE7()l
 extern _native int get_item_count(int pram0, int pram1)l
 extern _native void print_objective_format(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8, int pram9, int pram10)l

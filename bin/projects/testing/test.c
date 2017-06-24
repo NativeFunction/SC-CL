@@ -3,8 +3,48 @@
 #include "intrinsics.h"
 #include "natives.h"
 
+//bitfield overflow 1 bit = 2 = 1
 
-#ifdef __GTAIV__
+
+#if TARGET == TARGET_GTAV
+
+const int j = 40000;
+
+struct MenuToggles
+{
+	//unsigned int start;
+	unsigned Invulnerability : 1;
+	unsigned InfiniteDeadeye : 8;
+	unsigned FlyMod : 1;
+	unsigned BlazingGuns : 1;
+	unsigned InfiniteHorseStamina : 1;
+	unsigned ExplosiveWeapons : 1;
+	unsigned endi : 19;
+
+	unsigned startnbs : 1;
+	//unsigned int end;
+} MenuToggles = { 1, 2, 4, 0, 5, 10, j };
+
+
+void main()
+{
+	//do init str/uni bitfield
+	//do init str/uni bitfield gbl
+	//do str/uni bitfield gbl
+	int t = 0b00000001111101000001001111010010;
+	
+	
+	MenuToggles.startnbs = true;
+	MenuToggles.endi = 138371;
+	MenuToggles.Invulnerability = true;
+	MenuToggles.Invulnerability = false;
+	MenuToggles.InfiniteDeadeye = 239;
+	MenuToggles.ExplosiveWeapons = true;
+	MenuToggles.InfiniteDeadeye = 200;
+	
+}
+
+#elif TARGET == TARGET_GTAIV
 //function pointer need fixing
 //jump table needs fixing
 //
@@ -34,7 +74,7 @@ void main()
 	funcCall(3000);
 
 }
-#elif defined(__RDR__)
+#elif TARGET == TARGET_RDR
 
 GUIWindow MainWindow;
 

@@ -134,6 +134,17 @@ public:
 	void addOpPushNullPtr(){
 		_dynamicInitialisation.push_back(new Opcode(OK_PushNullPtr));
 	}
+	void addOpAddBitField(int bitIndex, int bitCount)
+	{
+		assert(bitIndex + bitCount >= 1 && bitIndex + bitCount <= 32 && "bitindex + bitCount must be between 1 and 32");
+		assert(_dynamicInitialisation.size() >= 2 && "cannot add bitset to empty instruction stack");
+
+		_dynamicInitialisation.push_back(Opcode::makeIntOpcode(OK_PushInt, Utils::Bitwise::revbitmask(bitCount)));
+		_dynamicInitialisation.push_back(new Opcode(OK_And));
+		_dynamicInitialisation.push_back(Opcode::makeIntOpcode(OK_PushInt, 0));
+		_dynamicInitialisation.push_back(new Opcode(OK_ShiftLeft));
+		_dynamicInitialisation.push_back(new Opcode(OK_Or));
+	}
 	void addOpPushInt(int value)
 	{
 		Opcode* op = new Opcode(OK_PushInt);

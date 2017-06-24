@@ -98,7 +98,7 @@ static int cvt(float arg, int prec, char *signp, int fmtch,
 static char *_round(float fract, int *exp, char *start, char *end,
 				   char ch, char *signp);
 static char *exponent(char *p, int exp, int fmtch);
-static double ModF(float f, float * iptr)
+static float ModF(float f, float * iptr)
 {
 	*iptr = (float)(int)f;
 	return f - (float)(int)f;
@@ -135,27 +135,27 @@ static int __finite(rtype f)
 
 static int __finite(float d)
 {
-	//struct
-	//{
-	//	int start;
-	//	int Invulnerability : 1;
-	//	int InfiniteDeadeye : 8;
-	//	int FlyMod : 1;
-	//	int BlazingGuns : 1;
-	//	int InfiniteHorseStamina : 1;
-	//	int ExplosiveWeapons : 1;
-	//	int endi : 19;// 20;
-	//	int end;
-	//} MenuToggles;
-	//
-	//
-	//MenuToggles.Invulnerability = ~MenuToggles.FlyMod;
-	//MenuToggles.InfiniteDeadeye = MenuToggles.InfiniteDeadeye;
-	//MenuToggles.BlazingGuns = true;
-	//MenuToggles.InfiniteHorseStamina = false;
-	//MenuToggles.start = 0;
-	//MenuToggles.end = 0;
-	//MenuToggles.endi = 0;
+	struct
+	{
+		int start;
+		unsigned Invulnerability : 1;
+		unsigned InfiniteDeadeye : 8;
+		unsigned FlyMod : 1;
+		unsigned BlazingGuns : 1;
+		unsigned InfiniteHorseStamina : 1;
+		unsigned ExplosiveWeapons : 1;
+		unsigned endi : 19;// 20;
+		int end;
+	} MenuToggles = {1000000, 1, 246, 0,0,0,0,20000,2000000};
+	
+	
+	MenuToggles.Invulnerability = ~MenuToggles.FlyMod;
+	MenuToggles.InfiniteDeadeye = MenuToggles.InfiniteDeadeye;
+	MenuToggles.BlazingGuns = true;
+	MenuToggles.InfiniteHorseStamina = false;
+	MenuToggles.start = 0;
+	MenuToggles.end = 0;
+	MenuToggles.endi = 0;
 
 
 	#if ENDIAN == ENDIAN_LITTLE
@@ -227,8 +227,8 @@ static void dtoa(char *dbuf, float arg, int fmtch, int width, int prec)
 
 static int cvt(float number, int prec, char *signp, int fmtch, char *startp, char *endp)
 {
-	register char *p, *t;
-	register float fract;
+	char *p, *t;
+	float fract;
 	float integer, tmp;
 	int dotrim, expcnt, gformat;
 
@@ -267,7 +267,7 @@ static int cvt(float number, int prec, char *signp, int fmtch, char *startp, cha
 			* if precision required or alternate flag set, add in a
 			* decimal point.
 			*/
-			if (prec || TESTFLAG(ALTERNATE_FORM))
+			if (prec)// || TESTFLAG(ALTERNATE_FORM))
 				*t++ = '.';
 			/* if requires more precision and some fraction left */
 			if (fract)

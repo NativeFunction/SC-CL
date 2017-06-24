@@ -1908,7 +1908,7 @@ extern _native bool is_aussie_version()l
 extern _native bool is_string_null(const char* string)l
 extern _native bool is_string_null_or_empty(const char* string)l
 extern _native bool string_to_int(const char* string, int* outInteger)l
-extern _native void set_bits_in_range(int* var, int rangeStart, int rangeEnd, int p3)l
+extern _native void set_bits_in_range(int* var, unsigned int rangeStart, unsigned int rangeEnd, int sourceNum)l
 extern _native int get_bits_in_range(int var, int rangeStart, int rangeEnd)l
 extern _native int add_stunt_jump(float p0, float p1, float p2, float p3, float p4, float p5, float p6, float p7, float p8, float p9, float p10, float p11, float p12, float p13, float p14, any p15, any p16)l
 extern _native int add_stunt_jump_angled(float p0, float p1, float p2, float p3, float p4, float p5, float p6, float p7, float p8, float p9, float p10, float p11, float p12, float p13, float p14, float p15, float p16, any p17, any p18)l
