@@ -3,6 +3,7 @@
 #include "Compiler/Opcode.h"
 #include <vector>
 #include "Compiler/BuildTarget.h"
+#include "Utils/Utils.h"
 
 class Script;
 class FunctionData;

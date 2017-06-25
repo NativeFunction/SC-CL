@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <cassert>
 #include "Utils/Utils.h"
+#include <windows.h>
+#include "ConsoleColor.h"
 
 
 using namespace std;

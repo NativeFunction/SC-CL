@@ -1,16 +1,17 @@
 #pragma once
-#include "ClangParsing/FunctionData.h"
+
 #include <cassert>
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "Utils/Utils.h"
+#include <fstream>
+#include <ctime>
 #include "OpcodeConsts.h"
 #include "Utils/ConstExpr.h"
-#include "ClangParsing/Script.h"
-#include "fstream"
-#include <ctime>
-extern std::string globalDirectory;
+#include "ClangParsing/GlobalDecls.h"
+#include "ClangParsing/Helpers/FunctionData.h"
+#include "ClangParsing/Helpers/Script.h"
+#include "Utils/Utils.h"
 
 #pragma region Collections
 class PageCollection{
@@ -1147,7 +1148,7 @@ class CompileGTAVPC : public CompileGTAV
 	public:
 		NativeTranslation(uint32_t versionString) : gameVersionStr(std::to_string(versionString))
 		{
-			std::ifstream natFile(globalDirectory + "PC_Natives.bin", std::ios::in | std::ios::binary | std::ios::ate);
+			std::ifstream natFile(SCCL::globalDirectory + "PC_Natives.bin", std::ios::in | std::ios::binary | std::ios::ate);
 			if (!natFile.is_open())
 			{
 				Utils::System::Warn("Couldnt open pc native translation table, check for file 'PC_Natives.bin' in directory");

@@ -1,6 +1,6 @@
 #include "Compiler/Opcode.h"
-#include "ClangParsing/StaticData.h"
-#include "ClangParsing/FunctionData.h"
+#include "ClangParsing/Helpers/StaticData.h"
+#include "ClangParsing/Helpers/FunctionData.h"
 
 using namespace std;
 

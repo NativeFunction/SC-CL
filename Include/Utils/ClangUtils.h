@@ -12,7 +12,6 @@
 #include "clang/Tooling/Tooling.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/raw_ostream.h"
-#include "Utils/Utils.h"
 
 class ArgumentsAdjustingCompilations : public clang::tooling::CompilationDatabase {
 public:

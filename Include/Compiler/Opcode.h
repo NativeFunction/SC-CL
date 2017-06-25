@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 #include <cassert>
-#include "Utils/Utils.h"
 #include <memory>
+#include "Utils/Utils.h"
 
 enum OpcodeKind{
 	OK_Null,

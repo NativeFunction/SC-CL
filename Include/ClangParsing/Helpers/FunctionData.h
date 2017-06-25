@@ -1,6 +1,6 @@
 #pragma once
 #include "Compiler/Opcode.h"
-#include "ClangParsing/StaticData.h"
+#include "ClangParsing/Helpers/StaticData.h"
 #include "Utils\ConstExpr.h"
 
 #define SimpleOpCheck(Op, OpName) if (getOptLevel() > OptimisationLevel::OL_None){ \

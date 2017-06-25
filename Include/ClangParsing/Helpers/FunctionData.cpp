@@ -1,18 +1,18 @@
-#include "ClangParsing/FunctionData.h"
 #include <cassert>
 #include <sstream>
 #include <ctime>
 #include <algorithm>
 #include <random>
 #include <chrono>
-#include "ClangParsing/Script.h"
 #include <unordered_map>
 #include <iterator>
 
+#include "ClangParsing/GlobalDecls.h"
+#include "ClangParsing/Helpers/FunctionData.h"
+#include "ClangParsing/Helpers/Script.h"
+
 
 using namespace std;
-
-extern uint8_t stackWidth;
 
 bool FunctionData::tryPop2Ints(int & i1, int & i2)
 {
@@ -518,7 +518,7 @@ int FunctionData::getSizeEstimate(int incDecl) const
 {
 	int size = 0;
 	if (incDecl) size += 5;//fDecl
-	for(int i = 0, max = Instructions.size(); i < max;i++)
+	for(int i = 0, _max = Instructions.size(); i < _max;i++)
 	{
 		size += Instructions[i]->getSizeEstimate();
 	}
@@ -752,8 +752,8 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 
 void FunctionData::optimisePushBytes()
 {
-	size_t size = Instructions.size(), max = size - 1, max2 = size - 2;
-	for (size_t i = 0; i < max;i++)
+	size_t size = Instructions.size(), _max = size - 1, max2 = size - 2;
+	for (size_t i = 0; i < _max;i++)
 	{
 		Opcode* op = Instructions[i], *next, *next2;
 		if (op->getKind() == OK_PushInt)
@@ -1970,9 +1970,9 @@ start:
 			case OK_GetStaticPRaw:
 			case OK_GetImmP:
 			{
-				if (immediate % stackWidth == 0)
+				if (immediate % SCCL::stackWidth == 0)
 				{
-					int newImmIndex = (int)last->getUShort(0) + immediate / stackWidth;
+					int newImmIndex = (int)last->getUShort(0) + immediate / SCCL::stackWidth;
 					if (newImmIndex < 0xFFFF)
 					{
 						last->setUShort(newImmIndex, 0);
@@ -1983,9 +1983,9 @@ start:
 			goto setAsAddImm;
 			case OK_GetGlobalP:
 			{
-				if (immediate % stackWidth == 0)
+				if (immediate % SCCL::stackWidth == 0)
 				{
-					int newImmIndex = last->getInt() + immediate / stackWidth;
+					int newImmIndex = last->getInt() + immediate / SCCL::stackWidth;
 					if (newImmIndex < 0xFFFFFF)
 					{
 						last->setInt(newImmIndex);
@@ -1996,9 +1996,9 @@ start:
 			goto setAsAddImm;
 			case OK_GetStaticP:
 			{
-				if (immediate % stackWidth == 0)
+				if (immediate % SCCL::stackWidth == 0)
 				{
-					int newImmIndex = (int)last->getStaticData()->getImmIndex() + immediate / stackWidth;
+					int newImmIndex = (int)last->getStaticData()->getImmIndex() + immediate / SCCL::stackWidth;
 					if (newImmIndex < 0xFFFF)
 					{
 						last->storage.staticData->setImmIndex(newImmIndex);

@@ -1,11 +1,12 @@
 #pragma once
-#include "ClangParsing/FunctionData.h"
-#include "ClangParsing/StaticData.h"
+#include "ClangParsing/Helpers/FunctionData.h"
+#include "ClangParsing/Helpers/StaticData.h"
 #include "Compiler/BuildTarget.h"
 #include <memory>
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include "Utils/Utils.h"
 
 struct StaticsIgnoreBlock{
 	size_t startIndex;
@@ -13,6 +14,7 @@ struct StaticsIgnoreBlock{
 };
 class Script
 {
+	
 	FunctionData *entryFunction;
 	FunctionData *mainFunction;
 	std::vector<std::unique_ptr<FunctionData>> functions;

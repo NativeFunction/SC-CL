@@ -4,51 +4,63 @@ set(LLVM_LINK_COMPONENTS support)
 set(LLVM_USED_LIBS clangTooling clangBasic clangAST)
 
 set(source_list
-  "Include/Utils/Utils.cpp"
-  "Include/Utils/ClangUtils.cpp"
-  "Include/Compiler/Compiler.cpp"
-  "Include/Compiler/Opcode.cpp"
-  "Include/ClangParsing/FunctionData.cpp"
-  "Include/ClangParsing/Script.cpp"
-  "Include/ClangParsing/StaticData.cpp"
-  "Include/Crypto/aes256.c"
+	"Include/ClangParsing/ASTConsumer.cpp"
+	"Include/ClangParsing/ASTFrontendAction.cpp"
+	"Include/ClangParsing/ASTVisitorGlobal.cpp"
+	"Include/ClangParsing/ASTVisitorLocal.cpp"
+	"Include/ClangParsing/CommandLineOptions.cpp"
+	"Include/ClangParsing/GlobalDecls.cpp"
+	"Include/ClangParsing/Helpers/FunctionData.cpp"
+	"Include/ClangParsing/Helpers/Script.cpp"
+	"Include/ClangParsing/Helpers/StaticData.cpp"
+	"Include/Utils/Utils.cpp"
+	"Include/Utils/ClangUtils.cpp"
+	"Include/Compiler/Compiler.cpp"
+	"Include/Compiler/Opcode.cpp"
+	"Include/Crypto/aes256.c"
 )
 
 set(header_list
-  "Include/ClangParsing/FunctionData.h"
-  "Include/ClangParsing/Script.h"
-  "Include/ClangParsing/StaticData.h"
-  "Include/Compiler/BuildTarget.h"
-  "Include/Compiler/Compiler.h"
-  "Include/Compiler/Opcode.h"
-  "Include/Compiler/OpcodeConsts.h"
-  "Include/Compression/zconf.h"
-  "Include/Compression/zlib.h"
-  "Include/Crypto/aes256.h"
-  "Include/Utils/ClangUtils.h"
-  "Include/Utils/ConsoleColor.h"
-  "Include/Utils/ConstExpr.h"
-  "Include/Utils/Utils.h"
+	"Include/ClangParsing/ASTConsumer.h"
+	"Include/ClangParsing/ASTFrontendAction.h"
+	"Include/ClangParsing/ASTVisitorGlobal.h"
+	"Include/ClangParsing/ASTVisitorLocal.h"
+	"Include/ClangParsing/CommandLineOptions.h"
+	"Include/ClangParsing/GlobalDecls.h"
+	"Include/ClangParsing/Helpers/FunctionData.h"
+	"Include/ClangParsing/Helpers/Script.h"
+	"Include/ClangParsing/Helpers/StaticData.h"
+	"Include/Compiler/BuildTarget.h"
+	"Include/Compiler/Compiler.h"
+	"Include/Compiler/Opcode.h"
+	"Include/Compiler/OpcodeConsts.h"
+	"Include/Compression/zconf.h"
+	"Include/Compression/zlib.h"
+	"Include/Crypto/aes256.h"
+	"Include/Utils/ClangUtils.h"
+	"Include/Utils/ConsoleColor.h"
+	"Include/Utils/ConstExpr.h"
+	"Include/Utils/Utils.h"
 )
 
 set(resource_list
-  "CMakeLists.txt"
-  ".gitignore"
-  "contributors.txt"
+	"CMakeLists.txt"
+	".gitignore"
+	"contributors.txt"
 )
 
 add_clang_executable(SC-CL
-  SC-CL.cpp
-  ${source_list}
-  ${header_list}
+	SC-CL.cpp
+	${source_list}
+	${header_list}
 )
 
 include_directories(Include)
 target_link_libraries(SC-CL
-  clangTooling
-  clangBasic
-  clangASTMatchers
-  Include/Compression/zlib
+	clangTooling
+	clangBasic
+	clangASTMatchers
+	Include/Compression/zlib
 )
 
 foreach(source IN LISTS source_list)

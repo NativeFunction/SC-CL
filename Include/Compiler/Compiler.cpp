@@ -1,5 +1,5 @@
 #include "Compiler/Compiler.h"
-#include "ClangParsing/StaticData.h"
+#include "ClangParsing/Helpers/StaticData.h"
 #include <random>
 #include <chrono>
 

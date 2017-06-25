@@ -1,4 +1,4 @@
-#include "ClangParsing/Script.h"
+#include "ClangParsing/Helpers/Script.h"
 #include "Utils/Utils.h"
 #include "Utils/ConstExpr.h"
 

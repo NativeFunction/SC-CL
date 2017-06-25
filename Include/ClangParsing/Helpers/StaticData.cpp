@@ -1,6 +1,6 @@
-#include "ClangParsing/StaticData.h"
-#include "ClangParsing/Script.h"
-#include "ClangParsing/FunctionData.h"
+#include "ClangParsing/Helpers/StaticData.h"
+#include "ClangParsing/Helpers/Script.h"
+#include "ClangParsing/Helpers/FunctionData.h"
 
 using namespace std;
 void StaticData::setUsedStaticInd(Script* scriptBase)

@@ -9,6 +9,7 @@
 !ASM Compiler/
 !Utils/
 !ClangParsing/
+!Helpers/
 !Version/
 !Version.h
 !zconf.h
@@ -18,6 +19,18 @@
 !aes256.c
 !ConsoleColor.h
 !contributors.txt
+!ASTConsumer.cpp
+!ASTConsumer.h
+!ASTFrontendAction.cpp
+!ASTFrontendAction.h
+!ASTVisitorGlobal.cpp
+!ASTVisitorGlobal.h
+!ASTVisitorLocal.cpp
+!ASTVisitorLocal.h
+!CommandLineOptions.cpp
+!CommandLineOptions.h
+!GlobalDecls.cpp
+!GlobalDecls.h
 !FunctionData.cpp
 !FunctionData.h
 !Opcode.h
@@ -73,3 +86,4 @@ bin/projects/MenuBase/*.opendb
 bin/projects/MenuBase/*.TMP
 *.exe
 !SC-CL_Version_Selector.exe
+/bin/projects/Network Protection
