@@ -8,4 +8,4 @@
 #pragma once
 
 //major.minor.revision.patchlevel
-#define VERSION "0.7.1.4"
+#define VERSION "0.7.1.5"
