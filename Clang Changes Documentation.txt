@@ -1,0 +1,198 @@
+=====================================================================
+llvm_src\tools\clang\lib\SemaSemaDeclAttr.cpp
+=====================================================================
+
+Function additions
+----------------------------------------
+static void handleIntrinsicAttribute(Sema &S, Decl *D,
+	const AttributeList &Attr) {
+	if (isa<FunctionDecl>(D))
+	{
+		const FunctionDecl * fDecl = cast<FunctionDecl>(D);
+		if (fDecl->getStorageClass() != SC_Extern)
+		{
+			S.Diag(Attr.getLoc(), diag::err_intrin_non_extern);
+		}
+		else
+		{
+			if (Attr.getNumArgs() == 1)
+			{
+				bool isUnsafe;
+				if (Attr.getArgAsExpr(0)->EvaluateAsBooleanCondition(isUnsafe, S.Context))
+				{
+					D->addAttr(::new (S.Context) IntrinsicFuncAttr(Attr.getRange(), S.Context, isUnsafe, Attr.getAttributeSpellingListIndex()));
+				}
+				else
+				{
+					S.Diag(Attr.getLoc(), diag::err_intrin_unknown_arg);
+				}
+			}
+			else
+			{
+				D->addAttr(::new (S.Context) IntrinsicFuncAttr(Attr.getRange(), S.Context,
+					Attr.getAttributeSpellingListIndex()));
+			}
+		}
+	}
+	else
+	{
+		S.Diag(Attr.getLoc(), diag::err_intrin_not_func);
+	}
+}
+
+static void handleGlobalAttribute(Sema &S, Decl *D,
+	const AttributeList &Attr)
+{
+	if (Attr.getNumArgs() == 1)
+	{
+		uint32_t index;
+		if (checkUInt32Argument(S, Attr, Attr.getArgAsExpr(0), index) && index < 0x1000000)
+		{
+			D->addAttr(::new (S.Context) GlobalVariableAttr(Attr.getRange(), S.Context, index,
+				Attr.getAttributeSpellingListIndex()));
+		}
+		else
+		{
+			S.Diag(Attr.getLoc(), diag::err_global_var_index_out_of_range);
+		}
+	}
+	else
+	{
+		S.Diag(Attr.getLoc(), diag::err_global_var_index_not_specified);
+	}
+}
+
+static void handleNativeAttribute(Sema &S, Decl *D,
+	const AttributeList &Attr) {
+	if(isa<FunctionDecl>(D))
+	{
+		const FunctionDecl * fDecl = cast<FunctionDecl>(D);
+		if(fDecl->getStorageClass() != SC_Extern)
+		{
+			S.Diag(Attr.getLoc(), diag::err_native_non_extern);
+		}
+		else
+		{
+			switch(Attr.getNumArgs())
+			{
+			case 0:
+				D->addAttr(::new (S.Context) NativeFuncAttr(Attr.getRange(), S.Context,
+					Attr.getAttributeSpellingListIndex()));
+				return;
+			case 1:
+			{
+				uint32_t lowDWord;
+				if(checkUInt32Argument(S, Attr, Attr.getArgAsExpr(0), lowDWord))
+				{
+					D->addAttr(::new (S.Context) NativeFuncAttr(Attr.getRange(), S.Context, lowDWord, 0,
+						Attr.getAttributeSpellingListIndex()));
+					return;
+				}
+				break;
+			}
+			case 2:
+			{
+				uint32_t lowDWord;
+				uint32_t hiDWord;
+				if(checkUInt32Argument(S, Attr, Attr.getArgAsExpr(0), lowDWord) && checkUInt32Argument(S, Attr, Attr.getArgAsExpr(1), hiDWord))
+				{
+					D->addAttr(::new (S.Context) NativeFuncAttr(Attr.getRange(), S.Context, lowDWord, hiDWord,
+						Attr.getAttributeSpellingListIndex()));
+					return;
+				}
+				break;
+			}
+
+			}
+			S.Diag(Attr.getLoc(), diag::err_native_hash_invalid_args);
+		}
+	}
+	else
+	{
+		S.Diag(Attr.getLoc(), diag::err_native_not_func);
+	}
+
+}
+
+
+ProcessDeclAttribute Attr.getKind() switch additions
+------------------------------
+case AttributeList::AT_IntrinsicFunc:
+  handleIntrinsicAttribute(S, D, Attr);
+  break;
+
+case AttributeList::AT_NativeFunc:
+  handleNativeAttribute(S, D, Attr);
+  break;
+
+case AttributeList::AT_GlobalVariable:
+  handleGlobalAttribute(S, D, Attr);
+  break;
+ 
+case AttributeList::AT_UnsafeFunc:
+  handleSimpleAttribute<UnsafeFuncAttr>(S, D, Attr);
+  break;
+
+=====================================================================
+llvm_src\tools\clang\include\clang\Basic\DiagnosticSemaKinds.td
+=====================================================================
+
+Custom defines
+----------------------------------------
+
+// joaat_error
+def err_joaat_nonconstant_string_argument : Error<
+  "Argument for jenkins_hash must be a constant string">;
+
+// natives
+def err_native_hash_invalid_args : Error<
+  "Invalid arguments for native attribute">;
+def err_native_non_extern : Error<
+  "Native attribute can only be used on functions marked as extern">;
+def err_intrin_non_extern : Error<
+  "Intrinsic attribute can only be used on functions marked as extern">;
+def err_native_not_func : Error<
+  "Native attribute can only be used on function definitions">;
+def err_intrin_not_func : Error<
+  "Intrinsic attribute can only be used on function definitions">;
+def err_intrin_unknown_arg : Error<
+  "Intrinsic attribute argument must be true (1) or false(0)">;
+
+def err_global_var_index_not_specified : Error<
+  "Global Index argument not specified">;
+def err_global_var_index_out_of_range : Error<
+  "Global Index must be in range 0 - 16,777,215">; 
+
+=====================================================================
+llvm_src\tools\clang\include\clang\Basic\Attr.td
+=====================================================================
+
+Custom defines
+----------------------------------------
+
+def IntrinsicFunc : InheritableAttr {
+  let Spellings = [GNU<"intrinsic">, Declspec<"intrinsic">];
+  let Subjects = SubjectList<[Function]>;
+  let Documentation = [Undocumented];
+  let Args = [DefaultBoolArgument<"isUnsafe", 0>];
+}
+
+def UnsafeFunc : InheritableAttr {
+  let Spellings = [GNU<"unsafe">, Declspec<"unsafe">];
+  let Subjects = SubjectList<[Function]>;
+  let Documentation = [Undocumented];
+}
+
+def NativeFunc : InheritableAttr {
+  let Spellings = [GNU<"native">, Declspec<"native">];
+  let Subjects = SubjectList<[Function]>;
+  let Documentation = [Undocumented];
+  let Args = [UnsignedArgument<"hash", 1>, UnsignedArgument<"x64HiDwordHash", 1>];
+}
+
+def GlobalVariable : InheritableAttr {
+  let Spellings = [GNU<"scriptglobal">, Declspec<"scriptglobal">];
+  let Subjects = SubjectList<[GlobalVar], ErrorDiag, "ExpectedVariable">;
+  let Documentation = [Undocumented];
+  let Args = [UnsignedArgument<"index">];
+}

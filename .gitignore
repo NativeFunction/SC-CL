@@ -1,5 +1,6 @@
 *
 !.gitignore
+!Clang Changes Documentation.txt
 !BuildTarget.h
 !CMakeLists.txt
 !Include/

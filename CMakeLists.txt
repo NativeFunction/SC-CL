@@ -82,8 +82,10 @@ foreach(resource IN LISTS resource_list)
     source_group("Resource Files\\${resource_path}" FILES "${resource}")
 endforeach()
 
-add_custom_command(TARGET SC-CL
-                   PRE_BUILD
-				   WORKING_DIRECTORY "Include/Version/"
-                   COMMAND "SC-CL_Version_Selector.exe"
-                   COMMENT "Updating Version Number")
+add_custom_command(
+	TARGET SC-CL
+	PRE_BUILD
+	WORKING_DIRECTORY "Include/Version/"
+	COMMAND "SC-CL_Version_Selector.exe"
+	COMMENT "Updating Version Number"
+)
