@@ -1,3 +1,47 @@
+/*H**********************************************************************
+* FILENAME :	intrinsics.h					START DATE :	10 Sept 16
+*
+* DESCRIPTION :
+*		Intrinsic functions to be used with all targets and platforms of SC-CL.
+*
+* NOTES :
+*		This file is part of SC-CL's include library.
+*
+* LICENSE :
+*
+*		Copyright 2016 SC-CL
+*
+*		Redistribution and use in source and binary forms, with or without
+*		modification, are permitted provided that the following conditions are met:
+*
+*		* Redistributions of source code must retain the above copyright
+*		notice, this list of conditions and the following disclaimer.
+*
+*		* Redistributions in binary form must reproduce the above copyright
+*		notice, this list of conditions and the following disclaimer in the
+*		documentation and/or other materials provided with the distribution.
+*
+*		* Neither SC-CL nor its contributors may be used to endorse or promote products
+*		derived from this software without specific prior written permission.
+*
+*		* Redistribution of this software in source or binary forms shall be free
+*		of all charges or fees to the recipient of this software.
+*
+*		THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+*		ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+*		WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+*		DISCLAIMED. IN NO EVENT SHALL SC-CL BE LIABLE FOR ANY
+*		DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+*		(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*		LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+*		ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+*		(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+*		SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*
+* AUTHORS :
+*		Rocko Tompkins
+*		Nathan James
+*H*/
 #pragma once
 #include "types.h"
 #include "constants.h"
@@ -99,40 +143,73 @@ extern __intrinsic void setByte(void* addr, unsigned char value);
 *	This can lead to dangerous behaviour if you aren't sure what is currently on the stack
 *************************************************************************/
 
-//Pops multiple items off the stack
+/// <summary>Pops multiple items off the stack.</summary>
+/// <param name="count">The amount of items to pop off.</param>
+/// <returns></returns>
 extern __unsafeIntrinsic void __popMult(const uint count);
-//Pushes a vector3 on the stack
+
+/// <summary>Pushes a vector3 on the stack.</summary>
+/// <param name="value">The vector3 to be pushed.</param>
+/// <returns></returns>
 extern __unsafeIntrinsic void __pushV(vector3 value);
-//Pushes a struct on the stack
+
+/// <summary>Pushes a struct on the stack.</summary>
+/// <param name="structure">The struct to be pushed.</param>
+/// <returns></returns>
 extern __unsafeIntrinsic void __pushStruct(void* structure);
-//Pops a struct off the stack
+
+/// <summary>Pops a struct off the stack.</summary>
+/// <param name="structure">The struct to be poped.</param>
+/// <returns></returns>
 extern __unsafeIntrinsic void __popStruct(void* structure);
-//Reverses items on the stack
+
+/// <summary>Reverses items on the stack.</summary>
+/// <param name="numItems">The amount of items to be reversed.</param>
+/// <returns></returns>
 extern __unsafeIntrinsic void __rev(const int numItems);
-//Exchanges a struct on the stack
+
+/// <summary>Exchanges two same sized structs on the stack.</summary>
+/// <param name="structStackSize">The size of the struct.</param>
+/// <returns></returns>
 extern __unsafeIntrinsic void __exch(const int structStackSize);
-//Gets the top item on the stack as a int
+
+/// <summary>Gets the top item on the stack as a int.</summary>
+/// <returns>The top item on the stack as a int.</returns>
 extern __unsafeIntrinsic int __popI();
-//Gets the top item on the stack as a float
+
+/// <summary>Gets the top item on the stack as a float.</summary>
+/// <returns>The top item on the stack as a float.</returns>
 extern __unsafeIntrinsic float __popF();
-//Gets the top item on the stack as a vector3
+
+/// <summary>Gets the top 3 items on the stack as a vector3.</summary>
+/// <returns>The top 3 items on the stack as a vector3.</returns>
 extern __unsafeIntrinsic vector3 __popV();
-//Pushes count amount of items from the specified pointer to the stack
+
+/// <summary>Pushes an amount of items from the specified pointer to the stack.</summary>
+/// <param name="address">The pointer to draw from.</param>
+/// <param name="count">The amount of items to push to the stack.</param>
+/// <returns></returns>
 extern __unsafeIntrinsic void __ptrToStack(const void* address, int count);
-//Pushes count amount of items from the stack to the specified pointer
+
+/// <summary>Pops an amount of items from the stack to the specified pointer.</summary>
+/// <param name="address">The pointer to place the items.</param>
+/// <param name="count">The amount of items to pop from the stack.</param>
+/// <returns></returns>
 extern __unsafeIntrinsic void __ptrFromStack(const void* address, int count);
 #pragma endregion //}
 
 #pragma region ASM //{
 /*************************************************************************
-*	These perform the operation on the item(or vector) on top of the stack
+*	These perform an operation on the item(or vector) on top of the stack
 *	This can lead to dangerous behaviour if you aren't sure what is currently on the stack
 *************************************************************************/
 
-/*************************************************************************
-	Adds specified amount of nops to the script
-	Note: Nops on GTAIV exit the script
-*************************************************************************/
+/// <summary>
+///		Adds specified amount of nops to the script in the interval [0,4096].
+///		<para>Note: GTAIV nops exit the script.</para>
+/// </summary>
+/// <param name="count">The amount of nops to add.</param>
+/// <returns></returns>
 extern __intrinsic       void __nop(const uint count);
 extern __unsafeIntrinsic void __add();
 extern __unsafeIntrinsic void __sub();
