@@ -66,7 +66,7 @@ extern _native64(0xE902EF951DCE178F) void GET_PLAYER_RGB_COLOUR(Player player, i
 extern _native64(0x407C7F91DDB46C16) int GET_NUMBER_OF_PLAYERS()l
 extern _native64(0x37039302F4E0A008) int GET_PLAYER_TEAM(Player player)l
 extern _native64(0x0299FA38396A4940) void SET_PLAYER_TEAM(Player player, int team)l
-extern _native64(0x6D0DE6A7B5DA71F8) const CHAR* GET_PLAYER_NAME(Player player)l
+extern _native64(0x6D0DE6A7B5DA71F8) const char* GET_PLAYER_NAME(Player player)l
 extern _native64(0x085DEB493BE80812) float GET_WANTED_LEVEL_RADIUS(Player player)l
 extern _native64(0x0C92BA89F1AF26F8) vector3 GET_PLAYER_WANTED_CENTRE_POSITION(Player player)l
 extern _native64(0x520E541A97A13354) void SET_PLAYER_WANTED_CENTRE_POSITION(Player player, vector3* position, bool p2, bool p3)l
@@ -314,7 +314,7 @@ extern _native64(0x7B3703D2D32DFA18) void GET_ENTITY_QUATERNION(Entity entity, f
 extern _native64(0x831E0242595560DF) float GET_ENTITY_ROLL(Entity entity)l
 extern _native64(0xAFBD61CC738D9EB9) vector3 GET_ENTITY_ROTATION(Entity entity, int rotationOrder)l
 extern _native64(0x213B91045D09B983) vector3 GET_ENTITY_ROTATION_VELOCITY(Entity entity)l
-extern _native64(0xA6E9C38DB51D7748) const CHAR* GET_ENTITY_SCRIPT(Entity entity, ScrHandle* script)l
+extern _native64(0xA6E9C38DB51D7748) const char* GET_ENTITY_SCRIPT(Entity entity, ScrHandle* script)l
 extern _native64(0xD5037BA82E12416F) float GET_ENTITY_SPEED(Entity entity)l
 extern _native64(0x9A8D700A51CB7B0D) vector3 GET_ENTITY_SPEED_VECTOR(Entity entity, bool relative)l
 extern _native64(0x95EED5A694951F9F) float GET_ENTITY_UPRIGHT_VALUE(Entity entity)l
@@ -973,7 +973,7 @@ extern _native64(0x953563CE563143AF) any UNK_0x953563CE563143AF(any p0)l
 extern _native64(0x96B1361D9B24C2FF) void UNREGISTER_PEDHEADSHOT(Ped ped)l
 extern _native64(0xA0A9668F158129A2) int IS_PEDHEADSHOT_VALID(int handle)l
 extern _native64(0x7085228842B13A67) bool IS_PEDHEADSHOT_READY(int handle)l
-extern _native64(0xDB4EACD4AD0A5D6B) const CHAR* GET_PEDHEADSHOT_TXD_STRING(int handle)l
+extern _native64(0xDB4EACD4AD0A5D6B) const char* GET_PEDHEADSHOT_TXD_STRING(int handle)l
 extern _native64(0xF0DAEF2F545BEE25) bool UNK_0xF0DAEF2F545BEE25(any p0)l
 extern _native64(0x5D517B27CF6ECD04) void UNK_0x5D517B27CF6ECD04(any p0)l
 extern _native64(0xEBB376779A760AA8) any UNK_0xEBB376779A760AA8()l
@@ -1138,7 +1138,7 @@ extern _native64(0x2A8F319B392E7B3F) void UNK_0x2A8F319B392E7B3F(Vehicle vehicle
 extern _native64(0x95CF53B3D687F9FA) void UNK_0x95CF53B3D687F9FA(Vehicle vehicle)l
 extern _native64(0x6E13FC662B882D1D) void SET_VEHICLE_TYRE_FIXED(Vehicle vehicle, int tyreIndex)l
 extern _native64(0x95A88F0B409CDA47) void SET_VEHICLE_NUMBER_PLATE_TEXT(Vehicle vehicle, const char* plateText)l
-extern _native64(0x7CE1CCB9B293020E) const CHAR* GET_VEHICLE_NUMBER_PLATE_TEXT(Vehicle vehicle)l
+extern _native64(0x7CE1CCB9B293020E) const char* GET_VEHICLE_NUMBER_PLATE_TEXT(Vehicle vehicle)l
 extern _native64(0x4C4D6B2644F458CB) int GET_NUMBER_OF_VEHICLE_NUMBER_PLATES()l
 extern _native64(0x9088EB5A43FFB0A1) void SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX(Vehicle vehicle, int plateIndex)l
 extern _native64(0xF11BC2DD9A3E7195) int GET_VEHICLE_NUMBER_PLATE_TEXT_INDEX(Vehicle vehicle)l
@@ -1286,7 +1286,7 @@ extern _native64(0x4E74E62E0A97E901) void UNK_0x4E74E62E0A97E901(Vehicle vehicle
 extern _native64(0x9C8C6504B5B63D2C) void START_VEHICLE_HORN(Vehicle vehicle, int duration, Hash mode, bool forever)l
 extern _native64(0x9D44FCCE98450843) void _SET_VEHICLE_SILENT(Vehicle vehicle, bool toggle)l
 extern _native64(0x92F0CF722BC4202F) void SET_VEHICLE_HAS_STRONG_AXLES(Vehicle vehicle, bool toggle)l
-extern _native64(0xB215AAC32D25D019) const CHAR* GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(Hash modelHash)l
+extern _native64(0xB215AAC32D25D019) const char* GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(Hash modelHash)l
 extern _native64(0x4EC6CFBC7B2E9536) vector3 GET_VEHICLE_DEFORMATION_AT_POS(Vehicle vehicle, vector3 offset)l
 extern _native64(0x60BF608F1B8CD1B6) void SET_VEHICLE_LIVERY(Vehicle vehicle, int livery)l
 extern _native64(0x2BB9230590DA5E8A) int GET_VEHICLE_LIVERY(Vehicle vehicle)l
@@ -1375,8 +1375,8 @@ extern _native64(0x43FEB945EE7F85B8) void SET_VEHICLE_MOD_COLOR_1(Vehicle vehicl
 extern _native64(0x816562BADFDEC83E) void SET_VEHICLE_MOD_COLOR_2(Vehicle vehicle, int paintType, int color)l
 extern _native64(0xE8D65CA700C9A693) void GET_VEHICLE_MOD_COLOR_1(Vehicle vehicle, int* paintType, int* color, int* p3)l
 extern _native64(0x81592BE4E3878728) void GET_VEHICLE_MOD_COLOR_2(Vehicle vehicle, int* paintType, int* color)l
-extern _native64(0xB45085B721EFD38C) const CHAR* GET_VEHICLE_MOD_COLOR_1_NAME(Vehicle vehicle, bool p1)l
-extern _native64(0x4967A516ED23A5A1) const CHAR* GET_VEHICLE_MOD_COLOR_2_NAME(Vehicle vehicle)l
+extern _native64(0xB45085B721EFD38C) const char* GET_VEHICLE_MOD_COLOR_1_NAME(Vehicle vehicle, bool p1)l
+extern _native64(0x4967A516ED23A5A1) const char* GET_VEHICLE_MOD_COLOR_2_NAME(Vehicle vehicle)l
 extern _native64(0x9A83F5F9963775EF) bool UNK_0x9A83F5F9963775EF(Vehicle vehicle)l
 extern _native64(0x6AF0636DDEDCB6DD) void SET_VEHICLE_MOD(Vehicle vehicle, int modType, int modIndex, bool customTires)l
 extern _native64(0x772960298DA26FDB) int GET_VEHICLE_MOD(Vehicle vehicle, int modType)l
@@ -1385,9 +1385,9 @@ extern _native64(0xE38E9162A2500646) int GET_NUM_VEHICLE_MODS(Vehicle vehicle, i
 extern _native64(0x92D619E420858204) void REMOVE_VEHICLE_MOD(Vehicle vehicle, int modType)l
 extern _native64(0x2A1F4F37F95BAD08) void TOGGLE_VEHICLE_MOD(Vehicle vehicle, int modType, bool toggle)l
 extern _native64(0x84B233A8C8FC8AE7) bool IS_TOGGLE_MOD_ON(Vehicle vehicle, int modType)l
-extern _native64(0x8935624F8C5592CC) const CHAR* GET_MOD_TEXT_LABEL(Vehicle vehicle, int modType, int modValue)l
-extern _native64(0x51F0FEB9F6AE98C0) const CHAR* GET_MOD_SLOT_NAME(Vehicle vehicle, int modType)l
-extern _native64(0xB4C7A93837C91A1F) const CHAR* GET_LIVERY_NAME(Vehicle vehicle, int liveryIndex)l
+extern _native64(0x8935624F8C5592CC) const char* GET_MOD_TEXT_LABEL(Vehicle vehicle, int modType, int modValue)l
+extern _native64(0x51F0FEB9F6AE98C0) const char* GET_MOD_SLOT_NAME(Vehicle vehicle, int modType)l
+extern _native64(0xB4C7A93837C91A1F) const char* GET_LIVERY_NAME(Vehicle vehicle, int liveryIndex)l
 extern _native64(0x90A38E9838E0A8C1) any GET_VEHICLE_MOD_MODIFIER_VALUE(Vehicle vehicle, int modType, int modIndex)l
 extern _native64(0x4593CF82AA179706) any _GET_VEHICLE_MOD_DATA(Vehicle vehicle, int modType, int modIndex)l
 extern _native64(0x758F49C24925568A) void PRELOAD_VEHICLE_MOD(any p0, any p1, any p2)l
@@ -1752,7 +1752,7 @@ extern _native64(0x504D54DF3F6F2247) void TASK_LEAVE_ANY_VEHICLE(Ped ped, int p1
 extern _native64(0x7A192BE16D373D00) void TASK_AIM_GUN_SCRIPTED(Ped ped, Hash scriptTask, bool p2, bool p3)l
 extern _native64(0x8605AF0DE8B3A5AC) void TASK_AIM_GUN_SCRIPTED_WITH_TARGET(any p0, any p1, float p2, float p3, float p4, any p5, bool p6, bool p7)l
 extern _native64(0x9724FB59A3E72AD0) void UPDATE_TASK_AIM_GUN_SCRIPTED_TARGET(Ped p0, Ped p1, float p2, float p3, float p4, bool p5)l
-extern _native64(0x3A8CADC7D37AACC5) const CHAR* GET_CLIP_SET_FOR_SCRIPTED_GUN_TASK(int p0)l
+extern _native64(0x3A8CADC7D37AACC5) const char* GET_CLIP_SET_FOR_SCRIPTED_GUN_TASK(int p0)l
 extern _native64(0x9B53BB6E8943AF53) void TASK_AIM_GUN_AT_ENTITY(Ped ped, Entity entity, int duration, bool p3)l
 extern _native64(0x5AD23D40115353AC) void TASK_TURN_PED_TO_FACE_ENTITY(Ped ped, Entity entity, int duration)l
 extern _native64(0x6671F3EEC681BDA1) void TASK_AIM_GUN_AT_COORD(Ped ped, vector3 vec, int time, bool p5, bool p6)l
@@ -1926,7 +1926,7 @@ extern _native64(0x921CE12C489C4C41) bool UNK_0x921CE12C489C4C41(int PlayerID)l
 extern _native64(0x30ED88D5E0C56A37) bool UNK_0x30ED88D5E0C56A37(any p0)l
 extern _native64(0xD01015C7316AE176) any UNK_0xD01015C7316AE176(Ped ped, const char* p1)l
 extern _native64(0xAB13A5565480B6D9) any UNK_0xAB13A5565480B6D9(any p0, any p1)l
-extern _native64(0x717E4D1F2048376D) const CHAR* UNK_0x717E4D1F2048376D(Ped ped)l
+extern _native64(0x717E4D1F2048376D) const char* UNK_0x717E4D1F2048376D(Ped ped)l
 extern _native64(0xD5BB4025AE449A4E) void UNK_0xD5BB4025AE449A4E(Ped p0, const char* p1, float p2)l
 extern _native64(0xB0A6CFD2C69C1088) void UNK_0xB0A6CFD2C69C1088(Ped p0, any* p1, bool p2)l
 extern _native64(0xA7FFBA498E4AAF67) bool UNK_0xA7FFBA498E4AAF67(any p0, const char* p1)l
@@ -1960,7 +1960,7 @@ extern _native64(0xC4301E5121A0ED73) void SET_MISSION_FLAG(bool toggle)l
 extern _native64(0xA33CDCCDA663159E) bool GET_MISSION_FLAG()l
 extern _native64(0x971927086CFD2158) void SET_RANDOM_EVENT_FLAG(bool p0)l
 extern _native64(0xD2D57F1D764117B1) any GET_RANDOM_EVENT_FLAG()l
-extern _native64(0x24DA7D7667FD7B09) const CHAR* _GET_GLOBAL_CHAR_BUFFER()l
+extern _native64(0x24DA7D7667FD7B09) const char* _GET_GLOBAL_CHAR_BUFFER()l
 extern _native64(0x4DCDF92BF64236CD) void UNK_0x4DCDF92BF64236CD(any p0, any p1)l
 extern _native64(0x31125FD509D9043F) void UNK_0x31125FD509D9043F(any p0)l
 extern _native64(0xEBD3205A207939ED) void UNK_0xEBD3205A207939ED(any p0)l
@@ -2217,7 +2217,7 @@ extern _native64(0x2587A48BC88DFADF) void UNK_0x2587A48BC88DFADF(bool p0)l
 extern _native64(0xCA78CFA0366592FE) void _DISPLAY_ONSCREEN_KEYBOARD_2(int p0, const char* windowTitle, any* p2, const char* defaultText, const char* defaultConcat1, const char* defaultConcat2, const char* defaultConcat3, const char* defaultConcat4, const char* defaultConcat5, const char* defaultConcat6, const char* defaultConcat7, int maxInputLength)l
 extern _native64(0x00DC833F2568DBF6) void DISPLAY_ONSCREEN_KEYBOARD(int p0, const char* windowTitle, const char* p2, const char* defaultText, const char* defaultConcat1, const char* defaultConcat2, const char* defaultConcat3, int maxInputLength)l
 extern _native64(0x0CF2B696BBF945AE) int UPDATE_ONSCREEN_KEYBOARD()l
-extern _native64(0x8362B09B91893647) const CHAR* GET_ONSCREEN_KEYBOARD_RESULT()l
+extern _native64(0x8362B09B91893647) const char* GET_ONSCREEN_KEYBOARD_RESULT()l
 extern _native64(0x3ED1438C1F5C6612) void UNK_0x3ED1438C1F5C6612(int p0)l
 extern _native64(0xA6A12939F16D85BE) void UNK_0xA6A12939F16D85BE(Hash hash, bool p1)l
 extern _native64(0x1EAE0A6E978894A2) void UNK_0x1EAE0A6E978894A2(int p0, bool p1)l
@@ -2342,8 +2342,8 @@ extern _native64(0xCC97B29285B1DC3B) void SET_ANIMAL_MOOD(Ped animal, int mood)l
 extern _native64(0xB35CE999E8EF317E) bool IS_MOBILE_PHONE_RADIO_ACTIVE()l
 extern _native64(0xBF286C554784F3DF) void SET_MOBILE_PHONE_RADIO_STATE(bool state)l
 extern _native64(0xE8AF77C4C06ADC93) int GET_PLAYER_RADIO_STATION_INDEX()l
-extern _native64(0xF6D733C32076AD03) const CHAR* GET_PLAYER_RADIO_STATION_NAME()l
-extern _native64(0xB28ECA15046CA8B9) const CHAR* GET_RADIO_STATION_NAME(int radioStation)l
+extern _native64(0xF6D733C32076AD03) const char* GET_PLAYER_RADIO_STATION_NAME()l
+extern _native64(0xB28ECA15046CA8B9) const char* GET_RADIO_STATION_NAME(int radioStation)l
 extern _native64(0xA571991A7FE6CCEB) any GET_PLAYER_RADIO_STATION_GENRE()l
 extern _native64(0xA151A7394A214E65) bool IS_RADIO_RETUNING()l
 extern _native64(0x0626A247D2405330) any UNK_0x0626A247D2405330()l
@@ -3027,13 +3027,13 @@ extern _native64(0x5F0F0C783EB16C04) bool HAS_SCRIPT_WITH_NAME_HASH_LOADED(Hash 
 extern _native64(0xF86AA3C56BA31381) bool _DOES_SCRIPT_WITH_NAME_HASH_EXIST(Hash scriptHash)l
 extern _native64(0xC8B189ED9138BCD4) void TERMINATE_THREAD(int threadId)l
 extern _native64(0x46E9AE36D8FA6417) bool IS_THREAD_ACTIVE(int threadId)l
-extern _native64(0x05A42BA9FC8DA96B) const CHAR* _GET_NAME_OF_THREAD(int threadId)l
+extern _native64(0x05A42BA9FC8DA96B) const char* _GET_NAME_OF_THREAD(int threadId)l
 extern _native64(0xDADFADA5A20143A8) void _BEGIN_ENUMERATING_THREADS()l
 extern _native64(0x30B4FA1C82DD4B9F) int _GET_ID_OF_NEXT_THREAD_IN_ENUMERATION()l
 extern _native64(0xC30338E8088E2E21) int GET_ID_OF_THIS_THREAD()l
 extern _native64(0x1090044AD1DA76FA) void TERMINATE_THIS_THREAD()l
 extern _native64(0x2C83A9DA6BFFC4F9) int _GET_NUMBER_OF_INSTANCES_OF_SCRIPT_WITH_NAME_HASH(Hash scriptHash)l
-extern _native64(0x442E0A7EDE4A738A) const CHAR* GET_THIS_SCRIPT_NAME()l
+extern _native64(0x442E0A7EDE4A738A) const char* GET_THIS_SCRIPT_NAME()l
 extern _native64(0x8A1C8B1738FFE87E) Hash GET_HASH_OF_THIS_SCRIPT_NAME()l
 extern _native64(0x5F92A689A06620AA) int GET_NUMBER_OF_EVENTS(bool p0)l
 extern _native64(0x936E6168A9BCEDB5) bool GET_EVENT_EXISTS(bool p0, int p1)l
@@ -3137,10 +3137,10 @@ extern _native64(0x761B77454205A61D) void _ADD_TEXT_COMPONENT_APP_TITLE(const ch
 extern _native64(0x94CF4AC034C9C986) void ADD_TEXT_COMPONENT_SUBSTRING_WEBSITE(const char* website)l
 extern _native64(0x5F68520888E69014) void _ADD_TEXT_COMPONENT_SCALEFORM(const char* p0)l
 extern _native64(0x39BBF623FC803EAC) void _SET_NOTIFICATION_COLOR_NEXT(int p0)l
-extern _native64(0x169BD9382084C8C0) const CHAR* _GET_TEXT_SUBSTRING(const char* text, int position, int length)l
-extern _native64(0xB2798643312205C5) const CHAR* _GET_TEXT_SUBSTRING_SAFE(const char* text, int position, int length, int maxLength)l
-extern _native64(0xCE94AEBA5D82908A) const CHAR* _GET_TEXT_SUBSTRING_SLICE(const char* text, int startPosition, int endPosition)l
-extern _native64(0x7B5280EBA9840C72) const CHAR* _GET_LABEL_TEXT(const char* labelName)l
+extern _native64(0x169BD9382084C8C0) const char* _GET_TEXT_SUBSTRING(const char* text, int position, int length)l
+extern _native64(0xB2798643312205C5) const char* _GET_TEXT_SUBSTRING_SAFE(const char* text, int position, int length, int maxLength)l
+extern _native64(0xCE94AEBA5D82908A) const char* _GET_TEXT_SUBSTRING_SLICE(const char* text, int startPosition, int endPosition)l
+extern _native64(0x7B5280EBA9840C72) const char* _GET_LABEL_TEXT(const char* labelName)l
 extern _native64(0xCC33FA791322B9D9) void CLEAR_PRINTS()l
 extern _native64(0x9D292F73ADBD9313) void CLEAR_BRIEF()l
 extern _native64(0x6178F68A87A4D3A0) void CLEAR_ALL_HELP_MESSAGES()l
@@ -3158,7 +3158,7 @@ extern _native64(0xAC09CA973C564252) bool DOES_TEXT_LABEL_EXIST(const char* gxt)
 extern _native64(0x801BD273D3A23F74) int GET_LENGTH_OF_STRING_WITH_THIS_TEXT_LABEL(const char* gxt)l
 extern _native64(0xF030907CCBB8A9FD) int GET_LENGTH_OF_LITERAL_STRING(const char* string)l
 extern _native64(0x43E4111189E54F0E) int _GET_LENGTH_OF_STRING(const char* p0)l
-extern _native64(0xD0EF8A959B8A4CB9) const CHAR* GET_STREET_NAME_FROM_HASH_KEY(Hash hash)l
+extern _native64(0xD0EF8A959B8A4CB9) const char* GET_STREET_NAME_FROM_HASH_KEY(Hash hash)l
 extern _native64(0x1930DFA731813EC4) bool IS_HUD_PREFERENCE_SWITCHED_ON()l
 extern _native64(0x9EB6522EA68F22FE) bool IS_RADAR_PREFERENCE_SWITCHED_ON()l
 extern _native64(0xAD6DACA4BA53E0A4) bool IS_SUBTITLE_PREFERENCE_SWITCHED_ON()l
@@ -3782,7 +3782,7 @@ extern _native64(0xC6796A8FFA375E53) void _POP_SCALEFORM_MOVIE_FUNCTION_VOID()l
 extern _native64(0xC50AA39A577AF886) any _POP_SCALEFORM_MOVIE_FUNCTION()l
 extern _native64(0x768FF8961BA904D6) bool UNK_0x768FF8961BA904D6(any funcData)l
 extern _native64(0x2DE7EFA66B906036) int UNK_0x2DE7EFA66B906036(any funcData)l
-extern _native64(0xE1E258829A885245) const CHAR* SITTING_TV(int scaleform)l
+extern _native64(0xE1E258829A885245) const char* SITTING_TV(int scaleform)l
 extern _native64(0xC3D0841A0CC546A6) void _PUSH_SCALEFORM_MOVIE_FUNCTION_PARAMETER_INT(int value)l
 extern _native64(0xD69736AAE04DB51A) void _PUSH_SCALEFORM_MOVIE_FUNCTION_PARAMETER_FLOAT(float value)l
 extern _native64(0xC58424BA936EB458) void _PUSH_SCALEFORM_MOVIE_FUNCTION_PARAMETER_BOOL(bool value)l
@@ -3855,11 +3855,11 @@ extern _native64(0x767FBC2AC802EF3D) bool STAT_GET_INT(Hash statHash, int* outVa
 extern _native64(0xD7AE6C9C9C6AC54C) bool STAT_GET_FLOAT(Hash statHash, float* outValue, any p2)l
 extern _native64(0x11B5E6D2AE73F48E) bool STAT_GET_BOOL(Hash statHash, bool* outValue, any p2)l
 extern _native64(0x8B0FACEFC36C824B) bool STAT_GET_DATE(Hash statHash, any* p1, any p2, any p3)l
-extern _native64(0xE50384ACC2C3DB74) const CHAR* STAT_GET_STRING(Hash statHash, int p1)l
+extern _native64(0xE50384ACC2C3DB74) const char* STAT_GET_STRING(Hash statHash, int p1)l
 extern _native64(0x350F82CCB186AA1B) bool STAT_GET_POS(any p0, any* p1, any* p2, any* p3, any p4)l
 extern _native64(0x655185A06D9EEAAB) bool STAT_GET_MASKED_INT(any p0, any* p1, any p2, any p3, any p4)l
-extern _native64(0x2365C388E393BBE2) const CHAR* STAT_GET_USER_ID(any p0)l
-extern _native64(0x5473D4195058B2E4) const CHAR* STAT_GET_LICENSE_PLATE(Hash statName)l
+extern _native64(0x2365C388E393BBE2) const char* STAT_GET_USER_ID(any p0)l
+extern _native64(0x5473D4195058B2E4) const char* STAT_GET_LICENSE_PLATE(Hash statName)l
 extern _native64(0x69FF13266D7296DA) bool STAT_SET_LICENSE_PLATE(Hash statName, const char* str)l
 extern _native64(0x9B5A68C6489E9909) void STAT_INCREMENT(Hash statName, float value)l
 extern _native64(0x5A556B229A169402) bool UNK_0x5A556B229A169402()l
@@ -4033,7 +4033,7 @@ extern _native64(0x247F0F73A182EA0B) bool _NETWORK_SHOP_IS_ITEM_UNLOCKED_HASH(Ha
 extern _native64(0x846AA8E7D55EE5B6) bool APP_DATA_VALID()l
 extern _native64(0xD3A58A12C77D9D4B) int APP_GET_INT(const char* property)l
 extern _native64(0x1514FB24C02C2322) float APP_GET_FLOAT(const char* property)l
-extern _native64(0x749B023950D2311C) const CHAR* APP_GET_STRING(const char* property)l
+extern _native64(0x749B023950D2311C) const char* APP_GET_STRING(const char* property)l
 extern _native64(0x607E8E3D3E4F9611) void APP_SET_INT(const char* property, int value)l
 extern _native64(0x25D7687C68E0DAA4) void APP_SET_FLOAT(const char* property, float value)l
 extern _native64(0x3FF2FCEC4B7721B4) void APP_SET_STRING(const char* property, const char* value)l
@@ -4145,8 +4145,8 @@ extern _native64(0x13337B38DB572509) bool _IS_INPUT_JUST_DISABLED(int inputGroup
 extern _native64(0xFC695459D4D0E219) bool _SET_CURSOR_LOCATION(vector2 vector)l
 extern _native64(0x23F09EADC01449D6) bool UNK_0x23F09EADC01449D6(bool p0)l
 extern _native64(0x6CD79468A1E595C6) bool UNK_0x6CD79468A1E595C6(int inputGroup)l
-extern _native64(0x0499D7B09FC9B407) const CHAR* GET_CONTROL_INSTRUCTIONAL_BUTTON(int inputGroup, int control, bool p2)l
-extern _native64(0x80C2FD58D720C801) const CHAR* UNK_0x80C2FD58D720C801(int inputGroup, int control, bool p2)l
+extern _native64(0x0499D7B09FC9B407) const char* GET_CONTROL_INSTRUCTIONAL_BUTTON(int inputGroup, int control, bool p2)l
+extern _native64(0x80C2FD58D720C801) const char* UNK_0x80C2FD58D720C801(int inputGroup, int control, bool p2)l
 extern _native64(0x8290252FFF36ACB5) void UNK_0x8290252FFF36ACB5(int p0, RGB colour)l
 extern _native64(0xCB0360EFEFB2580D) void UNK_0xCB0360EFEFB2580D(any p0)l
 extern _native64(0x48B3886C1358D0D5) void SET_PAD_SHAKE(int p0, int duration, int frequency)l
@@ -4193,7 +4193,7 @@ extern _native64(0xD27058A1CA2B13EE) void DATAFILE_CREATE()l
 extern _native64(0x9AB9C1CFC8862DFB) void DATAFILE_DELETE()l
 extern _native64(0x2ED61456317B8178) void UNK_0x2ED61456317B8178()l
 extern _native64(0xC55854C7D7274882) void UNK_0xC55854C7D7274882()l
-extern _native64(0x906B778CA1DC72B6) const CHAR* DATAFILE_GET_FILE_DICT()l
+extern _native64(0x906B778CA1DC72B6) const char* DATAFILE_GET_FILE_DICT()l
 extern _native64(0x83BCCE3224735F05) bool UNK_0x83BCCE3224735F05(const char* filename)l
 extern _native64(0x4DFDD9EB705F8140) bool UNK_0x4DFDD9EB705F8140(bool* p0)l
 extern _native64(0xBEDB96A7584AA8CF) bool DATAFILE_IS_SAVE_PENDING()l
@@ -4207,7 +4207,7 @@ extern _native64(0x5B11728527CA6E5F) any* _OBJECT_VALUE_ADD_ARRAY(any* objectDat
 extern _native64(0x1186940ED72FFEEC) bool _OBJECT_VALUE_GET_BOOLEAN(any* objectData, const char* key)l
 extern _native64(0x78F06F6B1FB5A80C) int _OBJECT_VALUE_GET_INTEGER(any* objectData, const char* key)l
 extern _native64(0x06610343E73B9727) float _OBJECT_VALUE_GET_FLOAT(any* objectData, const char* key)l
-extern _native64(0x3D2FD9E763B24472) const CHAR* _OBJECT_VALUE_GET_STRING(any* objectData, const char* key)l
+extern _native64(0x3D2FD9E763B24472) const char* _OBJECT_VALUE_GET_STRING(any* objectData, const char* key)l
 extern _native64(0x46CD3CB66E0825CC) vector3 _OBJECT_VALUE_GET_VECTOR3(any* objectData, const char* key)l
 extern _native64(0xB6B9DDC412FCEEE2) any* _OBJECT_VALUE_GET_OBJECT(any* objectData, const char* key)l
 extern _native64(0x7A983AA9DA2659ED) any* _OBJECT_VALUE_GET_ARRAY(any* objectData, const char* key)l
@@ -4221,7 +4221,7 @@ extern _native64(0x6889498B3E19C797) any* _ARRAY_VALUE_ADD_OBJECT(any* arrayData
 extern _native64(0x50C1B2874E50C114) bool _ARRAY_VALUE_GET_BOOLEAN(any* arrayData, int arrayIndex)l
 extern _native64(0x3E5AE19425CD74BE) int _ARRAY_VALUE_GET_INTEGER(any* arrayData, int arrayIndex)l
 extern _native64(0xC0C527B525D7CFB5) float _ARRAY_VALUE_GET_FLOAT(any* arrayData, int arrayIndex)l
-extern _native64(0xD3F2FFEB8D836F52) const CHAR* _ARRAY_VALUE_GET_STRING(any* arrayData, int arrayIndex)l
+extern _native64(0xD3F2FFEB8D836F52) const char* _ARRAY_VALUE_GET_STRING(any* arrayData, int arrayIndex)l
 extern _native64(0x8D2064E5B64A628A) vector3 _ARRAY_VALUE_GET_VECTOR3(any* arrayData, int arrayIndex)l
 extern _native64(0x8B5FADCC4E3A145F) any* _ARRAY_VALUE_GET_OBJECT(any* arrayData, int arrayIndex)l
 extern _native64(0x065DB281590CEA2D) int _ARRAY_VALUE_GET_SIZE(any* arrayData)l
@@ -4264,7 +4264,7 @@ extern _native64(0x5F3B7749C112D552) void SUPPRESS_AGITATION_EVENTS_NEXT_FRAME()
 extern _native64(0x27040C25DE6CB2F4) int GET_ZONE_AT_COORDS(vector3 vec)l
 extern _native64(0x98CD1D2934B76CC1) int GET_ZONE_FROM_NAME_ID(const char* zoneName)l
 extern _native64(0x4334BC40AA0CB4BB) int GET_ZONE_POPSCHEDULE(int zoneId)l
-extern _native64(0xCD90657D4C30E1CA) const CHAR* GET_NAME_OF_ZONE(vector3 vec)l
+extern _native64(0xCD90657D4C30E1CA) const char* GET_NAME_OF_ZONE(vector3 vec)l
 extern _native64(0xBA5ECEEA120E5611) void SET_ZONE_ENABLED(int zoneId, bool toggle)l
 extern _native64(0x5F7B268D15BA0739) int GET_ZONE_SCUMMINESS(int zoneId)l
 extern _native64(0x5F7D596BAC2E7777) void OVERRIDE_POPSCHEDULE_VEHICLE_MODEL(int scheduleId, Hash vehicleHash)l
@@ -4647,24 +4647,24 @@ extern _native64(0xD45CB817D7E177D2) void NETWORK_HANDLE_FROM_FRIEND(Player frie
 extern _native64(0x9F0C0A981D73FA56) bool NETWORK_GAMERTAG_FROM_HANDLE_START(NetworkHandle* networkHandle)l
 extern _native64(0xB071E27958EF4CF0) bool NETWORK_GAMERTAG_FROM_HANDLE_PENDING()l
 extern _native64(0xFD00798DBA7523DD) bool NETWORK_GAMERTAG_FROM_HANDLE_SUCCEEDED()l
-extern _native64(0x426141162EBE5CDB) const CHAR* NETWORK_GET_GAMERTAG_FROM_HANDLE(NetworkHandle* networkHandle)l
+extern _native64(0x426141162EBE5CDB) const char* NETWORK_GET_GAMERTAG_FROM_HANDLE(NetworkHandle* networkHandle)l
 extern _native64(0xD66C9E72B3CC4982) int UNK_0xD66C9E72B3CC4982(any* p0, any p1)l
 extern _native64(0x58CC181719256197) any UNK_0x58CC181719256197(any p0, any p1, any p2)l
 extern _native64(0x57DBA049E110F217) bool NETWORK_ARE_HANDLES_THE_SAME(NetworkHandle* netHandle1, NetworkHandle* netHandle2)l
 extern _native64(0x6F79B93B0A8E4133) bool NETWORK_IS_HANDLE_VALID(NetworkHandle* networkHandle, int bufferSize)l
 extern _native64(0xCE5F689CF5A0A49D) Player NETWORK_GET_PLAYER_FROM_GAMER_HANDLE(NetworkHandle* networkHandle)l
-extern _native64(0xC82630132081BB6F) const CHAR* NETWORK_MEMBER_ID_FROM_GAMER_HANDLE(NetworkHandle* networkHandle)l
+extern _native64(0xC82630132081BB6F) const char* NETWORK_MEMBER_ID_FROM_GAMER_HANDLE(NetworkHandle* networkHandle)l
 extern _native64(0x0F10B05DDF8D16E9) bool NETWORK_IS_GAMER_IN_MY_SESSION(NetworkHandle* networkHandle)l
 extern _native64(0x859ED1CEA343FCA8) void NETWORK_SHOW_PROFILE_UI(int* networkHandle)l
-extern _native64(0x7718D2E2060837D2) const CHAR* NETWORK_PLAYER_GET_NAME(Player player)l
-extern _native64(0x4927FC39CD0869A0) const CHAR* NETWORK_PLAYER_GET_USERID(Player player, int* userID)l
+extern _native64(0x7718D2E2060837D2) const char* NETWORK_PLAYER_GET_NAME(Player player)l
+extern _native64(0x4927FC39CD0869A0) const char* NETWORK_PLAYER_GET_USERID(Player player, int* userID)l
 extern _native64(0x544ABDDA3B409B6D) bool NETWORK_PLAYER_IS_ROCKSTAR_DEV(Player player)l
 extern _native64(0x565E430DB3B05BEC) bool UNK_0x565E430DB3B05BEC(any p0)l
 extern _native64(0x7E58745504313A2E) bool NETWORK_IS_INACTIVE_PROFILE(any* p0)l
 extern _native64(0xAFEBB0D5D8F687D2) int NETWORK_GET_MAX_FRIENDS()l
 extern _native64(0x203F1CFD823B27A4) int NETWORK_GET_FRIEND_COUNT()l
-extern _native64(0xE11EBBB2A783FE8B) const CHAR* NETWORK_GET_FRIEND_NAME(Player player)l
-extern _native64(0x4164F227D052E293) const CHAR* _NETWORK_GET_FRIEND_NAME_FROM_INDEX(int friendIndex)l
+extern _native64(0xE11EBBB2A783FE8B) const char* NETWORK_GET_FRIEND_NAME(Player player)l
+extern _native64(0x4164F227D052E293) const char* _NETWORK_GET_FRIEND_NAME_FROM_INDEX(int friendIndex)l
 extern _native64(0x425A44533437B64D) bool NETWORK_IS_FRIEND_ONLINE(const char* name)l
 extern _native64(0x87EB7A3FFCB314DB) bool UNK_0x87EB7A3FFCB314DB(any* p0)l
 extern _native64(0x2EA9A3BEDF3F17B8) bool NETWORK_IS_FRIEND_IN_SAME_TITLE(NetworkHandle* networkHandle)l
@@ -4813,7 +4813,7 @@ extern _native64(0xCB2CF5148012C8D0) bool IS_TIME_LESS_THAN(int timeA, int timeB
 extern _native64(0xDE350F8651E4346C) bool IS_TIME_MORE_THAN(int timeA, int timeB)l
 extern _native64(0xF5BC95857BD6D512) bool IS_TIME_EQUAL_TO(int timeA, int timeB)l
 extern _native64(0xA2C6FC031D46FFF0) int GET_TIME_DIFFERENCE(int timeA, int timeB)l
-extern _native64(0x9E23B1777A927DAD) const CHAR* GET_TIME_AS_STRING(int time)l
+extern _native64(0x9E23B1777A927DAD) const char* GET_TIME_AS_STRING(int time)l
 extern _native64(0x9A73240B49945C76) int _GET_POSIX_TIME()l
 extern _native64(0xAC97AF97FA68E5D5) void _GET_DATE_AND_TIME_FROM_UNIX_EPOCH(int unixEpoch, any* timeStructure)l
 extern _native64(0x423DE3854BB50894) void NETWORK_SET_IN_SPECTATOR_MODE(bool toggle, Ped playerPed)l
@@ -4959,14 +4959,14 @@ extern _native64(0xE0A6138401BCB837) any UNK_0xE0A6138401BCB837()l
 extern _native64(0x769951E2455E2EB5) any UNK_0x769951E2455E2EB5()l
 extern _native64(0x3A17A27D75C74887) any UNK_0x3A17A27D75C74887()l
 extern _native64(0xBA96394A0EECFA65) void UNK_0xBA96394A0EECFA65()l
-extern _native64(0xCD67AD041A394C9C) const CHAR* _GET_CONTENT_USER_ID(int p0)l
+extern _native64(0xCD67AD041A394C9C) const char* _GET_CONTENT_USER_ID(int p0)l
 extern _native64(0x584770794D758C18) bool UNK_0x584770794D758C18(any p0, any* p1)l
 extern _native64(0x8C8D2739BA44AF0F) bool UNK_0x8C8D2739BA44AF0F(any p0)l
 extern _native64(0x703F12425ECA8BF5) any UNK_0x703F12425ECA8BF5(any p0)l
 extern _native64(0xAEAB987727C5A8A4) bool UNK_0xAEAB987727C5A8A4(any p0)l
 extern _native64(0xA7BAB11E7C9C6C5A) int _GET_CONTENT_CATEGORY(int p0)l
-extern _native64(0x55AA95F481D694D2) const CHAR* _GET_CONTENT_ID(any p0)l
-extern _native64(0xC0173D6BFF4E0348) const CHAR* _GET_ROOT_CONTENT_ID(any p0)l
+extern _native64(0x55AA95F481D694D2) const char* _GET_CONTENT_ID(any p0)l
+extern _native64(0xC0173D6BFF4E0348) const char* _GET_ROOT_CONTENT_ID(any p0)l
 extern _native64(0xBF09786A7FCAB582) any UNK_0xBF09786A7FCAB582(any p0)l
 extern _native64(0x7CF0448787B23758) int _GET_CONTENT_DESCRIPTION_HASH(any p0)l
 extern _native64(0xBAF6BABF9E7CCC13) any UNK_0xBAF6BABF9E7CCC13(any p0, any p1)l
@@ -5020,7 +5020,7 @@ extern _native64(0x0B203B4AFDE53A4F) any UNK_0x0B203B4AFDE53A4F(any* p0, any* p1
 extern _native64(0x308F96458B7087CC) any UNK_0x308F96458B7087CC(any* p0, any p1, any p2, any p3, any* p4, bool p5)l
 extern _native64(0x487EB90B98E9FB19) void TEXTURE_DOWNLOAD_RELEASE(int p0)l
 extern _native64(0x5776ED562C134687) bool TEXTURE_DOWNLOAD_HAS_FAILED(int p0)l
-extern _native64(0x3448505B6E35262D) const CHAR* TEXTURE_DOWNLOAD_GET_NAME(int p0)l
+extern _native64(0x3448505B6E35262D) const char* TEXTURE_DOWNLOAD_GET_NAME(int p0)l
 extern _native64(0x8BD6C6DEA20E82C6) any UNK_0x8BD6C6DEA20E82C6(any p0)l
 extern _native64(0x60EDD13EB3AC1FF3) any UNK_0x60EDD13EB3AC1FF3()l
 extern _native64(0xEFFB25453D8600F9) bool NETWORK_IS_CABLE_CONNECTED()l
@@ -5113,7 +5113,7 @@ extern _native64(0x9FF28D88C766E3E8) void NETWORK_SPENT_PAY_VEHICLE_INSURANCE_PR
 extern _native64(0xACDE7185B374177C) void NETWORK_SPENT_CALL_PLAYER(any p0, any* p1, bool p2, bool p3)l
 extern _native64(0x29B260B84947DFCC) void NETWORK_SPENT_BOUNTY(any p0, bool p1, bool p2)l
 extern _native64(0x6A445B64ED7ABEB5) void NETWORK_SPENT_FROM_ROCKSTAR(int bank, bool p1, bool p2)l
-extern _native64(0x20194D48EAEC9A41) const CHAR* PROCESS_CASH_GIFT(int* p0, int* p1, const char* p2)l
+extern _native64(0x20194D48EAEC9A41) const char* PROCESS_CASH_GIFT(int* p0, int* p1, const char* p2)l
 extern _native64(0x7C99101F7FCE2EE5) void NETWORK_SPENT_PLAYER_HEALTHCARE(any p0, any p1, bool p2, bool p3)l
 extern _native64(0xD5BB406F4E04019F) void NETWORK_SPENT_NO_COPS(any p0, bool p1, bool p2)l
 extern _native64(0x8204DA7934DF3155) void NETWORK_SPENT_REQUEST_JOB(any p0, bool p1, bool p2)l
@@ -5123,7 +5123,7 @@ extern _native64(0x7C4FCCD2E4DEB394) bool UNK_0x7C4FCCD2E4DEB394()l
 extern _native64(0x76EF28DA05EA395A) int NETWORK_GET_VC_BANK_BALANCE()l
 extern _native64(0xA40F9C2623F6A8B5) int NETWORK_GET_VC_WALLET_BALANCE(int character)l
 extern _native64(0x5CBAD97E059E1B94) int NETWORK_GET_VC_BALANCE()l
-extern _native64(0xA6FA3979BED01B81) const CHAR* _NETWORK_GET_BANK_BALANCE_STRING()l
+extern _native64(0xA6FA3979BED01B81) const char* _NETWORK_GET_BANK_BALANCE_STRING()l
 extern _native64(0xDC18531D7019A535) bool UNK_0xDC18531D7019A535(any p0, any p1)l
 extern _native64(0x5D17BE59D2123284) bool NETWORK_CAN_RECEIVE_PLAYER_CASH(any p0, any p1, any p2, any p3)l
 extern _native64(0xF70EFA14FE091429) any UNK_0xF70EFA14FE091429(any p0)l
@@ -5233,7 +5233,7 @@ extern _native64(0xA00EFE4082C4056E) bool SC_INBOX_MESSAGE_GET_DATA_INT(int p0, 
 extern _native64(0xFFE5C16F402D851D) bool _SC_INBOX_MESSAGE_GET_DATA_BOOL(int p0, const char* p1)l
 extern _native64(0x7572EF42FC6A9B6D) bool SC_INBOX_MESSAGE_GET_DATA_STRING(int p0, const char* context, const char* out)l
 extern _native64(0x9A2C8064B6C1E41A) bool _SC_INBOX_MESSAGE_PUSH(int p0)l
-extern _native64(0xF3E31D16CBDCB304) const CHAR* _SC_INBOX_MESSAGE_GET_STRING(int p0)l
+extern _native64(0xF3E31D16CBDCB304) const char* _SC_INBOX_MESSAGE_GET_STRING(int p0)l
 extern _native64(0xDA024BDBD600F44A) void UNK_0xDA024BDBD600F44A(int* p0)l
 extern _native64(0xA68D3D229F4F3B06) void UNK_0xA68D3D229F4F3B06(const char* p0)l
 extern _native64(0x69D82604A1A5A254) bool SC_INBOX_MESSAGE_GET_UGCDATA(any p0, any* p1)l
@@ -5282,7 +5282,7 @@ extern _native64(0xD8122C407663B995) any UNK_0xD8122C407663B995()l
 extern _native64(0x3001BEF2FECA3680) bool UNK_0x3001BEF2FECA3680()l
 extern _native64(0x92DA6E70EF249BD1) bool UNK_0x92DA6E70EF249BD1(const char* p0, int* p1)l
 extern _native64(0x675721C9F644D161) void UNK_0x675721C9F644D161()l
-extern _native64(0x198D161F458ECC7F) const CHAR* _SC_GET_NICKNAME()l
+extern _native64(0x198D161F458ECC7F) const char* _SC_GET_NICKNAME()l
 extern _native64(0x225798743970412B) bool UNK_0x225798743970412B(int* p0)l
 extern _native64(0x418DC16FAE452C1C) bool UNK_0x418DC16FAE452C1C(int p0)l
 #pragma endregion //}
@@ -5361,7 +5361,7 @@ extern _native64(0x23789E777D14CE44) any UNK_0x23789E777D14CE44()l
 extern _native64(0x350AA5EBC03D3BD2) any UNK_0x350AA5EBC03D3BD2()l
 extern _native64(0x498C1E05CE5F7877) any _NETWORK_SHOP_CASH_TRANSFER_SET_TELEMETRY_NONCE_SEED()l
 extern _native64(0x9507D4271988E1AE) bool _NETWORK_SHOP_SET_TELEMETRY_NONCE_SEED(any p0)l
-extern _native64(0xFCA9373EF340AC0A) const CHAR* _GET_ONLINE_VERSION()l
+extern _native64(0xFCA9373EF340AC0A) const char* _GET_ONLINE_VERSION()l
 extern _native64(0xFA336E7F40C0A0D0) void UNK_0xFA336E7F40C0A0D0()l
 #pragma endregion //}
 

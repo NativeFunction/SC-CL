@@ -65,7 +65,7 @@ extern _native void GET_PLAYER_RGB_COLOUR(Player player, int* r, int* g, int* b)
 extern _native int GET_NUMBER_OF_PLAYERS()l
 extern _native int GET_PLAYER_TEAM(Player player)l
 extern _native void SET_PLAYER_TEAM(Player player, int team)l
-extern _native const CHAR* GET_PLAYER_NAME(Player player)l
+extern _native const char* GET_PLAYER_NAME(Player player)l
 extern _native float GET_WANTED_LEVEL_RADIUS(Player player)l
 extern _native vector3 GET_PLAYER_WANTED_CENTRE_POSITION(Player player)l
 extern _native void SET_PLAYER_WANTED_CENTRE_POSITION(Player player, vector3* position, bool p2, bool p3)l
@@ -296,7 +296,7 @@ extern _native void GET_ENTITY_QUATERNION(Entity entity, float* x, float* y, flo
 extern _native float GET_ENTITY_ROLL(Entity entity)l
 extern _native vector3 GET_ENTITY_ROTATION(Entity entity, int rotationOrder)l
 extern _native vector3 GET_ENTITY_ROTATION_VELOCITY(Entity entity)l
-extern _native const CHAR* GET_ENTITY_SCRIPT(Entity entity, ScrHandle* script)l
+extern _native const char* GET_ENTITY_SCRIPT(Entity entity, ScrHandle* script)l
 extern _native float GET_ENTITY_SPEED(Entity entity)l
 extern _native vector3 GET_ENTITY_SPEED_VECTOR(Entity entity, bool relative)l
 extern _native float GET_ENTITY_UPRIGHT_VALUE(Entity entity)l
@@ -899,7 +899,7 @@ extern _native any UNK_0x4DD03628(any p0)l
 extern _native void UNREGISTER_PEDHEADSHOT(Ped ped)l
 extern _native int IS_PEDHEADSHOT_VALID(int handle)l
 extern _native bool IS_PEDHEADSHOT_READY(int handle)l
-extern _native const CHAR* GET_PEDHEADSHOT_TXD_STRING(int handle)l
+extern _native const char* GET_PEDHEADSHOT_TXD_STRING(int handle)l
 extern _native bool UNK_0x10F2C023(any p0)l
 extern _native void UNK_0x0DBB2FA7(any p0)l
 extern _native any UNK_0x810158F8()l
@@ -1057,7 +1057,7 @@ extern _native void UNK_0xE74E85CE(Vehicle vehicle, float p1)l
 extern _native void UNK_0x06C47A6F(Vehicle vehicle)l
 extern _native void SET_VEHICLE_TYRE_FIXED(Vehicle vehicle, int tyreIndex)l
 extern _native void SET_VEHICLE_NUMBER_PLATE_TEXT(Vehicle vehicle, const char* plateText)l
-extern _native const CHAR* GET_VEHICLE_NUMBER_PLATE_TEXT(Vehicle vehicle)l
+extern _native const char* GET_VEHICLE_NUMBER_PLATE_TEXT(Vehicle vehicle)l
 extern _native int GET_NUMBER_OF_VEHICLE_NUMBER_PLATES()l
 extern _native void SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX(Vehicle vehicle, int plateIndex)l
 extern _native int GET_VEHICLE_NUMBER_PLATE_TEXT_INDEX(Vehicle vehicle)l
@@ -1199,7 +1199,7 @@ extern _native void SET_VEHICLE_NEEDS_TO_BE_HOTWIRED(Vehicle vehicle, bool toggl
 extern _native void START_VEHICLE_HORN(Vehicle vehicle, int duration, Hash mode, bool forever)l
 extern _native32(0x968E5770) void _SET_VEHICLE_SILENT(Vehicle vehicle, bool toggle)l
 extern _native void SET_VEHICLE_HAS_STRONG_AXLES(Vehicle vehicle, bool toggle)l
-extern _native const CHAR* GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(Hash modelHash)l
+extern _native const char* GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(Hash modelHash)l
 extern _native vector3 GET_VEHICLE_DEFORMATION_AT_POS(Vehicle vehicle, vector3 offset)l
 extern _native void SET_VEHICLE_LIVERY(Vehicle vehicle, int livery)l
 extern _native int GET_VEHICLE_LIVERY(Vehicle vehicle)l
@@ -1288,8 +1288,8 @@ extern _native void SET_VEHICLE_MOD_COLOR_1(Vehicle vehicle, int paintType, int 
 extern _native void SET_VEHICLE_MOD_COLOR_2(Vehicle vehicle, int paintType, int color)l
 extern _native void GET_VEHICLE_MOD_COLOR_1(Vehicle vehicle, int* paintType, int* color, int* p3)l
 extern _native void GET_VEHICLE_MOD_COLOR_2(Vehicle vehicle, int* paintType, int* color)l
-extern _native const CHAR* GET_VEHICLE_MOD_COLOR_1_NAME(Vehicle vehicle, bool p1)l
-extern _native const CHAR* GET_VEHICLE_MOD_COLOR_2_NAME(Vehicle vehicle)l
+extern _native const char* GET_VEHICLE_MOD_COLOR_1_NAME(Vehicle vehicle, bool p1)l
+extern _native const char* GET_VEHICLE_MOD_COLOR_2_NAME(Vehicle vehicle)l
 extern _native bool UNK_0x112D637A(Vehicle vehicle)l
 extern _native void SET_VEHICLE_MOD(Vehicle vehicle, int modType, int modIndex, bool customTires)l
 extern _native int GET_VEHICLE_MOD(Vehicle vehicle, int modType)l
@@ -1298,9 +1298,9 @@ extern _native int GET_NUM_VEHICLE_MODS(Vehicle vehicle, int modType)l
 extern _native void REMOVE_VEHICLE_MOD(Vehicle vehicle, int modType)l
 extern _native void TOGGLE_VEHICLE_MOD(Vehicle vehicle, int modType, bool toggle)l
 extern _native bool IS_TOGGLE_MOD_ON(Vehicle vehicle, int modType)l
-extern _native const CHAR* GET_MOD_TEXT_LABEL(Vehicle vehicle, int modType, int modValue)l
-extern _native const CHAR* GET_MOD_SLOT_NAME(Vehicle vehicle, int modType)l
-extern _native const CHAR* GET_LIVERY_NAME(Vehicle vehicle, int liveryIndex)l
+extern _native const char* GET_MOD_TEXT_LABEL(Vehicle vehicle, int modType, int modValue)l
+extern _native const char* GET_MOD_SLOT_NAME(Vehicle vehicle, int modType)l
+extern _native const char* GET_LIVERY_NAME(Vehicle vehicle, int liveryIndex)l
 extern _native any GET_VEHICLE_MOD_MODIFIER_VALUE(Vehicle vehicle, int modType, int modIndex)l
 extern _native32(0x94850968) any _GET_VEHICLE_MOD_DATA(Vehicle vehicle, int modType, int modIndex)l
 extern _native void PRELOAD_VEHICLE_MOD(any p0, any p1, any p2)l
@@ -1595,7 +1595,7 @@ extern _native void TASK_LEAVE_ANY_VEHICLE(Ped ped, int p1, int p2)l
 extern _native void TASK_AIM_GUN_SCRIPTED(Ped ped, Hash scriptTask, bool p2, bool p3)l
 extern _native void TASK_AIM_GUN_SCRIPTED_WITH_TARGET(any p0, any p1, float p2, float p3, float p4, any p5, bool p6, bool p7)l
 extern _native void UPDATE_TASK_AIM_GUN_SCRIPTED_TARGET(Ped p0, Ped p1, float p2, float p3, float p4, bool p5)l
-extern _native const CHAR* GET_CLIP_SET_FOR_SCRIPTED_GUN_TASK(int p0)l
+extern _native const char* GET_CLIP_SET_FOR_SCRIPTED_GUN_TASK(int p0)l
 extern _native void TASK_AIM_GUN_AT_ENTITY(Ped ped, Entity entity, int duration, bool p3)l
 extern _native void TASK_TURN_PED_TO_FACE_ENTITY(Ped ped, Entity entity, int duration)l
 extern _native void TASK_AIM_GUN_AT_COORD(Ped ped, vector3 vec, int time, bool p5, bool p6)l
@@ -1764,7 +1764,7 @@ extern _native32(0x71A5C5DB) void _TASK_MOVE_NETWORK_ADVANCED(Ped ped, const cha
 extern _native bool UNK_0x902656EB(int PlayerID)l
 extern _native bool UNK_0x92FDBAE6(any p0)l
 extern _native any UNK_0x885724DE(Ped ped, const char* p1)l
-extern _native const CHAR* UNK_0x96C0277B(Ped ped)l
+extern _native const char* UNK_0x96C0277B(Ped ped)l
 extern _native void UNK_0xA79BE783(Ped p0, const char* p1, float p2)l
 extern _native void UNK_0xF3538041(Ped p0, any* p1, bool p2)l
 extern _native bool UNK_0x1EBB6F3D(any p0, const char* p1)l
@@ -2025,7 +2025,7 @@ extern _native void UNK_0xD9660339(bool p0)l
 extern _native32(0xD2688412) void _DISPLAY_ONSCREEN_KEYBOARD_2(int p0, const char* windowTitle, any* p2, const char* defaultText, const char* defaultConcat1, const char* defaultConcat2, const char* defaultConcat3, const char* defaultConcat4, const char* defaultConcat5, const char* defaultConcat6, const char* defaultConcat7, int maxInputLength)l
 extern _native void DISPLAY_ONSCREEN_KEYBOARD(int p0, const char* windowTitle, const char* p2, const char* defaultText, const char* defaultConcat1, const char* defaultConcat2, const char* defaultConcat3, int maxInputLength)l
 extern _native int UPDATE_ONSCREEN_KEYBOARD()l
-extern _native const CHAR* GET_ONSCREEN_KEYBOARD_RESULT()l
+extern _native const char* GET_ONSCREEN_KEYBOARD_RESULT()l
 extern _native void UNK_0x3301EA47(int p0)l
 extern _native void UNK_0x42B484ED(Hash hash, bool p1)l
 extern _native void UNK_0x8F60366E(int p0, bool p1)l
@@ -2122,8 +2122,8 @@ extern _native void SET_ANIMAL_MOOD(Ped animal, int mood)l
 extern _native bool IS_MOBILE_PHONE_RADIO_ACTIVE()l
 extern _native void SET_MOBILE_PHONE_RADIO_STATE(bool state)l
 extern _native int GET_PLAYER_RADIO_STATION_INDEX()l
-extern _native const CHAR* GET_PLAYER_RADIO_STATION_NAME()l
-extern _native const CHAR* GET_RADIO_STATION_NAME(int radioStation)l
+extern _native const char* GET_PLAYER_RADIO_STATION_NAME()l
+extern _native const char* GET_RADIO_STATION_NAME(int radioStation)l
 extern _native any GET_PLAYER_RADIO_STATION_GENRE()l
 extern _native bool IS_RADIO_RETUNING()l
 extern _native void UNK_0x53DB6994()l
@@ -2753,13 +2753,13 @@ extern _native void SET_SCRIPT_WITH_NAME_HASH_AS_NO_LONGER_NEEDED(Hash scriptHas
 extern _native bool HAS_SCRIPT_WITH_NAME_HASH_LOADED(Hash scriptHash)l
 extern _native void TERMINATE_THREAD(int threadId)l
 extern _native bool IS_THREAD_ACTIVE(int threadId)l
-extern _native32(0xBE7ACD89) const CHAR* _GET_NAME_OF_THREAD(int threadId)l
+extern _native32(0xBE7ACD89) const char* _GET_NAME_OF_THREAD(int threadId)l
 extern _native32(0xBB4E2F66) void _BEGIN_ENUMERATING_THREADS()l
 extern _native32(0x1E28B28F) int _GET_ID_OF_NEXT_THREAD_IN_ENUMERATION()l
 extern _native int GET_ID_OF_THIS_THREAD()l
 extern _native void TERMINATE_THIS_THREAD()l
 extern _native32(0x029D3841) int _GET_NUMBER_OF_INSTANCES_OF_SCRIPT_WITH_NAME_HASH(Hash scriptHash)l
-extern _native const CHAR* GET_THIS_SCRIPT_NAME()l
+extern _native const char* GET_THIS_SCRIPT_NAME()l
 extern _native Hash GET_HASH_OF_THIS_SCRIPT_NAME()l
 extern _native int GET_NUMBER_OF_EVENTS(bool p0)l
 extern _native bool GET_EVENT_EXISTS(bool p0, int p1)l
@@ -2847,10 +2847,10 @@ extern _native32(0x65E1D404) void _ADD_TEXT_COMPONENT_APP_TITLE(const char* p0, 
 extern _native void ADD_TEXT_COMPONENT_SUBSTRING_WEBSITE(const char* website)l
 extern _native32(0x0829A799) void _ADD_TEXT_COMPONENT_SCALEFORM(const char* p0)l
 extern _native32(0x6F1A1901) void _SET_NOTIFICATION_COLOR_NEXT(int p0)l
-extern _native32(0x34A396EE) const CHAR* _GET_TEXT_SUBSTRING(const char* text, int position, int length)l
-extern _native32(0x0183A66C) const CHAR* _GET_TEXT_SUBSTRING_SAFE(const char* text, int position, int length, int maxLength)l
-extern _native32(0xFA6373BB) const CHAR* _GET_TEXT_SUBSTRING_SLICE(const char* text, int startPosition, int endPosition)l
-extern _native32(0x95C4B5AD) const CHAR* _GET_LABEL_TEXT(const char* labelName)l
+extern _native32(0x34A396EE) const char* _GET_TEXT_SUBSTRING(const char* text, int position, int length)l
+extern _native32(0x0183A66C) const char* _GET_TEXT_SUBSTRING_SAFE(const char* text, int position, int length, int maxLength)l
+extern _native32(0xFA6373BB) const char* _GET_TEXT_SUBSTRING_SLICE(const char* text, int startPosition, int endPosition)l
+extern _native32(0x95C4B5AD) const char* _GET_LABEL_TEXT(const char* labelName)l
 extern _native void CLEAR_PRINTS()l
 extern _native void CLEAR_BRIEF()l
 extern _native void CLEAR_ALL_HELP_MESSAGES()l
@@ -2868,7 +2868,7 @@ extern _native bool DOES_TEXT_LABEL_EXIST(const char* gxt)l
 extern _native int GET_LENGTH_OF_STRING_WITH_THIS_TEXT_LABEL(const char* gxt)l
 extern _native int GET_LENGTH_OF_LITERAL_STRING(const char* string)l
 extern _native32(0x7DBC0764) int _GET_LENGTH_OF_STRING(const char* p0)l
-extern _native const CHAR* GET_STREET_NAME_FROM_HASH_KEY(Hash hash)l
+extern _native const char* GET_STREET_NAME_FROM_HASH_KEY(Hash hash)l
 extern _native bool IS_HUD_PREFERENCE_SWITCHED_ON()l
 extern _native bool IS_RADAR_PREFERENCE_SWITCHED_ON()l
 extern _native bool IS_SUBTITLE_PREFERENCE_SWITCHED_ON()l
@@ -3410,7 +3410,7 @@ extern _native32(0x02DBF2D7) void _POP_SCALEFORM_MOVIE_FUNCTION_VOID()l
 extern _native32(0x2F38B526) any _POP_SCALEFORM_MOVIE_FUNCTION()l
 extern _native bool UNK_0x5CD7C3C0(any funcData)l
 extern _native int UNK_0x2CFB0E6D(any funcData)l
-extern _native const CHAR* SITTING_TV(int scaleform)l
+extern _native const char* SITTING_TV(int scaleform)l
 extern _native32(0x716777CB) void _PUSH_SCALEFORM_MOVIE_FUNCTION_PARAMETER_INT(int value)l
 extern _native32(0x9A01FFDA) void _PUSH_SCALEFORM_MOVIE_FUNCTION_PARAMETER_FLOAT(float value)l
 extern _native32(0x0D4AE8CB) void _PUSH_SCALEFORM_MOVIE_FUNCTION_PARAMETER_BOOL(bool value)l
@@ -3481,11 +3481,11 @@ extern _native bool STAT_GET_INT(Hash statHash, int* outValue, int p2)l
 extern _native bool STAT_GET_FLOAT(Hash statHash, float* outValue, any p2)l
 extern _native bool STAT_GET_BOOL(Hash statHash, bool* outValue, any p2)l
 extern _native bool STAT_GET_DATE(Hash statHash, any* p1, any p2, any p3)l
-extern _native const CHAR* STAT_GET_STRING(Hash statHash, int p1)l
+extern _native const char* STAT_GET_STRING(Hash statHash, int p1)l
 extern _native bool STAT_GET_POS(any p0, any* p1, any* p2, any* p3, any p4)l
 extern _native bool STAT_GET_MASKED_INT(any p0, any* p1, any p2, any p3, any p4)l
-extern _native const CHAR* STAT_GET_USER_ID(any p0)l
-extern _native const CHAR* STAT_GET_LICENSE_PLATE(Hash statName)l
+extern _native const char* STAT_GET_USER_ID(any p0)l
+extern _native const char* STAT_GET_LICENSE_PLATE(Hash statName)l
 extern _native bool STAT_SET_LICENSE_PLATE(Hash statName, const char* str)l
 extern _native void STAT_INCREMENT(Hash statName, float value)l
 extern _native bool UNK_0x46F21343()l
@@ -3623,7 +3623,7 @@ extern _native void GET_MOBILE_PHONE_RENDER_ID(int* renderId)l
 extern _native bool APP_DATA_VALID()l
 extern _native int APP_GET_INT(const char* property)l
 extern _native float APP_GET_FLOAT(const char* property)l
-extern _native const CHAR* APP_GET_STRING(const char* property)l
+extern _native const char* APP_GET_STRING(const char* property)l
 extern _native void APP_SET_INT(const char* property, int value)l
 extern _native void APP_SET_FLOAT(const char* property, float value)l
 extern _native void APP_SET_STRING(const char* property, const char* value)l
@@ -3723,8 +3723,8 @@ extern _native bool IS_DISABLED_CONTROL_JUST_RELEASED(int inputGroup, int contro
 extern _native float GET_DISABLED_CONTROL_NORMAL(int inputGroup, int control)l
 extern _native float UNK_0xF2A65A4C(int inputGroup, int control)l
 extern _native int UNK_0x0E8EF929(int p0)l
-extern _native const CHAR* GET_CONTROL_INSTRUCTIONAL_BUTTON(int inputGroup, int control, bool p2)l
-extern _native const CHAR* UNK_0x3EE71F6A(int inputGroup, int control, bool p2)l
+extern _native const char* GET_CONTROL_INSTRUCTIONAL_BUTTON(int inputGroup, int control, bool p2)l
+extern _native const char* UNK_0x3EE71F6A(int inputGroup, int control, bool p2)l
 extern _native void SET_PAD_SHAKE(int p0, int duration, int frequency)l
 extern _native void STOP_PAD_SHAKE(any p0)l
 extern _native void UNK_0x7D65EB6E(any p0, any p1)l
@@ -3759,7 +3759,7 @@ extern _native void DATAFILE_CREATE()l
 extern _native void DATAFILE_DELETE()l
 extern _native void UNK_0x4E03F632()l
 extern _native void UNK_0xF11F956F()l
-extern _native const CHAR* DATAFILE_GET_FILE_DICT()l
+extern _native const char* DATAFILE_GET_FILE_DICT()l
 extern _native bool UNK_0x768CBB35(const char* filename)l
 extern _native bool UNK_0x0B4087F7(bool* p0)l
 extern _native bool DATAFILE_IS_SAVE_PENDING()l
@@ -3773,7 +3773,7 @@ extern _native32(0x03939B8D) any* _OBJECT_VALUE_ADD_ARRAY(any* objectData, const
 extern _native32(0x8876C872) bool _OBJECT_VALUE_GET_BOOLEAN(any* objectData, const char* key)l
 extern _native32(0xA6C68693) int _OBJECT_VALUE_GET_INTEGER(any* objectData, const char* key)l
 extern _native32(0xA92C1AF4) float _OBJECT_VALUE_GET_FLOAT(any* objectData, const char* key)l
-extern _native32(0x942160EC) const CHAR* _OBJECT_VALUE_GET_STRING(any* objectData, const char* key)l
+extern _native32(0x942160EC) const char* _OBJECT_VALUE_GET_STRING(any* objectData, const char* key)l
 extern _native32(0xE84A127A) vector3 _OBJECT_VALUE_GET_VECTOR3(any* objectData, const char* key)l
 extern _native32(0xC9C13D8D) any* _OBJECT_VALUE_GET_OBJECT(any* objectData, const char* key)l
 extern _native32(0x1F2F7D00) any* _OBJECT_VALUE_GET_ARRAY(any* objectData, const char* key)l
@@ -3787,7 +3787,7 @@ extern _native32(0xC174C71B) any* _ARRAY_VALUE_ADD_OBJECT(any* arrayData)l
 extern _native32(0xA2E5F921) bool _ARRAY_VALUE_GET_BOOLEAN(any* arrayData, int arrayIndex)l
 extern _native32(0xBB120CFC) int _ARRAY_VALUE_GET_INTEGER(any* arrayData, int arrayIndex)l
 extern _native32(0x08AD2CC2) float _ARRAY_VALUE_GET_FLOAT(any* arrayData, int arrayIndex)l
-extern _native32(0x93F985A6) const CHAR* _ARRAY_VALUE_GET_STRING(any* arrayData, int arrayIndex)l
+extern _native32(0x93F985A6) const char* _ARRAY_VALUE_GET_STRING(any* arrayData, int arrayIndex)l
 extern _native32(0x80E3DA55) vector3 _ARRAY_VALUE_GET_VECTOR3(any* arrayData, int arrayIndex)l
 extern _native32(0xECE81278) any* _ARRAY_VALUE_GET_OBJECT(any* arrayData, int arrayIndex)l
 extern _native32(0xA8A21766) int _ARRAY_VALUE_GET_SIZE(any* arrayData)l
@@ -3828,7 +3828,7 @@ extern _native void SUPPRESS_AGITATION_EVENTS_NEXT_FRAME()l
 extern _native int GET_ZONE_AT_COORDS(vector3 vec)l
 extern _native int GET_ZONE_FROM_NAME_ID(const char* zoneName)l
 extern _native int GET_ZONE_POPSCHEDULE(int zoneId)l
-extern _native const CHAR* GET_NAME_OF_ZONE(vector3 vec)l
+extern _native const char* GET_NAME_OF_ZONE(vector3 vec)l
 extern _native void SET_ZONE_ENABLED(int zoneId, bool toggle)l
 extern _native int GET_ZONE_SCUMMINESS(int zoneId)l
 extern _native void OVERRIDE_POPSCHEDULE_VEHICLE_MODEL(int scheduleId, Hash vehicleHash)l
@@ -4156,14 +4156,14 @@ extern _native Entity NET_TO_ENT(int netHandle)l
 extern _native bool NETWORK_GAMERTAG_FROM_HANDLE_PENDING()l
 extern _native bool NETWORK_GAMERTAG_FROM_HANDLE_SUCCEEDED()l
 extern _native void NETWORK_SHOW_PROFILE_UI(int* networkHandle)l
-extern _native const CHAR* NETWORK_PLAYER_GET_NAME(Player player)l
-extern _native const CHAR* NETWORK_PLAYER_GET_USERID(Player player, int* userID)l
+extern _native const char* NETWORK_PLAYER_GET_NAME(Player player)l
+extern _native const char* NETWORK_PLAYER_GET_USERID(Player player, int* userID)l
 extern _native bool NETWORK_PLAYER_IS_ROCKSTAR_DEV(Player player)l
 extern _native bool UNK_0xD265B049(any p0)l
 extern _native bool NETWORK_IS_INACTIVE_PROFILE(any* p0)l
 extern _native int NETWORK_GET_MAX_FRIENDS()l
 extern _native int NETWORK_GET_FRIEND_COUNT()l
-extern _native const CHAR* NETWORK_GET_FRIEND_NAME(Player player)l
+extern _native const char* NETWORK_GET_FRIEND_NAME(Player player)l
 extern _native bool NETWORK_IS_FRIEND_ONLINE(const char* name)l
 extern _native any NETWORK_IS_PENDING_FRIEND(any p0)l
 extern _native any NETWORK_IS_ADDING_FRIEND()l
@@ -4291,7 +4291,7 @@ extern _native bool IS_TIME_LESS_THAN(int timeA, int timeB)l
 extern _native bool IS_TIME_MORE_THAN(int timeA, int timeB)l
 extern _native bool IS_TIME_EQUAL_TO(int timeA, int timeB)l
 extern _native int GET_TIME_DIFFERENCE(int timeA, int timeB)l
-extern _native const CHAR* GET_TIME_AS_STRING(int time)l
+extern _native const char* GET_TIME_AS_STRING(int time)l
 extern _native32(0xF2FDF2E0) int _GET_POSIX_TIME()l
 extern _native32(0xBB7CCE49) void _GET_DATE_AND_TIME_FROM_UNIX_EPOCH(int unixEpoch, any* timeStructure)l
 extern _native void NETWORK_SET_IN_SPECTATOR_MODE(bool toggle, Ped playerPed)l
@@ -4413,12 +4413,12 @@ extern _native any UNK_0x2DE69817()l
 extern _native any UNK_0x81BD8D3B()l
 extern _native any UNK_0x8E1D8F78()l
 extern _native void UNK_0x0D35DD93()l
-extern _native32(0x8F3137E6) const CHAR* _GET_CONTENT_USER_ID(int p0)l
+extern _native32(0x8F3137E6) const char* _GET_CONTENT_USER_ID(int p0)l
 extern _native any UNK_0xB9137BA7(any p0)l
 extern _native bool UNK_0x9FEEAA9C(any p0)l
 extern _native32(0x5E8A7559) int _GET_CONTENT_CATEGORY(int p0)l
-extern _native32(0x331AEABF) const CHAR* _GET_CONTENT_ID(any p0)l
-extern _native32(0x0E5E8E5C) const CHAR* _GET_ROOT_CONTENT_ID(any p0)l
+extern _native32(0x331AEABF) const char* _GET_CONTENT_ID(any p0)l
+extern _native32(0x0E5E8E5C) const char* _GET_ROOT_CONTENT_ID(any p0)l
 extern _native any UNK_0xA5A0C695(any p0)l
 extern _native32(0x91534C6E) int _GET_CONTENT_DESCRIPTION_HASH(any p0)l
 extern _native any UNK_0x744A9EA5(any p0, any p1)l
@@ -4470,7 +4470,7 @@ extern _native any UNK_0x1856D008(any* p0, any* p1, bool p2)l
 extern _native any UNK_0x68C9AF69(any* p0, any p1, any p2, any p3, any* p4, bool p5)l
 extern _native void TEXTURE_DOWNLOAD_RELEASE(int p0)l
 extern _native bool TEXTURE_DOWNLOAD_HAS_FAILED(int p0)l
-extern _native const CHAR* TEXTURE_DOWNLOAD_GET_NAME(int p0)l
+extern _native const char* TEXTURE_DOWNLOAD_GET_NAME(int p0)l
 extern _native any UNK_0x03225BA3(any p0)l
 extern _native any UNK_0x4DEBC227()l
 extern _native bool NETWORK_IS_CABLE_CONNECTED()l
@@ -4549,7 +4549,7 @@ extern _native void NETWORK_SPENT_PAY_VEHICLE_INSURANCE_PREMIUM(int amount, Hash
 extern _native void NETWORK_SPENT_CALL_PLAYER(any p0, any* p1, bool p2, bool p3)l
 extern _native void NETWORK_SPENT_BOUNTY(any p0, bool p1, bool p2)l
 extern _native void NETWORK_SPENT_FROM_ROCKSTAR(int bank, bool p1, bool p2)l
-extern _native const CHAR* PROCESS_CASH_GIFT(int* p0, int* p1, const char* p2)l
+extern _native const char* PROCESS_CASH_GIFT(int* p0, int* p1, const char* p2)l
 extern _native void NETWORK_SPENT_PLAYER_HEALTHCARE(any p0, any p1, bool p2, bool p3)l
 extern _native void NETWORK_SPENT_NO_COPS(any p0, bool p1, bool p2)l
 extern _native void NETWORK_SPENT_REQUEST_JOB(any p0, bool p1, bool p2)l
@@ -4655,7 +4655,7 @@ extern _native32(0x19EE0CCB) bool _SC_INBOX_MESSAGE_POP(int p0)l
 extern _native bool SC_INBOX_MESSAGE_GET_DATA_INT(int p0, const char* context, int* out)l
 extern _native bool SC_INBOX_MESSAGE_GET_DATA_STRING(int p0, const char* context, const char* out)l
 extern _native32(0xEBE420A4) bool _SC_INBOX_MESSAGE_PUSH(int p0)l
-extern _native32(0x2C959AF9) const CHAR* _SC_INBOX_MESSAGE_GET_STRING(int p0)l
+extern _native32(0x2C959AF9) const char* _SC_INBOX_MESSAGE_GET_STRING(int p0)l
 extern _native void UNK_0x0B9A3512(int* p0)l
 extern _native void UNK_0x75324674(const char* p0)l
 extern _native bool SC_INBOX_MESSAGE_GET_UGCDATA(any p0, any* p1)l
