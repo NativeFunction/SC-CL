@@ -74,7 +74,7 @@ typedef int* va_list;
 /// <param name="pN">
 ///	Name of the last named parameter in the function definition. 
 ///	<para>The arguments extracted by subsequent calls to va_arg are those after pN.</para>
-///	</param>
+/// </param>
 /// <returns></returns>
 #define va_start(ap, pN)	\
 	((ap) = (va_list)*(va_list)((char*)(&pN) + __va_argsiz(pN)))
@@ -92,7 +92,7 @@ typedef int* va_list;
 ///	<para>For a type expression to be suitable for its use with va_arg, it must be such that type* produces a pointer to type.</para>
 ///	<para>The type shall be compatible with type of the extracted argument(as promoted according to the default argument promotions),</para>
 ///	<para>or one be the unsigned version of the other, or one be a void pointer and the other some other pointer type.</para>
-///	</param>
+/// </param>
 /// <returns></returns>
 #define va_arg(ap, t)					\
 	 (((ap) = (va_list)((char*)(ap) + __va_argsiz(t))),		\
@@ -109,7 +109,7 @@ typedef int* va_list;
 /// <param name="src">
 ///	Object of type va_list that already carries information to retrieve additional arguments with va_arg 
 ///	<para>(i.e., it has already been passed as first argument to va_start or va_copy ans has not yet been released with va_end).</para>
-///	</param>
+/// </param>
 /// <returns></returns>
 #define va_copy(dest, src) ((dest) = (src))
 
@@ -119,7 +119,7 @@ typedef int* va_list;
 /// <param name="ap">
 ///	Object of type va_list carrying information about the current retrieval state of a variable argument list. 
 ///	<para>This object shall have been initialized by an initial call to va_start or va_copy and not have been released with va_end.</para>
-///	</param>
+/// </param>
 /// <returns></returns>
 #define va_end(ap)	((void)0)
 
@@ -128,7 +128,7 @@ typedef int* va_list;
 /// </summary>
 /// <param name="pN">
 ///	Name of the last named parameter in the function definition. 
-///	</param>
+/// </param>
 /// <returns></returns>
 #define va_count(pN)	\
 	(*(int*)((char*)(&pN) + __va_argsiz(pN) + sizeof(va_list)))
@@ -138,7 +138,7 @@ typedef int* va_list;
 /// </summary>
 /// <param name="pN">
 ///	Name of the last named parameter in the function definition. 
-///	</param>
+/// </param>
 /// <returns></returns>
 #define va_scount(pN)	\
 	(*(int*)((char*)(&pN) + __va_argsiz(pN) + sizeof(va_list) + sizeof(int)))
