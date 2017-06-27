@@ -37,6 +37,12 @@
 !Opcode.h
 !Opcode.cpp
 !SC-CL.cpp
+!rapidxml/
+!rapidxml.hpp
+!rapidxml_iterators.hpp
+!rapidxml_print.hpp
+!rapidxml_utils.hpp
+!license.txt
 !Utils.cpp
 !Utils.h
 !ClangUtils.cpp

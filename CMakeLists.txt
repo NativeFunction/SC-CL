@@ -41,6 +41,10 @@ set(header_list
 	"Include/Utils/ConsoleColor.h"
 	"Include/Utils/ConstExpr.h"
 	"Include/Utils/Utils.h"
+	"Include/Utils/rapidxml/rapidxml.hpp"
+	"Include/Utils/rapidxml/rapidxml_iterators.hpp"
+	"Include/Utils/rapidxml/rapidxml_print.hpp"
+	"Include/Utils/rapidxml/rapidxml_utils.hpp"
 )
 
 set(resource_list
