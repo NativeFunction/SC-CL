@@ -1467,8 +1467,8 @@ void CompileGTAIV::SCOWrite(const char* path, CompileGTAIV::SCRFlags EncryptionC
 			if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize, GTAIVEncryptionKey))
 				Utils::System::Throw("SCO Encryption Failed");
 
-			FILE* file = fopen(path, "wb");
-			if (Utils::IO::CheckFopenFile(path, file))
+			FILE* file = nullptr;
+			if (Utils::IO::CreateFileWithDir(path, file))
 			{
 				std::fwrite(SCR_Header.data(), 1, HeaderSize, file);//header
 				std::fwrite(&CompressedSize, 1, 4, file);//compressed size
@@ -1496,8 +1496,8 @@ void CompileGTAIV::SCOWrite(const char* path, CompileGTAIV::SCRFlags EncryptionC
 		}
 		//intentional no break
 		case SCRFlags::Standard:{
-			FILE* file = fopen(path, "wb");
-			if (Utils::IO::CheckFopenFile(path, file))
+			FILE* file = nullptr;
+			if (Utils::IO::CreateFileWithDir(path, file))
 			{
 				std::fwrite(SCR_Header.data(), 1, HeaderSize, file);//header
 				std::fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
@@ -2087,8 +2087,8 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 		CSR_Header.Flags.Flag[1] = SwapEndian(CSR_Header.Flags.Flag[1]);
 
 
-		FILE* file = fopen(path, "wb");
-		if (Utils::IO::CheckFopenFile(path, file))
+		FILE* file = nullptr;
+		if (Utils::IO::CreateFileWithDir(path, file))
 		{
 			fwrite(&CSR_Header, 1, 16, file);//encrypted data
 			fwrite(CompressedData.data(), 1, CompressedLen, file);//encrypted data
@@ -2098,9 +2098,9 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 	}
 	else
 	{
-		FILE* file = fopen(path, "wb");
+		FILE* file = nullptr;
 
-		if (Utils::IO::CheckFopenFile(path, file))
+		if (Utils::IO::CreateFileWithDir(path, file))
 		{
 			fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
 			fclose(file);
@@ -2153,8 +2153,8 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 		, Utils::Bitwise::SwapEndian(0u)//unk44
 		};
 
-		FILE* file = fopen(path, "wb");
-		if (Utils::IO::CheckFopenFile(path, file))
+		FILE* file = nullptr;
+		if (Utils::IO::CreateFileWithDir(path, file))
 		{
 			fwrite(SCR_Header.data(), 1, 48, file);//encrypted data
 			fwrite(CompressedData.data(), 1, CompressedSize, file);//encrypted data
@@ -2163,9 +2163,9 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 	}
 	else
 	{
-		FILE* file = fopen(path, "wb");
+		FILE* file = nullptr;
 
-		if (Utils::IO::CheckFopenFile(path, file))
+		if (Utils::IO::CreateFileWithDir(path, file))
 		{
 			fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
 			fclose(file);
@@ -2513,9 +2513,9 @@ void CompileGTAV::XSCWrite(const char* path, bool AddRsc7Header)
 		ChangeInt32inBuff(IntToPointerInt(SavedOffsets.StringPagePointers[i]), SavedOffsets.StringBlocks + (i * 4));
 	#pragma endregion
 
-	FILE* file = fopen(path, "wb");
+	FILE* file = nullptr;
 
-	if (Utils::IO::CheckFopenFile(path, file))
+	if (Utils::IO::CreateFileWithDir(path, file))
 	{
 		#pragma region Write_File
 		if (AddRsc7Header)
@@ -3164,8 +3164,8 @@ void CompileGTAVPC::YSCWrite(const char* path, bool AddRsc7Header)
 	#pragma endregion
 
 	#pragma region Write_File
-	FILE* file = fopen(path, "wb");
-	if (Utils::IO::CheckFopenFile(path, file))
+	FILE* file = nullptr;
+	if (Utils::IO::CreateFileWithDir(path, file))
 	{
 		if (AddRsc7Header)
 		{

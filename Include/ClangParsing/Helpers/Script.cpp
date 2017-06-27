@@ -57,6 +57,7 @@ FunctionData * Script::getFunctionFromName(const string& name)
 		if (hash == func->getHash() && name == func->getName())
 			return functions[i].get();
 	}
+	
 	Utils::System::Warn("Function \"" + name + "\" does not exist");
 	assert(false && "Function doesnt exist");
 	return NULL;

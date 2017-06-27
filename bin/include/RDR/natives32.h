@@ -57,11 +57,11 @@
 #define l {};
 #endif
 
-#define sin sin_degree
-#define cos cos_degree
-#define tan tan_degree
-#define atan atan_degree
-#define atan2 atan2_degree
+#define SIN SIN_DEGREE
+#define COS COS_DEGREE
+#define TAN TAN_DEGREE
+#define ATAN ATAN_DEGREE
+#define ATAN2 ATAN2_DEGREE
 
 extern _native int FLOOR(float x)l
 extern _native float SIN_DEGREE(float x)l
@@ -154,9 +154,9 @@ extern _native32(0x5842B9D1) int _GET_CURRENT_TIME()l
 extern _native void UNK_0x7D5C0C4D()l
 extern _native void UNK_0x7E4A92CF(int pram0, int pram1)l
 extern _native void UI_SET_MONEY(int pram0, int pram1, int pram2)l
-extern _native const CHAR* UNK_0x47EF426D(const char* pram0)l
+extern _native const char* UNK_0x47EF426D(const char* pram0)l
 extern _native int NET_GET_PLAYMODE()l
-extern _native const CHAR* UI_GET_STRING(const char* GXTEntry)l
+extern _native const char* UI_GET_STRING(const char* GXTEntry)l
 extern _native void SAVE_SOFT_SAVE(int pram0)l
 extern _native int UNK_0x82F63365(int pram0)l
 extern _native void SET_PLAYER_CONTROL_RUMBLE(int pram0, int pram1)l
@@ -195,8 +195,8 @@ extern _native int ABS(int pram0)l
 extern _native void REMOVE_COLLECTABLE(int pram0, int pram1)l
 extern _native int ROUND(int pram0)l
 extern _native int UNK_0xFA6BDD8E(int pram0, int pram1, int pram2)l
-extern _native32(0x8ED1FF95) const CHAR* _FLOAT_TO_STRING(float Flt, int unk3, int Precision)l
-extern _native const CHAR* INT_TO_STRING(int i)l
+extern _native32(0x8ED1FF95) const char* _FLOAT_TO_STRING(float Flt, int unk3, int Precision)l
+extern _native const char* INT_TO_STRING(int i)l
 extern _native void CLEAR_STAT_MESSAGE()l
 extern _native int STRING_TO_HASH(int pram0)l
 extern _native void SET_STAT_MESSAGE(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8, int pram9, int pram10, int pram11, int pram12)l
@@ -214,7 +214,7 @@ extern _native int AWARD_ACHIEVEMENT(int pram0)l
 extern _native int AWARD_AVATAR(int pram0)l
 extern _native int DECOR_CHECK_EXIST(int pram0, int pram1)l
 extern _native bool IS_DEV_BUILD()l
-extern _native const CHAR* SS_GET_STRING(int pram0, int pram1)l
+extern _native const char* SS_GET_STRING(int pram0, int pram1)l
 extern _native int SAVE_GAME(int pram0)l
 extern _native void UNK_0x17F34613(int pram0)l
 extern _native void UNK_0xED40F27D(int pram0)l
@@ -602,7 +602,7 @@ extern _native void ENABLE_WORLD_SECTOR(int pram0)l
 extern _native int ENABLE_CURVE(int pram0, int pram1)l
 extern _native int UNK_0xC7612A79(int pram0, int pram1)l
 extern _native void UNK_0xD44F7102(int pram0, int pram1, int pram2)l
-extern _native const CHAR* VECTOR_TO_STRING(vector3* Vec)l
+extern _native const char* VECTOR_TO_STRING(vector3* Vec)l
 extern _native void AUDIO_MUSIC_SET_STATE(int pram0)l
 extern _native int UNK_0x38771B89(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8, int pram9, int pram10)l
 extern _native int UNK_0xC426D16F(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8, int pram9, int pram10, int pram11)l
@@ -730,7 +730,7 @@ extern _native int UNK_0xD85CA776(int pram0)l
 extern _native int GET_DRAFT_ACTOR(int pram0, int pram1)l
 extern _native bool IS_ACTOR_DEAD(Actor actor)l
 extern _native int IS_OBJECT_IN_OBJECTSET(int pram0, int pram1)l
-extern _native const CHAR* GET_ACTOR_NAME(Actor actor)l
+extern _native const char* GET_ACTOR_NAME(Actor actor)l
 extern _native int UNK_0x1449EE9E(int pram0)l
 extern _native void AI_SET_NAV_MATERIAL_USAGE(int pram0, int pram1, int pram2)l
 extern _native void SET_ACTOR_EXEMPT_FROM_AMBIENT_RESTRICTIONS(int pram0, int pram1)l
@@ -808,7 +808,7 @@ extern _native int UNK_0x7A6146DB(int pram0, int pram1, int pram2, int pram3, in
 extern _native void SET_CAMERA_FOCUS_PROMPT_TEXT(int pram0, int pram1)l
 extern _native void UNK_0x601FC9F4(int pram0, int pram1)l
 extern _native void UNK_0x04A38C60(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6)l
-extern _native const CHAR* GET_SCRIPT_NAME()l
+extern _native const char* GET_SCRIPT_NAME()l
 extern _native int GET_TOTAL_MINUTES(int pram0)l
 extern _native int UNK_0xA5FF6076(int pram0, int pram1, int pram2, int pram3, int pram4)l
 extern _native int UNK_0x0E018669(int pram0, int pram1, int pram2, int pram3, int pram4, int pram5, int pram6, int pram7, int pram8)l
@@ -1744,7 +1744,7 @@ extern _native void UNK_0xC78B7436()l
 extern _native void UNK_0x49053A94(int pram0, int pram1)l
 extern _native void UI_UNFOCUS(const char* uiLayer)l
 extern _native int UNK_0xBA89F5EA(int pram0)l
-extern _native const CHAR* GET_SLOT_NAME(int SlotID)l
+extern _native const char* GET_SLOT_NAME(int SlotID)l
 extern _native int UNK_0xC0FC4B57()l
 extern _native int NET_IS_HOST_OF_THIS_SCRIPT()l
 extern _native void UNK_0x2547029C(int pram0, int pram1)l
@@ -3127,7 +3127,7 @@ extern _native int UNK_0x8701F1F6()l
 extern _native int UNK_0xB5401D4A()l
 extern _native int UNK_0x80B30545()l
 extern _native bool GET_LAST_HIT_ZONE(Actor Actor, int* out)l
-extern _native const CHAR* GET_WEAPON_DISPLAY_NAME(eWeapon WeaponID)l
+extern _native const char* GET_WEAPON_DISPLAY_NAME(eWeapon WeaponID)l
 extern _native Blip GET_BLIP_ON_OBJECT(Object Obj)l
 
 

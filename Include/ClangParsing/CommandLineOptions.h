@@ -39,13 +39,18 @@ namespace SCCL
 	extern llvm::cl::opt <uint32_t> Option_PlayerVarSize;
 	extern llvm::cl::opt<OptimisationLevel> Option_OptimizationLevel;
 
+	extern llvm::cl::opt<bool> Option_EmitAsm;
+	extern llvm::cl::opt<bool> Option_AsmOnly;
+
+	extern llvm::cl::opt<std::string> Option_OutputDirectory;
+
+	extern llvm::cl::opt<std::string> Option_VCXPROJ;
+
 	#pragma region Bool_Group
 	//Grouping is for multi bool set support ex: -snb
 	extern llvm::cl::opt<bool> Option_Singleton;
 	extern llvm::cl::opt<bool> Option_DisableFunctionNames;
 	extern llvm::cl::opt<bool> Option_EntryFunctionPadding;
-	extern llvm::cl::opt<bool> Option_EmitAsm;
-	extern llvm::cl::opt<bool> Option_AsmOnly;
 	#pragma endregion
 
 	//extern llvm::cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);

@@ -47,6 +47,10 @@ class Script
 	bool isStaticsLocked = false;
 public:
 	Script(std::string scriptName, BuildType buildType, Platform platform, bool isSingleton, bool isEntryFunctionPadding, OptimisationLevel optLevel);
+	
+	~Script()
+	{
+	}
 
 	FunctionData *getEntryFunction() const{ return entryFunction; }
 	FunctionData *getCurrentFunction()const{ return currentFunc; }
@@ -229,9 +233,5 @@ public:
 		}
 
 		return NULL;
-	}
-
-	~Script()
-	{
 	}
 };

@@ -64,7 +64,7 @@ extern _native bool CELL_CAM_IS_CHAR_VISIBLE(Ped ped)l
 extern _native bool CELL_CAM_IS_CHAR_VISIBLE_NO_FACE_CHECK(Ped ped)l
 extern _native bool DOES_CHAR_EXIST(Ped ped)l
 extern _native bool GET_CHAR_ALLOWED_TO_RUN_ON_BOATS(Ped ped)l
-extern _native bool GET_CHAR_ANIM_IS_EVENT(Ped ped, char* AnimName0, char* AnimName1, bool flag)l
+extern _native bool GET_CHAR_ANIM_IS_EVENT(Ped ped, const char* AnimName0, const char* AnimName1, bool flag)l
 extern _native bool GET_CHAR_MELEE_ACTION_FLAG0(Ped ped)l
 extern _native bool GET_CHAR_MELEE_ACTION_FLAG1(Ped ped)l
 extern _native bool GET_CHAR_MELEE_ACTION_FLAG2(Ped ped)l
@@ -79,7 +79,7 @@ extern _native bool GET_CHAR_WILL_TRY_TO_LEAVE_WATER(Ped ped)l
 extern _native bool GET_CLOSEST_CHAR(float x, float y, float z, float radius, bool unknown1, bool unknown2, Ped *pPed)l
 extern _native bool GET_GROUP_CHAR_DUCKS_WHEN_AIMED_AT(Ped ped)l
 extern _native bool HAS_CAR_BEEN_DAMAGED_BY_CHAR(Vehicle vehicle, Ped ped)l
-extern _native bool HAS_CHAR_ANIM_FINISHED(Ped ped, char* AnimName0, char* AnimName1)l
+extern _native bool HAS_CHAR_ANIM_FINISHED(Ped ped, const char* AnimName0, const char* AnimName1)l
 extern _native bool HAS_CHAR_BEEN_ARRESTED(Ped ped)l
 extern _native bool HAS_CHAR_BEEN_DAMAGED_BY_CHAR(Ped ped, Ped otherChar, bool unknownFalse)l
 extern _native bool HAS_CHAR_BEEN_PHOTOGRAPHED(Ped ped)l
@@ -117,7 +117,7 @@ extern _native bool IS_CHAR_ON_ANY_BIKE(Ped ped)l
 extern _native bool IS_CHAR_ON_FIRE(Ped ped)l
 extern _native bool IS_CHAR_ON_FOOT(Ped ped)l
 extern _native bool IS_CHAR_ON_SCREEN(Ped ped)l
-extern _native bool IS_CHAR_PLAYING_ANIM(Ped ped, char* animSet, char* animName)l
+extern _native bool IS_CHAR_PLAYING_ANIM(Ped ped, const char* animSet, const char* animName)l
 extern _native bool IS_CHAR_RESPONDING_TO_ANY_EVENT(Ped ped)l
 extern _native bool IS_CHAR_RESPONDING_TO_EVENT(Ped ped, int eventid)l
 extern _native bool IS_CHAR_SHOOTING(Ped ped)l
@@ -134,7 +134,7 @@ extern _native bool IS_CHAR_TOUCHING_OBJECT_ON_FOOT(Ped ped, Object obj)l
 extern _native bool IS_CHAR_TRYING_TO_ENTER_A_LOCKED_CAR(Ped ped)l
 extern _native bool IS_CHAR_USING_ANY_SCENARIO(Ped ped)l
 extern _native bool IS_CHAR_USING_MAP_ATTRACTOR(Ped ped)l
-extern _native bool IS_CHAR_USING_SCENARIO(Ped ped, char* scenarioName)l
+extern _native bool IS_CHAR_USING_SCENARIO(Ped ped, const char* scenarioName)l
 extern _native bool IS_CHAR_VISIBLE(Ped ped)l
 extern _native bool IS_CHAR_WAITING_FOR_WORLD_COLLISION(Ped ped)l
 extern _native bool LOCATE_CHAR_ANY_MEANS_2D(Ped ped, float x0, float y0, float x1, float y1, bool flag)l
@@ -161,8 +161,8 @@ extern _native bool LOCATE_CHAR_ON_FOOT_CHAR_2D(Ped ped, Ped pednext, float x, f
 extern _native bool LOCATE_CHAR_ON_FOOT_CHAR_3D(Ped ped, Ped pednext, float x, float y, float z, bool flag)l
 extern _native bool LOCATE_CHAR_ON_FOOT_OBJECT_2D(Ped ped, Object obj, float x, float y, bool flag)l
 extern _native bool LOCATE_CHAR_ON_FOOT_OBJECT_3D(Ped ped, Object obj, float x, float y, float z, bool flag)l
-extern _native bool SET_CHAR_ANIM_PLAYING_FLAG(Ped ped, char* AnimName0, char* AnimName1, bool flag)l
-extern _native char* GET_ANIM_GROUP_FROM_CHAR(Ped ped)l
+extern _native bool SET_CHAR_ANIM_PLAYING_FLAG(Ped ped, const char* AnimName0, const char* AnimName1, bool flag)l
+extern _native const char* GET_ANIM_GROUP_FROM_CHAR(Ped ped)l
 extern _native float GET_CHAR_MAX_MOVE_BLEND_RATIO(Ped ped)l
 extern _native int GET_CHAR_GRAVITY(Ped ped)l
 extern _native ScriptAny GET_CHAR_LAST_DAMAGE_BONE(Ped ped, uint *pBone)l
@@ -174,9 +174,9 @@ extern _native uint GET_CHAR_TEXTURE_VARIATION(Ped ped, uint component)l
 extern _native uint GET_NUMBER_OF_CHAR_DRAWABLE_VARIATIONS(Ped ped, uint component)l
 extern _native uint GET_NUMBER_OF_CHAR_TEXTURE_VARIATIONS(Ped ped, uint component, uint unknown1)l
 extern _native void ADD_ARMOUR_TO_CHAR(Ped ped, uint amount)l
-extern _native void ATTACH_ANIMS_TO_MODEL(uint model, char* anims)l
+extern _native void ATTACH_ANIMS_TO_MODEL(uint model, const char* anims)l
 extern _native void BEGIN_CHAR_SEARCH_CRITERIA(void)l
-extern _native void BLEND_FROM_NM_WITH_ANIM(Ped ped, char* AnimName0, char* AnimName1, int Unk1, float x, float y, float z)l
+extern _native void BLEND_FROM_NM_WITH_ANIM(Ped ped, const char* AnimName0, const char* AnimName1, int Unk1, float x, float y, float z)l
 extern _native void BLEND_OUT_CHAR_MOVE_ANIMS(Ped ped)l
 extern _native void BLOCK_CHAR_AMBIENT_ANIMS(Ped ped, bool block)l
 extern _native void BLOCK_CHAR_GESTURE_ANIMS(Ped ped, bool value)l
@@ -211,9 +211,9 @@ extern _native void EXPLODE_CHAR_HEAD(Ped ped)l
 extern _native void EXTINGUISH_CHAR_FIRE(Ped ped)l
 extern _native void FREEZE_CHAR_POSITION(Ped ped, bool frozen)l
 extern _native void FREEZE_CHAR_POSITION_AND_DONT_LOAD_COLLISION(Ped ped, bool frozen)l
-extern _native void GET_CHAR_ANIM_BLEND_AMOUNT(Ped ped, char* AnimName0, char* AnimName1, float *amount)l
-extern _native void GET_CHAR_ANIM_CURRENT_TIME(Ped ped, char* animGroup, char* animName, float *pValue)l
-extern _native void GET_CHAR_ANIM_TOTAL_TIME(Ped ped, char* animGroup, char* animName, float *pValue)l
+extern _native void GET_CHAR_ANIM_BLEND_AMOUNT(Ped ped, const char* AnimName0, const char* AnimName1, float *amount)l
+extern _native void GET_CHAR_ANIM_CURRENT_TIME(Ped ped, const char* animGroup, const char* animName, float *pValue)l
+extern _native void GET_CHAR_ANIM_TOTAL_TIME(Ped ped, const char* animGroup, const char* animName, float *pValue)l
 extern _native void GET_CHAR_ARMOUR(Ped ped, uint *pArmour)l
 extern _native void GET_CHAR_COORDINATES(Ped ped, float *pX, float *pY, float *pZ)l
 extern _native void GET_CHAR_EXTRACTED_DISPLACEMENT(Ped ped, bool unknown, float *pX, float *pY, float *pZ)l
@@ -239,15 +239,15 @@ extern _native void REMOVE_CHAR_DEFENSIVE_AREA(Ped ped)l
 extern _native void REMOVE_CHAR_ELEGANTLY(Ped ped)l
 extern _native void REMOVE_CHAR_FROM_CAR_MAINTAIN_POSITION(Ped ped, Vehicle car)l
 extern _native void REMOVE_CHAR_FROM_GROUP(Ped ped)l
-extern _native void SET_ANIM_GROUP_FOR_CHAR(Ped ped, char* grname)l
+extern _native void SET_ANIM_GROUP_FOR_CHAR(Ped ped, const char* grname)l
 extern _native void SET_CHAR_ACCURACY(Ped ped, uint value)l
 extern _native void SET_CHAR_ALLOWED_TO_DUCK(Ped ped, bool set)l
 extern _native void SET_CHAR_ALLOWED_TO_RUN_ON_BOATS(Ped ped, bool set)l
 extern _native void SET_CHAR_ALL_ANIMS_SPEED(Ped ped, float speed)l
 extern _native void SET_CHAR_ANGLED_DEFENSIVE_AREA(Ped ped, float x0, float y0, float z0, float x1, float y1, float z1, float angle)l
-extern _native void SET_CHAR_ANIM_BLEND_OUT_DELTA(Ped ped, char* AnimName0, char* AnimName1, float delta)l
-extern _native void SET_CHAR_ANIM_CURRENT_TIME(Ped ped, char* AnimName0, char* AnimName1, float time)l
-extern _native void SET_CHAR_ANIM_SPEED(Ped ped, char* AnimName0, char* AnimName1, float speed)l
+extern _native void SET_CHAR_ANIM_BLEND_OUT_DELTA(Ped ped, const char* AnimName0, const char* AnimName1, float delta)l
+extern _native void SET_CHAR_ANIM_CURRENT_TIME(Ped ped, const char* AnimName0, const char* AnimName1, float time)l
+extern _native void SET_CHAR_ANIM_SPEED(Ped ped, const char* AnimName0, const char* AnimName1, float speed)l
 extern _native void SET_CHAR_AS_ENEMY(Ped ped, bool value)l
 extern _native void SET_CHAR_AS_MISSION_CHAR(Ped ped)l
 extern _native void SET_CHAR_BLEEDING(Ped ped, bool set)l
@@ -275,7 +275,7 @@ extern _native void SET_CHAR_DRUGGED_UP(Ped ped, bool drugged)l
 extern _native void SET_CHAR_DUCKING_TIMED(Ped ped, int timed)l
 extern _native void SET_CHAR_FIRE_DAMAGE_MULTIPLIER(Ped ped, float multiplier)l
 extern _native void SET_CHAR_FORCE_DIE_IN_CAR(Ped ped, bool set)l
-extern _native void SET_CHAR_GESTURE_GROUP(Ped ped, char* AnimGroup)l
+extern _native void SET_CHAR_GESTURE_GROUP(Ped ped, const char* AnimGroup)l
 extern _native void SET_CHAR_GET_OUT_UPSIDE_DOWN_CAR(Ped ped, bool set)l
 extern _native void SET_CHAR_GRAVITY(Ped ped, float value)l
 extern _native void SET_CHAR_HEADING(Ped ped, float heading)l
@@ -336,7 +336,7 @@ extern _native void SET_DEAD_CHAR_COORDINATES(Ped ped, float x, float y, float z
 extern _native void SET_GROUP_CHAR_DUCKS_WHEN_AIMED_AT(Ped ped, bool value)l
 extern _native void SET_LOAD_COLLISION_FOR_CHAR_FLAG(Ped ped, bool set)l
 extern _native void SET_ROOM_FOR_CHAR_BY_KEY(Ped ped, uint key)l
-extern _native void SET_ROOM_FOR_CHAR_BY_NAME(Ped ped, char* roomname)l
+extern _native void SET_ROOM_FOR_CHAR_BY_NAME(Ped ped, const char* roomname)l
 extern _native void UNSET_CHAR_MELEE_MOVEMENT_CONSTAINT_BOX(Ped ped)l
 #pragma endregion//}
 #pragma region PLAYER//{
@@ -373,10 +373,10 @@ extern _native bool PLAYER_HAS_GREYED_OUT_STARS(Player playerIndex)l
 extern _native bool PLAYER_IS_INTERACTING_WITH_GARAGE(void)l
 extern _native bool PLAYER_IS_NEAR_FIRST_PIGEON(float x, float y, float z)l
 extern _native bool PLAYER_IS_PISSED_OFF(int player)l
-extern _native char* GET_PLAYER_RADIO_STATION_NAME(void)l
-extern _native char* GET_PLAYER_RADIO_STATION_NAME_ROLL(void)l
-extern _native char* GET_PLAYER_NAME(Player playerIndex)l
-extern _native char* GET_PLAYER_RADIO_STATION_NAME(void)l
+extern _native const char* GET_PLAYER_RADIO_STATION_NAME(void)l
+extern _native const char* GET_PLAYER_RADIO_STATION_NAME_ROLL(void)l
+extern _native const char* GET_PLAYER_NAME(Player playerIndex)l
+extern _native const char* GET_PLAYER_RADIO_STATION_NAME(void)l
 extern _native int GET_LOCAL_PLAYER_MP_CASH(void)l
 extern _native int GET_NO_LAW_VEHICLES_DESTROYED_BY_LOCAL_PLAYER(void)l
 extern _native int GET_PLAYER_ID_FOR_THIS_PED(Ped ped)l
@@ -440,8 +440,8 @@ extern _native void SET_EVERYONE_IGNORE_PLAYER(Player playerIndex, bool value)l
 extern _native void SET_FORCE_LOOK_BEHIND(bool set)l
 extern _native void SET_FORCE_PLAYER_TO_ENTER_THROUGH_DIRECT_DOOR(Ped ped, bool set)l
 extern _native void SET_FREE_HEALTH_CARE(int player, bool set)l
-extern _native void SET_LOCAL_PLAYER_PAIN_VOICE(char* name)l
-extern _native void SET_LOCAL_PLAYER_VOICE(char* name)l
+extern _native void SET_LOCAL_PLAYER_PAIN_VOICE(const char* name)l
+extern _native void SET_LOCAL_PLAYER_VOICE(const char* name)l
 extern _native void SET_PLAYERSETTINGS_MODEL_VARIATIONS_CHOICE(Player playerIndex)l
 extern _native void SET_PLAYER_CAN_BE_HASSLED_BY_GANGS(Player playerIndex, bool value)l
 extern _native void SET_PLAYER_CAN_DO_DRIVE_BY(Player playerIndex, bool value)l
@@ -469,7 +469,7 @@ extern _native void SET_PLAYER_MOOD_NORMAL(Player playerIndex)l
 extern _native void SET_PLAYER_MOOD_PISSED_OFF(Player playerIndex, uint unknown150)l
 extern _native void SET_PLAYER_MP_MODIFIER(int player, int Unk12, float modifier)l
 extern _native void SET_PLAYER_NEVER_GETS_TIRED(Player playerIndex, bool value)l
-extern _native void SET_PLAYER_PAIN_ROOT_BANK_NAME(char* name)l
+extern _native void SET_PLAYER_PAIN_ROOT_BANK_NAME(const char* name)l
 extern _native void SET_PLAYER_PLAYER_TARGETTING(bool set)l
 extern _native void SET_PLAYER_SETTINGS_GENRE(Ped ped)l
 extern _native void SET_USE_LEG_IK(int player, bool set)l
@@ -565,7 +565,7 @@ extern _native void GET_PED_GROUP_INDEX(Ped ped, uint* pIndex)l
 extern _native void GET_PED_TYPE(Ped ped, uint *pType)l
 extern _native void GET_SCRIPT_TASK_STATUS(Ped ped, int task, int *status)l
 extern _native void GIVE_PED_AMBIENT_OBJECT(Ped ped, uint model)l
-extern _native void GIVE_PED_FAKE_NETWORK_NAME(Ped ped, char* name, int r, int g, int b, int a)l
+extern _native void GIVE_PED_FAKE_NETWORK_NAME(Ped ped, const char* name, int r, int g, int b, int a)l
 extern _native void GIVE_PED_HELMET(Ped ped)l
 extern _native void GIVE_PED_HELMET_WITH_OPTS(Ped ped, bool Unk42)l
 extern _native void GIVE_PED_PICKUP_OBJECT(Ped ped, Object obj, bool flag)l
@@ -605,12 +605,12 @@ extern _native void SET_INFORM_RESPECTED_FRIENDS(Ped ped, int Unk43, int Unk44)l
 extern _native void SET_MIN_MAX_PED_ACCURACY(Ped ped, float min, float max)l
 extern _native void SET_MONEY_CARRIED_BY_ALL_NEW_PEDS(int money)l
 extern _native void SET_MONEY_CARRIED_BY_PED_WITH_MODEL(uint model, int m0, int m1)l
-extern _native void SET_NM_ANIM_POSE(Ped ped, char* AnimName0, char* AnimName1, float pose)l
+extern _native void SET_NM_ANIM_POSE(Ped ped, const char* AnimName0, const char* AnimName1, float pose)l
 extern _native void SET_NM_MESSAGE_BOOL(int id, bool value)l
 extern _native void SET_NM_MESSAGE_FLOAT(int id, float value)l
 extern _native void SET_NM_MESSAGE_INSTANCE_INDEX(int id, Ped ped, Vehicle car, Object obj)l
 extern _native void SET_NM_MESSAGE_INT(int id, int value)l
-extern _native void SET_NM_MESSAGE_STRING(int id, char* string)l
+extern _native void SET_NM_MESSAGE_STRING(int id, const char* string)l
 extern _native void SET_NM_MESSAGE_VEC3(int id, float x, float y, float z)l
 extern _native void SET_PED_ALLOW_MISSION_ONLY_DRIVEBY_USE(Ped ped, bool set)l
 extern _native void SET_PED_ALPHA(Ped ped, int alpha)l
@@ -693,14 +693,14 @@ extern _native bool IS_CAR_HEALTH_GREATER(Vehicle car, float health)l
 extern _native bool IS_CAR_IN_AIR_PROPER(Vehicle vehicle)l
 extern _native bool IS_CAR_IN_AREA_2D(Vehicle vehicle, float x1, float y1, float x2, float y2, bool unknownFalse)l
 extern _native bool IS_CAR_IN_AREA_3D(Vehicle vehicle, float x1, float y1, float z1, float x2, float y2, float z2, uint unknownFalse)l
-extern _native bool IS_CAR_IN_GARAGE_AREA(char* garageName, Vehicle vehicle)l
+extern _native bool IS_CAR_IN_GARAGE_AREA(const char* garageName, Vehicle vehicle)l
 extern _native bool IS_CAR_IN_WATER(Vehicle vehicle)l
 extern _native bool IS_CAR_LOW_RIDER(Vehicle car)l
 extern _native bool IS_CAR_MODEL(Vehicle vehicle, uint model)l
 extern _native bool IS_CAR_ON_FIRE(Vehicle vehicle)l
 extern _native bool IS_CAR_ON_SCREEN(Vehicle vehicle)l
 extern _native bool IS_CAR_PASSENGER_SEAT_FREE(Vehicle vehicle, uint seatIndex)l
-extern _native bool IS_CAR_PLAYING_ANIM(Vehicle car, char* animname0, char* animname1)l
+extern _native bool IS_CAR_PLAYING_ANIM(Vehicle car, const char* animname0, const char* animname1)l
 extern _native bool IS_CAR_SIREN_ON(Vehicle vehicle)l
 extern _native bool IS_CAR_STOPPED(Vehicle vehicle)l
 extern _native bool IS_CAR_STOPPED_AT_TRAFFIC_LIGHTS(Vehicle vehicle)l
@@ -736,9 +736,9 @@ extern _native bool IS_VEH_WINDOW_INTACT(Vehicle vehicle, uint window)l
 extern _native bool LOCATE_CAR_2D(Vehicle car, float x0, float y0, float xUnk48, float yUnk49, bool flag)l
 extern _native bool LOCATE_CAR_3D(Vehicle car, float x, float y, float z, float xa, float ya, float za, bool flag)l
 extern _native bool LOCATE_DEAD_CAR_3D(Vehicle car, float x, float y, float z, float xa, float ya, float za, bool flag)l
-extern _native bool PLAY_CAR_ANIM(Vehicle car, char* animname0, char* animname1, float Unk50, bool flag0, bool flag1)l
-extern _native char* GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(uint model)l
-extern _native char* GET_STATION_NAME(Train train, uint station)l
+extern _native bool PLAY_CAR_ANIM(Vehicle car, const char* animname0, const char* animname1, float Unk50, bool flag0, bool flag1)l
+extern _native const char* GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(uint model)l
+extern _native const char* GET_STATION_NAME(Train train, uint station)l
 extern _native float FIND_POSITION_IN_RECORDING(Vehicle car)l
 extern _native float FIND_TIME_POSITION_IN_RECORDING(Vehicle car)l
 extern _native float GET_ENGINE_HEALTH(Vehicle vehicle)l
@@ -805,8 +805,8 @@ extern _native void FORCE_GENERATE_PARKED_CARS_TOO_CLOSE_TO_OTHERS(bool set)l
 extern _native void FORCE_RANDOM_CAR_MODEL(uint hash)l
 extern _native void FREEZE_CAR_POSITION(Vehicle vehicle, bool frozen)l
 extern _native void FREEZE_CAR_POSITION_AND_DONT_LOAD_COLLISION(Vehicle vehicle, bool frozen)l
-extern _native void GET_CAR_ANIM_CURRENT_TIME(Vehicle car, char* animname0, char* animname1, float *time)l
-extern _native void GET_CAR_ANIM_TOTAL_TIME(Vehicle car, char* animname0, char* animname1, float *time)l
+extern _native void GET_CAR_ANIM_CURRENT_TIME(Vehicle car, const char* animname0, const char* animname1, float *time)l
+extern _native void GET_CAR_ANIM_TOTAL_TIME(Vehicle car, const char* animname0, const char* animname1, float *time)l
 extern _native void GET_CAR_BLOCKING_CAR(Vehicle car0, Vehicle *car1)l
 extern _native void GET_CAR_CHAR_IS_USING(Ped ped, Vehicle *pVehicle)l
 extern _native void GET_CAR_COLOURS(Vehicle vehicle, ColourIndex *pColour1, ColourIndex *pColour2)l
@@ -876,8 +876,8 @@ extern _native void SET_CAN_BURST_CAR_TYRES(Vehicle car, bool set)l
 extern _native void SET_CAN_RESPRAY_CAR(Vehicle car, bool can)l
 extern _native void SET_CAR_ALLOWED_TO_DROWN(Vehicle car, bool allowed)l
 extern _native void SET_CAR_ALWAYS_CREATE_SKIDS(Vehicle car, bool set)l
-extern _native void SET_CAR_ANIM_CURRENT_TIME(Vehicle car, char* animname0, char* animname1, float time)l
-extern _native void SET_CAR_ANIM_SPEED(Vehicle car, char* animname0, char* animname1, float speed)l
+extern _native void SET_CAR_ANIM_CURRENT_TIME(Vehicle car, const char* animname0, const char* animname1, float time)l
+extern _native void SET_CAR_ANIM_SPEED(Vehicle car, const char* animname0, const char* animname1, float speed)l
 extern _native void SET_CAR_AS_MISSION_CAR(Vehicle car)l
 extern _native void SET_CAR_CAN_BE_DAMAGED(Vehicle vehicle, bool value)l
 extern _native void SET_CAR_CAN_BE_VISIBLY_DAMAGED(Vehicle vehicle, bool value)l
@@ -945,7 +945,7 @@ extern _native void SET_REDUCE_VEHICLE_MODEL_BUDGET(bool set)l
 extern _native void SET_RENDER_TRAIN_AS_DERAILED(Vehicle train, bool set)l
 extern _native void SET_ROCKET_LAUNCHER_FREEBIE_IN_HELI(bool set)l
 extern _native void SET_ROOM_FOR_CAR_BY_KEY(Vehicle car, uint roomkey)l
-extern _native void SET_ROOM_FOR_CAR_BY_NAME(Vehicle car, char* roomname)l
+extern _native void SET_ROOM_FOR_CAR_BY_NAME(Vehicle car, const char* roomname)l
 extern _native void SET_SIREN_WITH_NO_DRIVER(Vehicle car, bool set)l
 extern _native void SET_SUPPRESS_HEADLIGHT_SWITCH(bool set)l
 extern _native void SET_TARGET_CAR_FOR_MISSION_GARAGE(int garage, Vehicle car)l
@@ -1023,8 +1023,8 @@ extern _native bool HAS_OBJECT_FRAGMENT_ROOT_BEEN_DAMAGED(Object obj)l
 extern _native bool HAS_POOL_OBJECT_COLLIDED_WITH_CUSHION(Object obj)l
 extern _native bool HAS_POOL_OBJECT_COLLIDED_WITH_OBJECT(Object obj, Object otherObj)l
 extern _native bool IS_CLOSEST_OBJECT_OF_TYPE_SMASHED_OR_DAMAGED(float x, float y, float z, float radius, uint type_or_model, bool flag0, bool flag1)l
-extern _native bool IS_GARAGE_CLOSED(char* garageName)l
-extern _native bool IS_GARAGE_OPEN(char* garageName)l
+extern _native bool IS_GARAGE_CLOSED(const char* garageName)l
+extern _native bool IS_GARAGE_OPEN(const char* garageName)l
 extern _native bool IS_NON_FRAG_OBJECT_SMASHED(float x, float y, float z, float radius, uint model)l
 extern _native bool IS_OBJECT_ATTACHED(Object obj)l
 extern _native bool IS_OBJECT_IN_ANGLED_AREA_3D(Object obj, float x0, float y0, float z0, float x1, float y1, float z1, float Unk72, bool flag)l
@@ -1033,7 +1033,7 @@ extern _native bool IS_OBJECT_IN_AREA_3D(Object obj, float x0, float y0, float z
 extern _native bool IS_OBJECT_IN_WATER(Object obj)l
 extern _native bool IS_OBJECT_ON_FIRE(Object obj)l
 extern _native bool IS_OBJECT_ON_SCREEN(Object obj)l
-extern _native bool IS_OBJECT_PLAYING_ANIM(Object obj, char* animname0, char* animname1)l
+extern _native bool IS_OBJECT_PLAYING_ANIM(Object obj, const char* animname0, const char* animname1)l
 extern _native bool IS_OBJECT_STATIC(Object obj)l
 extern _native bool IS_OBJECT_TOUCHING_OBJECT(Object obj0, Object obj1)l
 extern _native bool IS_OBJECT_UPRIGHT(Object obj, float angle)l
@@ -1041,7 +1041,7 @@ extern _native bool IS_OBJECT_WITHIN_BRAIN_ACTIVATION_RANGE(Object obj)l
 extern _native bool IS_SITTING_OBJECT_NEAR(float x, float y, float z, int Unk73)l
 extern _native bool LOCATE_OBJECT_2D(Object obj, float x0, float y0, float x1, float y1, bool flag)l
 extern _native bool LOCATE_OBJECT_3D(Object obj, float x, float y, float z, float xr, float yr, float zr, bool flag)l
-extern _native bool PLAY_OBJECT_ANIM(Object obj, char* animname0, char* animname1, float Unk74, bool flag0, bool flag1)l
+extern _native bool PLAY_OBJECT_ANIM(Object obj, const char* animname0, const char* animname1, float Unk74, bool flag0, bool flag1)l
 extern _native bool ROTATE_OBJECT(Object obj, float x, float y, bool flag)l
 extern _native bool SLIDE_OBJECT(Object obj, float x, float y, float z, float xs, float ys, float zs, bool flag)l
 extern _native bool SMASH_GLASS_ON_OBJECT(float x, float y, float z, float Unk75, uint model, float Unk76)l
@@ -1053,7 +1053,7 @@ extern _native Object GET_OBJECT_PED_IS_HOLDING(Ped ped)l
 extern _native Object WHAT_WILL_PLAYER_PICKUP(int player)l
 extern _native uint GET_MODEL_PED_IS_HOLDING(Ped ped)l
 extern _native void ADD_OBJECT_TO_INTERIOR_ROOM_BY_KEY(Object obj, uint roomKey)l
-extern _native void ADD_OBJECT_TO_INTERIOR_ROOM_BY_NAME(Object obj, char* room_name)l
+extern _native void ADD_OBJECT_TO_INTERIOR_ROOM_BY_NAME(Object obj, const char* room_name)l
 extern _native void ADD_STUNT_JUMP(float x, float y, float z, float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, int reward)l
 extern _native void ANCHOR_OBJECT(Object obj, bool anchor, uint flags)l
 extern _native void APPLY_FORCE_TO_OBJECT(Object obj, uint uk0_3, float pX, float pY, float pZ, float spinX, float spinY, float spinZ, uint uk4_0, uint uk5_1, uint uk6_1, uint uk7_1)l
@@ -1067,7 +1067,7 @@ extern _native void CHANGE_GARAGE_TYPE(int garage, int type)l
 extern _native void CLEAR_OBJECT_LAST_DAMAGE_ENTITY(Object obj)l
 extern _native void CLEAR_OBJECT_LAST_WEAPON_DAMAGE(Object obj)l
 extern _native void CLEAR_ROOM_FOR_OBJECT(Object obj)l
-extern _native void CLOSE_GARAGE(char* garageName)l
+extern _native void CLOSE_GARAGE(const char* garageName)l
 extern _native void CONNECT_LODS(Object obj0, Object obj1)l
 extern _native void CREATE_OBJECT(uint model, float x, float y, float z, Object *pObj, bool unknownTrue)l
 extern _native void CREATE_OBJECT_NO_OFFSET(uint model, float x, float y, float z, Object *pObj, bool unknownTrue)l
@@ -1083,8 +1083,8 @@ extern _native void FREEZE_OBJECT_POSITION_AND_DONT_LOAD_COLLISION(Object obj, b
 extern _native void FREEZE_POSITION_OF_CLOSEST_OBJECT_OF_TYPE(float x, float y, float z, float radius, uint model, bool frozen)l
 extern _native void GET_CLOSEST_STEALABLE_OBJECT(float x, float y, float z, float radius, Object *obj)l
 extern _native void GET_DOOR_STATE(Object obj, uint * Unk92, float * Unk93)l
-extern _native void GET_OBJECT_ANIM_CURRENT_TIME(Object obj, char* animname0, char* animname1, float *time)l
-extern _native void GET_OBJECT_ANIM_TOTAL_TIME(Object obj, char* animname0, char* animname1, float *time)l
+extern _native void GET_OBJECT_ANIM_CURRENT_TIME(Object obj, const char* animname0, const char* animname1, float *time)l
+extern _native void GET_OBJECT_ANIM_TOTAL_TIME(Object obj, const char* animname0, const char* animname1, float *time)l
 extern _native void GET_OBJECT_COORDINATES(Object obj, float *pX, float *pY, float *pZ)l
 extern _native void GET_OBJECT_HEADING(Object obj, float *pHeading)l
 extern _native void GET_OBJECT_HEALTH(Object obj, float *pHealth)l
@@ -1101,17 +1101,17 @@ extern _native void GET_STATE_OF_CLOSEST_DOOR_OF_TYPE(uint model, float x, float
 extern _native void GRAB_NEARBY_OBJECT_WITH_SPECIAL_ATTRIBUTE(int attribute, Object *obj)l
 extern _native void MAKE_OBJECT_TARGETTABLE(Object obj, bool targettable)l
 extern _native void MARK_OBJECT_AS_NO_LONGER_NEEDED(Object *pObj)l
-extern _native void OPEN_GARAGE(char* name)l
+extern _native void OPEN_GARAGE(const char* name)l
 extern _native void PLACE_OBJECT_RELATIVE_TO_CAR(Object obj, Vehicle car, float x, float y, float z)l
 extern _native void SET_ACTIVATE_OBJECT_PHYSICS_AS_SOON_AS_IT_IS_UNFROZEN(Object obj, bool set)l
 extern _native void SET_DOOR_STATE(Object door, bool flag, float Unk95)l
-extern _native void SET_GARAGE_LEAVE_CAMERA_ALONE(char* garageName, bool set)l
+extern _native void SET_GARAGE_LEAVE_CAMERA_ALONE(const char* garageName, bool set)l
 extern _native void SET_HEADING_OF_CLOSEST_OBJECT_OF_TYPE(float x, float y, float z, float radius, uint type_or_model, float heading)l
 extern _native void SET_LOAD_COLLISION_FOR_OBJECT_FLAG(Object obj, bool set)l
 extern _native void SET_OBJECT_ALPHA(Object obj, int alpha)l
-extern _native void SET_OBJECT_ANIM_CURRENT_TIME(Object obj, char* animname0, char* animname1, float time)l
-extern _native void SET_OBJECT_ANIM_PLAYING_FLAG(Object obj, char* animname0, char* animname1, bool flag)l
-extern _native void SET_OBJECT_ANIM_SPEED(Object obj, char* animname0, char* animname1, float speed)l
+extern _native void SET_OBJECT_ANIM_CURRENT_TIME(Object obj, const char* animname0, const char* animname1, float time)l
+extern _native void SET_OBJECT_ANIM_PLAYING_FLAG(Object obj, const char* animname0, const char* animname1, bool flag)l
+extern _native void SET_OBJECT_ANIM_SPEED(Object obj, const char* animname0, const char* animname1, float speed)l
 extern _native void SET_OBJECT_AS_STEALABLE(Object obj, bool set)l
 extern _native void SET_OBJECT_CCD(Object obj, bool set)l
 extern _native void SET_OBJECT_COLLISION(Object obj, bool value)l
@@ -1255,7 +1255,7 @@ extern _native void TASK_PERFORM_SEQUENCE_LOCALLY(Ped ped, ScriptAny Unk300)l
 extern _native void TASK_PICKUP_AND_CARRY_OBJECT(Ped ped, ScriptAny Unk301, ScriptAny Unk302, ScriptAny Unk303, ScriptAny Unk304, ScriptAny Unk305)l
 extern _native void TASK_PLAY_ANIM(Ped ped, ScriptAny Unk306, ScriptAny Unk307, ScriptAny Unk308, ScriptAny Unk309, ScriptAny Unk310, ScriptAny Unk311, ScriptAny Unk312, ScriptAny Unk313)l
 extern _native void TASK_PLAY_ANIM_FACIAL(Ped ped, ScriptAny Unk314, ScriptAny Unk315, ScriptAny Unk316, ScriptAny Unk317, ScriptAny Unk318, ScriptAny Unk319)l
-extern _native void TASK_PLAY_ANIM_NON_INTERRUPTABLE(Ped ped, char* animname0, char* animname1, float Unk320, int Unk321, int Unk322, int Unk323, int Unk324, int Unk325)l
+extern _native void TASK_PLAY_ANIM_NON_INTERRUPTABLE(Ped ped, const char* animname0, const char* animname1, float Unk320, int Unk321, int Unk322, int Unk323, int Unk324, int Unk325)l
 extern _native void TASK_PLAY_ANIM_ON_CLONE(Ped ped, ScriptAny Unk326, ScriptAny Unk327, ScriptAny Unk328, ScriptAny Unk329, ScriptAny Unk330, ScriptAny Unk331, ScriptAny Unk332, ScriptAny Unk333)l
 extern _native void TASK_PLAY_ANIM_READY_TO_BE_EXECUTED(Ped ped, ScriptAny Unk334, ScriptAny Unk335, ScriptAny Unk336)l
 extern _native void TASK_PLAY_ANIM_SECONDARY(Ped ped, ScriptAny Unk337, ScriptAny Unk338, ScriptAny Unk339, ScriptAny Unk340, ScriptAny Unk341, ScriptAny Unk342, ScriptAny Unk343, ScriptAny Unk344)l
@@ -1264,7 +1264,7 @@ extern _native void TASK_PLAY_ANIM_SECONDARY_NO_INTERRUPT(Ped ped, ScriptAny Unk
 extern _native void TASK_PLAY_ANIM_SECONDARY_UPPER_BODY(Ped ped, ScriptAny Unk361, ScriptAny Unk362, ScriptAny Unk363, ScriptAny Unk364, ScriptAny Unk365, ScriptAny Unk366, ScriptAny Unk367, ScriptAny Unk368)l
 extern _native void TASK_PLAY_ANIM_UPPER_BODY(Ped ped, ScriptAny Unk369, ScriptAny Unk370, ScriptAny Unk371, ScriptAny Unk372, ScriptAny Unk373, ScriptAny Unk374, ScriptAny Unk375, ScriptAny Unk376)l
 extern _native void TASK_PLAY_ANIM_WITH_ADVANCED_FLAGS(Ped ped, ScriptAny Unk377, ScriptAny Unk378, ScriptAny Unk379, ScriptAny Unk380, ScriptAny Unk381, ScriptAny Unk382, ScriptAny Unk383, ScriptAny Unk384, ScriptAny Unk385, ScriptAny Unk386, ScriptAny Unk387)l
-extern _native void TASK_PLAY_ANIM_WITH_FLAGS(Ped ped, char* animName, char* animSet, float unknown0_8, uint unknown1_0, uint flags)l
+extern _native void TASK_PLAY_ANIM_WITH_FLAGS(Ped ped, const char* animName, const char* animSet, float unknown0_8, uint unknown1_0, uint flags)l
 extern _native void TASK_PLAY_ANIM_WITH_FLAGS_AND_START_PHASE(Ped ped, ScriptAny Unk388, ScriptAny Unk389, ScriptAny Unk390, ScriptAny Unk391, ScriptAny Unk392, ScriptAny Unk393)l
 extern _native void TASK_PUT_CHAR_DIRECTLY_INTO_COVER(ScriptAny Unk394, ScriptAny Unk395, ScriptAny Unk396, ScriptAny Unk397, ScriptAny Unk398)l
 extern _native void TASK_SEEK_COVER_FROM_PED(Ped ped, ScriptAny Unk399, ScriptAny Unk400)l
@@ -1332,7 +1332,7 @@ extern _native void GET_CURRENT_POLICE_CAR_MODEL(uint *pModel)l
 extern _native void GET_MAX_WANTED_LEVEL(uint *pMaxWantedLevel)l
 extern _native void GET_PLAYER_WANTED_LEVEL_INCREMENT(int player, int *increment)l
 extern _native void MAINTAIN_FLASHING_STAR_AFTER_OFFENCE(int player, bool maintain)l
-extern _native void REPORT_CRIME(float x, float y, float z, char* name)l
+extern _native void REPORT_CRIME(float x, float y, float z, const char* name)l
 extern _native void REPORT_DISPATCH(int id, float x, float y, float z)l
 extern _native void REPORT_POLICE_SPOTTING_SUSPECT(Vehicle veh)l
 extern _native void REPORT_SUSPECT_ARRESTED(void)l
@@ -1351,11 +1351,11 @@ extern _native void SET_POLICE_FOCUS_WILL_TRACK_CAR(Vehicle car, bool set)l
 extern _native void SET_POLICE_IGNORE_PLAYER(Player playerIndex, bool value)l
 extern _native void SET_POLICE_RADAR_BLIPS(bool set)l
 extern _native void SET_WANTED_MULTIPLIER(float multiplier)l
-extern _native void SET_ZONE_NO_COPS(char* name, bool set)l
+extern _native void SET_ZONE_NO_COPS(const char* name, bool set)l
 extern _native void SPECIFY_SCRIPT_POPULATION_ZONE_PERCENTAGE_COPS(int percentage)l
 extern _native void STORE_WANTED_LEVEL(Player playerIndex, uint* value)l
 extern _native void SWITCH_POLICE_HELIS(bool set)l
-extern _native void TRIGGER_POLICE_REPORT(char* name)l
+extern _native void TRIGGER_POLICE_REPORT(const char* name)l
 extern _native void TRIGGER_VIGILANTE_CRIME(int id, float x, float y, float z)l
 #pragma endregion//}
 #pragma region GAMEPLAY//{
@@ -1430,12 +1430,12 @@ extern _native bool SPOT_CHECK5(void)l
 extern _native bool SPOT_CHECK6(void)l
 extern _native bool SPOT_CHECK7(void)l
 extern _native bool SPOT_CHECK8(void)l
-extern _native bool STRING_TO_INT(char* str, int *intval)l
-extern _native char* ASCII_INT_TO_STRING(int ascii)l
-extern _native char* GET_EPISODE_NAME(uint episodeIndex)l
-extern _native char* GET_RADIO_NAME(int id)l
-extern _native char* OBFUSCATE_STRING(char* str)l
-extern _native char* UNOBFUSCATE_STRING(char* str)l
+extern _native bool STRING_TO_INT(const char* str, int *intval)l
+extern _native const char* ASCII_INT_TO_STRING(int ascii)l
+extern _native const char* GET_EPISODE_NAME(uint episodeIndex)l
+extern _native const char* GET_RADIO_NAME(int id)l
+extern _native const char* OBFUSCATE_STRING(const char* str)l
+extern _native const char* UNOBFUSCATE_STRING(const char* str)l
 extern _native float ABSF(float value)l
 extern _native float ABSI(float value)l
 extern _native float ACOS(float Unk496)l
@@ -1444,10 +1444,10 @@ extern _native float ATAN(float value)l
 extern _native float ATAN2(float Unk497, float Unk498)l
 extern _native float GET_ASPECT_RATIO(void)l
 extern _native float GET_PROGRESS_PERCENTAGE(void)l
-extern _native int COMPARE_STRING(char* str0, char* str1)l
+extern _native int COMPARE_STRING(const char* str0, const char* str1)l
 extern _native int COMPARE_TWO_DATES(int date0_0, int date0_1, int date1_0, int date1_1)l
 extern _native int CONVERT_METRES_TO_FEET_INT(int metres)l
-extern _native int FIND_STATIC_EMITTER_INDEX(char* StaticEmitterName)l
+extern _native int FIND_STATIC_EMITTER_INDEX(const char* StaticEmitterName)l
 extern _native int GET_BITS_IN_RANGE(int val, int rangebegin, int rangeend)l
 extern _native int GET_CURRENT_STACK_SIZE(void)l
 extern _native int GET_FILTER_SAVE_SETTING(int filterid)l
@@ -1458,8 +1458,8 @@ extern _native int GET_SCREEN_FADE_ALPHA(void)l
 extern _native int GET_STATIC_EMITTER_PLAYTIME(int StaticEmitterIndex)l
 extern _native int GET_STREAM_PLAYTIME(void)l
 extern _native int READ_KILL_FRENZY_STATUS(void)l
-extern _native int STRING_DIFFERENCE(char* str0, char* str1)l//only works on 1.0.7
-extern _native int STRING_STRING(char* str0, char* str1)l//only works on 1.0.7
+extern _native int STRING_DIFFERENCE(const char* str0, const char* str1)l//only works on 1.0.7
+extern _native int STRING_STRING(const char* str0, const char* str1)l//only works on 1.0.7
 extern _native ScriptAny AWARD_ACHIEVEMENT(uint achievement)l
 extern _native ScriptAny GET_GROUND_Z_FOR_3D_COORD(float x, float y, float z, float *pGroundZ)l
 extern _native ScriptAny IS_SNIPER_BULLET_IN_AREA(float x0, float y0, float z0, float x1, float y1, float z1)l
@@ -1467,7 +1467,7 @@ extern _native uint GET_CURRENT_DAY_OF_WEEK(void)l
 extern _native uint GET_CURRENT_EPISODE(void)l
 extern _native uint GET_CURRENT_LANGUAGE(void)l
 extern _native uint GET_EPISODE_INDEX_FROM_SUMMONS(void)l
-extern _native uint GET_HASH_KEY(char* value)l
+extern _native uint GET_HASH_KEY(const char* value)l
 extern _native uint GET_HOURS_OF_DAY(void)l
 extern _native uint GET_MAP_AREA_FROM_COORDS(float x, float y, float z)l
 extern _native uint GET_MINUTES_OF_DAY(void)l
@@ -1476,7 +1476,7 @@ extern _native uint GET_NEXT_STATION_FOR_TRAIN(Train train)l
 extern _native uint GET_NUM_STREAMING_REQUESTS(void)l
 extern _native uint GET_TIME_SINCE_LAST_ARREST(void)l
 extern _native uint GET_TIME_SINCE_LAST_DEATH(void)l
-extern _native uint REGISTER_SAVE_HOUSE(float x, float y, float z, float unkf, char* name, uint unk0)l
+extern _native uint REGISTER_SAVE_HOUSE(float x, float y, float z, float unkf, const char* name, uint unk0)l
 extern _native void ABORT_ALL_GARAGE_ACTIVITY(void)l
 extern _native void ACTIVATE_CHEAT(uint cheat)l//0 - 15
 extern _native void ALLOW_AUTO_CONVERSATION_LOOKATS(Ped ped, bool allow)l
@@ -1539,7 +1539,7 @@ extern _native void POPULATE_NOW(void)l
 extern _native void PRIORITIZE_STREAMING_REQUEST(void)l
 extern _native void PROCESS_MISSION_DELETION_LIST(void)l
 extern _native void REGISTER_BEST_POSITION(int Unk505, int position)l
-extern _native void REGISTER_MISSION_PASSED(char* str)l
+extern _native void REGISTER_MISSION_PASSED(const char* str)l
 extern _native void REGISTER_ODDJOB_MISSION_PASSED(void)l
 extern _native void REGISTER_TRACK_NUMBER(int number)l
 extern _native void RELEASE_TEXTURE(Texture texture)l
@@ -1569,7 +1569,7 @@ extern _native void SET_GUNSHOT_SENSE_RANGE_FOR_RIOT2(float range)l
 extern _native void SET_MINIGAME_IN_PROGRESS(bool set)l
 extern _native void SET_MISSION_FLAG(bool isMission)l
 extern _native void SET_MISSION_PASSED_CASH(bool add, int cash, int Unk511)l
-extern _native void SET_MISSION_PICKUP_SOUND(uint model, char* SoundName)l
+extern _native void SET_MISSION_PICKUP_SOUND(uint model, const char* SoundName)l
 extern _native void SET_MISSION_RESPECT_TOTAL(float respect)l
 extern _native void SET_NEXT_DESIRED_MOVE_STATE(int state)l
 extern _native void SET_PHYS_CCD_HANDLES_ROTATION(bool set)l
@@ -1586,7 +1586,7 @@ extern _native void SET_USE_POOL_GAME_PHYSICS_SETTINGS(bool set)l
 extern _native void START_CREDITS(void)l
 extern _native void START_FIRING_AMNESTY(void)l
 extern _native void START_GPS_RACE_TRACK(int trackid)l
-extern _native void START_KILL_FRENZY(char* gxtname, int Unk512, int Unk513, int Unk514, int Unk515, int Unk516, int Unk517, int Unk518, bool Unk519)l
+extern _native void START_KILL_FRENZY(const char* gxtname, int Unk512, int Unk513, int Unk514, int Unk515, int Unk516, int Unk517, int Unk518, bool Unk519)l
 extern _native void STOP_CREDITS(void)l
 extern _native void SUPPRESS_FADE_IN_AFTER_DEATH_ARREST(bool set)l
 extern _native void SWITCH_AMBIENT_PLANES(bool on)l
@@ -1597,7 +1597,7 @@ extern _native void SWITCH_RANDOM_BOATS(bool on)l
 extern _native void SWITCH_RANDOM_TRAINS(bool on)l
 extern _native void SWITCH_STREAMING(bool on)l
 extern _native void SYNCH_AMBIENT_PLANES(int Unk520, int Unk521)l
-extern _native void TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME(char* name)l
+extern _native void TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME(const char* name)l
 extern _native void UNLOCK_GENERIC_NEWS_STORY(int StoryId)l
 extern _native void UNLOCK_LAZLOW_STATION(void)l
 extern _native void UNLOCK_MISSION_NEWS_STORY(int id)l
@@ -1609,10 +1609,10 @@ extern _native bool IS_AMBIENT_SPEECH_PLAYING(Ped ped)l
 extern _native bool IS_ANY_SPEECH_PLAYING(Ped ped)l
 extern _native bool IS_SCRIPTED_CONVERSATION_ONGOING(void)l
 extern _native bool IS_SCRIPTED_SPEECH_PLAYING(Ped ped)l
-extern _native bool REQUEST_AMBIENT_AUDIO_BANK(char* name)l
-extern _native bool REQUEST_MISSION_AUDIO_BANK(char* name)l
+extern _native bool REQUEST_AMBIENT_AUDIO_BANK(const char* name)l
+extern _native bool REQUEST_MISSION_AUDIO_BANK(const char* name)l
 extern _native bool ENABLE_SCRIPT_CONTROLLED_MICROPHONE(void)l
-extern _native char* GET_SPEECH_FOR_EMERGENCY_SERVICE_CALL(void)l
+extern _native const char* GET_SPEECH_FOR_EMERGENCY_SERVICE_CALL(void)l
 extern _native int ABORT_SCRIPTED_CONVERSATION(bool abort)l
 extern _native int GET_AUDIBLE_MUSIC_TRACK_TEXT_ID(void)l
 extern _native int GET_AUDIO_ROOM_ID(void)l
@@ -1630,12 +1630,12 @@ extern _native void DISABLE_STICKY_BOMB_ACTIVE_SOUND(Ped ped, bool disable)l
 extern _native void DONT_ABORT_CAR_CONVERSATIONS(bool flag0, bool flag1)l
 extern _native void ENABLE_CHASE_AUDIO(bool enable)l
 extern _native void ENABLE_FRONTEND_RADIO(void)l
-extern _native void FORCE_INITIAL_PLAYER_STATION(char* stationName)l
+extern _native void FORCE_INITIAL_PLAYER_STATION(const char* stationName)l
 extern _native void FORCE_NOISE_OFF(bool off)l
-extern _native void FORCE_RADIO_TRACK(char* radiostation, char* trackname, int Unk533, int Unk534)l
-extern _native void FREEZE_RADIO_STATION(char* stationName)l
+extern _native void FORCE_RADIO_TRACK(const char* radiostation, const char* trackname, int Unk533, int Unk534)l
+extern _native void FREEZE_RADIO_STATION(const char* stationName)l
 extern _native void GET_SOUND_LEVEL_AT_COORDS(Ped ped, float x, float y, float z, int *level)l
-extern _native void HANDLE_AUDIO_ANIM_EVENT(Ped ped, char* AudioAnimEventName)l
+extern _native void HANDLE_AUDIO_ANIM_EVENT(Ped ped, const char* AudioAnimEventName)l
 extern _native void HELI_AUDIO_SHOULD_SKIP_STARTUP(Vehicle heli, bool skip)l
 extern _native void MISSION_AUDIO_BANK_NO_LONGER_NEEDED(void)l
 extern _native void MUTE_GAMEWORLD_AND_POSITIONED_RADIO_FOR_TV(bool mute)l
@@ -1644,18 +1644,18 @@ extern _native void MUTE_POSITIONED_RADIO(bool mute)l
 extern _native void MUTE_STATIC_EMITTER(int StaticEmitterIndex, bool mute)l
 extern _native void NEW_SCRIPTED_CONVERSATION(void)l
 extern _native void PAUSE_SCRIPTED_CONVERSATION(bool pause)l
-extern _native void PLAY_AUDIO_EVENT(char* name)l
-extern _native void PLAY_AUDIO_EVENT_FROM_OBJECT(char* EventName, Object obj)l
-extern _native void PLAY_AUDIO_EVENT_FROM_PED(char* name, Ped ped)l
-extern _native void PLAY_AUDIO_EVENT_FROM_VEHICLE(char* name, Vehicle veh)l
+extern _native void PLAY_AUDIO_EVENT(const char* name)l
+extern _native void PLAY_AUDIO_EVENT_FROM_OBJECT(const char* EventName, Object obj)l
+extern _native void PLAY_AUDIO_EVENT_FROM_PED(const char* name, Ped ped)l
+extern _native void PLAY_AUDIO_EVENT_FROM_VEHICLE(const char* name, Vehicle veh)l
 extern _native void PLAY_FIRE_SOUND_FROM_POSITION(int sound_id, float x, float y, float z)l
 extern _native void PLAY_SCRIPTED_CONVERSATION_FRONTEND(bool play)l
-extern _native void PLAY_SOUND(int SoundId, char* SoundName)l
-extern _native void PLAY_SOUND_FROM_OBJECT(int sound_id, char* name, Object obj)l
-extern _native void PLAY_SOUND_FROM_PED(int SoundId, char* SoundName, Ped ped)l
-extern _native void PLAY_SOUND_FROM_POSITION(int sound_id, char* name, float x, float y, float z)l
-extern _native void PLAY_SOUND_FROM_VEHICLE(int SoundId, char* SoundName, Vehicle veh)l
-extern _native void PLAY_SOUND_FRONTEND(uint sound, char* soundName)l
+extern _native void PLAY_SOUND(int SoundId, const char* SoundName)l
+extern _native void PLAY_SOUND_FROM_OBJECT(int sound_id, const char* name, Object obj)l
+extern _native void PLAY_SOUND_FROM_PED(int SoundId, const char* SoundName, Ped ped)l
+extern _native void PLAY_SOUND_FROM_POSITION(int sound_id, const char* name, float x, float y, float z)l
+extern _native void PLAY_SOUND_FROM_VEHICLE(int SoundId, const char* SoundName, Vehicle veh)l
+extern _native void PLAY_SOUND_FRONTEND(uint sound, const char* soundName)l
 extern _native void PLAY_STREAM_FROM_OBJECT(Object obj)l
 extern _native void PLAY_STREAM_FROM_PED(Ped ped)l
 extern _native void PLAY_STREAM_FRONTEND(void)l
@@ -1665,17 +1665,17 @@ extern _native void RELEASE_SOUND_ID(uint sound)l
 extern _native void RESTART_SCRIPTED_CONVERSATION(void)l
 extern _native void RETUNE_RADIO_DOWN(void)l
 extern _native void RETUNE_RADIO_TO_STATION_INDEX(uint radioStation)l
-extern _native void RETUNE_RADIO_TO_STATION_NAME(char* name)l
+extern _native void RETUNE_RADIO_TO_STATION_NAME(const char* name)l
 extern _native void RETUNE_RADIO_UP(void)l
-extern _native void SAY_AMBIENT_SPEECH(Ped ped, char* phraseName, bool flag0, bool flag1, int style)l
-extern _native void SAY_AMBIENT_SPEECH_WITH_VOICE(Ped ped, char* SpeechName, char* VoiceName, bool flag0, bool flag1, int style)l
-extern _native void SET_AMBIENT_VOICE_NAME(Ped ped, char* name)l
+extern _native void SAY_AMBIENT_SPEECH(Ped ped, const char* phraseName, bool flag0, bool flag1, int style)l
+extern _native void SAY_AMBIENT_SPEECH_WITH_VOICE(Ped ped, const char* SpeechName, const char* VoiceName, bool flag0, bool flag1, int style)l
+extern _native void SET_AMBIENT_VOICE_NAME(Ped ped, const char* name)l
 extern _native void SET_GPS_VOICE_FOR_VEHICLE(Vehicle veh, int VoiceId)l
 extern _native void SET_LOUD_VEHICLE_RADIO(Vehicle veh, bool set)l
 extern _native void SET_MOVIE_VOLUME(float volume)l
 extern _native void SET_SCRIPT_MIC_LOOK_AT(float x, float y, float z)l
 extern _native void SET_SCRIPT_MIC_POSITION(float x, float y, float z)l
-extern _native void SET_VARIABLE_ON_SOUND(uint sound, char* varname, float value)l
+extern _native void SET_VARIABLE_ON_SOUND(uint sound, const char* varname, float value)l
 extern _native void SET_VOICE_ID_FROM_HEAD_COMPONENT(Ped ped, int VoiceId, bool IsMale)l
 extern _native void SKIP_RADIO_FORWARD(void)l
 extern _native void SKIP_TO_NEXT_SCRIPTED_CONVERSATION_LINE(void)l
@@ -1685,7 +1685,7 @@ extern _native void STOP_END_CREDITS_MUSIC(void)l
 extern _native void STOP_SOUND(uint sound)l
 extern _native void TRIGGER_LOADING_MUSIC_ON_NEXT_FADE(void)l
 extern _native void TRIGGER_MISSION_COMPLETE_AUDIO(int id)l
-extern _native void UNFREEZE_RADIO_STATION(char* radiostation)l
+extern _native void UNFREEZE_RADIO_STATION(const char* radiostation)l
 extern _native void UNPAUSE_RADIO(void)l
 extern _native void UNREGISTER_SCRIPT_WITH_AUDIO(void)l
 #pragma endregion//}
@@ -1697,11 +1697,11 @@ extern _native int GET_CUTSCENE_AUDIO_TIME_MS(void)l
 extern _native int GET_CUTSCENE_SECTION_PLAYING(void)l
 extern _native int GET_CUTSCENE_TIME(void)l
 extern _native void CLEAR_CUTSCENE(void)l
-extern _native void CLEAR_NAMED_CUTSCENE(char* name)l
-extern _native void INIT_CUTSCENE(char* name)l
+extern _native void CLEAR_NAMED_CUTSCENE(const char* name)l
+extern _native void INIT_CUTSCENE(const char* name)l
 extern _native void SET_CUTSCENE_EXTRA_ROOM_POS(float x, float y, float z)l
 extern _native void START_CUTSCENE(void)l
-extern _native void START_CUTSCENE_NOW(char* name)l
+extern _native void START_CUTSCENE_NOW(const char* name)l
 extern _native void STOP_CUTSCENE(void)l
 extern _native void STREAM_CUTSCENE(void)l
 #pragma endregion//}
@@ -1837,7 +1837,7 @@ extern _native void SET_CAM_INTERP_STYLE_CORE(int cam0, int cam1, int cam2, int 
 extern _native void SET_CAM_INTERP_STYLE_DETAILED(int cam, bool Unk568, bool Unk569, bool Unk570, bool Unk571)l
 extern _native void SET_CAM_IN_FRONT_OF_PED(Ped ped)l
 extern _native void SET_CAM_MOTION_BLUR(int cam, float blur)l
-extern _native void SET_CAM_NAME(int cam, char* camname)l
+extern _native void SET_CAM_NAME(int cam, const char* camname)l
 extern _native void SET_CAM_NEAR_CLIP(int cam, float clip)l
 extern _native void SET_CAM_NEAR_DOF(int cam, float dof)l
 extern _native void SET_CAM_POINT_DAMPING_PARAMS(int cam, float x, float y, float z)l
@@ -1876,7 +1876,7 @@ extern _native void SET_HINT_TIMES(float Unk580, float Unk581, float Unk582)l
 extern _native void SET_HINT_TIMES_DEFAULT(void)l
 extern _native void SET_PTFX_CAM_INSIDE_VEHICLE(bool set)l
 extern _native void SET_ROOM_FOR_VIEWPORT_BY_KEY(int viewportid, uint roomkey)l
-extern _native void SET_ROOM_FOR_VIEWPORT_BY_NAME(int viewportid, char* roomname)l
+extern _native void SET_ROOM_FOR_VIEWPORT_BY_NAME(int viewportid, const char* roomname)l
 extern _native void SET_TELESCOPE_CAM_ANGLE_LIMITS(float Unk583, float Unk584, float Unk585, float Unk586, float Unk587, float Unk588)l
 extern _native void SET_VIEWPORT(int viewportid, float Unk589, float Unk590, float Unk591, float Unk592)l
 extern _native void SET_VIEWPORT_DESTINATION(int viewportid, float x, float y, float z, float Unk593, int Unk594, int Unk595)l
@@ -1925,16 +1925,16 @@ extern _native void SET_HOT_WEAPON_SWAP(bool set)l
 #pragma region STREAMING//{
 extern _native bool HAS_COLLISION_FOR_MODEL_LOADED(uint model)l
 extern _native bool HAS_MODEL_LOADED(uint model)l
-extern _native bool HAS_STREAMED_TXD_LOADED(char* txdName)l
-extern _native bool HAS_THIS_ADDITIONAL_TEXT_LOADED(char* textName, uint textIndex)l
-extern _native bool HAVE_ANIMS_LOADED(char* animName)l
+extern _native bool HAS_STREAMED_TXD_LOADED(const char* txdName)l
+extern _native bool HAS_THIS_ADDITIONAL_TEXT_LOADED(const char* textName, uint textIndex)l
+extern _native bool HAVE_ANIMS_LOADED(const char* animName)l
 extern _native bool HAVE_REQUESTED_PATH_NODES_BEEN_LOADED(uint requestId)l
 extern _native bool IS_MODEL_IN_CDIMAGE(uint model)l
 extern _native bool IS_STREAMING_ADDITIONAL_TEXT(uint textIndex)l
 extern _native bool IS_STREAMING_PRIORITY_REQUESTS(void)l
-extern _native bool IS_STREAMING_THIS_ADDITIONAL_TEXT(char* str0, int Unk597, int Unk598)l
-extern _native bool PRELOAD_STREAM(char* name)l
-extern _native bool PRELOAD_STREAM_WITH_START_OFFSET(char* StreamName, int StartOffset)l
+extern _native bool IS_STREAMING_THIS_ADDITIONAL_TEXT(const char* str0, int Unk597, int Unk598)l
+extern _native bool PRELOAD_STREAM(const char* name)l
+extern _native bool PRELOAD_STREAM_WITH_START_OFFSET(const char* StreamName, int StartOffset)l
 extern _native bool REMOVE_NAVMESH_REQUIRED_REGION(float Unk599, float Unk600)l
 extern _native bool UPDATE_LOAD_SCENE(void)l
 extern _native void ADD_ADDITIONAL_POPULATION_MODEL(uint model)l
@@ -1945,48 +1945,48 @@ extern _native void LOAD_ALL_OBJECTS_NOW(void)l
 extern _native void LOAD_SCENE(float x, float y, float z)l
 extern _native void LOAD_SCENE_FOR_ROOM_BY_KEY(int interior, uint roomhash)l
 extern _native void MARK_MODEL_AS_NO_LONGER_NEEDED(uint model)l
-extern _native void MARK_STREAMED_TXD_AS_NO_LONGER_NEEDED(char* txdName)l
+extern _native void MARK_STREAMED_TXD_AS_NO_LONGER_NEEDED(const char* txdName)l
 extern _native void REMOVE_ADDITIONAL_POPULATION_MODEL(uint model)l
 extern _native void REMOVE_ALL_INACTIVE_GROUPS_FROM_CLEANUP_LIST(void)l
-extern _native void REMOVE_ANIMS(char* animName)l
-extern _native void REMOVE_IPL(char* iplName)l
-extern _native void REMOVE_IPL_DISCREETLY(char* iplname)l
+extern _native void REMOVE_ANIMS(const char* animName)l
+extern _native void REMOVE_IPL(const char* iplName)l
+extern _native void REMOVE_IPL_DISCREETLY(const char* iplname)l
 extern _native void REMOVE_TXD(TextureDict txd)l
-extern _native void REQUEST_ADDITIONAL_TEXT(char* textName, uint textIndex)l
+extern _native void REQUEST_ADDITIONAL_TEXT(const char* textName, uint textIndex)l
 extern _native void REQUEST_ALL_SLODS_IN_WORLD(void)l
-extern _native void REQUEST_ANIMS(char* animName)l
+extern _native void REQUEST_ANIMS(const char* animName)l
 extern _native void REQUEST_CAR_RECORDING(int CarRecId)l
 extern _native void REQUEST_COLLISION_AT_POSN(float x, float y, float z)l
 extern _native void REQUEST_COLLISION_FOR_MODEL(uint model)l
-extern _native void REQUEST_INTERIOR_MODELS(uint model, char* interiorName)l
-extern _native void REQUEST_IPL(char* iplName)l
+extern _native void REQUEST_INTERIOR_MODELS(uint model, const char* interiorName)l
+extern _native void REQUEST_IPL(const char* iplName)l
 extern _native void REQUEST_MODEL(uint model)l
-extern _native void REQUEST_STREAMED_TXD(char* txdName, bool unknown)l
+extern _native void REQUEST_STREAMED_TXD(const char* txdName, bool unknown)l
 extern _native void SET_STATE_OF_CLOSEST_DOOR_OF_TYPE(uint model, float x, float y, float z, int state, float Unk601)l
 extern _native void SET_STREAMING_REQUEST_LIST_TIME(int time)l
 extern _native void SET_STREAM_PARAMS(float rolloff, int UnkTime)l
 extern _native void SIMULATE_UPDATE_LOAD_SCENE(void)l
 extern _native void START_LOAD_SCENE(float x, float y, float z)l
-extern _native void START_STREAMING_REQUEST_LIST(char* name)l
+extern _native void START_STREAMING_REQUEST_LIST(const char* name)l
 extern _native void STOP_STREAM(void)l
-extern _native Texture GET_TEXTURE(TextureDict dictionary, char* textureName)l
-extern _native Texture GET_TEXTURE_FROM_STREAMED_TXD(char* txdName, char* textureName)l
-extern _native TextureDict GET_TXD(char* txdName)l
-extern _native TextureDict LOAD_TXD(char* txdName)l
+extern _native Texture GET_TEXTURE(TextureDict dictionary, const char* textureName)l
+extern _native Texture GET_TEXTURE_FROM_STREAMED_TXD(const char* txdName, const char* textureName)l
+extern _native TextureDict GET_TXD(const char* txdName)l
+extern _native TextureDict LOAD_TXD(const char* txdName)l
 #pragma endregion//}
 #pragma region SCRIPT//{
-extern _native bool DOES_SCRIPT_EXIST(char* name)l
-extern _native bool HAS_SCRIPT_LOADED(char* scriptName)l
+extern _native bool DOES_SCRIPT_EXIST(const char* name)l
+extern _native bool HAS_SCRIPT_LOADED(const char* scriptName)l
 extern _native bool IS_THREAD_ACTIVE(uint threadId)l
 extern _native uint GET_ID_OF_THIS_THREAD(void)l
-extern _native uint GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT(char* scriptName)l
-extern _native void ALLOCATE_SCRIPT_TO_OBJECT(char* ScriptName, uint model, int Unk602, float radius, int UnkTime)l
-extern _native void ALLOCATE_SCRIPT_TO_RANDOM_PED(char* ScriptName, uint model, int Unk603, bool flag)l
+extern _native uint GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT(const char* scriptName)l
+extern _native void ALLOCATE_SCRIPT_TO_OBJECT(const char* ScriptName, uint model, int Unk602, float radius, int UnkTime)l
+extern _native void ALLOCATE_SCRIPT_TO_RANDOM_PED(const char* ScriptName, uint model, int Unk603, bool flag)l
 extern _native void ALLOW_THIS_SCRIPT_TO_BE_PAUSED(bool allows)l
 extern _native void DESTROY_THREAD(int ScriptHandle)l
 extern _native void GET_SCRIPT_RENDERTARGET_RENDER_ID(uint *pRenderId)l
-extern _native void MARK_SCRIPT_AS_NO_LONGER_NEEDED(char* scriptName)l
-extern _native void REQUEST_SCRIPT(char* scriptName)l
+extern _native void MARK_SCRIPT_AS_NO_LONGER_NEEDED(const char* scriptName)l
+extern _native void REQUEST_SCRIPT(const char* scriptName)l
 extern _native void SET_INTERP_FROM_GAME_TO_SCRIPT(bool Unk604, int Unk605)l
 extern _native void SET_INTERP_FROM_SCRIPT_TO_GAME(bool Unk606, int Unk607)l
 extern _native void SET_SCRIPT_LIMIT_TO_GANG_SIZE(int size)l
@@ -1998,39 +1998,39 @@ extern _native void THIS_SCRIPT_SHOULD_BE_SAVED(void)l
 extern _native Blip GET_FIRST_BLIP_INFO_ID(uint type)l
 extern _native Blip GET_NEXT_BLIP_INFO_ID(uint type)l
 extern _native bool DOES_BLIP_EXIST(Blip blip)l
-extern _native bool DOES_TEXT_LABEL_EXIST(char* gxtentry)l
+extern _native bool DOES_TEXT_LABEL_EXIST(const char* gxtentry)l
 extern _native bool HAS_ADDITIONAL_TEXT_LOADED(uint textIndex)l
 extern _native bool IS_BLIP_SHORT_RANGE(Blip blip)l
-extern _native bool IS_STRING_NULL(char* str)l
-extern _native bool IS_THIS_HELP_MESSAGE_BEING_DISPLAYED(char* gxtentry)l
-extern _native bool IS_THIS_HELP_MESSAGE_WITH_NUMBER_BEING_DISPLAYED(char* gxtentry, int number)l
-extern _native bool IS_THIS_HELP_MESSAGE_WITH_STRING_BEING_DISPLAYED(char* gxtentry, char* str)l
-extern _native char* GET_STRING_FROM_STRING(char* str, int startsymb, int endsymb)l
-extern _native char* GET_STRING_FROM_TEXT_FILE(char* gxtentry)l
-//extern _native char* GET_BLIP_NAME(Blip blip)l
-extern _native char* GET_FIRST_N_CHARACTERS_OF_LITERAL_STRING(char* literalString, uint chars)l
-extern _native char* GET_FIRST_N_CHARACTERS_OF_STRING(char* gxtName, uint chars)l
-extern _native char* GET_NTH_INTEGER_IN_STRING(char* gxtName, uint index)l
-extern _native char* GET_STRING_FROM_HASH_KEY(uint hash)l
-extern _native float GET_STRING_WIDTH_WITH_STRING(char* gxtName, char* literalString)l
+extern _native bool IS_STRING_NULL(const char* str)l
+extern _native bool IS_THIS_HELP_MESSAGE_BEING_DISPLAYED(const char* gxtentry)l
+extern _native bool IS_THIS_HELP_MESSAGE_WITH_NUMBER_BEING_DISPLAYED(const char* gxtentry, int number)l
+extern _native bool IS_THIS_HELP_MESSAGE_WITH_STRING_BEING_DISPLAYED(const char* gxtentry, const char* str)l
+extern _native const char* GET_STRING_FROM_STRING(const char* str, int startsymb, int endsymb)l
+extern _native const char* GET_STRING_FROM_TEXT_FILE(const char* gxtentry)l
+//extern _native const char* GET_BLIP_NAME(Blip blip)l
+extern _native const char* GET_FIRST_N_CHARACTERS_OF_LITERAL_STRING(const char* literalString, uint chars)l
+extern _native const char* GET_FIRST_N_CHARACTERS_OF_STRING(const char* gxtName, uint chars)l
+extern _native const char* GET_NTH_INTEGER_IN_STRING(const char* gxtName, uint index)l
+extern _native const char* GET_STRING_FROM_HASH_KEY(uint hash)l
+extern _native float GET_STRING_WIDTH_WITH_STRING(const char* gxtName, const char* literalString)l
 extern _native int GET_BLIP_INFO_ID_ROTATION(int blip)l
 extern _native int GET_LENGTH_OF_STRING_WITH_THIS_HASH_KEY(uint gxtkey)l
 extern _native int GET_LENGTH_OF_STRING_WITH_THIS_TEXT_LABEL_INS_NUM(ScriptAny Unk608, ScriptAny Unk609, ScriptAny Unk610)l
 extern _native int GET_SIMPLE_BLIP_ID(void)l
-extern _native int GET_STRING_WIDTH(char* gxtName)l
-extern _native int GET_STRING_WIDTH_WITH_NUMBER(char* gxtName, int number)l
-extern _native int GET_STRING_WIDTH_WITH_TEXT_AND_INT(char* gxtname, char* gxtnamenext, int val)l
-extern _native int GET_WIDTH_OF_LITERAL_STRING(char* str)l
-extern _native int GET_WIDTH_OF_SUBSTRING_GIVEN_TEXT_LABEL(char* gxtname, bool Unk611, ScriptAny Unk612, ScriptAny Unk613, ScriptAny Unk614)l
+extern _native int GET_STRING_WIDTH(const char* gxtName)l
+extern _native int GET_STRING_WIDTH_WITH_NUMBER(const char* gxtName, int number)l
+extern _native int GET_STRING_WIDTH_WITH_TEXT_AND_INT(const char* gxtname, const char* gxtnamenext, int val)l
+extern _native int GET_WIDTH_OF_LITERAL_STRING(const char* str)l
+extern _native int GET_WIDTH_OF_SUBSTRING_GIVEN_TEXT_LABEL(const char* gxtname, bool Unk611, ScriptAny Unk612, ScriptAny Unk613, ScriptAny Unk614)l
 extern _native Object GET_BLIP_INFO_ID_OBJECT_INDEX(Blip blip)l
 extern _native Ped GET_BLIP_INFO_ID_PED_INDEX(Blip blip)l
 extern _native Pickup GET_BLIP_INFO_ID_PICKUP_INDEX(Blip blip)l
-extern _native ScriptAny IS_THIS_PRINT_BEING_DISPLAYED(char* gxtentry, int Unk615, int Unk616, int Unk617, int Unk618, int Unk619, int Unk620, int Unk621, int Unk622, int Unk623, int Unk624)l
+extern _native ScriptAny IS_THIS_PRINT_BEING_DISPLAYED(const char* gxtentry, int Unk615, int Unk616, int Unk617, int Unk618, int Unk619, int Unk620, int Unk621, int Unk622, int Unk623, int Unk624)l
 extern _native uint GET_BLIP_INFO_ID_DISPLAY(Blip blip)l
 extern _native uint GET_BLIP_INFO_ID_TYPE(Blip blip)l
 extern _native uint GET_BLIP_SPRITE(Blip blip)l
-extern _native uint GET_LENGTH_OF_LITERAL_STRING(char* literalString)l
-extern _native uint GET_LENGTH_OF_STRING_WITH_THIS_TEXT_LABEL(char* gxtName)l
+extern _native uint GET_LENGTH_OF_LITERAL_STRING(const char* literalString)l
+extern _native uint GET_LENGTH_OF_STRING_WITH_THIS_TEXT_LABEL(const char* gxtName)l
 extern _native Vehicle GET_BLIP_INFO_ID_CAR_INDEX(Blip blip)l
 extern _native void ACTIVATE_FRONTEND(void)l
 extern _native void ACTIVATE_REPLAY_MENU(void)l
@@ -2044,20 +2044,20 @@ extern _native void ADD_BLIP_FOR_OBJECT(Object obj, Blip *pBlip)l
 extern _native void ADD_BLIP_FOR_PICKUP(Pickup pickup, Blip *pBlip)l
 extern _native void ADD_BLIP_FOR_RADIUS(float x, float y, float z, int type, int *blip)l
 extern _native void ADD_BLIP_FOR_WEAPON(float x, float y, float z, int *blip)l
-extern _native void ADD_FIRST_N_CHARACTERS_OF_STRING_TO_HTML_SCRIPT_OBJECT(int htmlobj, char* str, int n)l
+extern _native void ADD_FIRST_N_CHARACTERS_OF_STRING_TO_HTML_SCRIPT_OBJECT(int htmlobj, const char* str, int n)l
 extern _native void ADD_NEXT_MESSAGE_TO_PREVIOUS_BRIEFS(bool add)l
 extern _native void ADD_SIMPLE_BLIP_FOR_PICKUP(Pickup pickup)l
-extern _native void ADD_STRING_TO_HTML_SCRIPT_OBJECT(int htmlobj, char* str)l
-extern _native void ADD_STRING_TO_NEWS_SCROLLBAR(char* str)l
-extern _native void ADD_STRING_WITH_THIS_TEXT_LABEL_TO_PREVIOUS_BRIEF(char* gxtname)l
+extern _native void ADD_STRING_TO_HTML_SCRIPT_OBJECT(int htmlobj, const char* str)l
+extern _native void ADD_STRING_TO_NEWS_SCROLLBAR(const char* str)l
+extern _native void ADD_STRING_WITH_THIS_TEXT_LABEL_TO_PREVIOUS_BRIEF(const char* gxtname)l
 extern _native void ADD_TICKER_TO_PREVIOUS_BRIEF_WITH_UNDERSCORE(ScriptAny Unk625, ScriptAny Unk626, ScriptAny Unk627, ScriptAny Unk628, ScriptAny Unk629, ScriptAny Unk630, ScriptAny Unk631)l	//used for japanese text correcting
-extern _native void ADD_TO_PREVIOUS_BRIEF(char* gxtentry)l
-extern _native void ADD_TO_PREVIOUS_BRIEF_WITH_UNDERSCORE(char* gxtentry)l
+extern _native void ADD_TO_PREVIOUS_BRIEF(const char* gxtentry)l
+extern _native void ADD_TO_PREVIOUS_BRIEF_WITH_UNDERSCORE(const char* gxtentry)l
 extern _native void CHANGE_BLIP_ALPHA(Blip blip, int alpha)l
 extern _native void CHANGE_BLIP_COLOUR(Blip blip, ColourIndex colour)l
 extern _native void CHANGE_BLIP_DISPLAY(Blip blip, uint display)l
-extern _native void CHANGE_BLIP_NAME_FROM_ASCII(Blip blip, char* blipName)l
-extern _native void CHANGE_BLIP_NAME_FROM_TEXT_FILE(Blip blip, char* gxtName)l
+extern _native void CHANGE_BLIP_NAME_FROM_ASCII(Blip blip, const char* blipName)l
+extern _native void CHANGE_BLIP_NAME_FROM_TEXT_FILE(Blip blip, const char* gxtName)l
 extern _native void CHANGE_BLIP_NAME_TO_PLAYER_NAME(int blip, int playerid)l
 extern _native void CHANGE_BLIP_PRIORITY(Blip blip, uint priority)l
 extern _native void CHANGE_BLIP_ROTATION(int blip, int rotation)l
@@ -2078,11 +2078,11 @@ extern _native void CLEAR_ONSCREEN_COUNTER(int counterid)l
 extern _native void CLEAR_ONSCREEN_TIMER(int timerid)l
 extern _native void CLEAR_PRINTS(void)l
 extern _native void CLEAR_SMALL_PRINTS(void)l
-extern _native void CLEAR_TEXT_LABEL(char* label)l
-extern _native void CLEAR_THIS_BIG_PRINT(char* gxtentry)l
-extern _native void CLEAR_THIS_PRINT(char* gxtentry)l
+extern _native void CLEAR_TEXT_LABEL(const char* label)l
+extern _native void CLEAR_THIS_BIG_PRINT(const char* gxtentry)l
+extern _native void CLEAR_THIS_PRINT(const char* gxtentry)l
 extern _native void CLEAR_THIS_PRINT_BIG_NOW(bool Unk635)l
-extern _native void CONVERT_THEN_ADD_STRING_TO_HTML_SCRIPT_OBJECT(int htmlobj, char* strgxtkey)l
+extern _native void CONVERT_THEN_ADD_STRING_TO_HTML_SCRIPT_OBJECT(int htmlobj, const char* strgxtkey)l
 extern _native void CREATE_TEMPORARY_RADAR_BLIPS_FOR_PICKUPS_IN_AREA(float x, float y, float z, float radius, int bliptype)l
 extern _native void DEACTIVATE_FRONTEND(void)l
 extern _native void DIM_BLIP(Blip blip, bool unknownTrue)l
@@ -2092,29 +2092,29 @@ extern _native void DISPLAY_AREA_NAME(bool display)l
 extern _native void DISPLAY_CASH(bool display)l
 extern _native void DISPLAY_FRONTEND_MAP_BLIPS(bool display)l
 extern _native void DISPLAY_GRIME_THIS_FRAME(void)l
-extern _native void DISPLAY_HELP_TEXT_THIS_FRAME(char* gxtkey, bool Unk636)l
+extern _native void DISPLAY_HELP_TEXT_THIS_FRAME(const char* gxtkey, bool Unk636)l
 extern _native void DISPLAY_HUD(bool display)l
 extern _native void DISPLAY_LOADING_THIS_FRAME_WITH_SCRIPT_SPRITES(void)l
 extern _native void DISPLAY_NON_MINIGAME_HELP_MESSAGES(bool Unk637)l
-extern _native void DISPLAY_NTH_ONSCREEN_COUNTER_WITH_STRING(int Unk638, int Unk639, int Unk640, char* str)l
-extern _native void DISPLAY_ONSCREEN_TIMER_WITH_STRING(int timerid, bool Unk641, char* str)l
+extern _native void DISPLAY_NTH_ONSCREEN_COUNTER_WITH_STRING(int Unk638, int Unk639, int Unk640, const char* str)l
+extern _native void DISPLAY_ONSCREEN_TIMER_WITH_STRING(int timerid, bool Unk641, const char* str)l
 extern _native void DISPLAY_RADAR(bool display)l
 extern _native void DISPLAY_SNIPER_SCOPE_THIS_FRAME(void)l
-extern _native void DISPLAY_TEXT(float x, float y, char* gxtName)l
+extern _native void DISPLAY_TEXT(float x, float y, const char* gxtName)l
 extern _native void DISPLAY_TEXT_SUBSTRING(ScriptAny Unk642, ScriptAny Unk643, ScriptAny Unk644, ScriptAny Unk645, ScriptAny Unk646, ScriptAny Unk647, ScriptAny Unk648)l
-extern _native void DISPLAY_TEXT_WITH_2_NUMBERS(float x, float y, char* gxtName, int number1, int number2)l
-extern _native void DISPLAY_TEXT_WITH_3_NUMBERS(float x, float y, char* gxtentry, int Unk649, int Unk650, int Unk651)l
-extern _native void DISPLAY_TEXT_WITH_BLIP_NAME(float x, float y, char* str, int blip)l
-extern _native void DISPLAY_TEXT_WITH_FLOAT(float x, float y, char* gxtName, float value, uint unknown)l
-extern _native void DISPLAY_TEXT_WITH_LITERAL_STRING(float x, float y, char* gxtName, char* literalStr)l
+extern _native void DISPLAY_TEXT_WITH_2_NUMBERS(float x, float y, const char* gxtName, int number1, int number2)l
+extern _native void DISPLAY_TEXT_WITH_3_NUMBERS(float x, float y, const char* gxtentry, int Unk649, int Unk650, int Unk651)l
+extern _native void DISPLAY_TEXT_WITH_BLIP_NAME(float x, float y, const char* str, int blip)l
+extern _native void DISPLAY_TEXT_WITH_FLOAT(float x, float y, const char* gxtName, float value, uint unknown)l
+extern _native void DISPLAY_TEXT_WITH_LITERAL_STRING(float x, float y, const char* gxtName, const char* literalStr)l
 extern _native void DISPLAY_TEXT_WITH_LITERAL_SUBSTRING(ScriptAny Unk652, ScriptAny Unk653, ScriptAny Unk654, ScriptAny Unk655, ScriptAny Unk656, ScriptAny Unk657)l
-extern _native void DISPLAY_TEXT_WITH_NUMBER(float x, float y, char* gxtName, int value)l
-extern _native void DISPLAY_TEXT_WITH_STRING(float x, float y, char* gxtName, char* gxtStringName)l
-extern _native void DISPLAY_TEXT_WITH_STRING_AND_INT(float x, float y, char* gxtname, char* gxtnamenext, int val)l
-extern _native void DISPLAY_TEXT_WITH_SUBSTRING_GIVEN_HASH_KEY(float x, float y, char* gxtkey, uint gxtkey0)l
-extern _native void DISPLAY_TEXT_WITH_TWO_LITERAL_STRINGS(float x, float y, char* gxtName, char* literalStr1, char* literalStr2)l
-extern _native void DISPLAY_TEXT_WITH_TWO_STRINGS(float x, float y, char* gxtName, char* gxtStringName1, char* gxtStringName2)l
-extern _native void DISPLAY_TEXT_WITH_TWO_SUBSTRINGS_GIVEN_HASH_KEYS(float x, float y, char* gxtkey, uint gxtkey0, uint gxtkey1)l
+extern _native void DISPLAY_TEXT_WITH_NUMBER(float x, float y, const char* gxtName, int value)l
+extern _native void DISPLAY_TEXT_WITH_STRING(float x, float y, const char* gxtName, const char* gxtStringName)l
+extern _native void DISPLAY_TEXT_WITH_STRING_AND_INT(float x, float y, const char* gxtname, const char* gxtnamenext, int val)l
+extern _native void DISPLAY_TEXT_WITH_SUBSTRING_GIVEN_HASH_KEY(float x, float y, const char* gxtkey, uint gxtkey0)l
+extern _native void DISPLAY_TEXT_WITH_TWO_LITERAL_STRINGS(float x, float y, const char* gxtName, const char* literalStr1, const char* literalStr2)l
+extern _native void DISPLAY_TEXT_WITH_TWO_STRINGS(float x, float y, const char* gxtName, const char* gxtStringName1, const char* gxtStringName2)l
+extern _native void DISPLAY_TEXT_WITH_TWO_SUBSTRINGS_GIVEN_HASH_KEYS(float x, float y, const char* gxtkey, uint gxtkey0, uint gxtkey1)l
 extern _native void FLASH_BLIP(Blip blip, bool on)l
 extern _native void FLASH_BLIP_ALT(Blip blip, bool on)l
 extern _native void FLASH_RADAR(bool flash)l
@@ -2126,51 +2126,51 @@ extern _native void GET_BLIP_COORDS(Blip blip, vector3 *pVector)l
 extern _native void HIDE_HELP_TEXT_THIS_FRAME(void)l
 extern _native void HIDE_HUD_AND_RADAR_THIS_FRAME(void)l
 extern _native void INIT_FRONTEND_HELPER_TEXT(void)l
-extern _native void LOAD_ADDITIONAL_TEXT(char* textName, uint textIndex)l
+extern _native void LOAD_ADDITIONAL_TEXT(const char* textName, uint textIndex)l
 extern _native void LOAD_SETTINGS(void)l
 extern _native void LOAD_TEXT_FONT(uint font)l
 extern _native void PAUSE_GAME(void)l
-extern _native void PRINT(char* gxtName, uint timeMS, bool enable)l
+extern _native void PRINT(const char* gxtName, uint timeMS, bool enable)l
 extern _native void PRINTFLOAT(float value)l
 extern _native void PRINTINT(int value)l
 extern _native void PRINTNL(void)l
-extern _native void PRINTSTRING(char* value)l
+extern _native void PRINTSTRING(const char* value)l
 extern _native void PRINTVECTOR(float x, float y, float z)l
-extern _native void PRINT_BIG(char* gxtName, uint timeMS, bool enable)l
-extern _native void PRINT_BIG_Q(char* gxtentry, int time, int flag)l
-extern _native void PRINT_HELP(char* gxtName)l
-extern _native void PRINT_HELP_FOREVER(char* gxtName)l
-extern _native void PRINT_HELP_FOREVER_WITH_NUMBER(char* gxtName, int value)l
-extern _native void PRINT_HELP_FOREVER_WITH_STRING(char* gxtName, char* gxtText)l
-extern _native void PRINT_HELP_FOREVER_WITH_STRING_NO_SOUND(char* gxtName, char* gxtText)l
-extern _native void PRINT_HELP_FOREVER_WITH_TWO_NUMBERS(char* gxtentry, int Unk658, int Unk659)l
-extern _native void PRINT_HELP_OVER_FRONTEND(char* gxtentry)l
-extern _native void PRINT_HELP_WITH_NUMBER(char* gxtName, int value)l
-extern _native void PRINT_HELP_WITH_STRING(char* gxtName, char* gxtText)l
-extern _native void PRINT_HELP_WITH_STRING_NO_SOUND(char* gxtName, char* gxtText)l
-extern _native void PRINT_HELP_WITH_TWO_NUMBERS(char* gxtentry, int Unk660, int Unk661)l
-extern _native void PRINT_NOW(char* gxtName, uint timeMS, bool enable)l
-extern _native void PRINT_STRING_IN_STRING(char* gxtName, char* gxtText, uint timeMS, bool enable)l
-extern _native void PRINT_STRING_IN_STRING_NOW(char* gxtName, char* gxtText, uint timeMS, bool enable)l
-extern _native void PRINT_STRING_WITH_LITERAL_STRING(char* gxtentry, char* string, int time, int flag)l
-extern _native void PRINT_STRING_WITH_LITERAL_STRING_NOW(char* gxtName, char *text, uint timeMS, bool enable)l
-extern _native void PRINT_STRING_WITH_SUBSTRING_GIVEN_HASH_KEY_NOW(char* gxtkey0, uint gxtkey1, int time, int style)l
-extern _native void PRINT_STRING_WITH_TWO_LITERAL_STRINGS(char* gxtentry, char* string1, char* string2, int time, int flag)l
-extern _native void PRINT_STRING_WITH_TWO_LITERAL_STRINGS_NOW(char* gxtentry, char* string1, char* string2, int time, int flag)l
-extern _native void PRINT_WITH_2_NUMBERS(char* gxtName, int value1, int value2, uint timeMS, bool enable)l
-extern _native void PRINT_WITH_2_NUMBERS_BIG(char* gxtentry, int Unk662, int Unk663, int time, int flag)l
-extern _native void PRINT_WITH_2_NUMBERS_NOW(char* gxtName, int value1, int value2, uint timeMS, bool enable)l
-extern _native void PRINT_WITH_3_NUMBERS(char* gxtentry, int Unk664, int Unk665, int Unk666, int time, int flag)l
-extern _native void PRINT_WITH_3_NUMBERS_NOW(char* gxtentry, int Unk667, int Unk668, int Unk669, int time, int flag)l
-extern _native void PRINT_WITH_4_NUMBERS(char* gxtentry, int Unk670, int Unk671, int Unk672, int Unk673, int time, int flag)l
-extern _native void PRINT_WITH_4_NUMBERS_NOW(char* gxtentry, int Unk674, int Unk675, int Unk676, int Unk677, int time, int flag)l
-extern _native void PRINT_WITH_5_NUMBERS(char* gxtentry, int Unk678, int Unk679, int Unk680, int Unk681, int Unk682, int time, int flag)l
-extern _native void PRINT_WITH_5_NUMBERS_NOW(char* gxtentry, int Unk683, int Unk684, int Unk685, int Unk686, int Unk687, int time, int flag)l
-extern _native void PRINT_WITH_6_NUMBERS(char* gxtentry, int Unk688, int Unk689, int Unk690, int Unk691, int Unk692, int Unk693, int time, int flag)l
-extern _native void PRINT_WITH_6_NUMBERS_NOW(char* gxtentry, int Unk694, int Unk695, int Unk696, int Unk697, int Unk698, int Unk699, int time, int flag)l
-extern _native void PRINT_WITH_NUMBER(char* gxtName, int value, uint timeMS, bool enable)l
-extern _native void PRINT_WITH_NUMBER_BIG(char* gxtName, int value, uint timeMS, bool enable)l
-extern _native void PRINT_WITH_NUMBER_NOW(char* gxtName, int value, uint timeMS, bool enable)l
+extern _native void PRINT_BIG(const char* gxtName, uint timeMS, bool enable)l
+extern _native void PRINT_BIG_Q(const char* gxtentry, int time, int flag)l
+extern _native void PRINT_HELP(const char* gxtName)l
+extern _native void PRINT_HELP_FOREVER(const char* gxtName)l
+extern _native void PRINT_HELP_FOREVER_WITH_NUMBER(const char* gxtName, int value)l
+extern _native void PRINT_HELP_FOREVER_WITH_STRING(const char* gxtName, const char* gxtText)l
+extern _native void PRINT_HELP_FOREVER_WITH_STRING_NO_SOUND(const char* gxtName, const char* gxtText)l
+extern _native void PRINT_HELP_FOREVER_WITH_TWO_NUMBERS(const char* gxtentry, int Unk658, int Unk659)l
+extern _native void PRINT_HELP_OVER_FRONTEND(const char* gxtentry)l
+extern _native void PRINT_HELP_WITH_NUMBER(const char* gxtName, int value)l
+extern _native void PRINT_HELP_WITH_STRING(const char* gxtName, const char* gxtText)l
+extern _native void PRINT_HELP_WITH_STRING_NO_SOUND(const char* gxtName, const char* gxtText)l
+extern _native void PRINT_HELP_WITH_TWO_NUMBERS(const char* gxtentry, int Unk660, int Unk661)l
+extern _native void PRINT_NOW(const char* gxtName, uint timeMS, bool enable)l
+extern _native void PRINT_STRING_IN_STRING(const char* gxtName, const char* gxtText, uint timeMS, bool enable)l
+extern _native void PRINT_STRING_IN_STRING_NOW(const char* gxtName, const char* gxtText, uint timeMS, bool enable)l
+extern _native void PRINT_STRING_WITH_LITERAL_STRING(const char* gxtentry, const char* string, int time, int flag)l
+extern _native void PRINT_STRING_WITH_LITERAL_STRING_NOW(const char* gxtName, const char* text, uint timeMS, bool enable)l
+extern _native void PRINT_STRING_WITH_SUBSTRING_GIVEN_HASH_KEY_NOW(const char* gxtkey0, uint gxtkey1, int time, int style)l
+extern _native void PRINT_STRING_WITH_TWO_LITERAL_STRINGS(const char* gxtentry, const char* string1, const char* string2, int time, int flag)l
+extern _native void PRINT_STRING_WITH_TWO_LITERAL_STRINGS_NOW(const char* gxtentry, const char* string1, const char* string2, int time, int flag)l
+extern _native void PRINT_WITH_2_NUMBERS(const char* gxtName, int value1, int value2, uint timeMS, bool enable)l
+extern _native void PRINT_WITH_2_NUMBERS_BIG(const char* gxtentry, int Unk662, int Unk663, int time, int flag)l
+extern _native void PRINT_WITH_2_NUMBERS_NOW(const char* gxtName, int value1, int value2, uint timeMS, bool enable)l
+extern _native void PRINT_WITH_3_NUMBERS(const char* gxtentry, int Unk664, int Unk665, int Unk666, int time, int flag)l
+extern _native void PRINT_WITH_3_NUMBERS_NOW(const char* gxtentry, int Unk667, int Unk668, int Unk669, int time, int flag)l
+extern _native void PRINT_WITH_4_NUMBERS(const char* gxtentry, int Unk670, int Unk671, int Unk672, int Unk673, int time, int flag)l
+extern _native void PRINT_WITH_4_NUMBERS_NOW(const char* gxtentry, int Unk674, int Unk675, int Unk676, int Unk677, int time, int flag)l
+extern _native void PRINT_WITH_5_NUMBERS(const char* gxtentry, int Unk678, int Unk679, int Unk680, int Unk681, int Unk682, int time, int flag)l
+extern _native void PRINT_WITH_5_NUMBERS_NOW(const char* gxtentry, int Unk683, int Unk684, int Unk685, int Unk686, int Unk687, int time, int flag)l
+extern _native void PRINT_WITH_6_NUMBERS(const char* gxtentry, int Unk688, int Unk689, int Unk690, int Unk691, int Unk692, int Unk693, int time, int flag)l
+extern _native void PRINT_WITH_6_NUMBERS_NOW(const char* gxtentry, int Unk694, int Unk695, int Unk696, int Unk697, int Unk698, int Unk699, int time, int flag)l
+extern _native void PRINT_WITH_NUMBER(const char* gxtName, int value, uint timeMS, bool enable)l
+extern _native void PRINT_WITH_NUMBER_BIG(const char* gxtName, int value, uint timeMS, bool enable)l
+extern _native void PRINT_WITH_NUMBER_NOW(const char* gxtName, int value, uint timeMS, bool enable)l
 extern _native void REMOVE_BLIP(Blip blip)l
 extern _native void REMOVE_BLIP_AND_CLEAR_INDEX(int blip)l
 extern _native void SET_ALWAYS_DISPLAY_WEAPON_PICKUP_MESSAGE(bool set)l
@@ -2182,7 +2182,7 @@ extern _native void SET_HIDE_WEAPON_ICON(bool set)l
 extern _native void SET_MESSAGES_WAITING(bool set)l
 extern _native void SET_MESSAGE_FORMATTING(bool Unk700, int Unk701, int Unk702)l
 extern _native void SET_MULTIPLAYER_HUD_CASH(uint cash)l
-extern _native void SET_MULTIPLAYER_HUD_TIME(char* str)l
+extern _native void SET_MULTIPLAYER_HUD_TIME(const char* str)l
 extern _native void SET_ONSCREEN_COUNTER_FLASH_WHEN_FIRST_DISPLAYED(int counterid, bool flash)l
 extern _native void SET_RADAR_AS_INTERIOR_THIS_FRAME(void)l
 extern _native void SET_RADAR_SCALE(float scale)l
@@ -2221,9 +2221,9 @@ extern _native bool GET_IS_HIDEF(void)l
 extern _native bool GET_IS_WIDESCREEN(void)l
 extern _native float GET_LINE_HEIGHT(void)l
 extern _native int GET_FRAME_COUNT(void)l
-extern _native int GET_NUMBER_LINES(float Unk703, float Unk704, char* str)l
-extern _native int GET_NUMBER_LINES_WITH_LITERAL_STRINGS(float Unk705, float Unk706, char* str1, char* str2, char* str3)l
-extern _native int GET_NUMBER_LINES_WITH_SUBSTRINGS(float Unk707, float Unk708, char* str1, char* str2, char* str3)l
+extern _native int GET_NUMBER_LINES(float Unk703, float Unk704, const char* str)l
+extern _native int GET_NUMBER_LINES_WITH_LITERAL_STRINGS(float Unk705, float Unk706, const char* str1, const char* str2, const char* str3)l
+extern _native int GET_NUMBER_LINES_WITH_SUBSTRINGS(float Unk707, float Unk708, const char* str1, const char* str2, const char* str3)l
 extern _native uint CREATE_CHECKPOINT(int type, float x, float y, float z, float Unk709, float Unk710)l
 extern _native void DELETE_CHECKPOINT(uint checkpoint)l
 extern _native void DISABLE_END_CREDITS_FADE(void)l
@@ -2237,8 +2237,8 @@ extern _native void DRAW_COLOURED_CYLINDER(float x, float y, float z, float Unk7
 extern _native void DRAW_CORONA(float x, float y, float z, float radius, ScriptAny Unk714, ScriptAny Unk715, ScriptAny Unk716, ScriptAny Unk717, ScriptAny Unk718)l
 extern _native void DRAW_CURVED_WINDOW(float Unk719, float Unk720, float Unk721, float Unk722, uint alpha)l
 extern _native void DRAW_CURVED_WINDOW_NOTEXT(float Unk723, float Unk724, float Unk725, float Unk726, int Unk727)l
-extern _native void DRAW_CURVED_WINDOW_TEXT(float Unk728, float Unk729, float Unk730, int Unk731, int Unk732, char* str0, char* str1, int Unk733)l
-extern _native void DRAW_FRONTEND_HELPER_TEXT(char* str0, char* str1, bool Unk734)l
+extern _native void DRAW_CURVED_WINDOW_TEXT(float Unk728, float Unk729, float Unk730, int Unk731, int Unk732, const char* str0, const char* str1, int Unk733)l
+extern _native void DRAW_FRONTEND_HELPER_TEXT(const char* str0, const char* str1, bool Unk734)l
 extern _native void DRAW_LIGHT_WITH_RANGE(float x, float y, float z, int r, int g, int b, float width, float height)l
 extern _native void DRAW_MOVIE(float Unk735, float Unk736, float Unk737, float Unk738, float Unk739, int r, int g, int b, int a)l
 extern _native void DRAW_RECT(float x1, float y1, float x2, float y2, uint r, uint g, uint b, uint a)l
@@ -2250,8 +2250,8 @@ extern _native void DRAW_SPRITE_WITH_FIXED_ROTATION(uint texture, float Unk744, 
 extern _native void DRAW_SPRITE_WITH_UV(uint texture, float Unk748, float Unk749, float Unk750, float Unk751, float angle, int r, int g, int b, int a)l
 extern _native void DRAW_SPRITE_WITH_UV_COORDS(uint texture, float Unk752, float Unk753, float Unk754, float Unk755, float Unk756, float Unk757, float Unk758, float Unk759, float angle, int r, int g, int b, int a)l
 extern _native void DRAW_TOPLEVEL_SPRITE(uint texture, float Unk760, float Unk761, float Unk762, float Unk763, float angle, int r, int g, int b, int a)l
-extern _native void DRAW_WINDOW(float Unk764, float Unk765, float Unk766, float Unk767, char* str, uint alpha)l
-extern _native void DRAW_WINDOW_TEXT(float Unk768, float Unk769, float Unk770, int Unk771, char* str0, int Unk772)l
+extern _native void DRAW_WINDOW(float Unk764, float Unk765, float Unk766, float Unk767, const char* str, uint alpha)l
+extern _native void DRAW_WINDOW_TEXT(float Unk768, float Unk769, float Unk770, int Unk771, const char* str0, int Unk772)l
 extern _native void ENABLE_DEFERRED_LIGHTING(bool enable)l
 extern _native void ENABLE_END_CREDITS_FADE(void)l
 extern _native void ENABLE_SHADOWS(bool enable)l
@@ -2264,7 +2264,7 @@ extern _native void IMPROVE_LOW_PERFORMANCE_MISSION_PER_FRAME_FLAG(void)l
 extern _native void LINE(float x0, float y0, float z0, float x1, float y1, float z1)l
 extern _native void PLAY_MOVIE(void)l
 extern _native void RELEASE_MOVIE(void)l
-extern _native void SET_CURRENT_MOVIE(char* filename)l
+extern _native void SET_CURRENT_MOVIE(const char* filename)l
 extern _native void SET_HELP_MESSAGE_BOX_SIZE(float Unk773)l
 extern _native void SET_HELP_MESSAGE_BOX_SIZE_F(float size)l
 extern _native void SET_INSTANT_WIDESCREEN_BORDERS(bool set)l
@@ -2300,11 +2300,11 @@ extern _native void PLAYSTATS_INT_FLOAT(ScriptAny Unk789, int Unk790, float Unk7
 extern _native void PLAYSTATS_INT_INT(ScriptAny Unk792, int Unk793, int Unk794)l
 extern _native void PLAYSTATS_MISSION_CANCELLED(int Unk795)l
 extern _native void PLAYSTATS_MISSION_FAILED(int Unk796)l
-extern _native void PLAYSTATS_MISSION_PASSED(char* str0)l
+extern _native void PLAYSTATS_MISSION_PASSED(const char* str0)l
 extern _native void PLAYSTATS_MISSION_STARTED(int Unk797)l
 extern _native void REGISTER_FLOAT_STAT(int stat, float val)l
 extern _native void REGISTER_INT_STAT(int stat, int val)l
-extern _native void REGISTER_STRING_FOR_FRONTEND_STAT(int stat, char* str)l
+extern _native void REGISTER_STRING_FOR_FRONTEND_STAT(int stat, const char* str)l
 extern _native void SET_FLOAT_STAT(uint stat, float value)l
 extern _native void SET_INT_STAT(uint stat, uint value)l
 extern _native void SET_STAT_FRONTEND_ALWAYS_VISIBLE(bool set)l
@@ -2315,7 +2315,7 @@ extern _native void SET_STAT_FRONTEND_VISIBLE_AFTER_INCREMENTED(int stat)l
 #pragma endregion//}
 #pragma region BRAIN//{
 extern _native bool IS_WORLD_POINT_WITHIN_BRAIN_ACTIVATION_RANGE(void)l
-extern _native void REGISTER_WORLD_POINT_SCRIPT_BRAIN(char* ScriptName, float radius)l
+extern _native void REGISTER_WORLD_POINT_SCRIPT_BRAIN(const char* ScriptName, float radius)l
 extern _native void SWITCH_OBJECT_BRAINS(int brain, bool switchstate)l
 #pragma endregion//}
 #pragma region MOBILE//{
@@ -2327,7 +2327,7 @@ extern _native bool IS_MOBILE_PHONE_CALL_ONGOING(void)l
 extern _native bool IS_MOBILE_PHONE_RADIO_ACTIVE(void)l
 extern _native float GET_MOBILE_PHONE_SCALE(void)l
 extern _native int GET_NUMBER_OF_WEB_PAGE_LINKS(int htmlviewport)l
-extern _native void ADD_LINE_TO_MOBILE_PHONE_CALL(int id, char* name, char* text)l
+extern _native void ADD_LINE_TO_MOBILE_PHONE_CALL(int id, const char* name, const char* text)l
 extern _native void CREATE_MOBILE_PHONE(int Unk799)l
 extern _native void DESTROY_MOBILE_PHONE(void)l
 extern _native void GET_MOBILE_PHONE_RENDER_ID(uint *pRenderId)l
@@ -2341,9 +2341,9 @@ extern _native void SET_MOBILE_PHONE_ROTATION(float x, float y, float z)l
 extern _native void SET_MOBILE_PHONE_SCALE(float scale)l
 extern _native void SET_MOBILE_RADIO_ENABLED_DURING_GAMEPLAY(bool set)l
 extern _native void SET_MOBILE_RING_TYPE(int type)l
-extern _native void SET_PHONE_HUD_ITEM(int id, char* gxttext, int Unk800)l
+extern _native void SET_PHONE_HUD_ITEM(int id, const char* gxttext, int Unk800)l
 extern _native void START_CUSTOM_MOBILE_PHONE_RINGING(int RingtoneId)l
-extern _native void START_MOBILE_PHONE_CALL(Ped callfrom, char* callfromvoice, Ped callto, char* calltovoice, bool flag0, bool flag1)l
+extern _native void START_MOBILE_PHONE_CALL(Ped callfrom, const char* callfromvoice, Ped callto, const char* calltovoice, bool flag0, bool flag1)l
 extern _native void START_MOBILE_PHONE_CALLING(void)l
 extern _native void START_MOBILE_PHONE_RINGING(void)l
 extern _native void START_PED_MOBILE_RINGING(Ped ped, int Unk801)l
@@ -2351,16 +2351,16 @@ extern _native void STOP_MOBILE_PHONE_RINGING(void)l
 extern _native void STOP_PREVIEW_RINGTONE(void)l
 #pragma endregion//}
 #pragma region INTERNET//{
-extern _native bool DOES_WEB_PAGE_EXIST(char* webaddress)l
-extern _native char* GET_WEB_PAGE_LINK_HREF(int htmlviewport, int linkid)l
+extern _native bool DOES_WEB_PAGE_EXIST(const char* webaddress)l
+extern _native const char* GET_WEB_PAGE_LINK_HREF(int htmlviewport, int linkid)l
 extern _native float GET_WEB_PAGE_HEIGHT(int htmlviewport)l
-extern _native int CREATE_HTML_SCRIPT_OBJECT(char* objname)l
+extern _native int CREATE_HTML_SCRIPT_OBJECT(const char* objname)l
 extern _native int GET_WEB_PAGE_LINK_AT_POSN(int htmlviewport, float x, float y)l
-extern _native void ADD_TO_HTML_SCRIPT_OBJECT(int htmlobj, char* htmlcode)l
+extern _native void ADD_TO_HTML_SCRIPT_OBJECT(int htmlobj, const char* htmlcode)l
 extern _native void DELETE_ALL_HTML_SCRIPT_OBJECTS(void)l
 extern _native void DELETE_HTML_SCRIPT_OBJECT(int htmlobj)l
 extern _native void GET_WEB_PAGE_LINK_POSN(int htmlviewport, int linkid, float *x, float *y)l
-extern _native void LOAD_WEB_PAGE(int htmlviewport, char* webaddress)l
+extern _native void LOAD_WEB_PAGE(int htmlviewport, const char* webaddress)l
 extern _native void RELOAD_WEB_PAGE(int htmlviewport)l
 extern _native void SET_WEB_PAGE_LINK_ACTIVE(int htmlviewport, int linkid, bool active)l
 extern _native void SET_WEB_PAGE_SCROLL(int htmlviewport, float scroll)l
@@ -2373,7 +2373,7 @@ extern _native void FREEZE_ONSCREEN_TIMER(bool freeze)l
 extern _native void GET_GAME_TIMER(uint *pTimer)l
 extern _native void GET_TIME_OF_DAY(uint *hour, uint *minute)l
 extern _native void SET_MOVIE_TIME(float time)l
-extern _native void SET_TIMECYCLE_MODIFIER(char* name)l
+extern _native void SET_TIMECYCLE_MODIFIER(const char* name)l
 extern _native void SET_TIMER_BEEP_COUNTDOWN_TIME(int timerid, int beeptime)l
 extern _native void SET_TIME_CYCLE_FAR_CLIP_DISABLED(bool set)l
 extern _native void SET_TIME_OF_DAY(uint hour, uint minute)l
@@ -2528,16 +2528,16 @@ extern _native void TASK_SET_CHAR_DECISION_MAKER(Ped ped, DecisionMaker dm)l
 extern _native void TASK_SET_COMBAT_DECISION_MAKER(Ped ped, DecisionMaker dm)l
 #pragma endregion//}
 #pragma region ZONE//{
-extern _native bool IS_CHAR_IN_ZONE(Ped ped, char* zonename)l
-extern _native char* GET_NAME_OF_INFO_ZONE(float x, float y, float z)l
-extern _native char* GET_NAME_OF_ZONE(float x, float y, float z)l
+extern _native bool IS_CHAR_IN_ZONE(Ped ped, const char* zonename)l
+extern _native const char* GET_NAME_OF_INFO_ZONE(float x, float y, float z)l
+extern _native const char* GET_NAME_OF_ZONE(float x, float y, float z)l
 extern _native int GET_CURRENT_POPULATION_ZONE_TYPE(void)l
 extern _native int GET_CURRENT_ZONE_SCUMMINESS(void)l
 extern _native void ACTIVATE_SCRIPT_POPULATION_ZONE(void)l
 extern _native void DEACTIVATE_SCRIPT_POPULATION_ZONE(void)l
 extern _native void FIND_PRIMARY_POPULATION_ZONE_GROUP(int *groupparam0, int *groupparam1)l
-extern _native void SET_ZONE_POPULATION_TYPE(char* zone, int poptype)l
-extern _native void SET_ZONE_SCUMMINESS(char* zone, int scumminess)l
+extern _native void SET_ZONE_POPULATION_TYPE(const char* zone, int poptype)l
+extern _native void SET_ZONE_SCUMMINESS(const char* zone, int scumminess)l
 extern _native void SPECIFY_SCRIPT_POPULATION_ZONE_AREA(int Unk848, int Unk849, int Unk850, int Unk851, int Unk852, int Unk853)l
 extern _native void SPECIFY_SCRIPT_POPULATION_ZONE_GROUPS(int Unk854, int Unk855, int Unk856, int Unk857, int Unk858)l
 extern _native void SPECIFY_SCRIPT_POPULATION_ZONE_NUM_CARS(int num)l
@@ -2554,15 +2554,15 @@ extern _native bool SYNCH_RECORDING_WITH_WATER(void)l
 extern _native int GET_MENU_ITEM_ACCEPTED(int menuid)l
 extern _native int GET_MENU_ITEM_SELECTED(int menuid)l
 extern _native void ACTIVATE_MENU_ITEM(int menuid, int item, bool activate)l
-extern _native void CREATE_MENU(char* gxtentry, ScriptAny Unk859, ScriptAny Unk860, ScriptAny Unk861, ScriptAny Unk862, ScriptAny Unk863, ScriptAny Unk864, ScriptAny Unk865, int *menuid)l
+extern _native void CREATE_MENU(const char* gxtentry, ScriptAny Unk859, ScriptAny Unk860, ScriptAny Unk861, ScriptAny Unk862, ScriptAny Unk863, ScriptAny Unk864, ScriptAny Unk865, int *menuid)l
 extern _native void DELETE_MENU(int menuid)l
 extern _native void GET_MENU_POSITION(int menuid, float *x, float *y)l
 extern _native void HIGHLIGHT_MENU_ITEM(int menuid, int item, bool highlight)l
 extern _native void SET_MENU_COLUMN(int menuid, ScriptAny Unk866, ScriptAny Unk867, ScriptAny Unk868, ScriptAny Unk869, ScriptAny Unk870, ScriptAny Unk871, ScriptAny Unk872, ScriptAny Unk873, ScriptAny Unk874, ScriptAny Unk875, ScriptAny Unk876, ScriptAny Unk877, ScriptAny Unk878, ScriptAny Unk879)l
 extern _native void SET_MENU_COLUMN_ORIENTATION(int menuid, int column, int orientation)l
 extern _native void SET_MENU_COLUMN_WIDTH(int menuid, int column, float width)l
-extern _native void SET_MENU_ITEM_WITH_2_NUMBERS(int menuid, int item, int Unk880, char* gxtkey, int number0, int number1)l
-extern _native void SET_MENU_ITEM_WITH_NUMBER(int menuid, int item, int Unk881, char* gxtkey, int number)l
+extern _native void SET_MENU_ITEM_WITH_2_NUMBERS(int menuid, int item, int Unk880, const char* gxtkey, int number0, int number1)l
+extern _native void SET_MENU_ITEM_WITH_NUMBER(int menuid, int item, int Unk881, const char* gxtkey, int number)l
 extern _native void SET_SELECTED_MENU_ITEM(int menuid, int item)l
 #pragma endregion//}
 #pragma region NETWORK//{
@@ -2599,7 +2599,7 @@ extern _native bool NETWORK_AM_I_MUTED_BY_PLAYER(Player playerIndex)l
 extern _native bool NETWORK_CHANGE_GAME_MODE_PENDING(void)l
 extern _native bool NETWORK_CHANGE_GAME_MODE_SUCCEEDED(void)l
 extern _native bool NETWORK_CHECK_INVITE_ARRIVAL(void)l
-extern _native bool NETWORK_DID_INVITE_FRIEND(char* FRIENDNAME)l
+extern _native bool NETWORK_DID_INVITE_FRIEND(const char* FRIENDNAME)l
 extern _native bool NETWORK_END_SESSION_PENDING(void)l
 extern _native bool NETWORK_FIND_GAME_PENDING(void)l
 extern _native bool NETWORK_GET_LAN_SESSION(void)l
@@ -2650,10 +2650,10 @@ extern _native bool NETWORK_STRING_VERIFY_PENDING(void)l
 extern _native bool NETWORK_STRING_VERIFY_SUCCEEDED(void)l
 extern _native bool PLAYER_WANTS_TO_JOIN_NETWORK_GAME(int Unk885)l
 extern _native bool REQUEST_CONTROL_OF_NETWORK_ID(int netid)l
-extern _native char* NETWORK_GET_HOST_SERVER_NAME(int host)l
-extern _native char* NETWORK_GET_FRIEND_NAME(int id)l
-extern _native char* NETWORK_GET_NEXT_TEXT_CHAT(void)l
-extern _native char* NETWORK_GET_UNACCEPTED_INVITER_NAME(int Unk886)l
+extern _native const char* NETWORK_GET_HOST_SERVER_NAME(int host)l
+extern _native const char* NETWORK_GET_FRIEND_NAME(int id)l
+extern _native const char* NETWORK_GET_NEXT_TEXT_CHAT(void)l
+extern _native const char* NETWORK_GET_UNACCEPTED_INVITER_NAME(int Unk886)l
 extern _native float GET_ONLINE_SCORE(int Unk887)l	//147, 148, or 149
 extern _native int FIND_NETWORK_KILLER_OF_PLAYER(Player playerIndex)l
 extern _native int GET_DESTROYER_OF_NETWORK_ID(Player playerIndex, int id)l
@@ -2683,7 +2683,7 @@ extern _native int NETWORK_GET_NUM_UNFILLED_RESERVATIONS(void)l
 extern _native int NETWORK_GET_PLAYER_ID_OF_NEXT_TEXT_CHAT(void)l
 extern _native int NETWORK_GET_RENDEZVOUS_HOST_PLAYER_ID(void)l
 extern _native int NETWORK_GET_UNACCEPTED_INVITE_EPISODE(ScriptAny Unk894)l
-extern _native int NETWORK_SET_SERVER_NAME(char* name)l
+extern _native int NETWORK_SET_SERVER_NAME(const char* name)l
 extern _native int STORE_DAMAGE_TRACKER_FOR_NETWORK_PLAYER(Player playerIndex, int ukn57, ScriptAny Unk895)l
 extern _native ScriptAny GET_SERVER_ID(void)l
 extern _native ScriptAny NETWORK_GET_SERVER_NAME(void)l
@@ -2727,7 +2727,7 @@ extern _native void NETWORK_EXPAND_TO_32_PLAYERS(void)l
 extern _native void NETWORK_FIND_GAME(int GameMode, int ukn0, int ukn1, int ukn2)l
 extern _native void NETWORK_FINISH_EXTENDED_SEARCH(void)l
 extern _native void NETWORK_GET_FIND_RESULT(ScriptAny Unk925, ScriptAny Unk926)l
-extern _native void NETWORK_INVITE_FRIEND(char* friendname, char* ukn)l
+extern _native void NETWORK_INVITE_FRIEND(const char* friendname, const char* ukn)l
 extern _native void NETWORK_KICK_PLAYER(Player playerIndex, bool value)l
 extern _native void NETWORK_LEAVE_GAME(void)l
 extern _native void NETWORK_LIMIT_TO_16_PLAYERS(void)l
@@ -2778,7 +2778,7 @@ extern _native void SET_IN_MP_TUTORIAL(bool set)l
 extern _native void SET_IN_SPECTATOR_MODE(bool spectate)l
 extern _native void SET_KILLSTREAK(void)l
 extern _native void SET_LOBBY_MUTE_OVERRIDE(bool set)l
-extern _native void SET_MSG_FOR_LOADING_SCREEN(char* label)l
+extern _native void SET_MSG_FOR_LOADING_SCREEN(const char* label)l
 extern _native void SET_NETWORK_ID_CAN_MIGRATE(int netid, bool value)l
 extern _native void SET_NETWORK_ID_EXISTS_ON_ALL_MACHINES(int netID, bool set)l
 extern _native void SET_NETWORK_ID_STOP_CLONING(int id, bool Unk966)l
@@ -2854,19 +2854,19 @@ extern _native void SET_ONLINE_SCORE(int Unk1059, ScriptAny Unk1060)l//147, 148,
 extern _native void STOP_SYNCING_SCRIPT_ANIMATIONS(bool Unk1061)l
 #pragma endregion//}
 #pragma region PTFX//{
-extern _native bool TRIGGER_PTFX(char* name, float x, float y, float z, float Unk1062, float Unk1063, float Unk1064, uint flags)l
-extern _native bool TRIGGER_PTFX_ON_OBJ(char* name, Object obj, float x, float y, float z, float Unk1065, float Unk1066, float Unk1067, uint flags)l
-extern _native bool TRIGGER_PTFX_ON_OBJ_BONE(char* name, Object obj, float x, float y, float z, float Unk1068, float Unk1069, float Unk1070, int objbone, uint flags)l
-extern _native bool TRIGGER_PTFX_ON_PED(char* name, Ped ped, float x, float y, float z, float Unk1071, float Unk1072, float Unk1073, uint flags)l
-extern _native bool TRIGGER_PTFX_ON_PED_BONE(char* name, Ped ped, float x, float y, float z, float Unk1074, float Unk1075, float Unk1076, int pedbone, uint flags)l
-extern _native bool TRIGGER_PTFX_ON_VEH(char* name, Vehicle veh, float x, float y, float z, float Unk1077, float Unk1078, float Unk1079, float Unk1080)l
-extern _native uint START_PTFX(char* name, float x, float y, float z, float yaw, float pitch, float roll, float scale)l
-extern _native uint START_PTFX_ON_OBJ(char* name, Object obj, float x, float y, float z, float yaw, float pitch, float roll, float scale)l
-extern _native uint START_PTFX_ON_OBJ_BONE(char* name, Object obj, float x, float y, float z, float yaw, float pitch, float roll, int objbone, float scale)l
-extern _native uint START_PTFX_ON_PED(char* name, Ped ped, float x, float y, float z, float yaw, float pitch, float roll, float scale)l
-extern _native uint START_PTFX_ON_PED_BONE(char* name, Ped ped, float x, float y, float z, float yaw, float pitch, float roll, int pedbone, float scale)l
-extern _native uint START_PTFX_ON_VEH(char* name, Vehicle veh, float x, float y, float z, float yaw, float pitch, float roll, float scale)l
-extern _native void EVOLVE_PTFX(uint ptfx, char* evolvetype, float val)l
+extern _native bool TRIGGER_PTFX(const char* name, float x, float y, float z, float Unk1062, float Unk1063, float Unk1064, uint flags)l
+extern _native bool TRIGGER_PTFX_ON_OBJ(const char* name, Object obj, float x, float y, float z, float Unk1065, float Unk1066, float Unk1067, uint flags)l
+extern _native bool TRIGGER_PTFX_ON_OBJ_BONE(const char* name, Object obj, float x, float y, float z, float Unk1068, float Unk1069, float Unk1070, int objbone, uint flags)l
+extern _native bool TRIGGER_PTFX_ON_PED(const char* name, Ped ped, float x, float y, float z, float Unk1071, float Unk1072, float Unk1073, uint flags)l
+extern _native bool TRIGGER_PTFX_ON_PED_BONE(const char* name, Ped ped, float x, float y, float z, float Unk1074, float Unk1075, float Unk1076, int pedbone, uint flags)l
+extern _native bool TRIGGER_PTFX_ON_VEH(const char* name, Vehicle veh, float x, float y, float z, float Unk1077, float Unk1078, float Unk1079, float Unk1080)l
+extern _native uint START_PTFX(const char* name, float x, float y, float z, float yaw, float pitch, float roll, float scale)l
+extern _native uint START_PTFX_ON_OBJ(const char* name, Object obj, float x, float y, float z, float yaw, float pitch, float roll, float scale)l
+extern _native uint START_PTFX_ON_OBJ_BONE(const char* name, Object obj, float x, float y, float z, float yaw, float pitch, float roll, int objbone, float scale)l
+extern _native uint START_PTFX_ON_PED(const char* name, Ped ped, float x, float y, float z, float yaw, float pitch, float roll, float scale)l
+extern _native uint START_PTFX_ON_PED_BONE(const char* name, Ped ped, float x, float y, float z, float yaw, float pitch, float roll, int pedbone, float scale)l
+extern _native uint START_PTFX_ON_VEH(const char* name, Vehicle veh, float x, float y, float z, float yaw, float pitch, float roll, float scale)l
+extern _native void EVOLVE_PTFX(uint ptfx, const char* evolvetype, float val)l
 extern _native void REMOVE_PROJTEX_FROM_OBJECT(Object obj)l
 extern _native void REMOVE_PROJTEX_IN_RANGE(float x, float y, float z, float radius)l
 extern _native void REMOVE_PTFX(uint ptfx)l
@@ -2899,8 +2899,8 @@ extern _native int ROUND(float Unk1085)l
 extern _native int SHIFT_LEFT(int val, uint shifts)l
 extern _native int SHIFT_RIGHT(int val, uint shifts)l
 extern _native int TIMERC(void)l
-extern _native uint START_NEW_SCRIPT(char* scriptName, uint stacksize)l
-extern _native uint START_NEW_SCRIPT_WITH_ARGS(char* scriptname, void *params, int paramcount, uint stacksize)l
+extern _native uint START_NEW_SCRIPT(const char* scriptName, uint stacksize)l
+extern _native uint START_NEW_SCRIPT_WITH_ARGS(const char* scriptname, void *params, int paramcount, uint stacksize)l
 extern _native uint TIMERA(void)l
 extern _native uint TIMERB(void)l
 extern _native uint TIMESTEP(void)l
@@ -2921,7 +2921,7 @@ extern _native bool IS_ANY_PICKUP_AT_COORDS(float x, float y, float z)l
 extern _native bool IS_MONEY_PICKUP_AT_COORDS(float x, float y, float z)l
 extern _native int COUNT_PICKUPS_OF_TYPE(int type)l
 extern _native void ADD_PICKUP_TO_INTERIOR_ROOM_BY_KEY(Object pickup, uint room_hash)l
-extern _native void ADD_PICKUP_TO_INTERIOR_ROOM_BY_NAME(Pickup pickup, char* roomName)l
+extern _native void ADD_PICKUP_TO_INTERIOR_ROOM_BY_NAME(Pickup pickup, const char* roomName)l
 extern _native void CREATE_MONEY_PICKUP(float x, float y, float z, uint amount, bool unknownTrue, Pickup *pPickup)l
 extern _native void CREATE_PICKUP(uint model, uint pickupType, float x, float y, float z, Pickup *pPickup, bool unknownFalse)l
 extern _native void CREATE_PICKUP_ROTATE(uint model, uint pickupType, uint unknown, float x, float y, float z, float rX, float rY, float rZ, Pickup *pPickup)l
@@ -2940,7 +2940,7 @@ extern _native void SET_PICKUP_COLLECTABLE_BY_CAR(Object pickup, bool set)l
 extern _native void SWITCH_ARROW_ABOVE_BLIPPED_PICKUPS(bool on)l
 #pragma endregion//}
 #pragma region WIDGET//{
-extern _native char* ADD_TEXT_WIDGET(ScriptAny Unk1089)l
+extern _native const char* ADD_TEXT_WIDGET(ScriptAny Unk1089)l
 extern _native int GET_CONTENTS_OF_TEXT_WIDGET(ScriptAny Unk1090)l
 extern _native void ADD_TO_WIDGET_COMBO(ScriptAny Unk1091)l
 extern _native void ADD_WIDGET_FLOAT_READ_ONLY(ScriptAny Unk1092, ScriptAny Unk1093)l
@@ -2959,7 +2959,7 @@ extern _native void SET_CONTENTS_OF_TEXT_WIDGET(ScriptAny Unk1115, ScriptAny Unk
 extern _native void START_NEW_WIDGET_COMBO(void)l
 #pragma endregion//}
 #pragma region DEBUG//{
-extern _native void SET_CHAR_NAME_DEBUG(Ped ped, char* debugName)l
+extern _native void SET_CHAR_NAME_DEBUG(Ped ped, const char* debugName)l
 extern _native void OPEN_DEBUG_FILE(void)l
 extern _native void CLOSE_DEBUG_FILE(void)l
 extern _native void DEBUG_OFF(void)l
@@ -2969,11 +2969,11 @@ extern _native void SAVE_INT_TO_DEBUG_FILE(ScriptAny Unk1118)l
 extern _native void SAVE_NEWLINE_TO_DEBUG_FILE(void)l
 extern _native void SAVE_STRING_TO_DEBUG_FILE(ScriptAny Unk1119)l
 extern _native bool IS_DEBUG_CAMERA_ON(void)l
-extern _native char* GET_MODEL_NAME_FOR_DEBUG(uint model)l
+extern _native const char* GET_MODEL_NAME_FOR_DEBUG(uint model)l
 extern _native void ENABLE_DEBUG_CAM(bool enable)l
 extern _native void GET_DEBUG_CAM(int *cam)l
 extern _native void INIT_DEBUG_WIDGETS(void)l
-extern _native void SCRIPT_ASSERT(char* text)l
+extern _native void SCRIPT_ASSERT(const char* text)l
 extern _native void SET_DEBUG_TEXT_VISIBLE(bool Unk1120)l
 extern _native int GET_CONSOLE_COMMAND_TOKEN(void)l
 extern _native int GET_LATEST_CONSOLE_COMMAND(void)l
@@ -3154,7 +3154,7 @@ void GET_ROPE_HEIGHT_FOR_OBJECT(Object obj, float *height)l
 void GRAB_ENTITY_ON_ROPE_FOR_OBJECT(Object obj, int * Unk1121, int * Unk1122, int * Unk1123)l
 void RESET_CONSOLE_COMMAND
 void SET_ROOM_FOR_DUMMY_CHAR_BY_KEY(Ped dummy, int key)l
-void SET_ROOM_FOR_DUMMY_CHAR_BY_NAME(Ped ped, char* roomname)l
+void SET_ROOM_FOR_DUMMY_CHAR_BY_NAME(Ped ped, const char* roomname)l
 void SET_SPRITE_HDR_MULTIPLIER(float multiplier)l
 void SET_UP_TRIP_SKIP_FOR_SPECIFIC_VEHICLE(float Unk1124, float Unk1125, float Unk1126, float Unk1127, Vehicle veh)l
 }*/

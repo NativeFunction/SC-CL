@@ -80,7 +80,12 @@ namespace Utils {
 	{
 		void LoadData(const char* path, std::vector<uint8_t>& out);
 		bool CheckFopenFile(const char* path, FILE* file);
-
+		bool CreateFileWithDir(const char* path, FILE*& file);
+		inline std::string GetDir(const std::string &Dir)
+		{
+			const size_t BaseExtPos = Dir.find_last_of("/\\") + 1;
+			return BaseExtPos == Dir.npos ? "" : Dir.substr(0, BaseExtPos);
+		}
 	}
 	namespace System
 	{

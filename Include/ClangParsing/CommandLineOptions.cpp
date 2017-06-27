@@ -26,7 +26,7 @@ namespace SCCL
 	));
 
 	opt<BuildType> Option_BuildType(
-		"build_type", desc("Choose build type:"),
+		"target", desc("Choose build target:"),
 		Required,
 		ValueRequired,
 		cat(CompilerOptions),
@@ -60,7 +60,7 @@ namespace SCCL
 	));
 
 	opt<uint32_t> Option_PCVerison(
-		"pc_version", desc("Sets the pc version for use in the native translation table"),
+		"pc-version", desc("Sets the pc version for use in the native translation table"),
 		ValueRequired,
 		cat(CompilerOptions)
 	);
@@ -101,12 +101,25 @@ namespace SCCL
 	));
 
 	opt<bool> Option_EmitAsm(
-		"asm", desc("Emits the pre compiled ASM representation of the script"),
+		"emit-asm", desc("Emits the pre compiled ASM representation of the script"),
 		cat(CompilerOptions)
 	);
 
 	opt<bool> Option_AsmOnly(
-		"asm-only", desc("Only emits the pre compiled ASM representation of the script"),
+		"emit-asm-only", desc("Only emits the pre compiled ASM representation of the script"),
+		cat(CompilerOptions)
+	);
+
+	opt<std::string> Option_OutputDirectory(
+		"out-dir", desc("Specify the output directory of the script"),
+		ValueRequired,
+		cat(CompilerOptions)
+	);
+
+	opt<std::string> Option_VCXPROJ(
+		"vcx",
+		desc("Parses source files out of a vcxproj file to allow for seamless linking in Visual Studio"),
+		value_desc("vcxproj path"),
 		cat(CompilerOptions)
 	);
 

@@ -9,7 +9,7 @@
 #include "Utils/Utils.h"
 #include <windows.h>
 #include "ConsoleColor.h"
-
+#include <experimental\filesystem>
 
 using namespace std;
 using namespace Utils::System;
@@ -45,6 +45,21 @@ namespace Utils {
 				return false;
 			}
 			return true;
+		}
+		bool CreateFileWithDir(const char* filePath, FILE*& file)
+		{
+			string dir = GetDir(filePath);
+			bool Status = std::experimental::filesystem::exists(std::experimental::filesystem::v1::path(dir)) ?
+			true : 
+			std::experimental::filesystem::create_directories(std::experimental::filesystem::v1::path(dir));
+			
+			file = fopen(filePath, "wb");
+			Status = file == NULL || Status;
+
+			if(!Status)
+				System::Throw("Could Not create File: " + string(filePath));
+
+			return Status;
 		}
 
 	}

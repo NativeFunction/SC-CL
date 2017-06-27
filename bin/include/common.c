@@ -54,12 +54,12 @@ char* GlobalCharBuffer = GlobalCharBufferD;//256
 void print(const char* str, int ms)
 {
 	#if TARGET == TARGET_GTAV
-	begin_text_command_print("STRING");
-	add_text_component_substring_player_name(str);
-	end_text_command_print(ms, 1);
+	BEGIN_TEXT_COMMAND_PRINT("STRING");
+	ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(str);
+	END_TEXT_COMMAND_PRINT(ms, 1);
 	#elif TARGET == TARGET_RDR
-	_clear_prints();
-	_print_subtitle(str, ms != 0 ? (float)ms / 1000.0f : 0, true, 2, 1, 0, 0, 0);
+	_CLEAR_PRINTS();
+	_PRINT_SUBTITLE(str, ms != 0 ? (float)ms / 1000.0f : 0, true, 2, 1, 0, 0, 0);
 	#elif TARGET == TARGET_GTAIV
 	CLEAR_PRINTS();
 	PRINT_STRING_WITH_LITERAL_STRING_NOW("STRING", str, ms, true);
@@ -160,12 +160,12 @@ void Throw(const char* str)
 
 	stradd(Buffer, str, 255);
 	print(Buffer, 10000);
-	wait(10000);
+	WAIT(10000);
 
 	#if TARGET == TARGET_GTAV
-	terminate_this_thread();
+	TERMINATE_THIS_THREAD();
 	#else
-	terminate_this_script();
+	TERMINATE_THIS_SCRIPT();
 	#endif
 }
 
@@ -234,14 +234,14 @@ int ModNegitive(int a, int b)
 
 quaternion EulerToQuaternion(vector3 euler)
 {
-	float cosYawOver2 = cos(euler.x * 0.5),
-		sinYawOver2 = sin(euler.x * 0.5),
+	float cosYawOver2 = COS(euler.x * 0.5),
+		  sinYawOver2 = SIN(euler.x * 0.5),
 
-		cosPitchOver2 = cos(euler.y * 0.5),
-		sinPitchOver2 = sin(euler.y * 0.5),
-
-		cosRollOver2 = cos(euler.z * 0.5),
-		sinRollOver2 = sin(euler.z * 0.5);
+		  cosPitchOver2 = COS(euler.y * 0.5),
+		  sinPitchOver2 = SIN(euler.y * 0.5),
+	      
+		  cosRollOver2 = COS(euler.z * 0.5),
+		  sinRollOver2 = SIN(euler.z * 0.5);
 
 	quaternion out =
 	{
@@ -257,19 +257,19 @@ vector3 RotationLookAtPoint(vector3 pos, vector3 endPos)
 {
 	vector3 out =
 	{
-		atan2(pos.y, pos.z),
-		atan2(pos.x * cos(endPos.x), pos.z),
-		atan2(cos(endPos.x), sin(endPos.x) * sin(pos.y))
+		ATAN2(pos.y, pos.z),
+		ATAN2(pos.x * COS(endPos.x), pos.z),
+		ATAN2(COS(endPos.x), SIN(endPos.x) * SIN(pos.y))
 	};
 	return out;
 }
 
 #if TARGET == TARGET_RDR
 #ifdef _MSC_VER
-#define acos(number) acosMSC(number)
+#define aCOS(number) acosMSC(number)
 float acosMSC(float number)
 #else
-float acos(float number)
+float aCOS(float number)
 #endif
 {
 	//this works fine for floats as negitive ints and floats both have msb set
@@ -284,7 +284,7 @@ float acos(float number)
 			- 0.2121144f)
 			* number)
 			+ 1.5707288f)
-			* sqrt(1.0 - number))
+			* SQRT(1.0 - number))
 			+ PI;
 	}
 
@@ -296,14 +296,14 @@ float acos(float number)
 		- 0.2121144f)
 		* number)
 		+ 1.5707288f)
-		* sqrt(1.0 - number);
+		* SQRT(1.0 - number);
 
 }
 #ifdef _MSC_VER
-#define asin(number) asinMSC(number)
+#define aSIN(number) asinMSC(number)
 float asinMSC(float number)
 #else
-float asin(float number)
+float aSIN(float number)
 #endif
 {
 	//this works fine for floats as negitive ints and floats both have msb set
@@ -318,7 +318,7 @@ float asin(float number)
 			- 0.2121144f)
 			* number)
 			+ 1.5707288f)
-			* sqrt(1.0 - number))
+			* SQRT(1.0 - number))
 			- 1.57079632;
 	}
 	return
@@ -329,7 +329,7 @@ float asin(float number)
 		- 0.2121144f)
 		* number)
 		+ 1.5707288f)
-		* sqrt(1.0 - number))
+		* SQRT(1.0 - number))
 		+ 1.57079632;
 }
 #endif
