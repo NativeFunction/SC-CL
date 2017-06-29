@@ -51,7 +51,7 @@ namespace SCCL
 		}
 		BitfieldData(std::initializer_list<size_t> l)
 		{
-			assert(l.size() <= 2 && "size too large");
+			assert(l.size() <= 2 && "bitfield size too large");
 			width = *l.begin();
 			offset = *((char*)l.begin() + 4);
 		}
@@ -149,7 +149,7 @@ namespace SCCL
 
 		size_t addDecl(const std::string& key, uint32_t size)
 		{
-			assert(size > 0);
+			assert(size > 0 && "size can't be 0");
 			auto lvlSize = newScope[scopeLevel].first.second;
 
 			newScope[scopeLevel].first.first.insert({ key, lvlSize });

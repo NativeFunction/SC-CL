@@ -799,7 +799,7 @@ public:
 			SCOWrite((outDirectory + HLData->getBuildFileName()).data(), SCRFlags::CompressedEncrypted);
 			break;
 			default:
-			assert(false && "Incompatible build type for GTAIV");
+				TEST(false, "Incompatible build type for GTAIV");
 			break;
 		}
 	}
@@ -938,7 +938,7 @@ public:
 				XSCWrite((outDirectory + HLData->getBuildFileName()).data(), true);
 				break;
 			default:
-				assert(false && "Incompatible build type for RDR");
+				TEST(false, "Incompatible build type for RDR");
 				break;
 		}
 	}
@@ -1058,7 +1058,7 @@ public:
 			XSCWrite((outDirectory + HLData->getBuildFileName()).data());
 			break;
 			default:
-			assert(false && "Incompatible build type for GTAV");
+				TEST(false, "Incompatible build type for GTAV");
 			break;
 		}
 	}
@@ -1194,7 +1194,8 @@ class CompileGTAVPC : public CompileGTAV
 public:
 	
 	CompileGTAVPC(const Script& data, uint32_t nativesVersion, bool Disable_Function_Names) : CompileGTAV(data, Disable_Function_Names), nativeTranslation(nativesVersion)
-	{		
+	{
+		TEST(false, "Compiling GTAV on PC has been disabled due to Rockstars actions against the GTA modding scene");
 	}
 
 	void Compile(const std::string& outDirectory) override

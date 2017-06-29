@@ -231,7 +231,7 @@ public:
 	uint32_t getCount() const{ return _count; }
 	void setDefaultJumpLoc(const std::string& defCase)
 	{
-		assert(!_defaultJumpLoc && "Default jump case alread specified");
+		assert(!_defaultJumpLoc && "Default jump case already specified");
 		_defaultJumpLoc = new StringStorage(defCase);
 	}
 	void overWriteDefaultJumpLoc(const std::string& newDefCase){
@@ -241,7 +241,7 @@ public:
 	}
 	void setDefaultJumpLoc(llvm::StringRef defCase)
 	{
-		assert(!_defaultJumpLoc && "Default jump case alread specified");
+		assert(!_defaultJumpLoc && "Default jump case already specified");
 		_defaultJumpLoc = new StringStorage(defCase);
 	}
 	bool hasDefaultJumpLoc()const{ return _defaultJumpLoc; }//only would occur when you have a switch statement with > 255 cases

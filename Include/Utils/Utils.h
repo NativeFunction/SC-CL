@@ -17,6 +17,14 @@
 
 #define STREAMSIZE_MAX 9223372036854775807
 
+#ifndef TEST
+#ifdef _DEBUG
+#define TEST(cond, reasonStr) assert((cond) && (reasonStr))
+#else
+#define TEST(cond, reasonStr) if (!(cond)) Utils::System::Throw(reasonStr)
+#endif
+#endif
+
 namespace Utils {
 
 	namespace Hashing
@@ -89,9 +97,9 @@ namespace Utils {
 	}
 	namespace System
 	{
-		void Pause(std::string str = "");
-		void Throw(std::string str);
-		void Warn(std::string str);
+		void Pause(const std::string& str = "");
+		void Throw(const std::string& str);
+		void Warn(const std::string& str);
 	}
 	namespace Math
 	{

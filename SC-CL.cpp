@@ -302,7 +302,7 @@ namespace SCCL
 
 int main(int argc, const char **argv)
 {
-	llvm::errs() << "Starting SC-CL " << VERSION << " running Clang 3.8.1\n";
+	llvm::errs() << "Starting SC-CL ALPHA " << VERSION << " running Clang 3.8.1\n";
 
 	SCCL::globalDirectory = Utils::IO::GetDir(string(argv[0]));
 	SetVersionPrinter(SCCL::PrintVersion);

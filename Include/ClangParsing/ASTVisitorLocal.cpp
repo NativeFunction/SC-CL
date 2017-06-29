@@ -65,7 +65,7 @@ namespace SCCL
 		string FileId = "";
 		if (decl->getStorageClass() == SC_Static)
 		{
-			assert(CurrentFileId && "File id 0 reserved for extern");
+			TEST(CurrentFileId, "File id 0 reserved for extern", TheRewriter, decl->getSourceRange());
 			char buf[9] = {};
 			FileId += string(itoa(CurrentFileId - 1, buf, 36)) += "~";
 			//this works without collision going on the notion that no one can add "~" to a function name
@@ -900,7 +900,7 @@ namespace SCCL
 
 				}
 				else
-					Throw("memset must have signature \"extern __intrinsic void memset(void* dst, byte src, size_t len);\"", TheRewriter, callee->getSourceRange());
+					Throw("memset must have signature \"extern __intrinsic void memset(void* ptr, byte src, size_t len);\"", TheRewriter, callee->getSourceRange());
 				return true;
 			} break;
 			case JoaatCasedConst("strcpy"):
@@ -937,7 +937,7 @@ namespace SCCL
 						Throw("Expected integer constant for string max length argument in strcpy", TheRewriter, argArray[2]->getSourceRange());
 				}
 				else
-					Throw("strcpy must have signature \"extern __intrinsic void strcpy(char* dst, const char* src, const byte len);\"", TheRewriter, callee->getSourceRange());
+					Throw("strcpy must have signature \"extern __intrinsic void strcpy(char* dest, const char* src, const byte len);\"", TheRewriter, callee->getSourceRange());
 
 				return false;
 			} break;
@@ -962,7 +962,7 @@ namespace SCCL
 					return true;
 				}
 				else
-					Throw("strcpy_s must have signature \"extern __intrinsic void strcpy_s(char* dst, const char* src);\"", TheRewriter, callee->getSourceRange());
+					Throw("strcpy_s must have signature \"extern __intrinsic void strcpy_s(char* dest, const char* src);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("stradd"):
@@ -993,7 +993,7 @@ namespace SCCL
 						Throw("Expected integer constant for string max length argument in stradd", TheRewriter, argArray[2]->getSourceRange());
 				}
 				else
-					Throw("stradd must have signature \"extern __intrinsic void stradd(char* dst, char* append, const byte len);\"", TheRewriter, callee->getSourceRange());
+					Throw("stradd must have signature \"extern __intrinsic void stradd(char* dest, char* append, const byte len);\"", TheRewriter, callee->getSourceRange());
 
 				return false;
 			} break;
@@ -1018,7 +1018,7 @@ namespace SCCL
 					return true;
 				}
 				else
-					Throw("stradd_s must have signature \"extern __intrinsic void stradd_s(char* dst, const char* src);\"", TheRewriter, callee->getSourceRange());
+					Throw("stradd_s must have signature \"extern __intrinsic void stradd_s(char* dest, const char* src);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("straddi"):
@@ -1049,7 +1049,7 @@ namespace SCCL
 						Throw("Expected integer constant for string max length argument in straddi", TheRewriter, argArray[2]->getSourceRange());
 				}
 				else
-					Throw("straddi must have signature \"extern __intrinsic void straddi(char* dst, int append, const byte len);\"", TheRewriter, callee->getSourceRange());
+					Throw("straddi must have signature \"extern __intrinsic void straddi(char* dest, int append, const byte len);\"", TheRewriter, callee->getSourceRange());
 
 				return false;
 			} break;
@@ -1074,7 +1074,7 @@ namespace SCCL
 					return true;
 				}
 				else
-					Throw("straddi_s must have signature \"extern __intrinsic void straddi_s(char* dst, int value);\"", TheRewriter, callee->getSourceRange());
+					Throw("straddi_s must have signature \"extern __intrinsic void straddi_s(char* dest, int value);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("itos"):
@@ -1105,7 +1105,7 @@ namespace SCCL
 						Throw("Expected integer constant for string max length argument in itos", TheRewriter, argArray[2]->getSourceRange());
 				}
 				else
-					Throw("itos must have signature \"extern __intrinsic void itos(char* dst, int value, const byte len);\"", TheRewriter, callee->getSourceRange());
+					Throw("itos must have signature \"extern __intrinsic void itos(char* dest, int value, const byte len);\"", TheRewriter, callee->getSourceRange());
 
 				return false;
 			} break;
@@ -1130,7 +1130,7 @@ namespace SCCL
 					return true;
 				}
 				else
-					Throw("itos_s must have signature \"extern __intrinsic void itos_s(char* dst, int value);\"", TheRewriter, callee->getSourceRange());
+					Throw("itos_s must have signature \"extern __intrinsic void itos_s(char* dest, int value);\"", TheRewriter, callee->getSourceRange());
 				return false;
 			} break;
 			case JoaatCasedConst("getHashKey"):
@@ -1576,8 +1576,23 @@ namespace SCCL
 				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 3 && getSizeFromBytes(getSizeOfType(argArray[0]->getType().getTypePtr())) == 3)
 				{
 					parseExpression(argArray[0], false, true);
-					AddInstruction(Drop);
-					AddInstruction(PushFloat, 0.0f);
+					
+
+					//GTA Coord Type = Y Depth
+					//RDR Coord Type = Z Depth
+					if (scriptData.getBuildType() == BT_RDR_SCO || BT_RDR_XSC)
+					{
+						AddInstruction(PushFloat, 1.0f);
+						AddInstruction(PushFloat, 0.0f);
+						AddInstruction(PushFloat, 1.0f);
+						AddInstruction(VMult);
+					}
+					else
+					{
+						AddInstruction(Drop);
+						AddInstruction(PushFloat, 0.0f);
+					}
+
 					return true;
 				}
 				Throw("vector3Flatten must have signature \"extern __intrinsic vector3 vector3Flatten(vector3 vector)\"", TheRewriter, callee->getSourceRange());
@@ -3474,7 +3489,7 @@ namespace SCCL
 											inlined = true;
 											if (!scriptData.addFunctionInline(name, to_string(e->getLocEnd().getRawEncoding())))
 											{
-												assert(false);
+												TEST(false, "Could not inline function", TheRewriter, e->getSourceRange());
 											}
 											LocalVariables.addLevel();
 											int Index = LocalVariables.getCurrentSize();
@@ -5178,7 +5193,8 @@ namespace SCCL
 				{
 					auto IncCurrentBitSize = [&] () -> void
 					{
-						assert(currentBitFieldSize <= 32 && "currentBitSize too big");
+						TEST(currentBitFieldSize <= 32, "Bit size too big", TheRewriter, record->getSourceRange());
+
 						offset += 4;
 						currentBitFieldSize = 0;
 					};
@@ -5233,7 +5249,8 @@ namespace SCCL
 						offset += max(temp, stackWidth);
 					}
 
-					assert(currentBitFieldSize == 0 && "Bitfield data was not calculated");
+					TEST(currentBitFieldSize == 0, "Bitfield data was not calculated", TheRewriter, record->getSourceRange());
+
 				}
 			}
 
@@ -5242,7 +5259,7 @@ namespace SCCL
 			if (selectedBitField.width)
 				comment += " Bit Width: " + to_string(selectedBitField.width) + " Bit Index: " + to_string(selectedBitField.offset);
 
-			AddInstructionComment(GetImmP, comment, getSizeFromBytes(offset))
+			AddInstructionComment(GetImmP, comment, getSizeFromBytes(offset));
 
 				if (isArrToPtrDecay)
 					return 1;
@@ -5250,13 +5267,13 @@ namespace SCCL
 				{
 					if (selectedBitField.width == 1)
 					{
-						assert(typeSize == 1 && "size larger then size for pget (IsBitSet)");
+						TEST(typeSize == 1, "size larger then size for pget (IsBitSet)", TheRewriter, ND->getSourceRange());
 						AddInstruction(PGet);
 						AddInstruction(IsBitSet, (uint8_t)selectedBitField.offset);
 					}
 					else if (selectedBitField.width)
 					{
-						assert(typeSize == 1 && "size larger then size for pget (GetBitField)");
+						TEST(typeSize == 1, "size larger then size for pget (GetBitField)", TheRewriter, ND->getSourceRange());
 						AddInstruction(PGet);
 						AddInstruction(GetBitField, selectedBitField.offset, selectedBitField.width, scriptData.getBuildType());
 					}
@@ -5480,7 +5497,7 @@ namespace SCCL
 						uint32_t currentBitFieldSize = 0;
 						auto IncCurrentBitSize = [&] () -> void
 						{
-							assert(currentBitFieldSize <= 32 && "currentBitSize too big");
+							TEST(currentBitFieldSize <= 32, "Bit size too big", TheRewriter, rd->getSourceRange());
 							AddInstruction(PushInt, currentRes);
 							while (QueuedBitfields.size())
 							{

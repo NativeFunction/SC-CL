@@ -277,7 +277,7 @@ void CompileBase::AddJump(const JumpInstructionType type, const string& label)
 	{
 		//jump backward
 		int32_t offset = it->second.LabelLocation - CodePageData->getTotalSize() - 3;//estimate
-		assert(offset < 0);
+		assert(offset < 0 && "backwards jump estimate was out of bounds");
 
 		if (offset >= -32768 + 3 + 2)//3 for opcode size, 2 for possible DoesOpcodeHaveRoom padding
 		{
@@ -319,7 +319,7 @@ CompileBase::JumpLabelData CompileBase::AddSwitchJump(const JumpInstructionType 
 	else
 	{
 		//jump backward
-		assert(it->second.LabelLocation - CodePageData->getTotalSize() - 2 >= 0);
+		assert(it->second.LabelLocation - CodePageData->getTotalSize() - 2 >= 0 && "backwards switch jump was out of bounds");
 
 		AddInt16(0);
 
@@ -1031,7 +1031,7 @@ CompileBase::JumpLabelData CompileGTAIV::AddSwitchJump(const JumpInstructionType
 	else
 	{
 		//jump backward
-		assert(it->second.LabelLocation - CodePageData->getTotalSize() - 4 >= 0);
+		assert(it->second.LabelLocation - CodePageData->getTotalSize() - 4 >= 0 && "backwards jump was out of bounds");
 
 		AddInt32(0);
 

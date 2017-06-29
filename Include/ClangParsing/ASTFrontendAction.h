@@ -1,6 +1,6 @@
 #pragma once
 #include "Utils/ClangUtils.h"
-#include "clang/Lex/PreProcessor.h"
+#include "clang/Lex/Preprocessor.h"
 #include "stdint.h"
 #include "ClangParsing/GlobalDecls.h"
 

@@ -15,8 +15,6 @@ using namespace std;
 using namespace Utils::System;
 using namespace Utils::Bitwise;
 
-
-
 namespace Utils {
 
 	namespace IO
@@ -66,18 +64,29 @@ namespace Utils {
 
 	namespace System
 	{
-		void Throw(string str)
+		void Test(bool Condition, const std::string& str)
+		{
+			if (!Condition)
+			{
+				cout << brightred << "error: " << white << str << flush;
+				assert(false);
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		void Throw(const std::string& str)
 		{
 			cout << brightred << "Exception: " << white << str << "\r\nPress ENTER to exit..." << flush;
 			cin.clear();
 			cin.ignore(STREAMSIZE_MAX, '\n');
 			exit(EXIT_FAILURE);
 		}
-		void Warn(string str)
+
+		void Warn(const std::string& str)
 		{
 			cout << brightyellow << "Warning: " << white << str << endl;
 		}
-		void Pause(string str)
+		void Pause(const std::string& str)
 		{
 			if (str != "")
 				cout << str << "\n";
