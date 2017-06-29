@@ -76,7 +76,7 @@ namespace Utils {
 
 		void Throw(const std::string& str)
 		{
-			cout << brightred << "Exception: " << white << str << "\r\nPress ENTER to exit..." << flush;
+			cout << brightred << "error: " << white << str << "\r\nPress ENTER to exit..." << flush;
 			cin.clear();
 			cin.ignore(STREAMSIZE_MAX, '\n');
 			exit(EXIT_FAILURE);
