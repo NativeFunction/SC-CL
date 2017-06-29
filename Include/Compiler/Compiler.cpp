@@ -1201,6 +1201,7 @@ void CompileGTAIV::AddFuncLoc(const FunctionData* function)
 
 void CompileGTAIV::pCall()
 {
+	Throw("Function pointers are not fully implmented on GTAIV");
 	DoesOpcodeHaveRoom(15);
 	AddOpcode(PushString);
 	AddInt8(1);//length
