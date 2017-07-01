@@ -1709,64 +1709,62 @@ namespace SCCL
 			case JoaatCasedConst("getByte"):
 			{
 				ChkHashCol("getByte");
-				if (scriptData.getBuildType() == BT_GTAV)
+				if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1 && argArray[0]->getType()->isPointerType())
 				{
-					if (argCount == 1 && getSizeFromBytes(getSizeOfType(callee->getReturnType().getTypePtr())) == 1 && argArray[0]->getType()->isPointerType())
-					{
-						//AddInstruction(PushNullPtr);
-						parseExpression(argArray[0], false, true);
-						AddInstruction(PGet);
-						AddInstruction(PushInt, 255);
-						AddInstruction(And);
-						//AddInstruction(Or);
-						return true;
-					}
-					else
-					{
-						Throw("getByte must have signature \"extern __intrinsic unsigned char getByte(void* addr)\"", TheRewriter, callee->getSourceRange());
-					}
+					parseExpression(argArray[0], false, true);
+					AddInstruction(PGet);
+					AddInstruction(PushInt, 0xFF000000);
+					AddInstruction(And);
+					AddInstruction(ShiftRight, 24);
+					return true;
 				}
 				else
 				{
-					Throw("getByte intrinsic is only available for GTA V", TheRewriter, callee->getSourceRange());
+					Throw("getByte must have signature \"extern __intrinsic unsigned char getByte(void* addr)\"", TheRewriter, callee->getSourceRange());
 				}
 			} break;
 			case JoaatCasedConst("setByte"):
 			{
 				ChkHashCol("setByte");
-				if (scriptData.getBuildType() == BT_GTAV)
+				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
 				{
-					if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && getSizeFromBytes(getSizeOfType(argArray[1]->getType().getTypePtr())) == 1)
-					{
-						parseExpression(argArray[0], false, true);
-						AddInstruction(PushInt, 0);
-						AddInstruction(PushInt, 7);
-						llvm::APSInt result;
-						if (argArray[1]->EvaluateAsInt(result, context))
-						{
-							if (result.getExtValue() > 0xFF)
-							{
-								Warn("Result does not fit into a byte", TheRewriter, argArray[1]->getSourceRange());
-							}
-							AddInstruction(PushInt, result.getExtValue() & 0xFF);
-						}
-						else
-						{
-							parseExpression(argArray[1], false, true);
-							AddInstruction(PushInt, 0xFF);
-							AddInstruction(And);
-						}
-						AddInstruction(Native, "set_bits_in_range", (scriptData.getBuildPlatform() == P_PC ? 0x8EF07E15701D61ED : JoaatConst("set_bits_in_range")), 4, 0);
-						return true;
-					}
-					else
-					{
-						Throw("setByte must have signature \"extern __intrinsic void setByte(void* addr, unsigned char value)\"", TheRewriter, callee->getSourceRange());
-					}
+					parseExpression(argArray[0], false, true);
+					AddInstruction(Dup);
+					AddInstruction(PGet);
+					AddInstruction(PushInt, 0x00FFFFFF);
+					AddInstruction(And);
+					parseExpression(argArray[1], false, true);
+					AddInstruction(ShiftLeft, 24);
+					AddInstruction(Or);
+					AddInstruction(PeekSet);
+					AddInstruction(Drop);
+					return true;
+
+					//old set_bits_in_range code
+					//parseExpression(argArray[0], false, true);
+					//AddInstruction(PushInt, 0);
+					//AddInstruction(PushInt, 7);
+					//llvm::APSInt result;
+					//if (argArray[1]->EvaluateAsInt(result, context))
+					//{
+					//	if (result.getExtValue() > 0xFF)
+					//	{
+					//		Warn("Result does not fit into a byte", TheRewriter, argArray[1]->getSourceRange());
+					//	}
+					//	AddInstruction(PushInt, result.getExtValue() & 0xFF);
+					//}
+					//else
+					//{
+					//	parseExpression(argArray[1], false, true);
+					//	AddInstruction(PushInt, 0xFF);
+					//	AddInstruction(And);
+					//}
+					//AddInstruction(Native, "set_bits_in_range", (scriptData.getBuildPlatform() == P_PC ? 0x8EF07E15701D61ED : JoaatConst("set_bits_in_range")), 4, 0);
+					//return true;
 				}
 				else
 				{
-					Throw("setByte intrinsic is only available for GTA V", TheRewriter, callee->getSourceRange());
+					Throw("setByte must have signature \"extern __intrinsic void setByte(void* addr, unsigned char value)\"", TheRewriter, callee->getSourceRange());
 				}
 			} break;
 			#pragma endregion
@@ -3375,7 +3373,6 @@ namespace SCCL
 
 				}
 
-
 				if (isVariadic)
 				{
 					if (!VariadicSize)
@@ -3409,7 +3406,6 @@ namespace SCCL
 						}
 					}
 				}
-
 
 				if (call->getDirectCallee() && call->getDirectCallee()->hasAttr<NativeFuncAttr>())
 				{

@@ -122,10 +122,10 @@ typedef union vector2
 	float v[2];
 } Point, Size, vector2;
 
+//GTA Coord Type = Y Depth
+//RDR Coord Type = Z Depth
 typedef union vector3
 {
-	//GTA Coord Type = Y Depth
-	//RDR Coord Type = Z Depth
 	struct { float x, y, z; };
 	float v[3];
 } vector3;
@@ -136,8 +136,9 @@ typedef union quaternion
 	float v[4];
 } quaternion;
 
+//Colour struct where values range from 0 - 255
 typedef union RGBA
-{//Colour struct where values range from 0 - 255
+{
 	struct
 	{
 		union{int red; int r;};
@@ -148,8 +149,9 @@ typedef union RGBA
 	int col[4];
 } RGBA;
 
+//Colour struct where values range from 0 - 255
 typedef union RGB
-{//Colour struct where values range from 0 - 255
+{
 	struct
 	{
 		union{int red; int r;};
@@ -159,8 +161,9 @@ typedef union RGB
 	int col[3];
 } RGB;
 
+//Colour struct where values range from 0.0 - 1.0
 typedef union FloatRGBA
-{//Colour struct where values range from 0.0 - 1.0
+{
 	struct
 	{
 		union{float red; float r;};
@@ -171,8 +174,9 @@ typedef union FloatRGBA
 	float col[4];
 } FloatRGBA;
 
+//Colour struct where values range from 0.0 - 1.0
 typedef union FloatRGB
-{//Colour struct where values range from 0.0 - 1.0
+{
 	struct
 	{
 		union{float red; float r;};
@@ -232,6 +236,7 @@ typedef union any
 } any;
 
 //poor mans constructors
+
 #define Any(x) (any) {x}
 #define RGBA(R,G,B,A) (RGBA){R,G,B,A}
 #define FloatRGBA(R,G,B,A) (FloatRGBA){R,G,B,A}

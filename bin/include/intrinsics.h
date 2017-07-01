@@ -318,6 +318,16 @@ extern __intrinsic void bit_reset(int* address, const byte bitIndex);
 /// <param name="bitIndex">The bit index to be flipped.<para>This value must be an integer literal.</para></param>
 /// <returns></returns>
 extern __intrinsic void bit_flip(int* address, const byte bitIndex);
+
+/// <summary>Gets the byte at an address of a int32 in big endian.</summary>
+/// <param name="addr">The address of the value you want to get.</param>
+/// <returns>The the byte at an address.</returns>
+extern __intrinsic unsigned char getByte(void* addr);
+
+/// <summary>Sets the byte at an address of a int32 in big endian.</summary>
+/// <param name="addr">The address of the value you want to set.</param>
+/// <param name="value">The value you want to set.</param>
+extern __intrinsic void setByte(void* addr, unsigned char value);
 #pragma endregion //}
 
 #pragma region Variables //{
@@ -365,20 +375,28 @@ extern __intrinsic void* getPtrFromArrayIndex(const void* array, int index, cons
 /// <param name="immIndex">The immediate index.<para>This value must be an integer literal.</para></param>
 /// <returns>The pointer + immIndex * 4.</returns>
 extern __intrinsic void* getPtrImmIndex(const void* pointer, const int immIndex);
+
 #pragma endregion //}
 
 #if PTRWIDTH == 64
 #pragma region YSC_Specific //{
+/// <summary>Sets the lower 32 bits of a value.</summary>
+/// <param name="addr">The address of the value you want to set.</param>
+/// <param name="value">The value to set.</param>
 extern __intrinsic void setLoDWord(void* addr, int value);
+/// <summary>Sets the higher 32 bits of a value.</summary>
+/// <param name="addr">The address of the value you want to set.</param>
+/// <param name="value">The value to set.</param>
 extern __intrinsic void setHiDWord(void* addr, int value);
+/// <summary>Gets the lower 32 bits of a value.</summary>
+/// <param name="addr">The address of the value you want to get.</param>
+/// <returns>The the lower 32 bits of the value.</returns>
 extern __intrinsic int getLoDWord(void* addr);
+/// <summary>Gets the higher 32 bits of a value.</summary>
+/// <param name="addr">The address of the value you want to get.</param>
+/// <returns>The the higher 32 bits of the value.</returns>
 extern __intrinsic int getHiDWord(void* addr);
 #pragma endregion //}
-#endif
-
-#if TARGET == TARGET_GTAV
-extern __intrinsic unsigned char getByte(void* addr);
-extern __intrinsic void setByte(void* addr, unsigned char value);
 #endif
 
 #pragma region Custom_ASM //{
@@ -413,7 +431,7 @@ extern __unsafeIntrinsic void __popStruct(void* structure);
 extern __unsafeIntrinsic void __rev(const int numItems);
 
 /// <summary>Exchanges two same sized structs on the stack.</summary>
-/// <param name="structStackSize">The size of the struct.</param>
+/// <param name="structStackSize">The size of the struct.<para>This value must be an integer literal.</para></param>
 /// <returns></returns>
 extern __unsafeIntrinsic void __exch(const int structStackSize);
 
@@ -452,105 +470,557 @@ extern __unsafeIntrinsic void __ptrFromStack(const void* address, int count);
 ///		Adds specified amount of nops to the script in the interval [0,4096].
 ///		<para>Note: GTAIV nops exit the script.</para>
 /// </summary>
-/// <param name="count">The amount of nops to add.</param>
+/// <param name="count">The amount of nops to add.<para>This value must be an integer literal.</para></param>
 /// <returns></returns>
-extern __intrinsic       void __nop(const uint count);
+extern __intrinsic void __nop(const uint count);
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) + Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __add();
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) - Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __sub();
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) * Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __mult();
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) / Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __div();
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) % Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __mod();
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Performs {!Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __not();
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Performs {-Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __neg();
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) == Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpEq();
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) != Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpNe();
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) > Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpGt();
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) >= Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpGe();
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) &#60; Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpLt();
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) &#60;= Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpLe();
+/// <summary>
+/// Pops two items off the stack. (float, float)
+/// <para>Performs {(Stack.Top - 1) + Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __addF();
+/// <summary>
+/// Pops two items off the stack. (float, float)
+/// <para>Performs {(Stack.Top - 1) - Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __subF();
+/// <summary>
+/// Pops two items off the stack. (float, float)
+/// <para>Performs {(Stack.Top - 1) * Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __multF();
+/// <summary>
+/// Pops two items off the stack. (float, float)
+/// <para>Performs {(Stack.Top - 1) / Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __divF();
+/// <summary>
+/// Pops two items off the stack. (float, float)
+/// <para>Performs {(Stack.Top - 1) % Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __modF();
+/// <summary>
+/// Pops one item off the stack.  (float)
+/// <para>Performs {-Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __negF();
+/// <summary>
+/// Pops two items off the stack. (float, float)
+/// <para>Performs {(Stack.Top - 1) == Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpEqF();
+/// <summary>
+/// Pops two items off the stack. (float, float)
+/// <para>Performs {(Stack.Top - 1) != Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpNeF();
+/// <summary>
+/// Pops two items off the stack. (float, float)
+/// <para>Performs {(Stack.Top - 1) > Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpGtF();
+/// <summary>
+/// Pops two items off the stack. (float, float)
+/// <para>Performs {(Stack.Top - 1) >= Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpGeF();
+/// <summary>
+/// Pops two items off the stack. (float, float)
+/// <para>Performs {(Stack.Top - 1) &#60; Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpLtF();
+/// <summary>
+/// Pops two items off the stack. (float, float)
+/// <para>Performs {(Stack.Top - 1) &#60;= Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __cmpLeF();
+/// <summary>
+/// Pops six items off the stack. (float, float, float, float, float, float)
+/// <para>Performs {(Stack.Top - 5) + (Stack.Top - 2)} as a float.</para>
+/// <para>Performs {(Stack.Top - 4) + (Stack.Top - 1)} as a float.</para>
+/// <para>Performs {(Stack.Top - 3) + Stack.Top} as a float.</para>
+/// <para>Pushes three items on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __addV();
+/// <summary>
+/// Pops six items off the stack. (float, float, float, float, float, float)
+/// <para>Performs {(Stack.Top - 5) - (Stack.Top - 2)} as a float.</para>
+/// <para>Performs {(Stack.Top - 4) - (Stack.Top - 1)} as a float.</para>
+/// <para>Performs {(Stack.Top - 3) - Stack.Top} as a float.</para>
+/// <para>Pushes three items on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __subV();
+/// <summary>
+/// Pops six items off the stack. (float, float, float, float, float, float)
+/// <para>Performs {(Stack.Top - 5) * (Stack.Top - 2)} as a float.</para>
+/// <para>Performs {(Stack.Top - 4) * (Stack.Top - 1)} as a float.</para>
+/// <para>Performs {(Stack.Top - 3) * Stack.Top} as a float.</para>
+/// <para>Pushes three items on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __multV();
+/// <summary>
+/// Pops six items off the stack. (float, float, float, float, float, float)
+/// <para>Performs {(Stack.Top - 5) / (Stack.Top - 2)} as a float.</para>
+/// <para>Performs {(Stack.Top - 4) / (Stack.Top - 1)} as a float.</para>
+/// <para>Performs {(Stack.Top - 3) / Stack.Top} as a float.</para>
+/// <para>Pushes three items on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __divV();
+/// <summary>
+/// Pops three items off the stack. (float, float, float)
+/// <para>Performs {-(Stack.Top - 2)} as a float.</para>
+/// <para>Performs {-(Stack.Top - 1)} as a float.</para>
+/// <para>Performs {-Stack.Top} as a float.</para>
+/// <para>Pushes three items on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __negV();
+/// <summary>
+/// Pops two item off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) & Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __and();
+/// <summary>
+/// Pops two item off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) | Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __or();
+/// <summary>
+/// Pops two item off the stack. (signed int32, signed int32)
+/// <para>Performs {(Stack.Top - 1) ^ Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __xor();
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Performs {(float)Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __iToF();
+/// <summary>
+/// Pops one item off the stack. (float)
+/// <para>Performs {(int)Stack.Top} as a float.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __fToI();
+/// <summary>
+/// Pops one item off the stack. (float)
+/// <para>Pushes three items of value Stack.Top on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __fToV();
-extern __unsafeIntrinsic void __push2(const uint value0, const uint value1);
-extern __unsafeIntrinsic void __push3(const uint value0, const uint value1, const uint value2);
+/// <summary>Pushes two signed int32 values to the stack.</summary>
+/// <param name="value0">The first value to push to the stack.<para>This value must be an integer literal.</para></param>
+/// <param name="value1">The second value to push to the stack.<para>This value must be an integer literal.</para></param>
+extern __unsafeIntrinsic void __push2(const int value0, const int value1);
+/// <summary>Pushes three signed int32 values to the stack.</summary>
+/// <param name="value0">The first value to push to the stack.<para>This value must be an integer literal.</para></param>
+/// <param name="value1">The second value to push to the stack.<para>This value must be an integer literal.</para></param>
+/// <param name="value2">The third value to push to the stack.<para>This value must be an integer literal.</para></param>
+extern __unsafeIntrinsic void __push3(const int value0, const int value1, const int value2);
+/// <summary>Pushes one signed int32 value to the stack.</summary>
+/// <param name="value">The value to push to the stack.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __push(const int value);
+/// <summary>Pushes one float value to the stack.</summary>
+/// <param name="value">The value to push to the stack.<para>This value must be an floating-point literal.</para></param>
 extern __unsafeIntrinsic void __pushF(const float value);
+/// <summary>Pushes a duplicate of Stack.Top to the stack.</summary>
 extern __unsafeIntrinsic void __dup();
+/// <summary>Pops one item off the stack and discards it.</summary>
 extern __unsafeIntrinsic void __drop();
+/// <summary>
+/// Pops the amount of items off the stack that the function takes.
+/// <para>Calls a native function.</para>
+/// </summary>
+/// <param name="nativeHash">The hash relating to the native.<para>This value must be an integer literal.</para></param>
+/// <param name="paramCount">The param count of the native.<para>This value must be an integer literal.</para></param>
+/// <param name="returnCount">The return count of the native.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __callNative(const uint nativeHash, const uint paramCount, const uint returnCount);
+/// <summary>
+/// Pops the amount of items off the stack that the function takes.
+/// <para>Calls a native function.</para>
+/// </summary>
+/// <param name="nativeHash64Part1">The upper 32 bits of the hash relating to the native.<para>This value must be an integer literal.</para></param>
+/// <param name="nativeHash64Part2">The lower 32 bits of the hash relating to the native.<para>This value must be an integer literal.</para></param>
+/// <param name="paramCount">The param count of the native.<para>This value must be an integer literal.</para></param>
+/// <param name="returnCount">The return count of the native.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __callNativePc(const uint nativeHash64Part1, const uint nativeHash64Part2, const uint paramCount, const uint returnCount);
+/// <summary>Returns a function.</summary>
+/// <param name="paramCount">The param count of the function.<para>This value must be an integer literal.</para></param>
+/// <param name="returnCount">The return count of the function.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __return(const uint paramCount, const uint returnCount);
+/// <summary>
+/// Pops one item off the stack. (void*)
+/// <para>Performs {*Stack.Top} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __pGet();
+/// <summary>
+/// Pops two items off the stack. (signed int32, void*)
+/// <para>Performs {*Stack.Top = (Stack.Top - 1)} as a signed int32.</para>
+/// </summary>
 extern __unsafeIntrinsic void __pSet();
+/// <summary>
+/// Pops two items off the stack. (void*, signed int32)
+/// <para>Performs {*(Stack.Top - 1) = Stack.Top} as a signed int32.</para>
+/// <para>Pushes Stack.Top on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __pPeekSet();
+/// <summary>
+/// Pops two items off the stack. (signed int32, void*)
+/// <para>Pushes items at the pointer Stack.Top for (Stack.Top - 1) on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __toStack();
+/// <summary>
+/// Pops two items off the stack. (signed int32, void*)
+/// <para>Pops off items from the stack for (Stack.Top - 1) into the pointer Stack.Top.</para>
+/// </summary>
 extern __unsafeIntrinsic void __fromStack();
+/// <summary>
+/// Pops two items off the stack. (signed int32, void*)
+/// <para>Performs {&Stack.Top[(Stack.Top - 1)]}.</para>>
+/// </summary>
+/// <param name="arraySize">The array item stack size.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __getArrayP(const uint arraySize);
+/// <summary>
+/// Pops two items off the stack. (signed int32, void*)
+/// <para>Performs {Stack.Top[(Stack.Top - 1)]}.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
+/// <param name="arraySize">The array item stack size.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __getArray(const uint arraySize);
+/// <summary>
+/// Pops two items off the stack. (signed int32, void*)
+/// <para>Performs {&Stack.Top[(Stack.Top - 1)] = (Stack.Top - 2)}.</para>
+/// </summary>
+/// <param name="arraySize">The array item stack size.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __setArray(const uint arraySize);
+/// <summary>
+/// Gets a local functon frame pointer by an index.
+/// <para>Pushes the frame pointer on the stack.</para>
+/// </summary>
+/// <param name="frameIndex">The index to get the frame at.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __getFrameP(const uint frameIndex);
+/// <summary>
+/// Gets a local functon frame pointer by it's name.
+/// <para>Pushes the frame pointer on the stack.</para>
+/// </summary>
+/// <param name="frameName">The name of the local function frame.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __getNamedFrameP(const char* frameName);
+/// <summary>
+/// Gets a local functon frame by an index.
+/// <para>Pushes the frame on the stack.</para>
+/// </summary>
+/// <param name="frameIndex">The index to get the frame at.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __getFrame(const uint frameIndex);
+/// <summary>
+/// Gets a local functon frame by it's name.
+/// <para>Pushes the frame on the stack.</para>
+/// </summary>
+/// <param name="frameName">The name of the local function frame.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __getNamedFrame(const char* frameName);
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Sets a local functon frame by an index.</para>
+/// </summary>
+/// <param name="frameIndex">The index to set the frame at.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __setFrame(const uint frameIndex);
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Sets a local functon frame by it's name.</para>
+/// </summary>
+/// <param name="frameName">The name of the local function frame.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __setNamedFrame(const char* frameName);
+/// <summary>
+/// Gets a static var pointer by an index.
+/// <para>Pushes the static var pointer on the stack.</para>
+/// </summary>
+/// <param name="staticIndex">The index to get the static at.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __getStaticP(const uint staticIndex);
+/// <summary>
+/// Gets a static var pointer by it's name.
+/// <para>Pushes the static var pointer on the stack.</para>
+/// </summary>
+/// <param name="StaticName">The name of the static var.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __getNamedStaticP(const char* StaticName);
+/// <summary>
+/// Gets a static var by an index.
+/// <para>Pushes the static var on the stack.</para>
+/// </summary>
+/// <param name="staticIndex">The index to get the static at.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __getStatic(const uint staticIndex);
+/// <summary>
+/// Gets a static var by it's name.
+/// <para>Pushes the static var on the stack.</para>
+/// </summary>
+/// <param name="StaticName">The name of the static var.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __getNamedStatic(const char* StaticName);
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Sets a static var by an index.</para>
+/// </summary>
+/// <param name="staticIndex">The index to set the static at.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __setStatic(const uint staticIndex);
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Sets a static var by it's name.</para>
+/// </summary>
+/// <param name="StaticName">The name of the static var.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __setNamedStatic(const char* StaticName);
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Performs {Stack.Top + value} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
+/// <param name="value">Right hand side of the math operation.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __addImm(const uint value);
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Performs {Stack.Top * value} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
+/// <param name="value">Right hand side of the math operation.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __multImm(const uint value);
+/// <summary>
+/// Pops one item off the stack. (void*)
+/// <para>Performs {Stack.Top + immediate * 4} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
+/// <param name="immediate">The immediate value of a pointer.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __getImmP(const uint immediate);
+/// <summary>
+/// Pops one item off the stack. (void*)
+/// <para>Performs {*(Stack.Top + immediate * 4)} as a signed int32.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
+/// <param name="immediate">The immediate value of a pointer.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __getImm(const uint immediate);
+/// <summary>
+/// Pops one item off the stack. (signed int32, void*)
+/// <para>Performs {*(Stack.Top + immediate * 4) = (Stack.Top - 1)} as a signed int32.</para>
+/// </summary>
+/// <param name="immediate">The immediate value of a pointer.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __setImm(const uint immediate);
+/// <summary>
+/// Gets a global var pointer by an index.
+/// <para>Pushes the global var pointer on the stack.</para>
+/// </summary>
+/// <param name="globalIndex">The index to get the global at.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __getGlobalP(const uint globalIndex);
+/// <summary>
+/// Gets a global var by an index.
+/// <para>Pushes the global var on the stack.</para>
+/// </summary>
+/// <param name="globalIndex">The index to get the global at.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __getGlobal(const uint globalIndex);
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Sets a global var by an index.</para>
+/// </summary>
+/// <param name="globalIndex">The index to set the global at.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __setGlobal(const uint globalIndex);
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Switchs on Stack.Top to the case.</para>
+/// <para>This function must have a label for every case.</para>
+/// </summary>
+/// <param name="Case">The case of the switch.<para>This value must be an integer literal.</para></param>
+/// <param name="label">The label of the switch to jump to if Stack.Top == Case.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __switch(const int Case, const char* label, ...);
+/// <summary>
+/// Performs {goto label;}.
+/// </summary>
+/// <param name="label">The label to jump to.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __jump(const char* label);
+/// <summary>
+/// Pops one item off the stack. (signed int32)
+/// <para>Performs {if(Stack.Top) goto label;}.</para>
+/// </summary>
+/// <param name="label">The label to jump to.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __jumpFalse(const char* label);
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {if((Stack.Top - 1) != Stack.Top) goto label;}.</para>
+/// </summary>
+/// <param name="label">The label to jump to.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __jumpNE(const char* label);
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {if((Stack.Top - 1) == Stack.Top) goto label;}.</para>
+/// </summary>
+/// <param name="label">The label to jump to.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __jumpEQ(const char* label);
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {if((Stack.Top - 1) &#60;= Stack.Top) goto label;}.</para>
+/// </summary>
+/// <param name="label">The label to jump to.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __jumpLE(const char* label);
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {if((Stack.Top - 1) &#60; Stack.Top) goto label;}.</para>
+/// </summary>
+/// <param name="label">The label to jump to.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __jumpLT(const char* label);
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {if((Stack.Top - 1) >= Stack.Top) goto label;}.</para>
+/// </summary>
+/// <param name="label">The label to jump to.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __jumpGE(const char* label);
+/// <summary>
+/// Pops two items off the stack. (signed int32, signed int32)
+/// <para>Performs {if((Stack.Top - 1) > Stack.Top) goto label;}.</para>
+/// </summary>
+/// <param name="label">The label to jump to.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __jumpGT(const char* label);
+/// <summary>
+/// Pops the amount of items off the stack that the function takes.
+/// <para>Calls a function.</para>
+/// </summary>
+/// <param name="functionName">The name of the function to call.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __call(const char* functionName);
+/// <summary>Pushes one char* to the stack.</summary>
+/// <param name="value">The string that will be referenced by the pointer.<para>This value must be an string literal.</para></param>
 extern __unsafeIntrinsic void __pushString(const char* value);
+/// <summary>
+/// Pops one item off the stack. (char*)
+/// <para>Performs {joaat(Stack.Top);}.</para>
+/// <para>Pushes one item on the stack.</para>
+/// </summary>
 extern __unsafeIntrinsic void __getHash();
+/// <summary>
+/// Pops two items off the stack. (char*, char*)
+/// <para>Copys (Stack.Top - 1) into Stack.Top for strLen bytes or until a 0 was hit in (Stack.Top - 1).</para>
+/// </summary>
+/// <param name="strLen">The length of the string destination buffer.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __strCopy(const uint strLen);
+/// <summary>
+/// Pops two items off the stack. (signed int32, char*)
+/// <para>Copys the string representation of (Stack.Top - 1) into Stack.Top for strLen bytes or until a 0 was hit in (Stack.Top - 1).</para>
+/// </summary>
+/// <param name="strLen">The length of the string destination buffer.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __iToS(const uint strLen);
+/// <summary>
+/// Pops two items off the stack. (char*, char*)
+/// <para>Appends (Stack.Top - 1) into Stack.Top for strLen bytes or until a 0 was hit in (Stack.Top - 1).</para>
+/// </summary>
+/// <param name="strLen">The length of the string destination buffer.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __strAdd(const uint strLen);
+/// <summary>
+/// Pops two items off the stack. (signed int32, char*)
+/// <para>appends the string representation of (Stack.Top - 1) into Stack.Top for strLen bytes or until a 0 was hit in (Stack.Top - 1).</para>
+/// </summary>
+/// <param name="strLen">The length of the string destination buffer.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __strAddI(const uint strLen);
+/// <summary>
+/// Pops three items off the stack. (signed int32, signed int32, void*)
+/// <para>Pops off items from the stack for {(Stack.Top - 2) * (Stack.Top - 1) / 4} into the pointer Stack.Top.</para>
+/// </summary>
 extern __unsafeIntrinsic void __memCopy();
+/// <summary>
+/// Pops one item off the stack. (void*) then pops the amount of items off the stack that the function takes.
+/// <para>Calls the function at the pointer Stack.Top.</para>
+/// </summary>
 extern __unsafeIntrinsic void __pCall();
 #pragma endregion //}
 
 #undef __intrinsic
 #undef __unsafeIntrinsic
 
+/// <summary>Creates a array with the first item as the size.</summary>
+/// <param name="type">The type of array to create.</param>
+/// <param name="name">The name of the array to create.</param>
+/// <param name="sizein">The size of the array to create.</param>
 #define CreateSizedArray(type, name, sizein, ...)\
 struct SizedArray\
 {\
@@ -558,14 +1028,26 @@ struct SizedArray\
 	type items[sizein];\
 } name = {.size = sizein, .items = {__VA_ARGS__}}
 
+/// <summary>Gets the size of the sized array.</summary>
+/// <param name="sizedarr">The pointer to the sized array.</param>
 #define GetSizedArraySize(sizedarr) (*(unsigned int*)sizedarr)
+
+/// <summary>Gets an item of the sized array.</summary>
+/// <param name="sizedarr">The pointer to the sized array.</param>
+/// <param name="type">The type of the sized array.</param>
+/// <param name="index">The index of the sized array item.</param>
 #define GetSizedArrayItem(sizedarr, type, index) (*(type*)((int*)sizedarr + 1 + index))
 
-
+/// <summary>Converts an array to a sized array.</summary>
+/// <param name="arr">The pointer to the array.</param>
+/// <param name="sizedarr">The pointer to the sized array.</param>
 #define ArrayToSizedArray(arr, sizedarr)\
 if(sizeof(arr) == sizeof(sizedarr.items))\
 	memcpy(sizedarr.items, arr, countof(arr));
 
+/// <summary>Converts an sized array to a array.</summary>
+/// <param name="sizedarr">The pointer to the sized array.</param>
+/// <param name="arr">The pointer to the array.</param>
 #define SizedArrayToArray(sizedarr, arr)\
 if(sizeof(arr) == sizeof(sizedarr.items))\
 	memcpy(arr, sizedarr.items, countof(sizedarr.items));
