@@ -1412,15 +1412,12 @@ CompileGTAIV::SignatureTypes CompileGTAIV::GetSignature()
 	switch (HLData->getBuildType())
 	{
 		case BT_GTAIV_TLAD:
-		return SignatureTypes::TLAD;
-		break;
+			return SignatureTypes::TLAD;
 		case BT_GTAIV_TBOGT:
-		return SignatureTypes::TBOGT;
-		break;
+			return SignatureTypes::TBOGT;
 		default:
 		case BT_GTAIV:
-		return SignatureTypes::GTAIV;
-		break;
+			return SignatureTypes::GTAIV;
 	}
 }
 void CompileGTAIV::SCOWrite(const char* path, CompileGTAIV::SCRFlags EncryptionCompressionLevel)

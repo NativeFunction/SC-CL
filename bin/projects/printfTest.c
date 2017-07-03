@@ -1,6 +1,9 @@
-#define MAX_FCONVERSION	255	/* largest possible real conversion 	*/
-#define MAX_EXPT	8	/* largest possible exponent field */
-#define MAX_FRACT	23	/* largest possible fraction field */
+//largest possible real conversion
+#define MAX_FCONVERSION 255
+//largest possible exponent field
+#define MAX_EXPT 8
+//largest possible fraction field
+#define MAX_FRACT 23
 
 #define TESTFLAG(x)	0
 
@@ -29,57 +32,9 @@ static float ModF(float f, float * iptr)
 #define	to_char(n)	((n) + '0')
 #define	to_digit(c)	((c) - '0')
 #define _isNan(arg)	((arg) != (arg))
-/*
-typedef union IEEEf2bits
-{
-	float	f;
-	struct
-	{
-		#if ENDIAN == ENDIAN_LITTLE
-		unsigned int	man : 23;
-		unsigned int	exp : 8;
-		unsigned int	sign : 1;
-		#else //ENDIAN_BIG
-		unsigned int	sign : 1;
-		unsigned int	exp : 8;
-		unsigned int	man : 23;
-		#endif
-	} bits;
-} IEEEf2bits;
-
-static int __finite(rtype f)
-{
-	IEEEf2bits ip;
-	ip.f = f;
-	return (ip.bits.exp != 0xFF);
-}
-*/
 
 static int __finite(float d)
 {
-	struct
-	{
-		int start;
-		unsigned Invulnerability : 1;
-		unsigned InfiniteDeadeye : 8;
-		unsigned FlyMod : 1;
-		unsigned BlazingGuns : 1;
-		unsigned InfiniteHorseStamina : 1;
-		unsigned ExplosiveWeapons : 1;
-		unsigned endi : 19;// 20;
-		int end;
-	} MenuToggles = {1000000, 1, 246, 0,0,0,0,20000,2000000};
-	
-	
-	MenuToggles.Invulnerability = ~MenuToggles.FlyMod;
-	MenuToggles.InfiniteDeadeye = MenuToggles.InfiniteDeadeye;
-	MenuToggles.BlazingGuns = true;
-	MenuToggles.InfiniteHorseStamina = false;
-	MenuToggles.start = 0;
-	MenuToggles.end = 0;
-	MenuToggles.endi = 0;
-
-
 	#if ENDIAN == ENDIAN_LITTLE
 	struct IEEEdp
 	{
@@ -179,7 +134,7 @@ static int cvt(float number, int prec, char *signp, int fmtch, char *startp, cha
 	}
 	switch (fmtch)
 	{
-		case 'f':
+		case 'f':{
 			/* reverse integer into beginning of buffer */
 			if (expcnt)
 				for (; ++p < endp; *t++ = *p);
@@ -205,79 +160,83 @@ static int cvt(float number, int prec, char *signp, int fmtch, char *startp, cha
 									   t - 1, (char)0, signp);
 			}
 			for (; prec--; *t++ = '0');
-			break;
-		case 'e':
-		case 'E':
-		eformat:	if (expcnt)
-		{
-			*t++ = *++p;
-			if (prec || TESTFLAG(ALTERNATE_FORM))
-				*t++ = '.';
-			/* if requires more precision and some integer left */
-			for (; prec && ++p < endp; --prec)
-				*t++ = *p;
-			/*
-			* if done precision and more of the integer component,
-			* round using it; adjust fract so we don't re-round
-			* later.
-			*/
-			if (!prec && ++p < endp)
-			{
-				fract = 0;
-				startp = _round(0, &expcnt, startp,
-							   t - 1, *p, signp);
-			}
-			/* adjust expcnt for digit in front of decimal */
-			--expcnt;
 		}
-					/* until first fractional digit, decrement exponent */
-					else if (fract)
+			break;
+		case 'e'://Scientific notation
+		case 'E':{
+		eformat:
+			if (expcnt)
+			{
+				*t++ = *++p;
+				if (prec || TESTFLAG(ALTERNATE_FORM))
+					*t++ = '.';
+				/* if requires more precision and some integer left */
+				for (; prec && ++p < endp; --prec)
+					*t++ = *p;
+				/*
+				* if done precision and more of the integer component,
+				* round using it; adjust fract so we don't re-round
+				* later.
+				*/
+				if (!prec && ++p < endp)
+				{
+					fract = 0;
+					startp = _round(0, &expcnt, startp,
+								   t - 1, *p, signp);
+				}
+				/* adjust expcnt for digit in front of decimal */
+				--expcnt;
+			}
+			else if (fract)/* until first fractional digit, decrement exponent */
+			{
+				/* adjust expcnt for digit in front of decimal */
+				for (expcnt = -1;; --expcnt)
+				{
+					fract = ModF(fract * 10, &tmp);
+					if (tmp)
+						break;
+				}
+				*t++ = to_char((int)tmp);
+				if (prec || TESTFLAG(ALTERNATE_FORM))
+					*t++ = '.';
+			}
+			else
+			{
+				*t++ = '0';
+				if (prec || TESTFLAG(ALTERNATE_FORM))
+					*t++ = '.';
+			}
+			
+			
+			/* if requires more precision and some fraction left */
+			if (fract)
+			{
+				if (prec)
+					do
 					{
-						/* adjust expcnt for digit in front of decimal */
-						for (expcnt = -1;; --expcnt)
-						{
-							fract = ModF(fract * 10, &tmp);
-							if (tmp)
-								break;
-						}
+						fract = ModF(fract * 10, &tmp);
 						*t++ = to_char((int)tmp);
-						if (prec || TESTFLAG(ALTERNATE_FORM))
-							*t++ = '.';
-					}
-					else
-					{
-						*t++ = '0';
-						if (prec || TESTFLAG(ALTERNATE_FORM))
-							*t++ = '.';
-					}
-					/* if requires more precision and some fraction left */
+					} while (--prec && fract);
 					if (fract)
-					{
-						if (prec)
-							do
-							{
-								fract = ModF(fract * 10, &tmp);
-								*t++ = to_char((int)tmp);
-							} while (--prec && fract);
-							if (fract)
-								startp = _round(fract, &expcnt, startp,
-											   t - 1, (char)0, signp);
-					}
-					/* if requires more precision */
-					for (; prec--; *t++ = '0');
+						startp = _round(fract, &expcnt, startp,
+									   t - 1, (char)0, signp);
+			}
+			/* if requires more precision */
+			for (; prec--; *t++ = '0');
 
-					/* unless alternate flag, trim any g/G format trailing 0's */
-					if (gformat && !TESTFLAG(ALTERNATE_FORM))
-					{
-						while (t > startp && *--t == '0');
-						if (*t == '.')
-							--t;
-						++t;
-					}
-					t = exponent(t, expcnt, fmtch);
-					break;
-		case 'g':
-		case 'G':
+			/* unless alternate flag, trim any g/G format trailing 0's */
+			if (gformat && !TESTFLAG(ALTERNATE_FORM))
+			{
+				while (t > startp && *--t == '0');
+				if (*t == '.')
+					--t;
+				++t;
+			}
+			t = exponent(t, expcnt, fmtch);
+		}
+			break;
+		case 'g'://shortest representation
+		case 'G':{
 			/* a precision of 0 is treated as a precision of 1. */
 			if (!prec)
 				++prec;
@@ -349,6 +308,8 @@ static int cvt(float number, int prec, char *signp, int fmtch, char *startp, cha
 				if (*t != '.')
 					++t;
 			}
+		}
+			break;
 	}
 	return (t - startp);
 }

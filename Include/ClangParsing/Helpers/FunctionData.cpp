@@ -1304,7 +1304,6 @@ void FunctionData::moveInto(std::vector<Opcode*>& source)
 
 void FunctionData::addOpAdd()
 {
-
 	assert(Instructions.size() && "Instruction stack empty, cant add Add Instruction");
 	int result;
 	if (getOptLevel() > OptimisationLevel::OL_None && tryPopInt(result))

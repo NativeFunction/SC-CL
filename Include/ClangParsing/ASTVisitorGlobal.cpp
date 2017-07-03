@@ -103,7 +103,7 @@ bool SCCL::ASTVisitorGlobal::VisitDecl(Decl *D)
 			else
 			{
 				bool isLocal = globalVarDecl->isStaticLocal();
-				//TODO: this will have to catch exturning vars
+				//TODO: this will have to catch externing vars
 				if ((!isLocal && scriptData.findStatic(dumpName(cast<NamedDecl>(D))) == NULL) || (isLocal && scriptData.findLocalStatic(globalVarDecl->getLocation().getRawEncoding()) == NULL))
 				{
 					string varName = dumpName(cast<NamedDecl>(D));

@@ -315,6 +315,8 @@ namespace SCCL
 						Throw("Function pointer \"" + key + "\" not found");
 				}
 			}
+			//else
+				//Throw("Could not find decl", TheRewriter, declref->getDecl()->getSourceRange());
 		}
 		AddInstructionConditionally(isStackCpy, ToStack);
 	}
@@ -5271,7 +5273,7 @@ namespace SCCL
 					{
 						TEST(typeSize == 1, "size larger then size for pget (GetBitField)", TheRewriter, ND->getSourceRange());
 						AddInstruction(PGet);
-						AddInstruction(GetBitField, selectedBitField.offset, selectedBitField.width, scriptData.getBuildType());
+						AddInstruction(GetBitField, selectedBitField.offset, selectedBitField.width, scriptData.getBuildType(), scriptData.getBuildPlatform());
 					}
 					else
 					{
@@ -5294,7 +5296,7 @@ namespace SCCL
 					{
 						LocalVariables.addLevel();
 						size_t index[2] = { LocalVariables.addDecl("__bitset_set_temp_ptr", 1), LocalVariables.addDecl("__bitset_set_temp_val", 1) };
-						AddInstruction(SetBitField, selectedBitField.offset, selectedBitField.width, index, scriptData.getBuildType());
+						AddInstruction(SetBitField, selectedBitField.offset, selectedBitField.width, index, scriptData.getBuildType(), scriptData.getBuildPlatform());
 						LocalVariables.removeLevel();
 
 					}

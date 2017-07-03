@@ -108,7 +108,7 @@ void Script::initializeEntryFunction()
 			case BT_GTAIV_TBOGT:
 			case BT_GTAIV:
 			entryFunction->addOpPushString(getScriptName());//no native for getting the name of a script at runtime
-			entryFunction->addOpNative("get_number_of_instances_of_streamed_script", 1, 1);// iv native takes a string
+			entryFunction->addOpNative("get_number_of_instances_of_streamed_script", (getBuildPlatform() == P_PC ? 0x5A1C52C7 : JoaatConst("get_number_of_instances_of_streamed_script")), 1, 1);// iv native takes a string
 			entryFunction->addOpPushInt(1);
 			entryFunction->addOpJumpGT("__builtin__singleton__");
 			Utils::System::Warn("Singleton scripts for GTA IV only work when you dont change the name of the output sco file");

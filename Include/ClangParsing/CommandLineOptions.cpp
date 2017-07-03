@@ -47,7 +47,7 @@ namespace SCCL
 	));
 
 	opt<ObfLevel> Option_ObfuscationLevel(
-		desc("Choose obfuscation level:"),
+		desc("Choose obfuscation level: (This option is experimental use at your own risk)"),
 		cat(CompilerOptions),
 		values(
 		clEnumValN(obf_string, "Fs", "Obfuscate string table - GTA V Only"),

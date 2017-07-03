@@ -319,12 +319,12 @@ extern __intrinsic void bit_reset(int* address, const byte bitIndex);
 /// <returns></returns>
 extern __intrinsic void bit_flip(int* address, const byte bitIndex);
 
-/// <summary>Gets the byte at an address of a int32 in big endian.</summary>
+/// <summary>Gets the byte at an address in big endian.</summary>
 /// <param name="addr">The address of the value you want to get.</param>
-/// <returns>The the byte at an address.</returns>
+/// <returns>The the byte at an address in big endian.</returns>
 extern __intrinsic unsigned char getByte(void* addr);
 
-/// <summary>Sets the byte at an address of a int32 in big endian.</summary>
+/// <summary>Sets the byte at an address.</summary>
 /// <param name="addr">The address of the value you want to set.</param>
 /// <param name="value">The value you want to set.</param>
 extern __intrinsic void setByte(void* addr, unsigned char value);
@@ -980,13 +980,13 @@ extern __unsafeIntrinsic void __pushString(const char* value);
 extern __unsafeIntrinsic void __getHash();
 /// <summary>
 /// Pops two items off the stack. (char*, char*)
-/// <para>Copys (Stack.Top - 1) into Stack.Top for strLen bytes or until a 0 was hit in (Stack.Top - 1).</para>
+/// <para>Copies (Stack.Top - 1) into Stack.Top for strLen bytes or until a 0 was hit in (Stack.Top - 1).</para>
 /// </summary>
 /// <param name="strLen">The length of the string destination buffer.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __strCopy(const uint strLen);
 /// <summary>
 /// Pops two items off the stack. (signed int32, char*)
-/// <para>Copys the string representation of (Stack.Top - 1) into Stack.Top for strLen bytes or until a 0 was hit in (Stack.Top - 1).</para>
+/// <para>Copies the string representation of (Stack.Top - 1) into Stack.Top for strLen bytes or until a 0 was hit in (Stack.Top - 1).</para>
 /// </summary>
 /// <param name="strLen">The length of the string destination buffer.<para>This value must be an integer literal.</para></param>
 extern __unsafeIntrinsic void __iToS(const uint strLen);

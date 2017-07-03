@@ -187,7 +187,7 @@ int ModNegitive(int a, int b);
 /// <returns>The quaternion result.</returns>
 quaternion EulerToQuaternion(vector3 euler);
 
-/// <summary>Applys slow rotation to a look position eventualy converting it to endPos.</summary>
+/// <summary>Applies slow rotation to a look position eventualy converting it to endPos.</summary>
 /// <param name="pos">The current look position.</param>
 /// <param name="pos">The end look position.</param>
 /// <returns>The updated look position.</returns>

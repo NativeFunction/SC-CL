@@ -199,8 +199,8 @@ public:
 	*/
 	void addOpSetBitStack(uint8_t bitIndex, size_t storageIndex)
 	{
-		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
-		assert(Instructions.size() && "cannot add bitset to empty instruction stack");
+		TEST(bitIndex >= 0 && bitIndex <= 31, "bitindex must be between 0 and 31");
+		TEST(Instructions.size(), "cannot add bitset to empty instruction stack");
 
 		
 		addOpSetFrame(storageIndex);
@@ -231,16 +231,31 @@ public:
 	1: var value
 	-------------------
 	*/
-	void addOpGetBitField(uint32_t bitIndex, uint32_t bitCount, int buildType)
+	void addOpGetBitField(uint32_t bitIndex, uint32_t bitCount, BuildType BT, Platform P)
 	{
-		assert(bitIndex + bitCount >= 1 && bitIndex + bitCount <= 32 && "bitindex + bitCount must be between 1 and 32");
-		assert(Instructions.size() && "cannot add bitset to empty instruction stack");
+		TEST(bitIndex + bitCount >= 1 && bitIndex + bitCount <= 32, "bitindex + bitCount must be between 1 and 32");
+		TEST(Instructions.size(), "cannot add bitset to empty instruction stack");
 		
-		if (buildType == BT_GTAIV_TLAD || buildType == BT_GTAIV_TBOGT || buildType == BT_GTAIV || buildType == BT_GTAV)
+		if (BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT || BT == BT_GTAIV || BT == BT_GTAV)
 		{
 			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, bitIndex));
 			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, Utils::Bitwise::bitCountToIntEnd(bitIndex, bitCount)));
-			addOpNative(JoaatConst("get_bits_in_range"), 3, 1);
+			
+			if (P == P_PC)
+			{
+				if (BT == BT_GTAV)
+				{
+					addOpNative(0x53158863FCC0893A, 3, 1);
+				}
+				else //GTAIV
+				{
+					addOpNative(0x58AE7C1D, 3, 1);
+				}
+			}
+			else
+			{
+				addOpNative(JoaatConst("get_bits_in_range"), 3, 1);
+			}
 		}
 		else
 		{
@@ -263,17 +278,17 @@ public:
 	-------------------
 	NOTE: this function should be in its own scope
 	*/
-	void addOpSetBitField(int bitIndex, int bitCount, size_t storageIndex[2], int buildType)
+	void addOpSetBitField(int bitIndex, int bitCount, size_t storageIndex[2], BuildType BT, Platform P)
 	{
-		assert(bitCount < 32 && "set_bits_in_range is only valid for 31 bits");
-		assert(bitIndex + bitCount >= 1 && bitIndex + bitCount <= 32 && "bitindex + bitCount must be between 1 and 31");
-		assert(Instructions.size() >= 2 && "cannot add bitset to empty instruction stack");
+		TEST(bitCount < 32, "set_bits_in_range is only valid for 31 bits");
+		TEST(bitIndex + bitCount >= 1 && bitIndex + bitCount <= 32 , "bitindex + bitCount must be between 1 and 31");
+		TEST(Instructions.size() >= 2, "cannot add bitset to empty instruction stack");
 
 		addOpSetFrame(storageIndex[0]);//ptr
 		pushComment("__bitset_set_temp_ptr");
 		addOpSetFrame(storageIndex[1]);//value
 
-		if (buildType == BT_GTAIV_TLAD || buildType == BT_GTAIV_TBOGT || buildType == BT_GTAIV || buildType == BT_GTAV)
+		if (BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT || BT == BT_GTAIV || BT == BT_GTAV)
 		{
 			addOpGetFrame(storageIndex[0]);
 			pushComment("__bitset_set_temp_ptr");
@@ -281,7 +296,22 @@ public:
 			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, Utils::Bitwise::bitCountToIntEnd(bitIndex, bitCount)));
 			addOpGetFrame(storageIndex[1]);
 			pushComment("__bitset_set_temp_val");
-			addOpNative(JoaatConst("set_bits_in_range"), 4, 0);
+
+			if (P == P_PC)
+			{
+				if (BT == BT_GTAV)
+				{
+					addOpNative(0x8EF07E15701D61ED, 4, 0);
+				}
+				else //GTAIV
+				{
+					addOpNative(0x14DD5F87, 4, 0);
+				}
+			}
+			else
+			{
+				addOpNative(JoaatConst("set_bits_in_range"), 4, 0);
+			}
 		}
 		else
 		{
@@ -323,8 +353,8 @@ public:
 	*/
 	void addOpAddBitField(int bitIndex, int bitCount)
 	{
-		assert(bitIndex + bitCount >= 1 && bitIndex + bitCount <= 32 && "bitindex + bitCount must be between 1 and 32");
-		assert(Instructions.size() >= 2 && "cannot add bitset to empty instruction stack");
+		TEST(bitIndex + bitCount >= 1 && bitIndex + bitCount <= 32, "bitindex + bitCount must be between 1 and 32");
+		TEST(Instructions.size() >= 2, "cannot add bitset to empty instruction stack");
 
 		Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, Utils::Bitwise::revbitmask(bitCount)));
 		Instructions.push_back(new Opcode(OK_And));
@@ -334,7 +364,7 @@ public:
 	}
 	void addOpIsBitSet(uint8_t bitIndex)
 	{
-		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
+		TEST(bitIndex >= 0 && bitIndex <= 31, "bitindex must be between 0 and 31");
 		int temp;
 		if (tryPopInt(temp))
 		{
@@ -349,8 +379,8 @@ public:
 	}
 	void addOpBitSet(uint8_t bitIndex)
 	{
-		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
-		assert(Instructions.size() && "cannot add bitset to empty instruction stack");
+		TEST(bitIndex >= 0 && bitIndex <= 31, "bitindex must be between 0 and 31");
+		TEST(Instructions.size(), "cannot add bitset to empty instruction stack");
 		Opcode* back = Instructions.back();
 		switch(back->getKind())
 		{
@@ -390,8 +420,8 @@ public:
 	}
 	void addOpBitReset(uint8_t bitIndex)
 	{
-		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
-		assert(Instructions.size() && "cannot add bitreset to empty instruction stack");
+		TEST(bitIndex >= 0 && bitIndex <= 31, "bitindex must be between 0 and 31");
+		TEST(Instructions.size(), "cannot add bitreset to empty instruction stack");
 		Opcode* back = Instructions.back();
 		switch (back->getKind())
 		{
@@ -431,8 +461,8 @@ public:
 	}
 	void addOpBitFlip(uint8_t bitIndex)
 	{
-		assert(bitIndex >= 0 && bitIndex <= 31 && "bitindex must be between 0 and 31");
-		assert(Instructions.size() && "cannot add bitflip to empty instruction stack");
+		TEST(bitIndex >= 0 && bitIndex <= 31, "bitindex must be between 0 and 31");
+		TEST(Instructions.size(), "cannot add bitflip to empty instruction stack");
 		Opcode* back = Instructions.back();
 		switch (back->getKind())
 		{

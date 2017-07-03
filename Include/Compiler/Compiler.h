@@ -640,8 +640,8 @@ protected:
 	virtual void SetImm() = 0;
 	virtual void GoToStack() = 0;
 	virtual void AddJumpTable() = 0;
-	virtual void Shift_Left() { CallNative(JoaatConst("shift_left"), 2, 1); }//Override: GTAVPC
-	virtual void Shift_Right() { CallNative(JoaatConst("shift_right"), 2, 1); }//Override: GTAVPC
+	virtual void Shift_Left() { CallNative(JoaatConst("shift_left"), 2, 1); }//Override: GTAVPC, GTAIVPC
+	virtual void Shift_Right() { CallNative(JoaatConst("shift_right"), 2, 1); }//Override: GTAVPC, GTAIVPC
 	
 	#pragma endregion
 
@@ -891,7 +891,11 @@ private:
 	virtual void FAddImm() override;
 	virtual void FMultImm() override;
 
-	void GetHash() override { CallNative(JoaatConst("get_hash_key"), 1, 1); };
+	
+	void GetHash() override { CallNative(HLData->getBuildPlatform() == P_PC ? 0x68FF7165 : JoaatConst("get_hash_key"), 1, 1); };
+	void Shift_Left() override { CallNative(HLData->getBuildPlatform() == P_PC ? 0x102A0A6C : JoaatConst("shift_left"), 2, 1); };
+	void Shift_Right() override { CallNative(HLData->getBuildPlatform() == P_PC ? 0x64DD173C : JoaatConst("shift_right"), 2, 1); };
+
 	void Call() override;
 	void GetImmPStack() override;
 	void GetImm() override;
