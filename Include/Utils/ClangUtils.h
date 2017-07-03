@@ -50,7 +50,7 @@ private:
 };
 
 #ifdef _DEBUG
-#define TEST(cond, reasonStr) assert((cond) && (reasonStr))
+#define TEST(cond, reasonStr, ...) assert((cond) && (reasonStr))
 #else
 #define TEST(cond, reasonStr, ...) if (!(cond)) Utils::System::Throw(reasonStr, __VA_ARGS__)
 #endif
