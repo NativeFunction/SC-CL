@@ -315,8 +315,8 @@ namespace SCCL
 						Throw("Function pointer \"" + key + "\" not found");
 				}
 			}
-			//else
-				//Throw("Could not find decl", TheRewriter, declref->getDecl()->getSourceRange());
+			else
+				Throw("Could not find decl", TheRewriter, declref->getDecl()->getSourceRange());
 		}
 		AddInstructionConditionally(isStackCpy, ToStack);
 	}

@@ -18,6 +18,7 @@ private:
 	std::vector<FunctionData*> _referencedFunctions;
 	std::string _name;
 	bool _isDynamic = false;
+	bool _isPrototype = false;
 
 	void cleanUpDynamic()
 	{
@@ -68,6 +69,10 @@ public:
 		assert(isUsed() && "cannot get index of unused static");
 		return _index;
 	}
+	bool isPrototype()const
+	{
+		return _isPrototype;
+	}
 	bool isDynamic()const
 	{
 		return _isDynamic;
@@ -75,6 +80,10 @@ public:
 	void setUsed(Script& scriptBase);
 	void setUsedStaticInd(Script* scriptBase);
 	
+	void setPrototype(bool value)
+	{
+		_isPrototype = value;
+	}
 	void setDynamic()
 	{
 		_isDynamic = true;

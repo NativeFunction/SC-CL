@@ -187,13 +187,16 @@ public:
 
 		UsedStatics.push_back(staticData);
 	}
-	void addStaticNewDecl(const std::string& name, int size, bool isStaticStorage)
+	void addStaticNewDecl(const std::string& name, int size, bool isStaticStorage, bool isPrototype = false)
 	{
 		uint32_t NameHash = Utils::Hashing::JoaatCased(name);
 		if (isStaticStorage)
 			currentStatic = staticMapStatic.insert({ NameHash , std::make_shared<StaticData>(name, size) })->second.get();
 		else
+		{
 			currentStatic = staticMapExtern.insert({ NameHash , std::make_shared<StaticData>(name, size) })->second.get();
+			currentStatic->setPrototype(isPrototype);
+		}
 	}
 	void addStaticLocalNewDecl(const std::string& name, int size, unsigned sourceLoc){
 		currentStatic = staticLocals.insert({ sourceLoc, std::make_shared<StaticData>(name, size) })->second.get();
@@ -205,6 +208,7 @@ public:
 		}
 		return nullptr;
 	}
+	void setCurrentStatic(StaticData* staticData) { currentStatic = staticData; }
 	StaticData* getCurrentStatic()const{ return currentStatic; }
 	std::vector<uint8_t>& getStaticTable(){ return staticTable; }
 	

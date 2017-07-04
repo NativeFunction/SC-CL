@@ -55,7 +55,7 @@
 #define unsafe
 #endif
 
-#if PLATFORM == PLATFORM_PC
+#if PLATFORM == PLATFORM_PC && TARGET == TARGET_GTAV
 #define int long long
 #define float double
 #endif

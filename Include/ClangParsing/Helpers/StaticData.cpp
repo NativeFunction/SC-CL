@@ -26,6 +26,9 @@ void StaticData::setUsedStaticInd(Script* scriptBase)
 
 void StaticData::setUsed(Script & scriptBase)
 {
+	if (isPrototype())
+		Utils::System::Throw("Implentation of " + getName() + " not found");
+
 	if (!isUsed())
 	{
 		_index = scriptBase.allocateStatic(getSize());
@@ -127,6 +130,11 @@ const string StaticData::getStringOutput(Endian endian, uint8_t stackWidth)const
 {
 	assert(isUsed() && "Cant Display Unused Static Info");
 	string output = "\r\nSetStaticName " + to_string(_index) + " " + getName();
+
+	//add this error to compiler 
+	if (isPrototype())
+		Utils::System::Throw("Implentation of " + getName() + " not found for asm output");
+
 	for (size_t i = 0; i <getSize();i++)
 	{
 		if (stackWidth == 4)

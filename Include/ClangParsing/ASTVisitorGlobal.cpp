@@ -104,7 +104,11 @@ bool SCCL::ASTVisitorGlobal::VisitDecl(Decl *D)
 			{
 				bool isLocal = globalVarDecl->isStaticLocal();
 				//TODO: this will have to catch externing vars
-				if ((!isLocal && scriptData.findStatic(dumpName(cast<NamedDecl>(D))) == NULL) || (isLocal && scriptData.findLocalStatic(globalVarDecl->getLocation().getRawEncoding()) == NULL))
+
+				StaticData* globalStatic = scriptData.findStatic(dumpName(cast<NamedDecl>(D)));
+
+				if ((!isLocal && globalStatic == NULL) ||
+					(isLocal && scriptData.findLocalStatic(globalVarDecl->getLocation().getRawEncoding()) == NULL))
 				{
 					string varName = dumpName(cast<NamedDecl>(D));
 
@@ -119,8 +123,11 @@ bool SCCL::ASTVisitorGlobal::VisitDecl(Decl *D)
 						case SC_Extern:
 							if (initializer)
 								scriptData.addStaticNewDecl(varName, getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())), false);
-							else
-								return true;//this is prototyped
+							else//this is prototyped
+							{
+								scriptData.addStaticNewDecl(varName, getSizeFromBytes(getSizeOfType(globalVarDecl->getType().getTypePtr())), false, true);
+								return true;
+							}
 							break;
 						case SC_Static:
 							if (globalVarDecl->isStaticLocal())
@@ -172,7 +179,52 @@ bool SCCL::ASTVisitorGlobal::VisitDecl(Decl *D)
 				}
 				else
 				{
-					if (globalVarDecl->getStorageClass() != SC_Extern)
+					if (!isLocal && globalStatic != NULL && globalStatic->isPrototype())
+					{
+						string varName = dumpName(cast<NamedDecl>(D));
+						const Expr *initializer = globalVarDecl->getAnyInitializer();
+
+						switch (globalVarDecl->getStorageClass())
+						{
+							case SC_None:
+								globalStatic->setPrototype(false);
+								scriptData.setCurrentStatic(globalStatic);
+								break;
+							case SC_Extern:
+								return true;
+							case SC_Static:
+								Throw("Unhandled static declaration with previous extern declaration", TheRewriter, globalVarDecl->getSourceRange());
+							default:
+								Throw("Unhandled Storage Class", TheRewriter, globalVarDecl->getSourceRange());
+						}
+
+						resetIntIndex();
+						savedType = nullptr;
+
+						isCurrentExprEvaluable = true;
+						doesCurrentValueNeedSet = false;
+
+						if (initializer)
+						{
+							ParseLiteral(initializer, false, true);
+
+							if (doesCurrentValueNeedSet)
+							{
+								globalStatic->addOpSetThisStatic(scriptData);
+							}
+							globalStatic->fillCapacity(scriptData.getStackWidth());
+						}
+						else
+						{
+							if (Option_EntryFunctionPadding)
+							{
+								globalStatic->addOpDynamicNullThisStatic(scriptData);
+							}
+							globalStatic->fillCapacity(scriptData.getStackWidth());
+						}
+
+					}
+					else if (globalVarDecl->getStorageClass() != SC_Extern)
 						Throw("Var " + dumpName(cast<NamedDecl>(D)) + " is already defined", TheRewriter, D->getLocStart());
 				}
 
