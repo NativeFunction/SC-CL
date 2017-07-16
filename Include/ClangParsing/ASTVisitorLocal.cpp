@@ -470,7 +470,7 @@ namespace SCCL
 		const CastExpr *cast;
 		if ((cast = dyn_cast<CastExpr>(e)) && cast->getCastKind() == CK_ArrayToPointerDecay)
 		{
-			return isa<StringLiteral>(cast->getSubExpr());
+			return isa<clang::StringLiteral>(cast->getSubExpr());
 		}
 		return false;
 	}
@@ -482,9 +482,9 @@ namespace SCCL
 			const ImplicitCastExpr *icast = cast<const ImplicitCastExpr>(expr);
 			expr = (Expr*)icast->getSubExpr();
 		}
-		if (isa<StringLiteral>(expr))
+		if (isa<clang::StringLiteral>(expr))
 		{
-			outStr = cast<const StringLiteral>(expr)->getString().str();
+			outStr = cast<const clang::StringLiteral>(expr)->getString().str();
 			return true;
 		}
 		return false;
@@ -3297,9 +3297,9 @@ namespace SCCL
 			}
 
 		}
-		else if (isa<StringLiteral>(e))
+		else if (isa<clang::StringLiteral>(e))
 		{
-			string str = cast<const StringLiteral>(e)->getString().str();
+			string str = cast<const clang::StringLiteral>(e)->getString().str();
 			if (isLtoRValue)
 			{
 				if (isArrToPtrDecay)
@@ -5660,9 +5660,9 @@ namespace SCCL
 				{
 					if (const Expr* arg = ueTrait->getArgumentExpr()->IgnoreParens())
 					{
-						if (isa<StringLiteral>(arg))
+						if (isa<clang::StringLiteral>(arg))
 						{
-							string str = cast<StringLiteral>(arg)->getString().str();
+							string str = cast<clang::StringLiteral>(arg)->getString().str();
 							AddInstructionComment(PushInt, "Joaat(\"" + str + "\")", Utils::Hashing::Joaat(str.c_str()));
 							if (!isLtoRValue)
 							{
