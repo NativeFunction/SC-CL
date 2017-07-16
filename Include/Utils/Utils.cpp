@@ -257,7 +257,7 @@ namespace Utils {
 		{
 			if (!HasxCompressLoaded)
 			{
-				xCompressDLL = LoadLibrary("xcompress32.dll");
+				xCompressDLL = LoadLibraryA("xcompress32.dll");
 
 				if (xCompressDLL != NULL)
 				{
