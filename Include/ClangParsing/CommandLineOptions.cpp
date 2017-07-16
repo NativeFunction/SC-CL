@@ -110,6 +110,11 @@ namespace SCCL
 		cat(CompilerOptions)
 	);
 
+	opt<bool> Option_NoRSC7(
+		"no-rsc7", desc("Removes the RSC7 header from the output (GTAV)"),
+		cat(CompilerOptions)
+	);
+
 	opt<std::string> Option_OutputDirectory(
 		"out-dir", desc("Specify the output directory of the script"),
 		ValueRequired,
@@ -126,7 +131,7 @@ namespace SCCL
 	#pragma region Bool_Group
 	//Grouping is for multi bool set support ex: -snb
 	opt<bool> Option_Singleton(
-		"s", desc("Limits script to one instance on runtime (GTAV)"),
+		"s", desc("Limits script to one instance on runtime (GTAV | GTAIV)"),
 		Grouping,
 		cat(CompilerOptions)
 	);

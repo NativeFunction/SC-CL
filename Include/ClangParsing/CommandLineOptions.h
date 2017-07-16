@@ -41,6 +41,7 @@ namespace SCCL
 
 	extern llvm::cl::opt<bool> Option_EmitAsm;
 	extern llvm::cl::opt<bool> Option_AsmOnly;
+	extern llvm::cl::opt<bool> Option_NoRSC7;
 
 	extern llvm::cl::opt<std::string> Option_OutputDirectory;
 

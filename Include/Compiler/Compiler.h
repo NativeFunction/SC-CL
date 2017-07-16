@@ -12,6 +12,7 @@
 #include "ClangParsing/Helpers/FunctionData.h"
 #include "ClangParsing/Helpers/Script.h"
 #include "Utils/Utils.h"
+#include "ClangParsing/CommandLineOptions.h"
 
 #pragma region Collections
 class PageCollection{
@@ -1059,7 +1060,7 @@ public:
 		switch (HLData->getBuildType())
 		{
 			case BT_GTAV:
-			XSCWrite((outDirectory + HLData->getBuildFileName()).data());
+			XSCWrite((outDirectory + HLData->getBuildFileName()).data(), !SCCL::Option_NoRSC7);
 			break;
 			default:
 				TEST(false, "Incompatible build type for GTAV");
@@ -1205,7 +1206,7 @@ public:
 	void Compile(const std::string& outDirectory) override
 	{
 		BuildTablesCheckEnc();
-		YSCWrite((outDirectory + HLData->getBuildFileName()).data());
+		YSCWrite((outDirectory + HLData->getBuildFileName()).data(), !SCCL::Option_NoRSC7);
 	}
 private:
 
