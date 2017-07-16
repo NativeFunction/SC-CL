@@ -1,5 +1,5 @@
 =====================================================================
-llvm_src\tools\clang\lib\SemaSemaDeclAttr.cpp
+llvm_src\tools\clang\lib\Sema\SemaDeclAttr.cpp
 =====================================================================
 
 Function additions
@@ -137,7 +137,7 @@ case AttributeList::AT_UnsafeFunc:
 llvm_src\tools\clang\include\clang\Basic\DiagnosticSemaKinds.td
 =====================================================================
 
-Custom defines
+CategoryName = "Semantic Issue" additions
 ----------------------------------------
 
 // joaat_error
@@ -167,7 +167,7 @@ def err_global_var_index_out_of_range : Error<
 llvm_src\tools\clang\include\clang\Basic\Attr.td
 =====================================================================
 
-Custom defines
+under Attributes begin here comment
 ----------------------------------------
 
 def IntrinsicFunc : InheritableAttr {
@@ -196,3 +196,168 @@ def GlobalVariable : InheritableAttr {
   let Documentation = [Undocumented];
   let Args = [UnsignedArgument<"index">];
 }
+
+=====================================================================
+llvm_src\tools\clang\include\clang\Basic\TypeTraits.h
+=====================================================================
+
+in the enum UnaryExprOrTypeTrait add to the bottom
+----------------------------------------
+
+UETT_JenkinsHash
+
+=====================================================================
+llvm_src\tools\clang\include\clang\Basic\TokenKinds.def
+=====================================================================
+
+bottom of C99 6.4.1: Keywords add
+----------------------------------------
+
+KEYWORD(joaat                       , KEYALL)
+KEYWORD(hashof                      , KEYALL)
+
+=====================================================================
+llvm_src\tools\clang\lib\AST\ExprConstant.cpp
+=====================================================================
+
+in bool IntExprEvaluator::VisitUnaryExprOrTypeTraitExpr in switch E->getKind() add case
+----------------------------------------
+
+  case UETT_JenkinsHash: {
+	  const Expr* arg = E->getArgumentExpr()->IgnoreParens();
+	  if (isa<StringLiteral>(arg))
+	  {
+		  std::string str = cast<StringLiteral>(arg)->getString().str();
+		  char *key = (char*)str.c_str();
+		  unsigned int hash, i;
+		  for(hash = i = 0;; i++)
+		  {
+			  if(key[i] == '\0')
+				  break;
+			  hash += tolower(key[i]);
+			  hash += (hash << 10);
+			  hash ^= (hash >> 6);
+		  }
+		  hash += (hash << 3);
+		  hash ^= (hash >> 11);
+		  hash += (hash << 15);
+		  return Success(llvm::APInt(32, (int)hash, true), E);
+	  }
+	  return false;
+  }
+
+=====================================================================
+llvm_src\tools\clang\lib\AST\ItaniumMangle.cpp
+=====================================================================
+
+add under case UETT_OpenMPRequiredSimdAlign
+----------------------------------------
+
+case UETT_JenkinsHash:
+		Out << 'j';
+		break;
+		
+=====================================================================
+llvm_src\tools\clang\lib\AST\StmtPrinter.cpp
+=====================================================================
+
+add under case UETT_OpenMPRequiredSimdAlign
+----------------------------------------
+	
+  case UETT_JenkinsHash:
+	  OS << "joaat";
+	  break;
+
+=====================================================================
+llvm_src\tools\clang\lib\AST\ASTDumper.cpp
+=====================================================================
+
+add under case UETT_OpenMPRequiredSimdAlign
+----------------------------------------
+	
+  case UETT_JenkinsHash:
+	  OS << "joaat";
+	  break;
+	  
+=====================================================================
+llvm_src\tools\clang\lib\CodeGen\CGExprScalar.cpp
+=====================================================================
+
+add under UETT_OpenMPRequiredSimdAlign
+----------------------------------------
+	  
+else if (E->getKind() == UETT_JenkinsHash){
+	  const Expr * arg = E->getArgumentExpr()->IgnoreParens();
+	  if (isa<StringLiteral>(arg))
+	  {
+		  std::string str = cast<StringLiteral>(arg)->getString().str();
+		  char *key = (char*)str.c_str();
+		  unsigned int hash, i;
+		  for(hash = i = 0;; i++)
+		  {
+			  if(key[i] == '\0')
+				  break;
+			  hash += tolower(key[i]);
+			  hash += (hash << 10);
+			  hash ^= (hash >> 6);
+		  }
+		  hash += (hash << 3);
+		  hash ^= (hash >> 11);
+		  hash += (hash << 15);
+		  return llvm::ConstantInt::get(CGF.IntTy, (int)hash, true);
+	  }
+  }
+
+
+=====================================================================
+llvm_src\tools\clang\lib\Parse\ParseExpr.cpp
+=====================================================================
+
+in function ParseCastExpression add above case kw___builtin_omp_required_simd_align to fall down into the same return
+----------------------------------------
+
+  case tok::kw_hashof:
+  case tok::kw_joaat:
+
+in function ParseExprAfterUnaryExprOrTypeTrait in the assert at the top add behind tok::kw___builtin_omp_required_simd_align
+----------------------------------------
+
+  , tok::kw_hashof, tok::kw_joaat
+
+in function ParseUnaryExprOrTypeTraitExpression in the assert at the top add behind tok::kw___builtin_omp_required_simd_align
+----------------------------------------
+
+  , tok::kw_hashof, tok::kw_joaat
+  
+in function ParseUnaryExprOrTypeTraitExpression under the else if(OpTok.is(tok::kw___builtin_omp_required_simd_align)) statement add
+----------------------------------------
+
+  else if(OpTok.isOneOf(tok::kw_hashof, tok::kw_joaat))
+	  ExprKind = UETT_JenkinsHash;
+
+=====================================================================
+llvm_src\tools\clang\lib\Sema\SemaExpr.cpp
+=====================================================================
+
+in function CreateUnaryExprOrTypeTraitExpr under the else if (ExprKind == UETT_OpenMPRequiredSimdAlign) statement add
+----------------------------------------
+
+else if (ExprKind == UETT_JenkinsHash)
+{
+  isInvalid = !isa<StringLiteral>(E->IgnoreParens());
+  if(isInvalid)
+	  Diag(E->getExprLoc(), diag::err_joaat_nonconstant_string_argument);
+}
+
+=====================================================================
+llvm_srctools\clang\tools\extra\CMakeLists.txt
+=====================================================================
+
+above add_subdirectory(modularize) add
+----------------------------------------
+add_subdirectory(clang-rename)
+
+add to bottom
+----------------------------------------
+add_subdirectory(SC-CL)
+
