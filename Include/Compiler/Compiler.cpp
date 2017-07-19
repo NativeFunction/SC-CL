@@ -684,7 +684,7 @@ void CompileBase::Switch(){
 
 				ChangeInt16InCodePage(offset, CasesToBeFixed[i].JumpInfo.JumpLocation);
 
-				cout << "fixed switch jump " + CasesToBeFixed[i].JumpInfo.Label << endl;
+				//cout << "fixed switch jump " + CasesToBeFixed[i].JumpInfo.Label << endl;
 
 
 				offset = CasesToBeFixed[i].LabelInfo.LabelLocation - CodePageData->getTotalSize() - 3;
