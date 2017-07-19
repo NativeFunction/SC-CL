@@ -1717,7 +1717,8 @@ namespace SCCL
 					AddInstruction(PGet);
 					AddInstruction(PushInt, 0xFF000000);
 					AddInstruction(And);
-					AddInstruction(ShiftRight, 24);
+					if(scriptData.getBuildPlatform() != P_PC)
+						AddInstruction(ShiftRight, 24);
 					return true;
 				}
 				else
@@ -1736,7 +1737,17 @@ namespace SCCL
 					AddInstruction(PushInt, 0x00FFFFFF);
 					AddInstruction(And);
 					parseExpression(argArray[1], false, true);
-					AddInstruction(ShiftLeft, 24);
+
+					if (scriptData.getBuildPlatform() == P_PC)
+					{
+						AddInstruction(PushInt, 0xFF000000);
+						AddInstruction(And);
+					}
+					else
+					{
+						AddInstruction(ShiftLeft, 24);
+					}
+
 					AddInstruction(Or);
 					AddInstruction(PeekSet);
 					AddInstruction(Drop);
