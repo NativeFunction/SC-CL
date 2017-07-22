@@ -1715,10 +1715,15 @@ namespace SCCL
 				{
 					parseExpression(argArray[0], false, true);
 					AddInstruction(PGet);
-					AddInstruction(PushInt, 0xFF000000);
-					AddInstruction(And);
-					if(scriptData.getBuildPlatform() != P_PC)
+					if (scriptData.getBuildPlatform() == P_PC)
+					{
+						AddInstruction(PushInt, 255);
+						AddInstruction(And);
+					}
+					else
+					{
 						AddInstruction(ShiftRight, 24);
+					}
 					return true;
 				}
 				else
@@ -1740,7 +1745,7 @@ namespace SCCL
 
 					if (scriptData.getBuildPlatform() == P_PC)
 					{
-						AddInstruction(PushInt, 0xFF000000);
+						AddInstruction(PushInt, 255);
 						AddInstruction(And);
 					}
 					else
