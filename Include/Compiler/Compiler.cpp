@@ -2556,6 +2556,8 @@ void CompileGTAV::BuildTablesCheckEnc()
 		AddOpcode(Call);
 		size_t entryCallLoc = CodePageData->getTotalSize();
 		AddInt24(0);
+
+
 		for (; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
 		{
 			ParseGeneral(HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)->getKind());
@@ -2581,14 +2583,18 @@ void CompileGTAV::BuildTablesCheckEnc()
 			}
 		}
 		fixFunctionCalls();
+
+
 		StringPageData->padAlign(8);
 		addDecryptionFunction(stringTableXOR, entryCallLoc);
 
-		for (size_t i = 0; i < StringPageData->getPageCount(); i++){
+		for (size_t i = 0; i < StringPageData->getPageCount(); i++)
+		{
 			size_t pageSize = (i == StringPageData->getPageCount() - 1) ? StringPageData->getLastPageSize() : 0x4000;
 			__int64* ptr = (__int64*)StringPageData->getPageAddress(i);
 			__int64* end = (__int64*)(StringPageData->getPageAddress(i) + pageSize);
-			while (ptr < end){
+			while (ptr < end)
+			{
 				*ptr++ ^= stringTableXOR;
 			}
 		}
@@ -2708,7 +2714,7 @@ void CompileGTAV::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
 	CodePageData->reserveBytes(1);
 	AddOpcode(pGet);
 
-	PushInt(xorValue & 0xFFFFFFFF);
+	PushInt(Utils::Bitwise::SwapEndian(xorValue & 0xFFFFFFFF));
 	CodePageData->reserveBytes(1);
 	AddOpcode(Xor);
 
@@ -2727,7 +2733,7 @@ void CompileGTAV::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
 	AddOpcode(GetImm1);
 	AddInt8(1);
 
-	PushInt(xorValue >> 32);
+	PushInt(Utils::Bitwise::SwapEndian(xorValue >> 32));
 	CodePageData->reserveBytes(1);
 	AddOpcode(Xor);
 
