@@ -4,15 +4,15 @@ SC-CL is a Clang Compiler targeted towards Rockstar's scripting format.
 Supported Targets
 ---------------------------------
 * Grand Theft Auto 4
-  * SCO format
+    * SCO format
 * Red Dead Redemption
-  * SCO format
-  * XSC format
-  * CSC format
+    * SCO format
+    * XSC format
+    * CSC format
 * Grand Theft Auto 5
-  * XSC format
-  * CSC format
-  * YSC format
+    * XSC format
+    * CSC format
+    * YSC format
   
 Usage
 ---------------------------------
