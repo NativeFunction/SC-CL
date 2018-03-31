@@ -102,7 +102,7 @@ namespace SCCL
 				else if (isa<FloatingLiteral>(e))
 				{
 					const FloatingLiteral *literal = cast<const FloatingLiteral>(e);
-					if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle)
+					if (&literal->getValue().getSemantics() == &llvm::APFloat::IEEEsingle())
 						return to_string(literal->getValue().convertToFloat());
 					else
 						return to_string(literal->getValue().convertToDouble());
@@ -147,7 +147,7 @@ namespace SCCL
 	{
 		uint32_t index = -1;
 		StaticData* sData = nullptr;
-		const Type* type = declref->getType().getTypePtr();
+		const clang::Type* type = declref->getType().getTypePtr();
 		const VarDecl *varDecl = dyn_cast<VarDecl>(declref->getDecl());
 		size_t size = getSizeOfType(type);
 		bool isStackCpy = size > stackWidth && isLtoRValue && !isAddr;//if greater then 4 bytes then a to stack is in order
@@ -369,7 +369,7 @@ namespace SCCL
 
 					uint32_t curIndex = LocalVariables.getCurrentSize();
 
-					const ArrayType *arr = NULL;
+					const clang::ArrayType *arr = NULL;
 					if ((arr = var->getType()->getAsArrayTypeUnsafe()) && arr->getArrayElementTypeNoTypeQual()->getAsCXXRecordDecl())
 					{
 						Throw("Unsupported decl of " + string(var->getDeclKindName()), TheRewriter, var->getLocStart());
@@ -3242,6 +3242,7 @@ namespace SCCL
 		{
 			if (result.Val.isInt())
 			{
+                int64_t resValue = result.Val.getInt().getSExtValue();
 				if (!isLtoRValue)
 					return -1;
 				int val;
@@ -3251,8 +3252,6 @@ namespace SCCL
 				}
 				else
 				{
-					int64_t resValue = result.Val.getInt().getSExtValue();
-
 					if (doesInt64FitIntoInt32(resValue))
 					{
 						string value = to_string(resValue);
@@ -3354,7 +3353,7 @@ namespace SCCL
 			const Expr* callee = call->getCallee();
 			if (isAddr)
 			{
-				Throw("cannot take the address of an rvalue of type '" + QualType::getAsString(call->getCallReturnType(context).split()) + "'", TheRewriter, call->getSourceRange());
+				Throw("cannot take the address of an rvalue of type '" + QualType::getAsString(call->getCallReturnType(context).split(), SCCL::printingPolicy) + "'", TheRewriter, call->getSourceRange());
 			}
 			LocalVariables.addLevel();
 			if (isa<MemberExpr>(callee))
@@ -3382,7 +3381,7 @@ namespace SCCL
 					}
 
 					parseExpression(argArray[i], false, true);
-					const Type* type = argArray[i]->getType().getTypePtr();
+					const clang::Type* type = argArray[i]->getType().getTypePtr();
 					if (type->isCharType() || type->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || type->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort))
 					{
 						AddInstruction(SetConv, scriptData, getSizeOfType(type));
@@ -3453,7 +3452,7 @@ namespace SCCL
 				}
 				//else if (call->getDirectCallee() && !call->getDirectCallee()->isDefined() && call->getDirectCallee()->getStorageClass() != StorageClass::SC_Extern)
 				//	Throw("Function \"" + call->getDirectCallee()->getNameAsString() + "\" Not Defined", TheRewriter, call->getExprLoc());
-				else if (isa<PointerType>(callee->getType()) && !call->getDirectCallee())
+				else if (isa<clang::PointerType>(callee->getType()) && !call->getDirectCallee())
 				{
 					parseExpression(call->getCallee(), false, true);
 					AddInstruction(PCall);
@@ -4027,7 +4026,7 @@ namespace SCCL
 			}
 			else if (op->getOpcode() == UO_Deref)
 			{
-				const Type* type = e->getType().getTypePtr();
+				const clang::Type* type = e->getType().getTypePtr();
 				int size = getSizeOfType(type);
 				int bSize = getSizeFromBytes(size);
 
@@ -4198,7 +4197,7 @@ namespace SCCL
 			int pMult = 1;
 			if ((op->isPrefix() || op->isPostfix()) && subE->getType().getTypePtr()->isAnyPointerType())
 			{
-				const Type* pTypePtr = subE->getType().getTypePtr()->getPointeeType().getTypePtr();
+				const clang::Type* pTypePtr = subE->getType().getTypePtr()->getPointeeType().getTypePtr();
 
 				int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 				pMult = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
@@ -4242,7 +4241,7 @@ namespace SCCL
 						}
 						else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
 						{
-							Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", TheRewriter, subE->getSourceRange());
+							Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split(), SCCL::printingPolicy) + "'", TheRewriter, subE->getSourceRange());
 						}
 						else
 						{
@@ -4306,7 +4305,7 @@ namespace SCCL
 					}
 					else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
 					{
-						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", TheRewriter, subE->getSourceRange());
+						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split(), SCCL::printingPolicy) + "'", TheRewriter, subE->getSourceRange());
 					}
 					else
 					{
@@ -4395,7 +4394,7 @@ namespace SCCL
 					}
 					else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
 					{
-						Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", TheRewriter, subE->getSourceRange());
+						Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split(), SCCL::printingPolicy) + "'", TheRewriter, subE->getSourceRange());
 					}
 					else
 					{
@@ -4458,7 +4457,7 @@ namespace SCCL
 					}
 					else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
 					{
-						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split()) + "'", TheRewriter, subE->getSourceRange());
+						Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split(), SCCL::printingPolicy) + "'", TheRewriter, subE->getSourceRange());
 					}
 					else
 					{
@@ -4934,9 +4933,9 @@ namespace SCCL
 				if (bOp->getRHS()->EvaluateAsInt(intRes, context))
 				{
 					int64_t val = intRes.getSExtValue();
-					if (isa<PointerType>(bOp->getLHS()->getType()))
+					if (isa<clang::PointerType>(bOp->getLHS()->getType()))
 					{
-						const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
+						const clang::Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
 						AddInstruction(PushInt, val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr));
 						if (pointerSet)
 						{
@@ -4979,9 +4978,9 @@ namespace SCCL
 				else
 				{
 					parseExpression(bOp->getRHS(), false, true);
-					if (isa<PointerType>(bOp->getLHS()->getType()))
+					if (isa<clang::PointerType>(bOp->getLHS()->getType()))
 					{
-						const Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
+						const clang::Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
 						AddInstruction(MultImm, getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr));
 					}
 
@@ -5033,7 +5032,7 @@ namespace SCCL
 
 							if (op == BO_Sub)
 							{
-								const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+								const clang::Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
 								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 								int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
@@ -5055,7 +5054,7 @@ namespace SCCL
 
 							if (op == BO_Add || op == BO_Sub)
 							{
-								const Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+								const clang::Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
 								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 								int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 								AddInstructionConditionally(pSize > 1, MultImm, pSize);
@@ -5068,7 +5067,7 @@ namespace SCCL
 
 							if (op == BO_Add || op == BO_Sub)
 							{
-								const Type* pTypePtr = bOp->getRHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
+								const clang::Type* pTypePtr = bOp->getRHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
 								int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
 								int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
@@ -5160,7 +5159,7 @@ namespace SCCL
 			const MemberExpr *E = cast<const MemberExpr>(e);
 			NamedDecl *ND = E->getMemberDecl();
 			Expr *BaseExpr = E->getBase();
-			const Type* type = E->getType().getTypePtr();
+			const clang::Type* type = E->getType().getTypePtr();
 
 			int typeSize = getSizeFromBytes(getSizeOfType(type));
 
@@ -5258,7 +5257,7 @@ namespace SCCL
 						else if (currentBitFieldSize)
 							IncCurrentBitSize();
 
-						const Type* type = CS->getType().getTypePtr();
+						const clang::Type* type = CS->getType().getTypePtr();
 						int temp = getSizeOfType(type);
 						offset += max(temp, stackWidth);
 					}
@@ -5800,7 +5799,7 @@ namespace SCCL
 		bool isCst = index->EvaluateAsInt(evalIndex, context);
 
 		const DeclRefExpr *declRef = getDeclRefExpr(base);
-		const Type *type = base->getType().getTypePtr();//declRef->getType().getTypePtr()->getArrayElementTypeNoTypeQual();
+		const clang::Type *type = base->getType().getTypePtr();//declRef->getType().getTypePtr()->getArrayElementTypeNoTypeQual();
 
 		if (type == NULL)
 		{

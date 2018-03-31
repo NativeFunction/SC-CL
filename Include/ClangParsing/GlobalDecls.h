@@ -62,6 +62,7 @@ namespace SCCL
 	extern uint32_t CurrentFileId;
 	extern uint8_t stackWidth;
 	extern clang::Rewriter* rewriter;
+    extern clang::PrintingPolicy printingPolicy;
 
 	typedef struct QueuedBF
 	{
@@ -199,7 +200,7 @@ namespace SCCL
 	}
 	inline double extractAPFloat(llvm::APFloat value)
 	{
-		return &value.getSemantics() == &llvm::APFloat::IEEEsingle ? (double)value.convertToFloat() : value.convertToDouble();
+		return &value.getSemantics() == &llvm::APFloat::IEEEsingle() ? (double)value.convertToFloat() : value.convertToDouble();
 	}
 
 	#pragma region Global_Local/Static_Functions

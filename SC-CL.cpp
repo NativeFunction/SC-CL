@@ -141,6 +141,8 @@ namespace SCCL
 		return Dir.substr(BaseStartPos, BaseExtPos - BaseStartPos);
 	}
 
+
+
 	void PrintVersion()
 	{
 		cout << "Version: " << VERSION << endl;
@@ -160,6 +162,7 @@ namespace SCCL
 
 			stackWidth = scriptData->getStackWidth();
 			ProcessingFailed = Tool.run(newFrontendActionFactory<ASTFrontendAction>().get());
+
 
 			/// ClangTool::run accepts a FrontendActionFactory, which is then used to
 			/// create new objects implementing the FrontendAction interface. Here we use
@@ -269,7 +272,8 @@ namespace SCCL
 
 	void ParseCommandLine(int argc, const char **argv, const char* Overview, unique_ptr<CompilationDatabase>& Compilations)
 	{
-		Compilations.reset(FixedCompilationDatabase::loadFromCommandLine(argc, argv));
+        string err = "Error loading from command line";
+        Compilations = FixedCompilationDatabase::loadFromCommandLine(argc, argv, err);
 
 		ParseCommandLineOptions(argc, argv, Overview);
 
@@ -292,7 +296,7 @@ namespace SCCL
 				Compilations.reset(new FixedCompilationDatabase(".", std::vector<std::string>()));
 			}
 		}
-		auto AdjustingCompilations = llvm::make_unique<ArgumentsAdjustingCompilations>(std::move(Compilations));
+        auto AdjustingCompilations = llvm::make_unique < clang::tooling::ArgumentsAdjustingCompilations > (std::move(Compilations));
 
 		AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsBefore, ArgumentInsertPosition::BEGIN));
 		AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
@@ -302,11 +306,18 @@ namespace SCCL
 
 int main(int argc, const char **argv)
 {
-	llvm::errs() << "Starting SC-CL ALPHA " << VERSION << " running Clang 3.8.1\n";
+	llvm::errs() << "Starting SC-CL ALPHA " << VERSION << " running Clang 6.0.0\n";
 
 	SCCL::globalDirectory = Utils::IO::GetDir(string(argv[0]));
-	SetVersionPrinter(SCCL::PrintVersion);
+
+    llvm::cl::VersionPrinterTy versionPrinter = [&] (llvm::raw_ostream& os) -> void
+    {
+        SCCL::PrintVersion();
+    };
+    
+	SetVersionPrinter(versionPrinter);
 	unique_ptr<CompilationDatabase> Compilations;
+    
 	SCCL::ParseCommandLine(argc, argv, " SC-CL\n", Compilations);
 
 	ClangTool Tool(*Compilations, SCCL::SourcePaths);

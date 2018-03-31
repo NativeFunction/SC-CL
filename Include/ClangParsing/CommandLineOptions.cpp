@@ -21,8 +21,7 @@ namespace SCCL
 		values(
 		clEnumValN(Platform::P_X360, "X360", "Target Xbox (32 bit, big endian)"),
 		clEnumValN(Platform::P_PS3, "PS3", "Target PS3 (32 bit, big endian)"),
-		clEnumValN(Platform::P_PC, "PC", "Target PC (64 bit, little endian)"),
-		clEnumValEnd
+		clEnumValN(Platform::P_PC, "PC", "Target PC (64 bit, little endian)")
 	));
 
 	opt<BuildType> Option_BuildType(
@@ -36,8 +35,7 @@ namespace SCCL
 		clEnumValN(BuildType::BT_GTAIV_TBOGT, "GTAIV_TBOGT", "Grand Theft Auto IV The Ballad of Gay Tony (sco output)"),
 		clEnumValN(BuildType::BT_GTAV, "GTAV", "Grand Theft Auto V (#sc output)"),
 		clEnumValN(BuildType::BT_RDR_SCO, "RDR_SCO", "Red Dead Redemption (sco output)"),
-		clEnumValN(BuildType::BT_RDR_XSC, "RDR_#SC", "Red Dead Redemption (#sc output)"),
-		clEnumValEnd
+		clEnumValN(BuildType::BT_RDR_XSC, "RDR_#SC", "Red Dead Redemption (#sc output)")
 	));
 
 	opt<std::string> Option_OutputFileName(
@@ -55,8 +53,7 @@ namespace SCCL
 		clEnumValN(obf_default, "F2", "Enable default obfuscations"),
 		clEnumValN(obf_high, "F3", "Enable high obfuscations"),
 		clEnumValN(obf_veryhigh, "F4", "Enable very high obfuscations"),
-		clEnumValN(obf_max, "F5", "Enable max obfuscations"),
-		clEnumValEnd
+		clEnumValN(obf_max, "F5", "Enable max obfuscations")
 	));
 
 	opt<uint32_t> Option_PCVerison(
@@ -96,8 +93,7 @@ namespace SCCL
 		clEnumValN(OptimisationLevel::OL_None, "g", "No optimizations, enable debugging"),
 		clEnumValN(OptimisationLevel::OL_Trivial, "O1", "Enable trivial optimizations"),
 		clEnumValN(OptimisationLevel::OL_Normal, "O2", "Enable default optimizations"),
-		clEnumValN(OptimisationLevel::OL_Full, "O3", "Enable expensive optimizations"),
-		clEnumValEnd
+		clEnumValN(OptimisationLevel::OL_Full, "O3", "Enable expensive optimizations")
 	));
 
 	opt<bool> Option_EmitAsm(

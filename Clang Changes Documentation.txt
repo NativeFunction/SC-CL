@@ -350,6 +350,15 @@ else if (ExprKind == UETT_JenkinsHash)
 }
 
 =====================================================================
+llvm_src\tools\clang\include\clang\AST\Stmt.h
+=====================================================================
+
+in class UnaryExprOrTypeTraitExprBitfields change Kind 2 to 3
+----------------------------------------
+
+unsigned Kind : 3;
+
+=====================================================================
 llvm_srctools\clang\tools\extra\CMakeLists.txt
 =====================================================================
 

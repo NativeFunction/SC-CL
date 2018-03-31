@@ -53,18 +53,21 @@ set(resource_list
 	"contributors.txt"
 )
 
+link_directories(Include)
+
 add_clang_executable(SC-CL
 	SC-CL.cpp
 	${source_list}
 	${header_list}
 )
 
+
 include_directories(Include)
 target_link_libraries(SC-CL
-	clangTooling
-	clangBasic
-	clangASTMatchers
-	Include/Compression/zlib
+	PUBLIC clangTooling
+	PUBLIC clangBasic
+	PUBLIC clangASTMatchers
+	PUBLIC Compression/zlib
 )
 
 foreach(source IN LISTS source_list)
@@ -89,7 +92,7 @@ endforeach()
 add_custom_command(
 	TARGET SC-CL
 	PRE_BUILD
-	WORKING_DIRECTORY "Include/Version/"
+	CMAKE_CURRENT_SOURCE_DIR "Include/Version/"
 	COMMAND "SC-CL_Version_Selector.exe"
 	COMMENT "Updating Version Number"
 )

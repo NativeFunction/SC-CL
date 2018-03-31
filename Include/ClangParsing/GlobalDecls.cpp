@@ -15,6 +15,8 @@ namespace SCCL
 	uint32_t CurrentFileId = 0;
 	uint8_t stackWidth = 4;
 	Rewriter* rewriter;
+    const clang::LangOptions langOptions;
+    clang::PrintingPolicy printingPolicy(langOptions);
 
 
 	#pragma region Global_Size_Functions
