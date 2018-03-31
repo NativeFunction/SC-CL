@@ -13,6 +13,26 @@ Supported Targets
     * XSC format
     * CSC format
     * YSC format
+
+How To Build
+---------------------------------
+1. Download [LLVM 6.0.0 source](http://releases.llvm.org/download.html#6.0.0)
+2. Download [clang-tools-extra 6.0.0 source](http://releases.llvm.org/download.html#6.0.0)
+3. Download [clang 6.0.0 SC-CL edited source](https://bitbucket.org/scclteam/clang-6.0.0-sc-cl-edited/downloads/)
+4. Extract LLVM
+5. Make Directory llvm_src/tools/clang
+6. Move clang 6.0.0 SC-CL edited contents into llvm_src/tools/clang
+7. Make Directory llvm_src/tools/clang/tools/extra
+8. Move clang-tools-extra contents into llvm_src/tools/clang/tools/extra
+9. Make directory llvm_src/tools/clang/tools/extra/SC-CL
+10. Open llvm_src/tools/clang/tools/extra/CMakeLists.txt
+11. Add ```add_subdirectory(SC-CL)``` to bottom
+12. Download [SC-CL source](https://bitbucket.org/scclteam/sc-cl/downloads/)
+13. Move SC-CL contents into llvm_src/tools/clang/tools/extra/SC-CL
+14. Run CMake on llvm_src dir
+15. Open llvm_bin/LLVM.sln or equivalent
+16. Go to Clang executables in solution explorer
+17. Right click on SC-CL and click build
   
 Usage
 ---------------------------------
