@@ -50,7 +50,7 @@ Clang Options:
 
 Compiler Options:
 
-  Choose obfuscation level:  (This option is experimental use at your own risk)
+  Choose obfuscation level: (This option is experimental use at your own risk)
     -Fs                      - Obfuscate string table - GTA V Only
     -F1                      - Enable low obfuscations
     -F2                      - Enable default obfuscations
@@ -66,6 +66,10 @@ Compiler Options:
   -emit-asm-only             - Only emits the pre compiled ASM representation of the script
   -hvi=<uint>                - Sets the starting index for host variables to ignore
   -hvs=<uint>                - Sets the amount of host variables to ignore
+  -ivscr                     - Choose GTAIV sco output config:
+    =CompressEncrypt         -   Sco output with compression and encryption (Default)
+    =None                    -   Sco output with no compression or encryption
+    =Encrypt                 -   Sco output with encryption
   -n                         - Disable function names in script output, Enabled when optimisations are turned on
   -name=<string>             - File name of output script, defaults to input file name
   -no-rsc7                   - Removes the RSC7 header from the output (GTAV)
@@ -86,10 +90,6 @@ Compiler Options:
     =RDR_SCO                 -   Red Dead Redemption (sco output)
     =RDR_#SC                 -   Red Dead Redemption (#sc output)
   -vcx=<vcxproj path>        - Parses source files out of a vcxproj file to allow for seamless linking in Visual Studio
-
-General options:
-
-  -stats                     - Enable statistics output from program (available with Asserts)
 
 Generic Options:
 
