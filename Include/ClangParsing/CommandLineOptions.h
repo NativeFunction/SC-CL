@@ -38,6 +38,7 @@ namespace SCCL
 	extern llvm::cl::opt <uint32_t> Option_PlayerVarIndex;
 	extern llvm::cl::opt <uint32_t> Option_PlayerVarSize;
 	extern llvm::cl::opt<OptimisationLevel> Option_OptimizationLevel;
+    extern llvm::cl::opt<GTAIVSCRFlags> Option_GTAIVSCRFlag;
 
 	extern llvm::cl::opt<bool> Option_EmitAsm;
 	extern llvm::cl::opt<bool> Option_AsmOnly;

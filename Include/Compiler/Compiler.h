@@ -13,6 +13,7 @@
 #include "ClangParsing/Helpers/Script.h"
 #include "Utils/Utils.h"
 #include "ClangParsing/CommandLineOptions.h"
+#include "BuildTarget.h"
 
 #pragma region Collections
 class PageCollection{
@@ -797,7 +798,20 @@ public:
 			case BT_GTAIV_TLAD:
 			case BT_GTAIV_TBOGT:
 			case BT_GTAIV:
-			SCOWrite((outDirectory + HLData->getBuildFileName()).data(), SCRFlags::CompressedEncrypted);
+                
+                switch (SCCL::Option_GTAIVSCRFlag)
+                {
+                    case GTAIVSCRFlags::SCRF_Standard:
+                        SCOWrite((outDirectory + HLData->getBuildFileName()).data(), SCRFlags::Standard);
+                        break;
+                    case GTAIVSCRFlags::SCRF_Encrypted:
+                        SCOWrite((outDirectory + HLData->getBuildFileName()).data(), SCRFlags::Encrypted);
+                        break;
+                    case GTAIVSCRFlags::SCRF_CompressedEncrypted:
+                        SCOWrite((outDirectory + HLData->getBuildFileName()).data(), SCRFlags::CompressedEncrypted);
+                        break;
+                }
+			
 			break;
 			default:
 				TEST(false, "Incompatible build type for GTAIV");

@@ -29,3 +29,10 @@ typedef enum OptimisationLevel
 	OL_Normal,
 	OL_Full
 } OptimisationLevel;
+
+typedef enum GTAIVSCRFlags
+{
+    SCRF_CompressedEncrypted,
+    SCRF_Standard,
+    SCRF_Encrypted
+} GTAIVSCRFlags;

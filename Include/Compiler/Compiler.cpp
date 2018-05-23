@@ -1455,9 +1455,9 @@ void CompileGTAIV::SCOWrite(const char* path, CompileGTAIV::SCRFlags EncryptionC
 	switch (EncryptionCompressionLevel)
 	{
 		case SCRFlags::CompressedEncrypted:{
-			uint32_t CompressedSize = BuildBuffer.size();
-			vector<uint8_t> CompressedData(CompressedSize * 2, 0);
-			Utils::Compression::ZLIB_CompressChecksum(BuildBuffer.data(), BuildBuffer.size(), CompressedData.data(), CompressedSize);
+			vector<uint8_t> CompressedData;
+			Utils::Compression::ZLIB_Compress(BuildBuffer, CompressedData);
+            size_t CompressedSize = CompressedData.size();
 
 			if (CompressedSize <= 0)
 				Utils::System::Throw("SCO Compressed Size Invalid");
@@ -2044,14 +2044,10 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 			break;
 			case Platform::P_PS3:
 			{
-				CompressedData.resize(BuildBuffer.size(), 0);
-				CompressedLen = BuildBuffer.size();
-				Utils::Compression::ZLIB_Compress(BuildBuffer.data(), BuildBuffer.size(), CompressedData.data(), CompressedLen);
+				Utils::Compression::ZLIB_Compress(BuildBuffer, CompressedData);
 				
-				if (CompressedLen == 0)
+				if (CompressedData.size() == 0)
 					Throw("CSC Compressed Size Invalid");
-
-				CompressedData.resize(CompressedLen);
 			}
 			break;
 			case Platform::P_PC:
@@ -2120,26 +2116,22 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 	#pragma region Write_File
 	if (CompressAndEncrypt)
 	{
-
-		uint32_t CompressedSize = BuildBuffer.size();
-
-		vector<uint8_t> CompressedData(BuildBuffer.size(), 0);
-
-		Utils::Compression::ZLIB_Compress(BuildBuffer.data(), BuildBuffer.size(), CompressedData.data(), CompressedSize);
+        vector<uint8_t> CompressedData;
+		Utils::Compression::ZLIB_Compress(BuildBuffer, CompressedData);
 		//fix length of compressed data
 
 		const uint8_t RDREncryptionKey[32] = { 0xB7, 0x62, 0xDF, 0xB6, 0xE2, 0xB2, 0xC6, 0xDE, 0xAF, 0x72, 0x2A, 0x32, 0xD2, 0xFB, 0x6F, 0x0C, 0x98, 0xA3, 0x21, 0x74, 0x62, 0xC9, 0xC4, 0xED, 0xAD, 0xAA, 0x2E, 0xD0, 0xDD, 0xF9, 0x2F, 0x10 };
 
-		if (CompressedSize == 0)
+		if (CompressedData.size() == 0)
 			Utils::System::Throw("SCO Compressed Size Invalid");
-		else if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedSize, RDREncryptionKey))
+		else if (!Utils::Crypt::AES_Encrypt(CompressedData.data(), CompressedData.size(), RDREncryptionKey))
 			Utils::System::Throw("SCO Encryption Failed");
 
 		const vector<uint32_t> SCR_Header = //size: 12
 		{ 
 		  Utils::Bitwise::SwapEndian(0x53435202u)//SCR.
 		, Utils::Bitwise::SwapEndian(0x349D018Au)//GlobalsSignature
-		, Utils::Bitwise::SwapEndian(CompressedSize)
+		, Utils::Bitwise::SwapEndian(CompressedData.size())
 		, Utils::Bitwise::SwapEndian(-3u)//-3 is_crypt?
 		, Utils::Bitwise::SwapEndian(BuildBuffer.size())
 		, Utils::Bitwise::SwapEndian(HLData->getStaticCount())
@@ -2155,7 +2147,7 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 		if (Utils::IO::CreateFileWithDir(path, file))
 		{
 			fwrite(SCR_Header.data(), 1, 48, file);//encrypted data
-			fwrite(CompressedData.data(), 1, CompressedSize, file);//encrypted data
+			fwrite(CompressedData.data(), 1, CompressedData.size(), file);//encrypted data
 			fclose(file);
 		}
 	}

@@ -47,17 +47,17 @@ namespace Utils {
 		bool CreateFileWithDir(const char* filePath, FILE*& file)
 		{
 			string dir = GetDir(filePath);
-			bool Status = std::experimental::filesystem::exists(std::experimental::filesystem::v1::path(dir)) ?
+			bool exists = std::experimental::filesystem::exists(std::experimental::filesystem::v1::path(dir)) ?
 			true : 
 			std::experimental::filesystem::create_directories(std::experimental::filesystem::v1::path(dir));
 			
 			file = fopen(filePath, "wb");
-			Status = file == NULL || Status;
+            exists = file != NULL && exists;
 
-			if(!Status)
+			if(!exists)
 				System::Throw("Could Not create File: " + string(filePath));
 
-			return Status;
+			return exists;
 		}
 
 	}
@@ -334,136 +334,184 @@ namespace Utils {
 			return hr;
 		}
 
-		void ZLIB_Decompress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize)
+
+        #define CHUNK 16384
+
+		void ZLIB_Decompress(const std::vector<uint8_t>& in, std::vector<uint8_t> &out)
 		{
-			z_stream infstream;
-			infstream.zalloc = Z_NULL;
-			infstream.zfree = Z_NULL;
-			infstream.opaque = Z_NULL;
-			// setup "b" as the input and "c" as the compressed output
-			infstream.avail_in = inSize; // size of input
-			infstream.next_in = in; // input char array
-			infstream.avail_out = outSize; // size of output
-			infstream.next_out = out; // output char array
+            int ec;
+            unsigned have;
+            z_stream strm;
+            unsigned char inbuf[CHUNK];
+            unsigned char outbuf[CHUNK];
+            uint32_t inIndex = 0;
+            uint32_t inIndexOld = 0;
 
-			int32_t res;
+            out.clear();
 
-			res = inflateInit(&infstream);
-			if (res != Z_OK)
-			{
-				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				cout << "Error: " << zError(res) << '\n';
-				Throw("ZLIB InflateInit Failed");
-			}
-			res = inflate(&infstream, Z_NO_FLUSH);
-			if (!(res == Z_STREAM_END || res == Z_OK))
-			{
-				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				cout << "Error: " << zError(res) << '\n';
-				Throw("ZLIB Inflate Failed");
-			}
-			res = inflateEnd(&infstream);
-			if (res != Z_OK)
-			{
-				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				cout << "Error: " << zError(res) << '\n';
-				Throw("ZLIB InflateEnd Failed");
-			}
+            /* allocate inflate state */
+            strm.zalloc = Z_NULL;
+            strm.zfree = Z_NULL;
+            strm.opaque = Z_NULL;
+            strm.avail_in = 0;
+            strm.next_in = Z_NULL;
+            ec = inflateInit(&strm);
+            if (ec != Z_OK)
+            {
+                cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
+                //cout << "Error: " << zError(ec) << '\n';
+                Throw("ZLIB InflateInit Failed");
+            }
 
-			outSize = infstream.next_out - out;
+            /* decompress until deflate stream ends or end of file */
+            do
+            {
+                inIndexOld = inIndex;
+                inIndex += CHUNK;
+                if (inIndex > in.size())
+                    inIndex = in.size();
+
+                uint32_t size = inIndex - inIndexOld;
+                if (size == 0)
+                    break;
+                memcpy(inbuf, in.data() + inIndexOld, size);
+
+                strm.avail_in = size;
+                strm.next_in = inbuf;
+
+                /* run inflate() on input until output buffer not full */
+                do
+                {
+                    strm.avail_out = CHUNK;
+                    strm.next_out = outbuf;
+                    ec = inflate(&strm, Z_NO_FLUSH);
+
+                    /* state not clobbered */
+                    if (ec == Z_STREAM_ERROR)
+                    {
+                        cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
+                        // cout << "Error: " << zError(ec) << '\n';
+                        Throw("ZLIB deflate Failed ");
+                    }
+
+                    switch (ec)
+                    {
+                        case Z_NEED_DICT:
+                            ec = Z_DATA_ERROR;     /* and fall through */
+                        case Z_DATA_ERROR:
+                        case Z_MEM_ERROR:
+                            (void)inflateEnd(&strm);
+                            cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
+                            // cout << "Error: " << zError(ec) << '\n';
+                            Throw("ZLIB deflate Failed ");
+                    }
+
+                    have = CHUNK - strm.avail_out;
+                    out.insert(out.end(), outbuf, outbuf + have);
+
+                } while (strm.avail_out == 0);
 
 
+
+                /* done when inflate() says it's done */
+            } while (ec != Z_STREAM_END);
+
+            /* clean up and return */
+            ec = inflateEnd(&strm);
+            if (ec != Z_OK)
+            {
+                cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
+                //cout << "Error: " << zError(ec) << '\n';
+                Throw("ZLIB InflateEnd Failed");
+            }
 		}
-		void ZLIB_Compress(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize)
-		{
-			z_stream defstream;
-			defstream.zalloc = Z_NULL;
-			defstream.zfree = Z_NULL;
-			defstream.opaque = Z_NULL;
-			defstream.data_type = Z_BINARY;
-			// setup "a" as the input and "b" as the compressed output
 
-			defstream.next_in = in; // input char array
-			defstream.avail_in = inSize; // size of input
-			defstream.next_out = out; // output char array
-			defstream.avail_out = outSize; // size of output
+        void ZLIB_Compress(const std::vector<uint8_t>& in, std::vector<uint8_t> &out)
+        {
+            int32_t ec, flush;
+            uint32_t have;
+            z_stream strm;
+            uint8_t inbuf[CHUNK];
+            uint8_t outbuf[CHUNK];
+            uint32_t inIndex = 0;
+            uint32_t inIndexOld = 0;
 
-			
-			int32_t res = deflateInit(&defstream, Z_BEST_COMPRESSION);
-			if (res != Z_OK)
-			{
-				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				//cout << "Error: " << zError(res) << '\n';
-				Throw("ZLIB DeflateInit Failed");
-			}
+            out.clear();
 
-			res = deflate(&defstream, Z_FINISH);
-			if (!(res == Z_STREAM_END || res == Z_OK))
-			{
-				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				//cout << "Error: " << zError(res) << '\n';
-				Throw("ZLIB deflate Failed ");
-			}
-			
+            /* allocate deflate state */
+            strm.zalloc = Z_NULL;
+            strm.zfree = Z_NULL;
+            strm.opaque = Z_NULL;
+            ec = deflateInit(&strm, Z_BEST_COMPRESSION);
+            if (ec != Z_OK)
+            {
+                cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
+                // cout << "Error: " << zError(ec) << '\n';
+                Throw("ZLIB DeflateInit Failed");
+            }
 
-			res = deflateEnd(&defstream);
-			if (res != Z_OK)
-			{
-				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				//cout << "Error: " << zError(res) << '\n';
-				Throw("ZLIB deflateEnd Failed");
-			}
+            /* compress until end of file */
+            do
+            {
+                inIndexOld = inIndex;
+                inIndex += CHUNK;
+                if (inIndex > in.size())
+                {
+                    inIndex = in.size();
+                    flush = Z_FINISH;
+                }
+                else
+                    flush = Z_NO_FLUSH;
 
-			outSize = defstream.next_out - out;
-		}
-		void ZLIB_CompressChecksum(uint8_t* in, uint32_t inSize, uint8_t* out, uint32_t& outSize)
-		{
-			z_stream defstream;
-			defstream.zalloc = Z_NULL;
-			defstream.zfree = Z_NULL;
-			defstream.opaque = Z_NULL;
-			defstream.data_type = Z_BINARY;
-			// setup "a" as the input and "b" as the compressed output
+                uint32_t size = inIndex - inIndexOld;
+                memcpy(inbuf, in.data() + inIndexOld, size);
 
-			defstream.next_in = in; // input char array
-			defstream.avail_in = inSize; // size of input
-			defstream.next_out = out; // output char array
-			defstream.avail_out = outSize; // size of output
+                strm.avail_in = size;
+                strm.next_in = inbuf;
 
-			//deflateSetDictionary(&defstream, )
+                /* run deflate() on input until output buffer not full, finish
+                compression if all of source has been read in */
+                do
+                {
+                    strm.avail_out = CHUNK;
+                    strm.next_out = outbuf;
+                    ec = deflate(&strm, flush);    /* no bad return value */
 
-			int32_t res = deflateInit(&defstream, Z_BEST_COMPRESSION);
-			if (res != Z_OK)
-			{
-				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				//cout << "Error: " << zError(res) << '\n';
-				Throw("ZLIB DeflateInit Failed");
-			}
+                    /* state not clobbered */
+                    if (ec == Z_STREAM_ERROR)
+                    {
+                        cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
+                        // cout << "Error: " << zError(ec) << '\n';
+                        Throw("ZLIB deflate Failed ");
+                    }
 
-			res = deflate(&defstream, Z_FINISH);
-			if (!(res == Z_STREAM_END || res == Z_OK))
-			{
-				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				//cout << "Error: " << zError(res) << '\n';
-				Throw("ZLIB deflate Failed ");
-			}
+                    have = CHUNK - strm.avail_out;
 
-			res = deflateEnd(&defstream);
-			if (res != Z_OK)
-			{
-				cout << "Error Code: " << ZLIB_ErrorCodeToStr(res) << '\n';
-				//cout << "Error: " << zError(res) << '\n';
-				Throw("ZLIB deflateEnd Failed");
-			}
+                    out.insert(out.end(), outbuf, outbuf + have);
 
-			outSize = defstream.next_out - out;
+                } while (strm.avail_out == 0);
+                assert(strm.avail_in == 0);     /* all input will be used */
 
-			if (*(uint32_t*)(out + outSize - 4) != _byteswap_ulong(defstream.adler))
-			{
-				*(uint32_t*)(out + outSize) = _byteswap_ulong(defstream.adler);
-				outSize += 4;
-			}
-		}
+                                                /* done when last data in file processed */
+            } while (flush != Z_FINISH);
+            
+            /* stream will be complete */
+            if (ec != Z_STREAM_END)
+            {
+                cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
+                // cout << "Error: " << zError(ec) << '\n';
+                Throw("ZLIB deflate Failed ");
+            }
+
+            /* clean up and return */
+            ec = deflateEnd(&strm);
+            if (ec != Z_OK)
+            {
+                cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
+                //cout << "Error: " << zError(ec) << '\n';
+                Throw("ZLIB InflateEnd Failed");
+            }
+        }
 
 		string ZLIB_ErrorCodeToStr(int32_t errorcode)
 		{
@@ -481,6 +529,8 @@ namespace Utils {
 			}
 			return "UNK_ERR" + to_string(errorcode);
 		}
+
+        #undef CHUNK
 
 	}
 

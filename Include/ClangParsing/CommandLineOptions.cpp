@@ -56,6 +56,16 @@ namespace SCCL
 		clEnumValN(obf_max, "F5", "Enable max obfuscations")
 	));
 
+    opt<GTAIVSCRFlags> Option_GTAIVSCRFlag(
+        "ivscr", desc("Choose GTAIV sco output config:"),
+        ValueRequired,
+        cat(CompilerOptions),
+        values(
+        clEnumValN(GTAIVSCRFlags::SCRF_CompressedEncrypted, "CompressEncrypt", "Sco output with compression and encryption (Default)"),
+        clEnumValN(GTAIVSCRFlags::SCRF_Standard, "None", "Sco output with no compression or encryption"),
+        clEnumValN(GTAIVSCRFlags::SCRF_Encrypted, "Encrypt", "Sco output with encryption")
+    ));
+
 	opt<uint32_t> Option_PCVerison(
 		"pc-version", desc("Sets the pc version for use in the native translation table"),
 		ValueRequired,
