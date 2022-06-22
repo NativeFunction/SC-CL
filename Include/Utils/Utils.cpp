@@ -360,7 +360,7 @@ namespace Utils {
             {
                 cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
                 //cout << "Error: " << zError(ec) << '\n';
-                Throw("ZLIB InflateInit Failed");
+                Throw("ZLIB inflateInit Failed");
             }
 
             /* decompress until deflate stream ends or end of file */
@@ -391,7 +391,7 @@ namespace Utils {
                     {
                         cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
                         // cout << "Error: " << zError(ec) << '\n';
-                        Throw("ZLIB deflate Failed ");
+                        Throw("ZLIB inflate Failed ");
                     }
 
                     switch (ec)
@@ -403,7 +403,7 @@ namespace Utils {
                             (void)inflateEnd(&strm);
                             cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
                             // cout << "Error: " << zError(ec) << '\n';
-                            Throw("ZLIB deflate Failed ");
+                            Throw("ZLIB inflate Failed ");
                     }
 
                     have = CHUNK - strm.avail_out;
@@ -447,7 +447,7 @@ namespace Utils {
             {
                 cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
                 // cout << "Error: " << zError(ec) << '\n';
-                Throw("ZLIB DeflateInit Failed");
+                Throw("ZLIB deflateInit Failed");
             }
 
             /* compress until end of file */
@@ -509,7 +509,7 @@ namespace Utils {
             {
                 cout << "Error Code: " << ZLIB_ErrorCodeToStr(ec) << '\n';
                 //cout << "Error: " << zError(ec) << '\n';
-                Throw("ZLIB InflateEnd Failed");
+                Throw("ZLIB deflateEnd Failed");
             }
         }
 
