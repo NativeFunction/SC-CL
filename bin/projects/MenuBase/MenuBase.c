@@ -9,27 +9,27 @@
 
 void main()
 {
-	//Break("script start");
-	int HostBroadcastVars[3];
-	int PlayerBroadcastVars[LobbySize + 1];
-	//network_set_script_is_safe_for_network_game();
-	network_set_this_script_is_network_script(LobbySize, false, 0);
-	network_register_host_broadcast_variables(HostBroadcastVars, 3);
-	network_register_player_broadcast_variables(PlayerBroadcastVars, LobbySize + 1);
-	reserve_network_mission_vehicles(1);
-	
-	InitMenuDraw();
+    //Break("script start");
+    int HostBroadcastVars[3];
+    int PlayerBroadcastVars[LobbySize + 1];
+    //network_set_script_is_safe_for_network_game();
+    NETWORK_SET_THIS_SCRIPT_IS_NETWORK_SCRIPT(LobbySize, false, 0);
+    NETWORK_REGISTER_HOST_BROADCAST_VARIABLES(HostBroadcastVars, 3);
+    NETWORK_REGISTER_PLAYER_BROADCAST_VARIABLES(PlayerBroadcastVars, LobbySize + 1);
+    RESERVE_NETWORK_MISSION_VEHICLES(1);
 
-	while (true)
-	{
-		wait(0);
+    InitMenuDraw();
 
-		HandleMenuUi();
+    while (true)
+    {
+        WAIT(0);
 
-		AsynchronousLoop();
+        HandleMenuUi();
 
-		if (!network_is_in_transition())
-			LoopedExecutionEntry();
-	}
+        AsynchronousLoop();
+
+        if (!NETWORK_IS_IN_TRANSITION())
+            LoopedExecutionEntry();
+    }
 }
 

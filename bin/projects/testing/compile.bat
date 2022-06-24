@@ -5,5 +5,5 @@ echo loop-convert test.c
 echo Press ENTER to launch
 pause > nul
 cls
-"../../Debug/sc-cl.exe" -platform=X360 -asm -build_type=GTAV test.c -- -I "../../include/"
+"../../Debug/SC-CL.exe" -platform=X360 -emit-asm -target=GTAV test.c -- -I "../../include/"
 goto start

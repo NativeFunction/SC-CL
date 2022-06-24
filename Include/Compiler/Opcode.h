@@ -171,7 +171,13 @@ public:
 		if (_next)
 			delete _next;
 	}
+    SwitchCaseStorage(const SwitchCaseStorage* scs)
+    {
+        _caseVal = scs->getCaseValue();
+        _jumpLoc = scs->getCaseLocation();
+        _next = new SwitchCaseStorage(scs->getNextCase());
 
+    }
 	std::string getCaseLocation()const { return _jumpLoc; }
 	void setCaseLocation(const std::string& newCaseLoc){ _jumpLoc = newCaseLoc; }
 	int getCaseValue()const { return _caseVal; }
@@ -209,6 +215,15 @@ public:
 			delete _defaultJumpLoc;
 		}
 	}
+    SwitchStorage(const SwitchStorage* sw)
+    {
+        _count = sw->_count;
+
+        _defaultJumpLoc = new StringStorage(sw->getDefaultJumpLoc()->toString());
+        _first = new SwitchCaseStorage(sw->getFirstCase());
+        _last = new SwitchCaseStorage(sw->getLastCase());
+
+    }
 
 	void addCase(int caseVal, const std::string& caseLoc)
 	{
@@ -226,6 +241,7 @@ public:
 			_last = next;
 		}
 	}
+	const SwitchCaseStorage* getLastCase() const { return _last; }
 	const SwitchCaseStorage* getFirstCase() const { return _first; }
 	SwitchCaseStorage* getFirstCase(){ return _first; }
 	uint32_t getCount() const{ return _count; }
@@ -298,10 +314,18 @@ public:
 struct JumpTableStorage
 {
 private:
-	std::vector<std::unique_ptr<StringStorage>> jumpLocs;
-	uint32_t _XORvalue = 0;
+
+    std::vector<std::unique_ptr<StringStorage>> jumpLocs;
+    uint32_t _XORvalue = 0;
 public:
 	JumpTableStorage(){}
+    JumpTableStorage(const JumpTableStorage* jts)
+    {
+        _XORvalue = jts->getXORValue();
+        jts->copyJumpLocs(jumpLocs);
+
+    }
+
 	uint32_t getByteSize()const{ return jumpLocs.size() << 2; }
 	uint32_t getItemCount()const{ return jumpLocs.size(); }
 	void addJumpLoc(const std::string& jumpLoc){ jumpLocs.push_back(std::make_unique<StringStorage>(jumpLoc)); }
@@ -321,6 +345,17 @@ public:
 	}
 	void setXORValue(uint32_t val){ _XORvalue = val; }
 	uint32_t getXORValue()const{ return _XORvalue; }
+    void copyJumpLocs(std::vector<std::unique_ptr<StringStorage>>& n) const{
+        n.clear();
+        n.reserve(getItemCount());
+        for(size_t i = 0; i < jumpLocs.size(); i++)
+        {
+            n.push_back(std::make_unique<StringStorage>(jumpLocs[i]->toString()));
+        }
+    }
+
+    
+
 };
 
 struct OpStaticStorage
@@ -346,6 +381,23 @@ class Opcode
 	friend class FunctionData;
 	friend class StaticData;
 	OpcodeKind opcodeKind;
+    union
+    {
+        void* ptr;
+        char u8[sizeof(void*)];
+        uint16_t u16[sizeof(void*) / 2];
+        int16_t i16[sizeof(void*) / 2];
+        int32_t i32;
+        uint32_t u32;
+        float f32;
+        SwitchStorage *switchCase;
+        NativeStorage *native;
+        StringStorage *string;
+        JumpTableStorage *jTable;
+        OpStaticStorage* staticData;
+        FunctionData* functionData;
+    } storage;
+
 #ifdef _DEBUG
 	StringStorage *_comment = NULL;
 #endif
@@ -359,6 +411,47 @@ class Opcode
 	Opcode(OpcodeKind kind, uint8_t storageVal1, uint8_t storageVal2) : opcodeKind(kind){
 		storage.u8[0] = storageVal1; storage.u8[1] = storageVal2; storage.u8[2] = storage.u8[3] = 0;
 	}
+    Opcode(const Opcode* op)
+    {
+        opcodeKind = op->getKind();
+
+#ifdef _DEBUG
+        if (_comment)
+        {
+            _comment = new StringStorage(op->_comment->toString());
+        }
+#endif
+        switch (opcodeKind)
+        {
+        case OK_PushString:
+        case OK_Jump:
+        case OK_JumpFalse:
+        case OK_JumpEQ:
+        case OK_JumpNE:
+        case OK_JumpGT:
+        case OK_JumpGE:
+        case OK_JumpLT:
+        case OK_JumpLE:
+        case OK_Label:
+        case OK_LabelLoc:
+            storage.string = new StringStorage(op->storage.string->toString());
+            break;
+        case OK_Native:
+            storage.native = new NativeStorage(op->storage.native->getHash(), op->storage.native->getParamCount(), op->storage.native->getReturnCount());
+            break;
+        case OK_Switch:
+            storage.switchCase = new SwitchStorage(op->storage.switchCase);
+            break;
+        case OK_JumpTable:
+            storage.jTable = new JumpTableStorage(op->storage.jTable);
+            break;
+        default:
+            storage.ptr = op->storage.ptr;
+            break;
+        }
+    }
+
+
 	void setString(const std::string& str)
 	{
 		if (storage.string)
@@ -389,22 +482,7 @@ class Opcode
 		storage.u8[offset] = value;
 	}
 	void setKind(OpcodeKind newKind){ opcodeKind = newKind; }
-	union
-	{
-		void* ptr;
-		char u8[sizeof(void*)];
-		uint16_t u16[sizeof(void*) / 2];
-		int16_t i16[sizeof(void*) / 2];
-		int32_t i32;
-		uint32_t u32;
-		float f32;
-		SwitchStorage *switchCase;
-		NativeStorage *native;
-		StringStorage *string;
-		JumpTableStorage *jTable;
-		OpStaticStorage* staticData;
-		FunctionData* functionData;
-	}storage;
+	
 public:
 	static Opcode* makeIntOpcode(OpcodeKind ok, int value)
 	{

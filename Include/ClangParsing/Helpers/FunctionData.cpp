@@ -551,7 +551,7 @@ void FunctionData::codeLayoutRandomisation(const Script& scriptData, uint32_t ma
 	if (makeJumpTable)
 	{
 		int pcFrameIndex = 0;
-		if (scriptData.getBuildType() == BT_GTAV && scriptData.getBuildPlatform() == P_PC)
+		if ((scriptData.getBuildType() == BT_GTAV && scriptData.getBuildPlatform() == P_PC) || scriptData.getBuildType() == BT_RDR2)
 		{
 			pcFrameIndex = getStackSize();
 			stackSize++;

@@ -7,6 +7,7 @@
 #include "ConsoleColor.h"
 #include "../Crypto/aes256.h"
 #include "../Compression/zlib.h"
+#include <unordered_map>
 
 
 #ifdef _MSC_VER
@@ -94,6 +95,9 @@ namespace Utils {
 			const size_t BaseExtPos = Dir.find_last_of("/\\") + 1;
 			return BaseExtPos == Dir.npos ? "" : Dir.substr(0, BaseExtPos);
 		}
+        bool LoadCSVMap(const std::string& path, bool hasHeader, int keyBase, std::unordered_map<uint64_t, uint64_t>& map, bool reverse);
+
+        std::string GetExecutablePath();
 	}
 	namespace System
 	{

@@ -1,8 +1,8 @@
 #pragma once
 typedef enum
 {
-	P_X360,
-	P_PS3,
+	P_XBOX,
+	P_PSX,
 	P_PC
 } Platform;
 
@@ -13,7 +13,8 @@ typedef enum
 	BT_GTAIV_TBOGT,
 	BT_RDR_XSC,
 	BT_RDR_SCO,
-	BT_GTAV
+	BT_GTAV,
+    BT_RDR2
 } BuildType;
 
 typedef enum

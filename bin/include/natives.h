@@ -44,7 +44,11 @@
 *H*/
 #pragma once
 
-#if TARGET == TARGET_RDR
+#if TARGET == TARGET_RDR2
+
+#include "RDR2/natives.h"
+
+#elif TARGET == TARGET_RDR
 
 #include "RDR/natives32.h"
 

@@ -14,8 +14,8 @@ Script::Script(string scriptName, BuildType buildType, Platform platform, bool i
 	initializeEntryFunction();
 
 	functions.push_back(std::move(entry));
-	_endian = (buildType == BT_GTAV && platform == P_PC) ? END_LITTLE : END_BIG;
-	_stackWidth = (buildType == BT_GTAV && platform == P_PC) ? 8 : 4;
+	_endian = ((buildType == BT_GTAV && platform == P_PC) || buildType ==  BT_RDR2) ? END_LITTLE : END_BIG;
+	_stackWidth = ((buildType == BT_GTAV && platform == P_PC) || buildType == BT_RDR2) ? 8 : 4;
 }
 
 FunctionData * Script::createFunction(string name, int paramCount, int returnCount, bool makeCurrent, bool isPrototype)
@@ -98,6 +98,12 @@ void Script::initializeEntryFunction()
 	{
 		switch (getBuildType())
 		{
+            case BT_RDR2:
+            entryFunction->addOpNative("get_hash_of_this_script_name", 0xBC2C927F5C264960, 0, 1);
+            entryFunction->addOpNative("_get_number_of_instances_of_streamed_script", 0x8E34C953364A76DD, 1, 1);
+            entryFunction->addOpPushInt(1);
+            entryFunction->addOpJumpGT("__builtin__singleton__");
+            break;
 			case BT_GTAV:
 			entryFunction->addOpNative("get_hash_of_this_script_name", (getBuildPlatform() == P_PC ? 0x8A1C8B1738FFE87E : JoaatConst("get_hash_of_this_script_name")), 0, 1);
 			entryFunction->addOpNative("_get_number_of_instances_of_streamed_script", (getBuildPlatform() == P_PC ? 0x2C83A9DA6BFFC4F9 : 0x029D3841), 1, 1);
@@ -119,12 +125,14 @@ void Script::initializeEntryFunction()
 		}
 	}
 }
+
 void Script::finaliseEntryFunction()
 {
 	lockReservedStaticBlock();
 	if (mainFunction)
 	{
 		entryFunction->addUsedFunc(mainFunction);
+
 		if (scriptParams)
 		{
 			if (getBuildType() == BT_RDR_XSC || getBuildType() == BT_RDR_SCO)
@@ -152,12 +160,34 @@ void Script::finaliseEntryFunction()
 		{
 			entryFunction->setUsed(*this);
 		}
-		entryFunction->addOpCall(mainFunction);
-		for (int i = 0; i < mainFunction->getReturnCount(); i++)
-		{
-			entryFunction->addOpDrop();
-			entryFunction->pushComment("dropping main returns");
-		}
+
+
+        if (!mainFunction->isMainFuncInline())
+        {
+            entryFunction->addOpCall(mainFunction);
+            for (int i = 0; i < mainFunction->getReturnCount(); i++)
+            {
+                entryFunction->addOpDrop();
+                entryFunction->pushComment("dropping main returns");
+            }
+        }
+        else
+        {
+            
+            entryFunction->setStackSize(entryFunction->getStackSize() + mainFunction->getStackSize() - 2);
+
+            size_t count = mainFunction->getInstructionCount();
+
+            for (size_t i = 0; i < count; i++)
+            {
+
+                //Instructions.push_back(Opcode::make2ByteOpcode(OK_Return, pcount, rcount));
+
+                entryFunction->addInstruction(mainFunction->getInstruction(i));
+            }
+        }
+
+
 		if (isSingleton())
 		{
 			entryFunction->addOpLabel("__builtin__singleton__");
@@ -235,8 +265,8 @@ string Script::getPlatformAbv() const
 	const int BT = getBuildType();
 	switch (getBuildPlatform())
 	{
-		case P_X360: return "x";
-		case P_PS3: return "c";
+		case P_XBOX: return "x";
+		case P_PSX: return "c";
 		case P_PC: return (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT) ? "w" : "y";
 	}
 	Utils::System::Throw("No platform selected");
@@ -247,8 +277,8 @@ string Script::getPlatformAbvUpper() const
 	const int BT = getBuildType();
 	switch (getBuildPlatform())
 	{
-		case P_X360: return "X";
-		case P_PS3: return "C";
+		case P_XBOX: return "X";
+		case P_PSX: return "C";
 		case P_PC: return (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT) ? "W" : "Y";
 	}
 	Utils::System::Throw("No platform selected");
@@ -263,7 +293,8 @@ string Script::getBuildTypeExt() const
 		case BT_GTAIV: return "sca";//it would be cool to support gta 4 at some point but its not a priority
 		case BT_RDR_XSC: return getPlatformAbv() + "sa";
 		case BT_RDR_SCO: return "sca2";
-		case BT_GTAV: return getPlatformAbv() + "sa2";
+		case BT_GTAV: return getPlatformAbv() + "sa";
+		case BT_RDR2: return getPlatformAbv() + "sa";
 	}
 	return "asm";
 }
@@ -276,6 +307,7 @@ string Script::getCompiledOutputExt() const
 		case BT_GTAIV_TLAD:
 		case BT_GTAIV_TBOGT:
 		case BT_GTAIV: return "sco";
+		case BT_RDR2:
 		case BT_GTAV:
 		case BT_RDR_XSC: return getPlatformAbv() + "sc";
 	}

@@ -190,7 +190,7 @@ void CompileBase::BuildTables()
 {
 	for (FunctionCount = 0; FunctionCount < HLData->getFunctionCount(); FunctionCount++)
 	{
-		if (HLData->getFunctionFromIndex(FunctionCount)->IsUsed())
+		if (HLData->getFunctionFromIndex(FunctionCount)->IsUsed() && !HLData->getFunctionFromIndex(FunctionCount)->isMainFuncInline())
 		{
 			AddFunction(HLData->getFunctionFromIndex(FunctionCount), DisableFunctionNames);
 			for (InstructionCount = 0; InstructionCount < HLData->getFunctionFromIndex(FunctionCount)->getInstructionCount(); InstructionCount++)
@@ -2021,7 +2021,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 
 		switch (HLData->getBuildPlatform())
 		{
-			case Platform::P_X360:
+			case Platform::P_XBOX:
 			{
 				Utils::Compression::xCompress Compression;
 				Compression.xCompressInit();
@@ -2042,7 +2042,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 				CompressedData.resize(CompressedLen);
 			}
 			break;
-			case Platform::P_PS3:
+			case Platform::P_PSX:
 			{
 				Utils::Compression::ZLIB_Compress(BuildBuffer, CompressedData);
 				
@@ -2069,7 +2069,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 			RSCFlag Flags;
 		} CSR_Header =
 		{
-			SwapEndian(HLData->getBuildPlatform() == Platform::P_X360 ? 0x85435352u : 0x86435352u),
+			SwapEndian(HLData->getBuildPlatform() == Platform::P_XBOX ? 0x85435352u : 0x86435352u),
 			SwapEndian(0x00000002u)
 		};
 		CSR_Header.Flags.bResource = true;
@@ -2183,14 +2183,14 @@ inline int32_t CompileGTAV::GetSizeFromFlag(uint32_t flag, int32_t baseSize)
 }
 inline int32_t CompileGTAV::GetSizeFromSystemFlag(uint32_t flag)
 {
-	if (HLData->getBuildPlatform() == Platform::P_PS3)
+	if (HLData->getBuildPlatform() == Platform::P_PSX)
 		return GetSizeFromFlag(flag, 0x1000);
 	else // XBOX 360 / PC
 		return GetSizeFromFlag(flag, 0x2000);
 }
 inline int32_t CompileGTAV::GetSizeFromGraphicsFlag(uint32_t flag)
 {
-	if (HLData->getBuildPlatform() == Platform::P_PS3)
+	if (HLData->getBuildPlatform() == Platform::P_PSX)
 		return GetSizeFromFlag(flag, 0x1580);
 	else // XBOX 360 / PC
 		return GetSizeFromFlag(flag, 0x2000);
@@ -2535,7 +2535,7 @@ void CompileGTAV::BuildTablesCheckEnc()
 	if (isStringEncrypted){
 		auto randomEngine = default_random_engine(chrono::system_clock::now().time_since_epoch().count());
 		__int64 stringTableXOR = ((__int64)randomEngine() << 32) | randomEngine();
-		StringPageData->AddPadding(8);
+		StringPageData->AddPadding(8, 0);
 		FunctionCount = 0;
 		InstructionCount = 0;
 		AddFunction(HLData->getFunctionFromIndex(FunctionCount), DisableFunctionNames);
@@ -2544,7 +2544,7 @@ void CompileGTAV::BuildTablesCheckEnc()
 			InstructionCount = 1;
 
 		}
-		CodePageData->reserveBytes(4);
+		ReserveBytes(4);
 		AddOpcode(Call);
 		size_t entryCallLoc = CodePageData->getTotalSize();
 		AddInt24(0);
@@ -2597,7 +2597,7 @@ void CompileGTAV::BuildTablesCheckEnc()
 }
 void CompileGTAV::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
 {
-	CodePageData->reserveBytes(5);
+	ReserveBytes(5);
 	ChangeInt24InCodePage(CodePageData->getTotalSize(), entryCallLoc);
 	AddOpcode(Function);
 	AddInt8(0);
@@ -2606,18 +2606,18 @@ void CompileGTAV::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
 
 	PushInt(0);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(PushString);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(pGet);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Not);
 
 	AddJump(CompileBase::JumpInstructionType::JumpFalse, "__decrypted_not_done");
 
-	CodePageData->reserveBytes(3);
+	ReserveBytes(3);
 	AddOpcode(Return);
 	AddInt16(0);
 
@@ -2625,63 +2625,63 @@ void CompileGTAV::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
 
 	PushInt(StringPageData->getTotalSize());
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Dup);
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(2);
 
 	AddImm(16383);
 	PushInt(16384);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Div);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(3);
 
 	PushInt(0);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(4);
 
 	AddLabel("__decryptedForBody");
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(4);
 
 	MultImm(16384);
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(PushString);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Dup);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(5);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(4);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(3);
 
 	AddImm(-1);
 	AddJump(CompileBase::JumpInstructionType::JumpNE, "__decryptedCondFalse");
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(2);
 
 	PushInt(16383);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(And);
 	AddJump(CompileBase::JumpInstructionType::Jump, "__decryptedCondEnd");
 
@@ -2689,92 +2689,92 @@ void CompileGTAV::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
 	PushInt(16384);
 	AddLabel("__decryptedCondEnd");
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Add);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(6);
 
 	AddLabel("__decryptedWhileBody");
 
 	//decrypt lower 32 bits
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(5);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(pGet);
 
 	PushInt(Utils::Bitwise::SwapEndian(xorValue & 0xFFFFFFFF));
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Xor);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(5);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(pSet);
 	//decrypt higher 32 bits
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(5);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetImm1);
 	AddInt8(1);
 
 	PushInt(Utils::Bitwise::SwapEndian(xorValue >> 32));
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Xor);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(5);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetImm1);
 	AddInt8(1);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(5);
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetImmP1);
 	AddInt8(2);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Dup);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(5);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(6);
 
 	AddJump(CompileBase::JumpInstructionType::JumpLT, "__decryptedWhileBody");
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(4);
 	AddImm(1);
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Dup);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(4);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(3);
 
 	AddJump(CompileBase::JumpInstructionType::JumpLT, "__decryptedForBody");
 
-	CodePageData->reserveBytes(3);
+	ReserveBytes(3);
 	AddOpcode(Return);
 	AddInt16(0);
 
@@ -2792,7 +2792,7 @@ void CompileGTAV::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
 #pragma region Opcode_Functions
 void CompileGTAVPC::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
 {
-	CodePageData->reserveBytes(5);
+	ReserveBytes(5);
 	ChangeInt24InCodePage(CodePageData->getTotalSize(), entryCallLoc);
 	AddOpcode(Function);
 	AddInt8(0);
@@ -2801,18 +2801,18 @@ void CompileGTAVPC::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
 
 	PushInt(0);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(PushString);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(pGet);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Not);
 
 	AddJump(CompileBase::JumpInstructionType::JumpFalse, "__decrypted_not_done");
 
-	CodePageData->reserveBytes(3);
+	ReserveBytes(3);
 	AddOpcode(Return);
 	AddInt16(0);
 
@@ -2820,63 +2820,63 @@ void CompileGTAVPC::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
 
 	PushInt(StringPageData->getTotalSize());
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Dup);
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(2);
 
 	AddImm(16383);
 	PushInt(16384);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Div);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(3);
 
 	PushInt(0);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(4);
 
 	AddLabel("__decryptedForBody");
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(4);
 
 	MultImm(16384);
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(PushString);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Dup);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(5);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(4);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(3);
 
 	AddImm(-1);
 	AddJump(CompileBase::JumpInstructionType::JumpNE, "__decryptedCondFalse");
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(2);
 
 	PushInt(16383);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(And);
 	AddJump(CompileBase::JumpInstructionType::Jump, "__decryptedCondEnd");
 
@@ -2884,92 +2884,92 @@ void CompileGTAVPC::addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)
 	PushInt(16384);
 	AddLabel("__decryptedCondEnd");
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Add);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(6);
 
 	AddLabel("__decryptedWhileBody");
 
 	//decrypt lower 32 bits
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(5);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(pGet);
 
 	PushInt(xorValue & 0xFFFFFFFF);
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Xor);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(5);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(pSet);
 	//decrypt higher 32 bits
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(5);
 	AddImm(4);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(pGet);
 
 	PushInt(xorValue >> 32);
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Xor);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(5);
 	AddImm(4);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(pSet);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(5);
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetImmP1);
 	AddInt8(1);
 
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Dup);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(5);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(6);
 
 	AddJump(CompileBase::JumpInstructionType::JumpLT, "__decryptedWhileBody");
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(4);
 	AddImm(1);
-	CodePageData->reserveBytes(1);
+	ReserveBytes(1);
 	AddOpcode(Dup);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(SetFrame1);
 	AddInt8(4);
 
-	CodePageData->reserveBytes(2);
+	ReserveBytes(2);
 	AddOpcode(GetFrame1);
 	AddInt8(3);
 
 	AddJump(CompileBase::JumpInstructionType::JumpLT, "__decryptedForBody");
 
-	CodePageData->reserveBytes(3);
+	ReserveBytes(3);
 	AddOpcode(Return);
 	AddInt16(0);
 
@@ -3089,8 +3089,17 @@ void CompileGTAVPC::WriteNatives()
 		BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
 		for (unordered_map<uint64_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
 		{
-			*(uint64_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 8) = _rotr64(nativeTranslation.Translate(it->first), it->second + CodePageData->getTotalSize());
-		}
+            auto res = NativeTranslationMap.find(it->first);
+
+            if (res != NativeTranslationMap.end())
+            {
+                *(uint64_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 8) = _rotr64(res->second, it->second + CodePageData->getTotalSize());
+
+            }
+            else
+                Utils::System::Throw("Could not find native " + to_string(it->first) + " in native translation map (" + NativeMapFileName + ")");
+			
+        }
 
 		Pad();
 	}
@@ -3183,5 +3192,523 @@ void CompileGTAVPC::YSCWrite(const char* path, bool AddRsc7Header)
 
 }
 #pragma endregion
+
+#pragma endregion
+
+#pragma region RDR2Console
+
+#pragma region Opcode_Functions
+void CompileRDR2Console::Switch() {
+
+    const SwitchStorage* switchStore = DATA->getSwitch();
+    const uint32_t caseCount = switchStore->getCount();
+    DoesOpcodeHaveRoom(caseCount * 6 + 3);//opcode, case count
+
+    AddOpcode(Switch);
+    AddInt16(caseCount);
+
+    if (caseCount)
+    {
+        vector<CompileBase::JumpLabelData> CasesToBeFixed;
+        const SwitchCaseStorage* sCase = switchStore->getFirstCase();
+
+        AddInt32(sCase->getCaseValue());
+        CompileBase::JumpLabelData JumpLabelData = AddSwitchJump(JumpInstructionType::Switch, sCase->getCaseLocation());
+        if (JumpLabelData.JumpInfo.JumpLocation)
+            CasesToBeFixed.push_back(JumpLabelData);
+
+        while (sCase->hasNextCase())
+        {
+            sCase = sCase->getNextCase();
+            AddInt32(sCase->getCaseValue());
+            CompileBase::JumpLabelData JumpLabelData = AddSwitchJump(JumpInstructionType::Switch, sCase->getCaseLocation());
+            if (JumpLabelData.JumpInfo.JumpLocation)
+                CasesToBeFixed.push_back(JumpLabelData);
+        }
+        //start jump table to fix jumps
+        if (CasesToBeFixed.size() > 0)
+        {
+            uint32_t JumpOverOffset;
+            if (switchStore->hasDefaultJumpLoc())
+            {
+                AddJump(JumpInstructionType::Jump, switchStore->getDefaultJumpLoc()->toString());
+            }
+            else {
+                DoesOpcodeHaveRoom(3);
+                AddOpcode(Jump);
+                JumpOverOffset = CodePageData->getTotalSize();
+                AddInt16(0);
+            }
+
+
+            //need to update jumps of same label that are out of bounds to jumps that are already added. instead of adding another jump to jump.
+
+            int32_t offset = 0;
+
+            for (uint32_t i = 0; i < CasesToBeFixed.size(); i++)
+            {
+                offset = CodePageData->getTotalSize() - CasesToBeFixed[i].JumpInfo.JumpLocation - 2;
+                if (offset > 65535)
+                    Throw("Jump label \"" + CasesToBeFixed[i].JumpInfo.Label + "\" out of jump range on jump to jump " + to_string(offset));
+
+                ChangeInt16InCodePage(offset, CasesToBeFixed[i].JumpInfo.JumpLocation);
+
+                //cout << "fixed switch jump " + CasesToBeFixed[i].JumpInfo.Label << endl;
+
+
+                offset = CasesToBeFixed[i].LabelInfo.LabelLocation - CodePageData->getTotalSize() - 3;
+                if (offset >= -32768)
+                {
+                    DoesOpcodeHaveRoom(3);
+                    AddOpcode(Jump);
+                    AddInt16(offset);
+                }
+                else
+                {
+                    PushInt(CasesToBeFixed[i].LabelInfo.LabelLocation);
+                    GoToStack();
+                }
+            }
+
+
+            //set jump over jump
+            if (!switchStore->hasDefaultJumpLoc())
+                ChangeInt16InCodePage(CodePageData->getTotalSize() - JumpOverOffset - 2, JumpOverOffset);
+        }
+        else if (switchStore->hasDefaultJumpLoc()) {
+            AddJump(JumpInstructionType::Jump, switchStore->getDefaultJumpLoc()->toString());
+        }
+    }
+    else if (switchStore->hasDefaultJumpLoc())
+    {
+        AddJump(JumpInstructionType::Jump, switchStore->getDefaultJumpLoc()->toString());
+    }
+
+}
+#pragma endregion
+
+
+#pragma region Write_Functions
+void CompileRDR2Console::WriteHeader()
+{
+    headerLocation = BuildBuffer.size();
+
+    AddInt64toBuff(0);//page base
+    AddInt64toBuff(0); //Unk1 ptr
+    AddInt64toBuff(0); //codeBlocksListOffsetPtr
+    AddInt32toBuff(Utils::Bitwise::SwapEndian(0x03F176DE));//unk2
+    AddInt32toBuff(CodePageData->getTotalSize());//code length
+    AddInt32toBuff(HLData->getParameterCount());//script ParameterCount (this needs to be implemented)
+    AddInt32toBuff(HLData->getStaticCount());//statics count
+    AddInt32toBuff(0);//GlobalsSize
+    AddInt32toBuff(NativeHashMap.size());//natives count
+    AddInt64toBuff(0); //Statics offset
+    AddInt64toBuff(0); //Globals ptr, stay 0
+    AddInt64toBuff(0); //native offset
+    AddInt64toBuff(0);//Unk3
+    AddInt64toBuff(0);//Unk4
+    AddInt32toBuff(Utils::Hashing::Joaat(HLData->getScriptName()));
+    AddInt32toBuff(1);//Unk5 typically 1
+    AddInt64toBuff(0); //script name offset
+    AddInt64toBuff(0); //strings offset
+    AddInt32toBuff(StringPageData->getTotalSize());
+    AddInt32toBuff(0);//Unk6
+    AddInt64toBuff(0);//unk7
+
+
+    AddInt64toBuff(1);//unk8
+    AddInt64toBuff(0);//unk8Ptr
+    AddInt64toBuff(0);//unk9
+    AddInt64toBuff(0);//unk9Ptr
+    AddInt64toBuff(64);//unk10
+    AddInt64toBuff(0);//unk10Ptr
+
+     //no need to pad as its divisible by 16
+}
+void CompileRDR2Console::WritePointers()
+{
+    //Write script name
+    const uint32_t StringSize = HLData->getScriptName().size() + 1;
+    if (GetSpaceLeft(16384) < StringSize)
+        FillPageDynamic(16384);
+
+    SavedOffsets.ScriptName = BuildBuffer.size();
+
+    BuildBuffer.resize(BuildBuffer.size() + StringSize);
+    memcpy(BuildBuffer.data() + BuildBuffer.size() - StringSize, HLData->getScriptName().data(), StringSize);
+    Pad();
+
+    //Write code page pointers
+    if (GetSpaceLeft(16384) < CodePageData->getPageCount() * 4)
+        FillPageDynamic(16384);
+
+    SavedOffsets.CodeBlocks = BuildBuffer.size();
+    BuildBuffer.resize(BuildBuffer.size() + CodePageData->getPageCount() * 8, 0);
+    Pad();
+
+    //Write string page pointers
+
+    if (StringPageData->getPageCountIgnoreEmpty())
+    {
+        if (GetSpaceLeft(16384) < StringPageData->getPageCountIgnoreEmpty() * 8)
+            FillPageDynamic(16384);
+
+        SavedOffsets.StringBlocks = BuildBuffer.size();
+        BuildBuffer.resize(BuildBuffer.size() + StringPageData->getPageCountIgnoreEmpty() * 8, 0);
+        Pad();
+    }
+    else
+    {
+        if (GetSpaceLeft(16384) < 16)
+            FillPageDynamic(16384);
+        SavedOffsets.StringBlocks = BuildBuffer.size();
+        ForcePad();
+    }
+
+    //write unk1
+    if (GetSpaceLeft(16384) < 16)
+        FillPageDynamic(16384);
+    SavedOffsets.Unk1 = BuildBuffer.size();
+    BuildBuffer.resize(BuildBuffer.size() + 24);
+    *(BuildBuffer.data() + BuildBuffer.size() - 24 + 8) = 1;
+
+
+    SavedOffsets.Unk8 = BuildBuffer.size();
+    BuildBuffer.resize(BuildBuffer.size() + 16);
+
+
+    SavedOffsets.Unk9 = BuildBuffer.size();
+    BuildBuffer.resize(BuildBuffer.size() + 16);
+    uint32_t* Unk9Ptr = (uint32_t*)(BuildBuffer.data() + BuildBuffer.size() - 16);
+    Unk9Ptr[2] = 2;
+    Unk9Ptr[3] = 1;
+
+    SavedOffsets.Unk10 = BuildBuffer.size();
+    BuildBuffer.resize(BuildBuffer.size() + 256);
+    uint8_t* Unk10Ptr = (uint8_t*)(BuildBuffer.data() + BuildBuffer.size() - 256);
+    uint8_t unk10[256] = { 0x03,0xF1,0x76,0xDE,0xFC,0xC7,0xE0,0x05,0x7B,0xBC,0x85,0x96,0x00,0x00,0x00,0x00,0x44,0xFA,0x50,0x10,0xBD,0xAB,0xF8,0x44,0x33,0xEF,0xEA,0xA8,0x52,0xD1,0xC0,0xA1,0x6D,0xAF,0xCE,0xCE,0x8D,0xB4,0x85,0xBD,0xD6,0x3B,0x0A,0x9A,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 };
+
+    memcpy_s(Unk10Ptr, 256, unk10, 256);
+
+
+    FillPageDynamic(16384 / 2);
+}
+void CompileRDR2Console::WriteNatives()
+{
+    if (NativeHashMap.size() > 0)
+    {
+        const size_t nativeByteSize = NativeHashMap.size() * 8;
+
+        if (GetSpaceLeft(16384) < nativeByteSize)
+            FillPageDynamic(16384);
+
+        SavedOffsets.Natives = BuildBuffer.size();
+
+        BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
+        for (unordered_map<uint64_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
+        {
+            uint64_t native = it->first;
+
+            *(uint64_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 8) = _rotr64(native, (it->second + CodePageData->getTotalSize()) & 0x3f);
+
+        }
+
+        Pad();
+    }
+    else
+    {
+        if (GetSpaceLeft(16384) < 16)
+            FillPageDynamic(16384);
+        SavedOffsets.Natives = BuildBuffer.size();
+        ForcePad();
+    }
+
+}
+
+void CompileRDR2Console::YSCWrite(const char* path, bool AddRsc7Header)
+{
+    FilePadding = 0;
+    ClearWriteVars();
+
+    WriteHeader();
+    Write16384CodePages();
+    WriteFinalCodePage();
+    Write16384StringPages();
+    WriteFinalStringPage();
+    WriteNatives();
+    WriteStatics();
+    WritePointers();
+
+#pragma region Fix_header_and_other_pointers
+    ChangeInt64inBuff(IntToPointerInt(SavedOffsets.Unk1), headerLocation + 8);
+    ChangeInt64inBuff(IntToPointerInt(SavedOffsets.CodeBlocks), headerLocation + 16);
+    ChangeInt64inBuff(IntToPointerInt(SavedOffsets.Statics), headerLocation + 48);
+    ChangeInt64inBuff(IntToPointerInt(SavedOffsets.Natives), headerLocation + 64);
+    ChangeInt64inBuff(IntToPointerInt(SavedOffsets.ScriptName), headerLocation + 96);
+    ChangeInt64inBuff(IntToPointerInt(SavedOffsets.StringBlocks), headerLocation + 104);
+
+    ChangeInt64inBuff(IntToPointerInt(SavedOffsets.Unk8), headerLocation + 128);
+    ChangeInt64inBuff(IntToPointerInt(SavedOffsets.Unk9), headerLocation + 144);
+    ChangeInt64inBuff(IntToPointerInt(SavedOffsets.Unk10), headerLocation + 160);
+
+
+    for (uint32_t i = 0; i < SavedOffsets.CodePagePointers.size(); i++)
+        ChangeInt64inBuff(IntToPointerInt(SavedOffsets.CodePagePointers[i]), SavedOffsets.CodeBlocks + (i * 8));
+    for (uint32_t i = 0; i < SavedOffsets.StringPagePointers.size(); i++)
+        ChangeInt64inBuff(IntToPointerInt(SavedOffsets.StringPagePointers[i]), SavedOffsets.StringBlocks + (i * 8));
+#pragma endregion
+
+#pragma region Write_File
+    FILE* file = nullptr;
+    if (Utils::IO::CreateFileWithDir(path, file))
+    {
+        if (AddRsc7Header)
+        {
+            Utils::System::Warn("RSC header not supported for RDR2");
+            //const vector<uint32_t> rsc8 =
+            //{
+            //    Utils::Bitwise::SwapEndian(0x52534338u),//magic
+            //    Utils::Bitwise::SwapEndian((uint32_t)ResourceType::ScriptContainer),//resourceType
+            //    Utils::Bitwise::SwapEndian(GetFlagFromSize(BuildBuffer.size())),//systemFlag
+            //    Utils::Bitwise::SwapEndian(0x90000000u)//graphicsFlag
+            //};
+            //
+            //fwrite(rsc8.data(), 1, 16, file);
+        }
+
+        fwrite(BuildBuffer.data(), 1, BuildBuffer.size(), file);
+        fclose(file);
+    }
+#pragma endregion
+
+}
+#pragma endregion
+
+
+#pragma endregion
+
+#pragma region RDR2PC
+
+CompileRDR2PC::CompileRDR2PC(const Script & data, bool Disable_Function_Names) :
+    CompileRDR2Console(data, Disable_Function_Names)
+{
+    
+
+    std::unordered_map<uint64_t, uint64_t> opMap;
+
+    if (!Utils::IO::LoadCSVMap(Utils::IO::GetDir(Utils::IO::GetExecutablePath()) + OpcodeMapFileName, true, 10, opMap, true))
+    {
+        Utils::System::Throw("Could not load opcode map " + OpcodeMapFileName);
+    }
+
+    if (opMap.size() != 142)
+    {
+        Utils::System::Throw("Could not load opcode map " + OpcodeMapFileName);
+    }
+    memset(BaseOpcodes, opMap[R2PO_Nop], BASE_OPCODE_SIZE);
+
+    BaseOpcodes->Nop = opMap[R2PO_Nop];
+    BaseOpcodes->Add = opMap[R2PO_Add];
+    BaseOpcodes->Sub = opMap[R2PO_Sub];
+    BaseOpcodes->Mult = opMap[R2PO_Mult];
+    BaseOpcodes->Div = opMap[R2PO_Div];
+    BaseOpcodes->Mod = opMap[R2PO_Mod];
+    BaseOpcodes->Not = opMap[R2PO_Not];
+    BaseOpcodes->Neg = opMap[R2PO_Neg];
+    BaseOpcodes->CmpEq = opMap[R2PO_CmpEQ];
+    BaseOpcodes->CmpNe = opMap[R2PO_CmpNE];
+    BaseOpcodes->CmpGt = opMap[R2PO_CmpGT];
+    BaseOpcodes->CmpGe = opMap[R2PO_CmpGE];
+    BaseOpcodes->CmpLt = opMap[R2PO_CmpLT];
+    BaseOpcodes->CmpLe = opMap[R2PO_CmpLE];
+    BaseOpcodes->fAdd = opMap[R2PO_fAdd];
+    BaseOpcodes->fSub = opMap[R2PO_fSub];
+    BaseOpcodes->fMult = opMap[R2PO_fMult];
+    BaseOpcodes->fDiv = opMap[R2PO_fDiv];
+    BaseOpcodes->fMod = opMap[R2PO_fMod];
+    BaseOpcodes->fNeg = opMap[R2PO_fNeg];
+    BaseOpcodes->fCmpEq = opMap[R2PO_fCmpEQ];
+    BaseOpcodes->fCmpNe = opMap[R2PO_fCmpNE];
+    BaseOpcodes->fCmpGt = opMap[R2PO_fCmpGT];
+    BaseOpcodes->fCmpGe = opMap[R2PO_fCmpGE];
+    BaseOpcodes->fCmpLt = opMap[R2PO_fCmpLT];
+    BaseOpcodes->fCmpLe = opMap[R2PO_fCmpLE];
+    BaseOpcodes->vAdd = opMap[R2PO_vAdd];
+    BaseOpcodes->vSub = opMap[R2PO_vSub];
+    BaseOpcodes->vMult = opMap[R2PO_vMult];
+    BaseOpcodes->vDiv = opMap[R2PO_vDiv];
+    BaseOpcodes->vNeg = opMap[R2PO_vNeg];
+    BaseOpcodes->And = opMap[R2PO_And];
+    BaseOpcodes->Or = opMap[R2PO_Or];
+    BaseOpcodes->Xor = opMap[R2PO_Xor];
+    BaseOpcodes->ItoF = opMap[R2PO_ItoF];
+    BaseOpcodes->FtoI = opMap[R2PO_FtoI];
+    BaseOpcodes->FtoV = opMap[R2PO_FtoV];
+    BaseOpcodes->PushB = opMap[R2PO_PushB];
+    BaseOpcodes->PushB2 = opMap[R2PO_PushB2];
+    BaseOpcodes->PushB3 = opMap[R2PO_PushB3];
+    BaseOpcodes->Push = opMap[R2PO_Push];
+    BaseOpcodes->PushF = opMap[R2PO_PushF];
+    BaseOpcodes->Dup = opMap[R2PO_Dup];
+    BaseOpcodes->Drop = opMap[R2PO_Drop];
+    BaseOpcodes->CallNative = opMap[R2PO_CallNative];
+    BaseOpcodes->Function = opMap[R2PO_Function];
+    BaseOpcodes->Return = opMap[R2PO_Return];
+    BaseOpcodes->pGet = opMap[R2PO_pGet];
+    BaseOpcodes->pSet = opMap[R2PO_pSet];
+    BaseOpcodes->pPeekSet = opMap[R2PO_pPeekSet];
+    BaseOpcodes->ToStack = opMap[R2PO_ToStack];
+    BaseOpcodes->FromStack = opMap[R2PO_FromStack];
+    BaseOpcodes->GetArrayP1 = opMap[R2PO_GetArrayP1];
+    BaseOpcodes->GetArray1 = opMap[R2PO_GetArray1];
+    BaseOpcodes->SetArray1 = opMap[R2PO_SetArray1];
+    BaseOpcodes->GetFrameP1 = opMap[R2PO_GetLocalP1];
+    BaseOpcodes->GetFrame1 = opMap[R2PO_GetLocal1];
+    BaseOpcodes->SetFrame1 = opMap[R2PO_SetLocal1];
+    BaseOpcodes->GetStaticP1 = opMap[R2PO_GetStaticP1];
+    BaseOpcodes->GetStatic1 = opMap[R2PO_GetStatic1];
+    BaseOpcodes->SetStatic1 = opMap[R2PO_SetStatic1];
+    BaseOpcodes->Add1 = opMap[R2PO_AddImm1];
+    BaseOpcodes->Mult1 = opMap[R2PO_MultImm1];
+    BaseOpcodes->GetImm1 = opMap[R2PO_GetImm1];
+    BaseOpcodes->SetImm1 = opMap[R2PO_SetImm1];
+    BaseOpcodes->PushS = opMap[R2PO_PushS];
+    BaseOpcodes->Add2 = opMap[R2PO_AddImm2];
+    BaseOpcodes->Mult2 = opMap[R2PO_MultImm2];
+    BaseOpcodes->GetImm2 = opMap[R2PO_GetImm2];
+    BaseOpcodes->SetImm2 = opMap[R2PO_SetImm2];
+    BaseOpcodes->GetArrayP2 = opMap[R2PO_GetArrayP2];
+    BaseOpcodes->GetArray2 = opMap[R2PO_GetArray2];
+    BaseOpcodes->SetArray2 = opMap[R2PO_SetArray2];
+    BaseOpcodes->GetFrameP2 = opMap[R2PO_GetLocalP2];
+    BaseOpcodes->GetFrame2 = opMap[R2PO_GetLocal2];
+    BaseOpcodes->SetFrame2 = opMap[R2PO_SetLocal2];
+    BaseOpcodes->GetStaticP2 = opMap[R2PO_GetStaticP2];
+    BaseOpcodes->GetStatic2 = opMap[R2PO_GetStatic2];
+    BaseOpcodes->SetStatic2 = opMap[R2PO_SetStatic2];
+    BaseOpcodes->GetGlobalP2 = opMap[R2PO_GetGlobalP2];
+    BaseOpcodes->GetGlobal2 = opMap[R2PO_GetGlobal2];
+    BaseOpcodes->SetGlobal2 = opMap[R2PO_SetGlobal2];
+    BaseOpcodes->Jump = opMap[R2PO_Jump];
+    BaseOpcodes->JumpFalse = opMap[R2PO_JumpFalse];
+    BaseOpcodes->JumpNE = opMap[R2PO_JumpNE];
+    BaseOpcodes->JumpEQ = opMap[R2PO_JumpEQ];
+    BaseOpcodes->JumpLE = opMap[R2PO_JumpLE];
+    BaseOpcodes->JumpLT = opMap[R2PO_JumpLT];
+    BaseOpcodes->JumpGE = opMap[R2PO_JumpGE];
+    BaseOpcodes->JumpGT = opMap[R2PO_JumpGT];
+    BaseOpcodes->Call = opMap[R2PO_Call];
+    BaseOpcodes->GetGlobalP3 = opMap[R2PO_GetGlobalP3];
+    BaseOpcodes->GetGlobal3 = opMap[R2PO_GetGlobal3];
+    BaseOpcodes->SetGlobal3 = opMap[R2PO_SetGlobal3];
+    BaseOpcodes->PushI24 = opMap[R2PO_PushI24];
+    BaseOpcodes->Switch = opMap[R2PO_Switch];
+    BaseOpcodes->PushString = opMap[R2PO_PushStringS];
+    BaseOpcodes->StrCopy = opMap[R2PO_StrCopy];
+    BaseOpcodes->ItoS = opMap[R2PO_ItoS];
+    BaseOpcodes->StrAdd = opMap[R2PO_StrAdd];
+    BaseOpcodes->StrAddi = opMap[R2PO_StrAddi];
+    BaseOpcodes->MemCopy = opMap[R2PO_MemCopy];
+    BaseOpcodes->Catch = opMap[R2PO_Catch];
+    BaseOpcodes->Throw = opMap[R2PO_Throw];
+    BaseOpcodes->pCall = opMap[R2PO_pCall];
+    BaseOpcodes->Push_Neg1 = opMap[R2PO_Push_Neg1];
+    BaseOpcodes->Push_0 = opMap[R2PO_Push_0];
+    BaseOpcodes->Push_1 = opMap[R2PO_Push_1];
+    BaseOpcodes->Push_2 = opMap[R2PO_Push_2];
+    BaseOpcodes->Push_3 = opMap[R2PO_Push_3];
+    BaseOpcodes->Push_4 = opMap[R2PO_Push_4];
+    BaseOpcodes->Push_5 = opMap[R2PO_Push_5];
+    BaseOpcodes->Push_6 = opMap[R2PO_Push_6];
+    BaseOpcodes->Push_7 = opMap[R2PO_Push_7];
+    BaseOpcodes->PushF_Neg1 = opMap[R2PO_PushF_Neg1];
+    BaseOpcodes->PushF_0 = opMap[R2PO_PushF_0];
+    BaseOpcodes->PushF_1 = opMap[R2PO_PushF_1];
+    BaseOpcodes->PushF_2 = opMap[R2PO_PushF_2];
+    BaseOpcodes->PushF_3 = opMap[R2PO_PushF_3];
+    BaseOpcodes->PushF_4 = opMap[R2PO_PushF_4];
+    BaseOpcodes->PushF_5 = opMap[R2PO_PushF_5];
+    BaseOpcodes->PushF_6 = opMap[R2PO_PushF_6];
+    BaseOpcodes->PushF_7 = opMap[R2PO_PushF_7];
+
+    //Extra GTAV Opcodes
+    BaseOpcodes->GetImmP = opMap[R2PO_GetImmPs];
+    BaseOpcodes->GetImmP1 = opMap[R2PO_GetImmP1];
+    BaseOpcodes->GetImmP2 = opMap[R2PO_GetImmP2];
+    BaseOpcodes->GetHash = opMap[R2PO_GetHash];
+
+    //RDR2 Extra Opcodes
+    BaseOpcodes->GetLocalS = opMap[R2PO_GetLocalS];
+    BaseOpcodes->SetLocalS = opMap[R2PO_SetLocalS];
+    BaseOpcodes->SetLocalSR = opMap[R2PO_SetLocalSR];
+    BaseOpcodes->GetStaticS = opMap[R2PO_GetStaticS];
+    BaseOpcodes->SetStaticS = opMap[R2PO_SetStaticS];
+    BaseOpcodes->SetStaticSR = opMap[R2PO_SetStaticSR];
+    BaseOpcodes->pGetS = opMap[R2PO_pGetS];
+    BaseOpcodes->pSetS = opMap[R2PO_pSetS];
+    BaseOpcodes->pSetSR = opMap[R2PO_pSetSR];
+    BaseOpcodes->GetGlobalS = opMap[R2PO_GetGlobalS];
+    BaseOpcodes->SetGlobalS = opMap[R2PO_SetGlobalS];
+    BaseOpcodes->SetGlobalSR = opMap[R2PO_SetGlobalSR];
+
+    BaseOpcodes->GetStaticP3 = opMap[R2PO_GetStaticP3];
+    BaseOpcodes->GetStatic3 = opMap[R2PO_GetStatic3];
+    BaseOpcodes->SetStatic3 = opMap[R2PO_SetStatic3];
+
+}
+
+
+#pragma region Write_Functions
+
+void CompileRDR2PC::WriteNatives()
+{
+    if (NativeHashMap.size() > 0)
+    {
+        const size_t nativeByteSize = NativeHashMap.size() * 8;
+
+        if (GetSpaceLeft(16384) < nativeByteSize)
+            FillPageDynamic(16384);
+
+        SavedOffsets.Natives = BuildBuffer.size();
+
+        BuildBuffer.resize(BuildBuffer.size() + nativeByteSize);
+        auto codeSize = CodePageData->getTotalSize();
+        
+
+        for (unordered_map<uint64_t, uint32_t>::iterator it = NativeHashMap.begin(); it != NativeHashMap.end(); it++)
+        {
+            uint64_t native = it->first;
+
+            uint64_t* nativeData = (uint64_t*)(BuildBuffer.data() + SavedOffsets.Natives + it->second * 8);
+
+            *nativeData = _rotr64(native, (it->second + codeSize) & 0x3f);
+
+        }
+
+        uint8_t carry = codeSize;
+        uint8_t* nativeptr = (uint8_t*)(BuildBuffer.data() + SavedOffsets.Natives);
+        for (size_t i = 0; i < nativeByteSize; i++)
+        {
+            uint8_t* bPtr = nativeptr + i;
+
+            *bPtr ^= carry;
+            carry = *bPtr;
+        }
+
+
+        Pad();
+    }
+    else
+    {
+        if (GetSpaceLeft(16384) < 16)
+            FillPageDynamic(16384);
+        SavedOffsets.Natives = BuildBuffer.size();
+        ForcePad();
+    }
+
+}
+
+#pragma endregion
+
 
 #pragma endregion

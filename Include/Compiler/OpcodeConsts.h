@@ -553,11 +553,307 @@ enum GTAIV_Opcodes
 	, IVO_Push_159 = 255
 };
 
+enum RDR2_Opcodes : uint8_t
+{
+    R2O_Nop = 0
+    , R2O_Add = 1
+    , R2O_Sub = 2
+    , R2O_Mult = 3
+    , R2O_Div = 4
+    , R2O_Mod = 5
+    , R2O_Not = 6
+    , R2O_Neg = 7
+    , R2O_CmpEQ = 8
+    , R2O_CmpNE = 9
+    , R2O_CmpGT = 10
+    , R2O_CmpGE = 11
+    , R2O_CmpLT = 12
+    , R2O_CmpLE = 13
+    , R2O_fAdd = 14
+    , R2O_fSub = 15
+    , R2O_fMult = 16
+    , R2O_fDiv = 17
+    , R2O_fMod = 18
+    , R2O_fNeg = 19
+    , R2O_fCmpEQ = 20
+    , R2O_fCmpNE = 21
+    , R2O_fCmpGT = 22
+    , R2O_fCmpGE = 23
+    , R2O_fCmpLT = 24
+    , R2O_fCmpLE = 25
+    , R2O_vAdd = 26
+    , R2O_vSub = 27
+    , R2O_vMult = 28
+    , R2O_vDiv = 29
+    , R2O_vNeg = 30
+    , R2O_And = 31
+    , R2O_Or = 32
+    , R2O_Xor = 33
+    , R2O_ItoF = 34
+    , R2O_FtoI = 35
+    , R2O_FtoV = 36
+    , R2O_PushB = 37
+    , R2O_PushB2 = 38
+    , R2O_PushB3 = 39
+    , R2O_Push = 40
+    , R2O_PushF = 41
+    , R2O_Dup = 42
+    , R2O_Drop = 43
+    , R2O_CallNative = 44
+    , R2O_Function = 45
+    , R2O_Return = 46
+    , R2O_pGet = 47
+    , R2O_pSet = 48
+    , R2O_pPeekSet = 49
+    , R2O_ToStack = 50
+    , R2O_FromStack = 51
+    , R2O_GetArrayP1 = 52
+    , R2O_GetArray1 = 53
+    , R2O_SetArray1 = 54
+    , R2O_GetLocalP1 = 55
+    , R2O_GetLocal1 = 56
+    , R2O_SetLocal1 = 57
+    , R2O_GetStaticP1 = 58
+    , R2O_GetStatic1 = 59
+    , R2O_SetStatic1 = 60
+    , R2O_AddImm1 = 61
+    , R2O_MultImm1 = 62
+    , R2O_GetImmPs = 63
+    , R2O_GetImmP1 = 64
+    , R2O_GetImm1 = 65
+    , R2O_SetImm1 = 66
+    , R2O_PushS = 67
+    , R2O_AddImm2 = 68
+    , R2O_MultImm2 = 69
+    , R2O_GetImmP2 = 70
+    , R2O_GetImm2 = 71
+    , R2O_SetImm2 = 72
+    , R2O_GetArrayP2 = 73
+    , R2O_GetArray2 = 74
+    , R2O_SetArray2 = 75
+    , R2O_GetLocalP2 = 76
+    , R2O_GetLocal2 = 77
+    , R2O_SetLocal2 = 78
+    , R2O_GetStaticP2 = 79
+    , R2O_GetStatic2 = 80
+    , R2O_SetStatic2 = 81
+    , R2O_GetGlobalP2 = 82
+    , R2O_GetGlobal2 = 83
+    , R2O_SetGlobal2 = 84
+    , R2O_Jump = 85
+    , R2O_JumpFalse = 86
+    , R2O_JumpNE = 87
+    , R2O_JumpEQ = 88
+    , R2O_JumpLE = 89
+    , R2O_JumpLT = 90
+    , R2O_JumpGE = 91
+    , R2O_JumpGT = 92
+    , R2O_Call = 93
+    , R2O_GetStaticP3 = 94
+    , R2O_GetStatic3 = 95
+    , R2O_SetStatic3 = 96
+    , R2O_GetGlobalP3 = 97
+    , R2O_GetGlobal3 = 98
+    , R2O_SetGlobal3 = 99
+    , R2O_PushI24 = 100
+    , R2O_Switch = 101
+    , R2O_PushStringS = 102
+    , R2O_GetHash = 103
+    , R2O_StrCopy = 104
+    , R2O_ItoS = 105
+    , R2O_StrAdd = 106
+    , R2O_StrAddi = 107
+    , R2O_MemCopy = 108
+    , R2O_Catch = 109
+    , R2O_Throw = 110
+    , R2O_pCall = 111
+    , R2O_Push_Neg1 = 112
+    , R2O_Push_0 = 113
+    , R2O_Push_1 = 114
+    , R2O_Push_2 = 115
+    , R2O_Push_3 = 116
+    , R2O_Push_4 = 117
+    , R2O_Push_5 = 118
+    , R2O_Push_6 = 119
+    , R2O_Push_7 = 120
+    , R2O_PushF_Neg1 = 121
+    , R2O_PushF_0 = 122
+    , R2O_PushF_1 = 123
+    , R2O_PushF_2 = 124
+    , R2O_PushF_3 = 125
+    , R2O_PushF_4 = 126
+    , R2O_PushF_5 = 127
+    , R2O_PushF_6 = 128
+    , R2O_PushF_7 = 129
+    , R2O_GetLocalS = 130
+    , R2O_SetLocalS = 131
+    , R2O_SetLocalSR = 132
+    , R2O_GetStaticS = 133
+    , R2O_SetStaticS = 134
+    , R2O_SetStaticSR = 135
+    , R2O_pGetS = 136
+    , R2O_pSetS = 137
+    , R2O_pSetSR = 138
+    , R2O_GetGlobalS = 139
+    , R2O_SetGlobalS = 140
+    , R2O_SetGlobalSR = 141
+};
+
+enum RDR2PC_Opcodes : uint8_t
+{
+      R2PO_Nop = 0
+    , R2PO_Add = 1
+    , R2PO_Sub = 2
+    , R2PO_Mult = 3
+    , R2PO_Div = 4
+    , R2PO_Mod = 5
+    , R2PO_Not = 6
+    , R2PO_Neg = 7
+    , R2PO_CmpEQ = 8
+    , R2PO_CmpNE = 9
+    , R2PO_CmpGT = 10
+    , R2PO_CmpGE = 11
+    , R2PO_CmpLT = 12
+    , R2PO_CmpLE = 13
+    , R2PO_fAdd = 14
+    , R2PO_fSub = 15
+    , R2PO_fMult = 16
+    , R2PO_fDiv = 17
+    , R2PO_fMod = 18
+    , R2PO_fNeg = 19
+    , R2PO_fCmpEQ = 20
+    , R2PO_fCmpNE = 21
+    , R2PO_fCmpGT = 22
+    , R2PO_fCmpGE = 23
+    , R2PO_fCmpLT = 24
+    , R2PO_fCmpLE = 25
+    , R2PO_vAdd = 26
+    , R2PO_vSub = 27
+    , R2PO_vMult = 28
+    , R2PO_vDiv = 29
+    , R2PO_vNeg = 30
+    , R2PO_And = 31
+    , R2PO_Or = 32
+    , R2PO_Xor = 33
+    , R2PO_ItoF = 34
+    , R2PO_FtoI = 35
+    , R2PO_FtoV = 36
+    , R2PO_PushB = 37
+    , R2PO_PushB2 = 38
+    , R2PO_PushB3 = 39
+    , R2PO_Push = 40
+    , R2PO_PushF = 41
+    , R2PO_Dup = 42
+    , R2PO_Drop = 43
+    , R2PO_CallNative = 44
+    , R2PO_Function = 45
+    , R2PO_Return = 46
+    , R2PO_pGet = 47
+    , R2PO_pSet = 48
+    , R2PO_pPeekSet = 49
+    , R2PO_ToStack = 50
+    , R2PO_FromStack = 51
+    , R2PO_GetArrayP1 = 52
+    , R2PO_GetArray1 = 53
+    , R2PO_SetArray1 = 54
+    , R2PO_GetLocalP1 = 55
+    , R2PO_GetLocal1 = 56
+    , R2PO_SetLocal1 = 57
+    , R2PO_GetStaticP1 = 58
+    , R2PO_GetStatic1 = 59
+    , R2PO_SetStatic1 = 60
+    , R2PO_AddImm1 = 61
+    , R2PO_MultImm1 = 62
+    , R2PO_GetImmPs = 63
+    , R2PO_GetImmP1 = 64
+    , R2PO_GetImm1 = 65
+    , R2PO_SetImm1 = 66
+    , R2PO_PushS = 67
+    , R2PO_AddImm2 = 68
+    , R2PO_MultImm2 = 69
+    , R2PO_GetImmP2 = 70
+    , R2PO_GetImm2 = 71
+    , R2PO_SetImm2 = 72
+    , R2PO_GetArrayP2 = 73
+    , R2PO_GetArray2 = 74
+    , R2PO_SetArray2 = 75
+    , R2PO_GetLocalP2 = 76
+    , R2PO_GetLocal2 = 77
+    , R2PO_SetLocal2 = 78
+    , R2PO_GetStaticP2 = 79
+    , R2PO_GetStatic2 = 80
+    , R2PO_SetStatic2 = 81
+    , R2PO_GetGlobalP2 = 82
+    , R2PO_GetGlobal2 = 83
+    , R2PO_SetGlobal2 = 84
+    , R2PO_Jump = 85
+    , R2PO_JumpFalse = 86
+    , R2PO_JumpNE = 87
+    , R2PO_JumpEQ = 88
+    , R2PO_JumpLE = 89
+    , R2PO_JumpLT = 90
+    , R2PO_JumpGE = 91
+    , R2PO_JumpGT = 92
+    , R2PO_Call = 93
+    , R2PO_GetGlobalP3 = 94
+    , R2PO_GetGlobal3 = 95
+    , R2PO_SetGlobal3 = 96
+    , R2PO_PushI24 = 97
+    , R2PO_Switch = 98
+    , R2PO_PushStringS = 99
+    , R2PO_GetHash = 100
+    , R2PO_StrCopy = 101
+    , R2PO_ItoS = 102
+    , R2PO_StrAdd = 103
+    , R2PO_StrAddi = 104
+    , R2PO_MemCopy = 105
+    , R2PO_Catch = 106
+    , R2PO_Throw = 107
+    , R2PO_pCall = 108
+    , R2PO_Push_Neg1 = 109
+    , R2PO_Push_0 = 110
+    , R2PO_Push_1 = 111
+    , R2PO_Push_2 = 112
+    , R2PO_Push_3 = 113
+    , R2PO_Push_4 = 114
+    , R2PO_Push_5 = 115
+    , R2PO_Push_6 = 116
+    , R2PO_Push_7 = 117
+    , R2PO_PushF_Neg1 = 118
+    , R2PO_PushF_0 = 119
+    , R2PO_PushF_1 = 120
+    , R2PO_PushF_2 = 121
+    , R2PO_PushF_3 = 122
+    , R2PO_PushF_4 = 123
+    , R2PO_PushF_5 = 124
+    , R2PO_PushF_6 = 125
+    , R2PO_PushF_7 = 126
+    , R2PO_GetLocalS = 127
+    , R2PO_SetLocalS = 128
+    , R2PO_SetLocalSR = 129
+    , R2PO_GetStaticS = 130
+    , R2PO_SetStaticS = 131
+    , R2PO_SetStaticSR = 132
+    , R2PO_pGetS = 133
+    , R2PO_pSetS = 134
+    , R2PO_pSetSR = 135
+    , R2PO_GetGlobalS = 136
+    , R2PO_SetGlobalS = 137
+    , R2PO_SetGlobalSR = 138
+    , R2PO_GetStaticP3 = 139
+    , R2PO_GetStatic3 = 140
+    , R2PO_SetStatic3 = 141
+};
+
+
+
 #pragma warning( disable : 4201 )//unnamed struct extention
+
+const uint32_t BASE_OPCODE_SIZE = 191;
 typedef union OpCodes {
-	const uint8_t A[176];
+	uint8_t A[BASE_OPCODE_SIZE];
 	struct {
-		const uint8_t
+		uint8_t
 			Nop
 			, Add
 			, Sub
@@ -743,6 +1039,24 @@ typedef union OpCodes {
 			, SetXProtect//PC
 			, RefXProtect//PC
 			, Exit
+
+            ///RDR2 Extra Opcodes
+            , GetLocalS
+            , SetLocalS
+            , SetLocalSR
+            , GetStaticS
+            , SetStaticS
+            , SetStaticSR
+            , pGetS
+            , pSetS
+            , pSetSR
+            , GetGlobalS
+            , SetGlobalS
+            , SetGlobalSR
+            , GetStaticP3
+            , GetStatic3
+            , SetStatic3
+            
 
 			;
 	};

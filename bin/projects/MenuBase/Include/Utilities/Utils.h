@@ -21,5 +21,5 @@ void Assert(const char* File, int Line, const char* Expression);
 //TODO: create ui for assert because print cant hold the amount of text you need to print
 #define assert(expression) do { if (!(expression)) { Assert(__FILE__, __LINE__, #expression); } } while (false)
 
-#define PlayMenuSound(SoundName) play_sound_frontend(-1, SoundName, "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
+#define PlayMenuSound(SoundName) PLAY_SOUND_FRONTEND(-1, SoundName, "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
 

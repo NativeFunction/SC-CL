@@ -5367,4 +5367,5 @@ extern _native64(0xFA336E7F40C0A0D0) void UNK_0xFA336E7F40C0A0D0()l
 
 	
 #undef _native64
+#undef l
 #pragma clang diagnostic pop

@@ -29,8 +29,8 @@ public:
 		Pages.push_back(std::move(newPage));
 		lastPage = &Pages.back();
 	}
-	void AddNewPage(){
-		lastPage->resize(0x4000, 0);//fill last page with zeros
+	void AddNewPage(uint8_t nopVal){
+		lastPage->resize(0x4000, nopVal);//fill last page with nops
 		std::vector<uint8_t> newPage;
 		newPage.reserve(0x4000);
 		Pages.push_back(std::move(newPage));
@@ -81,15 +81,15 @@ public:
 	}
 	//Ensures there is enough space in the current code page for a specific opcode
 	//Returns true if a new page needed to be created to fit the desired amount of bytes
-	bool reserveBytes(size_t byteCount){
+	bool reserveBytes(size_t byteCount, uint8_t nopVal){
 		if (DoesPageRequirePadding && lastPage->size() + byteCount >= 0x4000){
-			AddNewPage();
+			AddNewPage(nopVal);
 			return true;
 		}
 		return false;
 	}
-	void AddPadding(const uint32_t paddingCount){
-		lastPage->resize(lastPage->size() + paddingCount);
+	void AddPadding(const uint32_t paddingCount, uint8_t nopVal){
+		lastPage->resize(lastPage->size() + paddingCount, nopVal);
 	}
 };
 
@@ -196,7 +196,7 @@ public:
 		}
 		else{
 			auto strSize = value.size() + 1;
-			reserveBytes(strSize);
+			reserveBytes(strSize, 0);
 			auto index = getTotalSize();
 			auto curSize = lastPage->size();
 			lastPage->resize(curSize + strSize);
@@ -208,7 +208,7 @@ public:
 	virtual void ChangeInt32(const uint32_t newValue, const size_t position) = 0;
 	size_t AddJumpTable(const uint32_t itemCount){
 		//lastPage->resize(lastPage->size() + 3 & ~3, 0);
-		reserveBytes(itemCount * 4);
+		reserveBytes(itemCount * 4, 0);
 		size_t pageStartIndex = lastPage->size();
 		size_t tableIndex = getTotalSize();
 		lastPage->resize(pageStartIndex + itemCount * 4, 0);
@@ -281,7 +281,7 @@ protected:
 	} CallData;
 	typedef struct 
 	{
-		int32_t CodeBlocks, Unk1, Statics, Natives, StringBlocks, ScriptName;
+		int32_t CodeBlocks, Unk1, Statics, Natives, StringBlocks, ScriptName, Unk8, Unk9, Unk10;
 		std::vector<uint32_t> CodePagePointers;
 		std::vector<uint32_t> StringPagePointers;
 	} PHO;//placeHolderOffsets
@@ -424,7 +424,7 @@ protected:
 	#pragma endregion
 
 	#pragma region Parse_Data_Vars
-	const OpCodes* BaseOpcodes;//dynamic opcode list
+	OpCodes* BaseOpcodes;//dynamic opcode list
 	const Script* HLData;//data to parse(High Level Data)
 	const uint32_t ReadBufferSize = 0;
 	uint32_t FunctionCount = 0;
@@ -445,17 +445,17 @@ protected:
 	#define DATA HLData->getFunctionFromIndex(FunctionCount)->getInstruction(InstructionCount)
 	#define AddOpcode(op) AddInt8(BaseOpcodes->op);
 
-	CompileBase(const OpCodes& Op, const Script& data, const uint32_t Function_Count, const uint32_t Instruction_Count, bool Disable_Function_Names) :
+	CompileBase(OpCodes& Op, const Script& data, const uint32_t Function_Count, const uint32_t Instruction_Count, bool Disable_Function_Names) :
 		BaseOpcodes(&Op), 
 		HLData(&data), 
-		ReadBufferSize(data.getBuildPlatform() == Platform::P_PS3 ? 8192 : 16384),
+		ReadBufferSize(data.getBuildPlatform() == Platform::P_PSX ? 8192 : 16384),
 		FunctionCount(Function_Count),
 		InstructionCount(Instruction_Count),
 		DisableFunctionNames(Disable_Function_Names)
 	{
 		//Set Endian
 		const int BT = HLData->getBuildType();
-		if ((HLData->getBuildPlatform() == Platform::P_PC && BT == BT_GTAV) || (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT))
+		if ((HLData->getBuildPlatform() == Platform::P_PC && BT == BT_GTAV) || BT == BT_RDR2 || (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT))
 		{
 			CodePageData = std::make_unique<CodePageCollectionLit>();
 			AddInt32toBuff = &CompileBase::AddInt32toBuffL;
@@ -483,8 +483,13 @@ protected:
 	}
 	void AddPadding(const uint32_t paddingCount)
 	{
-		CodePageData->AddPadding(paddingCount);
+		CodePageData->AddPadding(paddingCount, BaseOpcodes->Nop);
 	}
+
+    void ReserveBytes(const uint32_t paddingCount)
+    {
+        CodePageData->reserveBytes(paddingCount, BaseOpcodes->Nop);
+    }
 	void AddInt8(const uint8_t value){
 		CodePageData->AddInt8(value);
 	}
@@ -551,7 +556,7 @@ protected:
 	}
 	void DoesOpcodeHaveRoom(const size_t OpcodeLen)
 	{
-		if (CodePageData->reserveBytes(OpcodeLen))
+		if (CodePageData->reserveBytes(OpcodeLen, BaseOpcodes->Nop))
 		{
 			CheckSignedJumps();
 			CheckUnsignedJumps();
@@ -629,7 +634,7 @@ protected:
 	virtual void GetHash() = 0;
 	virtual void Call() = 0;
 	virtual void AddFuncLoc(const FunctionData* function);
-	void Switch();//for gta4 switches override AddJump
+	virtual void Switch();//for gta4 switches override AddJump
 	virtual void AddImm(const int32_t Literal);//Override: GTAIV
 	void AddImm(){ AddImm(DATA->getInt()); }
 	virtual void MultImm(const int32_t Literal);//Override: GTAIV
@@ -782,7 +787,7 @@ protected:
 	#pragma endregion
 };
 
-class CompileGTAIV : CompileBase
+class CompileGTAIV : public CompileBase
 {
 public:
 	CompileGTAIV(const Script& data, bool Disable_Function_Names) : CompileBase(GTAIVOpcodes, data, 0, 0, Disable_Function_Names) 
@@ -820,7 +825,7 @@ public:
 	}
 private:
 	//visual studio plz... designated initializers were added in 1999 get with the times
-	const OpCodes GTAIVOpcodes = { IVO_Nop, IVO_Add, IVO_Sub, IVO_Mult, IVO_Div, IVO_Mod, IVO_Not, IVO_Neg, IVO_CmpEq, IVO_CmpNe, IVO_CmpGt, IVO_CmpGe, IVO_CmpLt, IVO_CmpLe, IVO_fAdd, IVO_fSub, IVO_fMult, IVO_fDiv, IVO_fMod, IVO_fNeg, IVO_fCmpEq, IVO_fCmpNe, IVO_fCmpGt, IVO_fCmpGe, IVO_fCmpLt, IVO_fCmpLe, IVO_vAdd, IVO_vSub, IVO_vMult, IVO_vDiv, IVO_vNeg, IVO_And, IVO_Or, IVO_Xor, IVO_ItoF, IVO_FtoI, IVO_FtoV, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Push, IVO_PushF, IVO_Dup, IVO_Drop, IVO_CallNative, IVO_Function, IVO_Return, IVO_pGet, IVO_pSet, IVO_pPeekSet, IVO_ToStack, IVO_FromStack, IVO_Nop, IVO_Nop, IVO_Nop, IVO_GetFrameP1, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_PushS, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_GetFrameP2, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Jump, IVO_JumpFalse, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Call, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Switch, IVO_PushString, IVO_StrCopy, IVO_ItoS, IVO_StrAdd, IVO_StrAddi, IVO_MemCopy, IVO_Catch, IVO_Throw, IVO_Nop, IVO_Push_Neg1, IVO_Push_0, IVO_Push_1, IVO_Push_2, IVO_Push_3, IVO_Push_4, IVO_Push_5, IVO_Push_6, IVO_Push_7, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_PushStringNull, IVO_JumpTrue, IVO_GetFrameP0, IVO_GetFrameP3, IVO_GetFrameP4, IVO_GetFrameP5, IVO_GetFrameP6, IVO_GetFrameP7, IVO_GetFrameP, IVO_GetGlobalP, IVO_GetStaticP, IVO_GetArrayP, IVO_GetXProtect, IVO_SetXProtect, IVO_RefXProtect, IVO_Exit };
+	OpCodes GTAIVOpcodes = { IVO_Nop, IVO_Add, IVO_Sub, IVO_Mult, IVO_Div, IVO_Mod, IVO_Not, IVO_Neg, IVO_CmpEq, IVO_CmpNe, IVO_CmpGt, IVO_CmpGe, IVO_CmpLt, IVO_CmpLe, IVO_fAdd, IVO_fSub, IVO_fMult, IVO_fDiv, IVO_fMod, IVO_fNeg, IVO_fCmpEq, IVO_fCmpNe, IVO_fCmpGt, IVO_fCmpGe, IVO_fCmpLt, IVO_fCmpLe, IVO_vAdd, IVO_vSub, IVO_vMult, IVO_vDiv, IVO_vNeg, IVO_And, IVO_Or, IVO_Xor, IVO_ItoF, IVO_FtoI, IVO_FtoV, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Push, IVO_PushF, IVO_Dup, IVO_Drop, IVO_CallNative, IVO_Function, IVO_Return, IVO_pGet, IVO_pSet, IVO_pPeekSet, IVO_ToStack, IVO_FromStack, IVO_Nop, IVO_Nop, IVO_Nop, IVO_GetFrameP1, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_PushS, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_GetFrameP2, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Jump, IVO_JumpFalse, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Call, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Switch, IVO_PushString, IVO_StrCopy, IVO_ItoS, IVO_StrAdd, IVO_StrAddi, IVO_MemCopy, IVO_Catch, IVO_Throw, IVO_Nop, IVO_Push_Neg1, IVO_Push_0, IVO_Push_1, IVO_Push_2, IVO_Push_3, IVO_Push_4, IVO_Push_5, IVO_Push_6, IVO_Push_7, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_Nop, IVO_PushStringNull, IVO_JumpTrue, IVO_GetFrameP0, IVO_GetFrameP3, IVO_GetFrameP4, IVO_GetFrameP5, IVO_GetFrameP6, IVO_GetFrameP7, IVO_GetFrameP, IVO_GetGlobalP, IVO_GetStaticP, IVO_GetArrayP, IVO_GetXProtect, IVO_SetXProtect, IVO_RefXProtect, IVO_Exit };
 
 	#pragma region Type_Defines
 	enum class SCRFlags
@@ -935,7 +940,7 @@ private:
 	
 };
 
-class CompileRDR : CompileBase
+class CompileRDR : public CompileBase
 {
 public:
 	CompileRDR(const Script& data, bool Disable_Function_Names) : CompileBase(RDROpcodes, data, 0, 0, Disable_Function_Names) 
@@ -963,7 +968,7 @@ public:
 	}
 private:
 	//visual studio plz... designated initializers were added in 1999 get with the times
-	const OpCodes RDROpcodes = { RO_Nop, RO_Add, RO_Sub, RO_Mult, RO_Div, RO_Mod, RO_Not, RO_Neg, RO_CmpEq, RO_CmpNe, RO_CmpGt, RO_CmpGe, RO_CmpLt, RO_CmpLe, RO_fAdd, RO_fSub, RO_fMult, RO_fDiv, RO_fMod, RO_fNeg, RO_fCmpEq, RO_fCmpNe, RO_fCmpGt, RO_fCmpGe, RO_fCmpLt, RO_fCmpLe, RO_vAdd, RO_vSub, RO_vMult, RO_vDiv, RO_vNeg, RO_And, RO_Or, RO_Xor, RO_ItoF, RO_FtoI, RO_FtoV, RO_PushB, RO_PushB2, RO_PushB3, RO_Push, RO_PushF, RO_Dup, RO_Drop, RO_CallNative, RO_Function, RO_Return, RO_pGet, RO_pSet, RO_pPeekSet, RO_ToStack, RO_FromStack, RO_GetArrayP1, RO_GetArray1, RO_SetArray1, RO_GetFrameP1, RO_GetFrame1, RO_SetFrame1, RO_GetStaticP1, RO_GetStatic1, RO_SetStatic1, RO_Add1, RO_Mult1, RO_GetImm1, RO_SetImm1, RO_PushS, RO_Add2, RO_Mult2, RO_GetImm2, RO_SetImm2, RO_GetArrayP2, RO_GetArray2, RO_SetArray2, RO_GetFrameP2, RO_GetFrame2, RO_SetFrame2, RO_GetStaticP2, RO_GetStatic2, RO_SetStatic2, RO_GetGlobalP2, RO_GetGlobal2, RO_SetGlobal2, RO_Jump, RO_JumpFalse, RO_JumpNE, RO_JumpEQ, RO_JumpLE, RO_JumpLT, RO_JumpGE, RO_JumpGT, RO_Nop, RO_GetGlobalP3, RO_GetGlobal3, RO_SetGlobal3, RO_PushI24, RO_Switch, RO_PushString, RO_StrCopy, RO_ItoS, RO_StrAdd, RO_StrAddi, RO_MemCopy, RO_Catch, RO_Throw, RO_pCall, RO_Push_Neg1, RO_Push_0, RO_Push_1, RO_Push_2, RO_Push_3, RO_Push_4, RO_Push_5, RO_Push_6, RO_Push_7, RO_PushF_Neg1, RO_PushF_0, RO_PushF_1, RO_PushF_2, RO_PushF_3, RO_PushF_4, RO_PushF_5, RO_PushF_6, RO_PushF_7, RO_Nop, RO_Nop, RO_Nop, RO_Nop, RO_Call2, RO_Call2h1, RO_Call2h2, RO_Call2h3, RO_Call2h4, RO_Call2h5, RO_Call2h6, RO_Call2h7, RO_Call2h8, RO_Call2h9, RO_Call2hA, RO_Call2hB, RO_Call2hC, RO_Call2hD, RO_Call2hE, RO_Call2hF, RO_PushArrayP, RO_ReturnP0R0, RO_ReturnP0R1, RO_ReturnP0R2, RO_ReturnP0R3, RO_ReturnP1R0, RO_ReturnP1R1, RO_ReturnP1R2, RO_ReturnP1R3, RO_ReturnP2R0, RO_ReturnP2R1, RO_ReturnP2R2, RO_ReturnP2R3, RO_ReturnP3R0, RO_ReturnP3R1, RO_ReturnP3R2, RO_ReturnP3R3, RO_PushStringNull };
+	OpCodes RDROpcodes = { RO_Nop, RO_Add, RO_Sub, RO_Mult, RO_Div, RO_Mod, RO_Not, RO_Neg, RO_CmpEq, RO_CmpNe, RO_CmpGt, RO_CmpGe, RO_CmpLt, RO_CmpLe, RO_fAdd, RO_fSub, RO_fMult, RO_fDiv, RO_fMod, RO_fNeg, RO_fCmpEq, RO_fCmpNe, RO_fCmpGt, RO_fCmpGe, RO_fCmpLt, RO_fCmpLe, RO_vAdd, RO_vSub, RO_vMult, RO_vDiv, RO_vNeg, RO_And, RO_Or, RO_Xor, RO_ItoF, RO_FtoI, RO_FtoV, RO_PushB, RO_PushB2, RO_PushB3, RO_Push, RO_PushF, RO_Dup, RO_Drop, RO_CallNative, RO_Function, RO_Return, RO_pGet, RO_pSet, RO_pPeekSet, RO_ToStack, RO_FromStack, RO_GetArrayP1, RO_GetArray1, RO_SetArray1, RO_GetFrameP1, RO_GetFrame1, RO_SetFrame1, RO_GetStaticP1, RO_GetStatic1, RO_SetStatic1, RO_Add1, RO_Mult1, RO_GetImm1, RO_SetImm1, RO_PushS, RO_Add2, RO_Mult2, RO_GetImm2, RO_SetImm2, RO_GetArrayP2, RO_GetArray2, RO_SetArray2, RO_GetFrameP2, RO_GetFrame2, RO_SetFrame2, RO_GetStaticP2, RO_GetStatic2, RO_SetStatic2, RO_GetGlobalP2, RO_GetGlobal2, RO_SetGlobal2, RO_Jump, RO_JumpFalse, RO_JumpNE, RO_JumpEQ, RO_JumpLE, RO_JumpLT, RO_JumpGE, RO_JumpGT, RO_Nop, RO_GetGlobalP3, RO_GetGlobal3, RO_SetGlobal3, RO_PushI24, RO_Switch, RO_PushString, RO_StrCopy, RO_ItoS, RO_StrAdd, RO_StrAddi, RO_MemCopy, RO_Catch, RO_Throw, RO_pCall, RO_Push_Neg1, RO_Push_0, RO_Push_1, RO_Push_2, RO_Push_3, RO_Push_4, RO_Push_5, RO_Push_6, RO_Push_7, RO_PushF_Neg1, RO_PushF_0, RO_PushF_1, RO_PushF_2, RO_PushF_3, RO_PushF_4, RO_PushF_5, RO_PushF_6, RO_PushF_7, RO_Nop, RO_Nop, RO_Nop, RO_Nop, RO_Call2, RO_Call2h1, RO_Call2h2, RO_Call2h3, RO_Call2h4, RO_Call2h5, RO_Call2h6, RO_Call2h7, RO_Call2h8, RO_Call2h9, RO_Call2hA, RO_Call2hB, RO_Call2hC, RO_Call2hD, RO_Call2hE, RO_Call2hF, RO_PushArrayP, RO_ReturnP0R0, RO_ReturnP0R1, RO_ReturnP0R2, RO_ReturnP0R3, RO_ReturnP1R0, RO_ReturnP1R1, RO_ReturnP1R2, RO_ReturnP1R3, RO_ReturnP2R0, RO_ReturnP2R1, RO_ReturnP2R2, RO_ReturnP2R3, RO_ReturnP3R0, RO_ReturnP3R1, RO_ReturnP3R2, RO_ReturnP3R3, RO_PushStringNull };
 	
 	#pragma region Type_Defines
 	typedef union
@@ -1055,7 +1060,7 @@ private:
 
 };
 
-class CompileGTAV : CompileBase
+class CompileGTAV : public CompileBase
 {
 	friend class CompileGTAVPC;
 public:
@@ -1083,8 +1088,12 @@ public:
 	}
 
 private:
-	const OpCodes GTAVOpcodes = { VO_Nop, VO_Add, VO_Sub, VO_Mult, VO_Div, VO_Mod, VO_Not, VO_Neg, VO_CmpEq, VO_CmpNe, VO_CmpGt, VO_CmpGe, VO_CmpLt, VO_CmpLe, VO_fAdd, VO_fSub, VO_fMult, VO_fDiv, VO_fMod, VO_fNeg, VO_fCmpEq, VO_fCmpNe, VO_fCmpGt, VO_fCmpGe, VO_fCmpLt, VO_fCmpLe, VO_vAdd, VO_vSub, VO_vMult, VO_vDiv, VO_vNeg, VO_And, VO_Or, VO_Xor, VO_ItoF, VO_FtoI, VO_FtoV, VO_PushB, VO_PushB2, VO_PushB3, VO_Push, VO_PushF, VO_Dup, VO_Drop, VO_CallNative, VO_Function, VO_Return, VO_pGet, VO_pSet, VO_pPeekSet, VO_ToStack, VO_FromStack, VO_GetArrayP1, VO_GetArray1, VO_SetArray1, VO_GetFrameP1, VO_GetFrame1, VO_SetFrame1, VO_GetStaticP1, VO_GetStatic1, VO_SetStatic1, VO_Add1, VO_Mult1, VO_GetImm1, VO_SetImm1, VO_PushS, VO_Add2, VO_Mult2, VO_GetImm2, VO_SetImm2, VO_GetArrayP2, VO_GetArray2, VO_SetArray2, VO_GetFrameP2, VO_GetFrame2, VO_SetFrame2, VO_GetStaticP2, VO_GetStatic2, VO_SetStatic2, VO_GetGlobalP2, VO_GetGlobal2, VO_SetGlobal2, VO_Jump, VO_JumpFalse, VO_JumpNE, VO_JumpEQ, VO_JumpLE, VO_JumpLT, VO_JumpGE, VO_JumpGT, VO_Call, VO_GetGlobalp3, VO_GetGlobal3, VO_SetGlobal3, VO_PushI24, VO_Switch, VO_PushString, VO_StrCopy, VO_ItoS, VO_StrAdd, VO_StrAddi, VO_Memcopy, VO_Catch, VO_Throw, VO_pCall, VO_Push_Neg1, VO_Push_0, VO_Push_1, VO_Push_2, VO_Push_3, VO_Push_4, VO_Push_5, VO_Push_6, VO_Push_7, VO_PushF_Neg1, VO_PushF_0, VO_PushF_1, VO_PushF_2, VO_PushF_3, VO_PushF_4, VO_PushF_5, VO_PushF_6, VO_PushF_7, VO_GetImmP, VO_GetImmP1, VO_GetImmP2, VO_GetHash };
-	std::unique_ptr<StringPageCollection> StringPageData;
+	OpCodes GTAVOpcodes = { VO_Nop, VO_Add, VO_Sub, VO_Mult, VO_Div, VO_Mod, VO_Not, VO_Neg, VO_CmpEq, VO_CmpNe, VO_CmpGt, VO_CmpGe, VO_CmpLt, VO_CmpLe, VO_fAdd, VO_fSub, VO_fMult, VO_fDiv, VO_fMod, VO_fNeg, VO_fCmpEq, VO_fCmpNe, VO_fCmpGt, VO_fCmpGe, VO_fCmpLt, VO_fCmpLe, VO_vAdd, VO_vSub, VO_vMult, VO_vDiv, VO_vNeg, VO_And, VO_Or, VO_Xor, VO_ItoF, VO_FtoI, VO_FtoV, VO_PushB, VO_PushB2, VO_PushB3, VO_Push, VO_PushF, VO_Dup, VO_Drop, VO_CallNative, VO_Function, VO_Return, VO_pGet, VO_pSet, VO_pPeekSet, VO_ToStack, VO_FromStack, VO_GetArrayP1, VO_GetArray1, VO_SetArray1, VO_GetFrameP1, VO_GetFrame1, VO_SetFrame1, VO_GetStaticP1, VO_GetStatic1, VO_SetStatic1, VO_Add1, VO_Mult1, VO_GetImm1, VO_SetImm1, VO_PushS, VO_Add2, VO_Mult2, VO_GetImm2, VO_SetImm2, VO_GetArrayP2, VO_GetArray2, VO_SetArray2, VO_GetFrameP2, VO_GetFrame2, VO_SetFrame2, VO_GetStaticP2, VO_GetStatic2, VO_SetStatic2, VO_GetGlobalP2, VO_GetGlobal2, VO_SetGlobal2, VO_Jump, VO_JumpFalse, VO_JumpNE, VO_JumpEQ, VO_JumpLE, VO_JumpLT, VO_JumpGE, VO_JumpGT, VO_Call, VO_GetGlobalp3, VO_GetGlobal3, VO_SetGlobal3, VO_PushI24, VO_Switch, VO_PushString, VO_StrCopy, VO_ItoS, VO_StrAdd, VO_StrAddi, VO_Memcopy, VO_Catch, VO_Throw, VO_pCall, VO_Push_Neg1, VO_Push_0, VO_Push_1, VO_Push_2, VO_Push_3, VO_Push_4, VO_Push_5, VO_Push_6, VO_Push_7, VO_PushF_Neg1, VO_PushF_0, VO_PushF_1, VO_PushF_2, VO_PushF_3, VO_PushF_4, VO_PushF_5, VO_PushF_6, VO_PushF_7, VO_GetImmP, VO_GetImmP1, VO_GetImmP2, VO_GetHash };
+
+protected:
+    std::unique_ptr<StringPageCollection> StringPageData;
+private:
+
 	#pragma region Type_Defines
 	enum class ResourceType : uint8_t
 	{
@@ -1100,6 +1109,7 @@ private:
 	};
 	#pragma endregion
 
+protected:
 	#pragma region Parse_Functions
 	int32_t GetSizeFromFlag(uint32_t flag, int32_t baseSize);
 	int32_t GetSizeFromSystemFlag(uint32_t flag);
@@ -1133,6 +1143,7 @@ private:
 	#pragma region StringEnc
 	bool isStringEncrypted = false;
 	virtual void addDecryptionFunction(__int64 xorValue, size_t entryCallLoc);
+
 	void BuildTablesCheckEnc();
 public:
 	void setEncryptStrings(bool bValue = true) { isStringEncrypted = true; }
@@ -1141,80 +1152,20 @@ public:
 
 class CompileGTAVPC : public CompileGTAV
 {
-	class NativeTranslation
-	{
-		std::unordered_map<uint64_t, uint64_t> translation;
-		uint64_t _noTranslation(uint64_t nat)const { return nat; }
-		std::string gameVersionStr;
-		uint64_t _translate(uint64_t nat)const 
-		{
-			auto it = translation.find(nat);
-			if (it != translation.end())
-			{
-				auto translated = it->second;
-				if (translated == 0)
-				{
-					char buff[128];
-					snprintf(buff, sizeof(buff), "Couldn't translate native '0x%016llX' for game version '%s'", nat, gameVersionStr.c_str());
-					Utils::System::Warn(buff);
-				}
-				return translated;
-			}
-			Utils::System::Warn("Couldn't find native '0x" + Utils::DataConversion::IntToHex(nat) + "' in the native translation table.");
-			return nat;
-		}
-		uint64_t(NativeTranslation::*translationFunction)(uint64_t) const;
-	public:
-		NativeTranslation(uint32_t versionString) : gameVersionStr(std::to_string(versionString))
-		{
-			std::ifstream natFile(SCCL::globalDirectory + "PC_Natives.bin", std::ios::in | std::ios::binary | std::ios::ate);
-			if (!natFile.is_open())
-			{
-				Utils::System::Warn("Couldnt open pc native translation table, check for file 'PC_Natives.bin' in directory");
-				translationFunction = &NativeTranslation::_noTranslation;
-				return;
-			}
-			natFile.seekg(0);
-			uint32_t verCount = 0, natCount = 0;
-			natFile.read((char*)&verCount, 4);
-			natFile.read((char*)&natCount, 4);
-			char buff[8];
-			uint32_t usedVersion = (uint32_t)-1;
-			for (uint32_t i = 0; i < verCount;i++)
-			{
-				natFile.read(buff, 8);
-				if (strcmp(gameVersionStr.data(), buff) == 0)
-				{
-					usedVersion = i;
-					natFile.seekg((verCount - i - 1) * 8, std::ios_base::cur);//skip past rest of versions
-					break;
-				}
-			}
-			if (usedVersion == (uint32_t)-1)
-			{
-				Utils::System::Warn("Version string '" + gameVersionStr + "' was not found in translation data file, defaulting to latest game version");
-				usedVersion = verCount - 1;
-			}
-			translationFunction = &NativeTranslation::_translate;
-			for (uint32_t i = 0; i < natCount;i++)
-			{
-				uint64_t origNative, mappedNative;
-				natFile.read((char*)&origNative, 8);
-				natFile.seekg(usedVersion * 8, std::ios_base::cur);//skip past rest of versions
-				natFile.read((char*)&mappedNative, 8);
-				natFile.seekg((verCount - usedVersion - 1) * 8, std::ios_base::cur);
-				translation.insert({ origNative, mappedNative });
-			}
-			natFile.close();
-		}
+    //old, new
+    std::unordered_map<uint64_t, uint64_t> NativeTranslationMap;
+    const std::string NativeMapFileName = "GTAVNativesTranslationPC.csv";
 
-		uint64_t Translate(uint64_t originalHash)const { return (this->*translationFunction)(originalHash); }
-	}nativeTranslation;
 public:
 	
-	CompileGTAVPC(const Script& data, uint32_t nativesVersion, bool Disable_Function_Names) : CompileGTAV(data, Disable_Function_Names), nativeTranslation(nativesVersion)
+	CompileGTAVPC(const Script& data, bool Disable_Function_Names) : 
+        CompileGTAV(data, Disable_Function_Names)
 	{
-		TEST(false, "Compiling GTAV on PC has been disabled due to Rockstars actions against the GTA modding scene");
+
+        if (!Utils::IO::LoadCSVMap(Utils::IO::GetDir(Utils::IO::GetExecutablePath()) + NativeMapFileName, true, 16, NativeTranslationMap, true))
+        {
+            Utils::System::Throw("Could not load native map " + NativeMapFileName);
+        }
 	}
 
 	void Compile(const std::string& outDirectory) override
@@ -1222,7 +1173,7 @@ public:
 		BuildTablesCheckEnc();
 		YSCWrite((outDirectory + HLData->getBuildFileName()).data(), !SCCL::Option_NoRSC7);
 	}
-private:
+protected:
 
 	#pragma region Parsed_Data_Vars
 	std::unordered_map<uint64_t, uint32_t> NativeHashMap;//hash, index  (native hash map has index start of 1) (hash map list for NativesList to limit find recursion)
@@ -1242,9 +1193,9 @@ private:
 
 	#pragma endregion
 
-
 	#pragma region Opcode_Functions
 	void CallNative(const uint64_t hash, const uint8_t paramCount, const uint8_t returnCount) override;
+
 	void Shift_Left() override { CallNative(0xEDD95A39E5544DE8, 2, 1); }
 	void Shift_Right() override { CallNative(0x97EF1E5BCE9DC075, 2, 1); }
 	#pragma endregion
@@ -1257,8 +1208,212 @@ private:
 	void YSCWrite(const char* path, bool AddRsc7Header = false);
 	#pragma endregion
 
-#pragma region StringEnc
+    #pragma region StringEnc
 	virtual void addDecryptionFunction(__int64 xorValue, size_t entryCallLoc)override;
-#pragma endregion
+    #pragma endregion
 
 };
+
+class CompileRDR2Console : public CompileGTAVPC
+{
+
+public:
+
+    CompileRDR2Console(const Script& data, bool Disable_Function_Names) :
+        CompileGTAVPC(data, Disable_Function_Names)
+    {
+        memset(BaseOpcodes, R2O_Nop, BASE_OPCODE_SIZE);
+
+        BaseOpcodes->Nop = R2O_Nop;
+        BaseOpcodes->Add = R2O_Add;
+        BaseOpcodes->Sub = R2O_Sub;
+        BaseOpcodes->Mult = R2O_Mult;
+        BaseOpcodes->Div = R2O_Div;
+        BaseOpcodes->Mod = R2O_Mod;
+        BaseOpcodes->Not = R2O_Not;
+        BaseOpcodes->Neg = R2O_Neg;
+        BaseOpcodes->CmpEq = R2O_CmpEQ;
+        BaseOpcodes->CmpNe = R2O_CmpNE;
+        BaseOpcodes->CmpGt = R2O_CmpGT;
+        BaseOpcodes->CmpGe = R2O_CmpGE;
+        BaseOpcodes->CmpLt = R2O_CmpLT;
+        BaseOpcodes->CmpLe = R2O_CmpLE;
+        BaseOpcodes->fAdd = R2O_fAdd;
+        BaseOpcodes->fSub = R2O_fSub;
+        BaseOpcodes->fMult = R2O_fMult;
+        BaseOpcodes->fDiv = R2O_fDiv;
+        BaseOpcodes->fMod = R2O_fMod;
+        BaseOpcodes->fNeg = R2O_fNeg;
+        BaseOpcodes->fCmpEq = R2O_fCmpEQ;
+        BaseOpcodes->fCmpNe = R2O_fCmpNE;
+        BaseOpcodes->fCmpGt = R2O_fCmpGT;
+        BaseOpcodes->fCmpGe = R2O_fCmpGE;
+        BaseOpcodes->fCmpLt = R2O_fCmpLT;
+        BaseOpcodes->fCmpLe = R2O_fCmpLE;
+        BaseOpcodes->vAdd = R2O_vAdd;
+        BaseOpcodes->vSub = R2O_vSub;
+        BaseOpcodes->vMult = R2O_vMult;
+        BaseOpcodes->vDiv = R2O_vDiv;
+        BaseOpcodes->vNeg = R2O_vNeg;
+        BaseOpcodes->And = R2O_And;
+        BaseOpcodes->Or = R2O_Or;
+        BaseOpcodes->Xor = R2O_Xor;
+        BaseOpcodes->ItoF = R2O_ItoF;
+        BaseOpcodes->FtoI = R2O_FtoI;
+        BaseOpcodes->FtoV = R2O_FtoV;
+        BaseOpcodes->PushB = R2O_PushB;
+        BaseOpcodes->PushB2 = R2O_PushB2;
+        BaseOpcodes->PushB3 = R2O_PushB3;
+        BaseOpcodes->Push = R2O_Push;
+        BaseOpcodes->PushF = R2O_PushF;
+        BaseOpcodes->Dup = R2O_Dup;
+        BaseOpcodes->Drop = R2O_Drop;
+        BaseOpcodes->CallNative = R2O_CallNative;
+        BaseOpcodes->Function = R2O_Function;
+        BaseOpcodes->Return = R2O_Return;
+        BaseOpcodes->pGet = R2O_pGet;
+        BaseOpcodes->pSet = R2O_pSet;
+        BaseOpcodes->pPeekSet = R2O_pPeekSet;
+        BaseOpcodes->ToStack = R2O_ToStack;
+        BaseOpcodes->FromStack = R2O_FromStack;
+        BaseOpcodes->GetArrayP1 = R2O_GetArrayP1;
+        BaseOpcodes->GetArray1 = R2O_GetArray1;
+        BaseOpcodes->SetArray1 = R2O_SetArray1;
+        BaseOpcodes->GetFrameP1 = R2O_GetLocalP1;
+        BaseOpcodes->GetFrame1 = R2O_GetLocal1;
+        BaseOpcodes->SetFrame1 = R2O_SetLocal1;
+        BaseOpcodes->GetStaticP1 = R2O_GetStaticP1;
+        BaseOpcodes->GetStatic1 = R2O_GetStatic1;
+        BaseOpcodes->SetStatic1 = R2O_SetStatic1;
+        BaseOpcodes->Add1 = R2O_AddImm1;
+        BaseOpcodes->Mult1 = R2O_MultImm1;
+        BaseOpcodes->GetImm1 = R2O_GetImm1;
+        BaseOpcodes->SetImm1 = R2O_SetImm1;
+        BaseOpcodes->PushS = R2O_PushS;
+        BaseOpcodes->Add2 = R2O_AddImm2;
+        BaseOpcodes->Mult2 = R2O_MultImm2;
+        BaseOpcodes->GetImm2 = R2O_GetImm2;
+        BaseOpcodes->SetImm2 = R2O_SetImm2;
+        BaseOpcodes->GetArrayP2 = R2O_GetArrayP2;
+        BaseOpcodes->GetArray2 = R2O_GetArray2;
+        BaseOpcodes->SetArray2 = R2O_SetArray2;
+        BaseOpcodes->GetFrameP2 = R2O_GetLocalP2;
+        BaseOpcodes->GetFrame2 = R2O_GetLocal2;
+        BaseOpcodes->SetFrame2 = R2O_SetLocal2;
+        BaseOpcodes->GetStaticP2 = R2O_GetStaticP2;
+        BaseOpcodes->GetStatic2 = R2O_GetStatic2;
+        BaseOpcodes->SetStatic2 = R2O_SetStatic2;
+        BaseOpcodes->GetGlobalP2 = R2O_GetGlobalP2;
+        BaseOpcodes->GetGlobal2 = R2O_GetGlobal2;
+        BaseOpcodes->SetGlobal2 = R2O_SetGlobal2;
+        BaseOpcodes->Jump = R2O_Jump;
+        BaseOpcodes->JumpFalse = R2O_JumpFalse;
+        BaseOpcodes->JumpNE = R2O_JumpNE;
+        BaseOpcodes->JumpEQ = R2O_JumpEQ;
+        BaseOpcodes->JumpLE = R2O_JumpLE;
+        BaseOpcodes->JumpLT = R2O_JumpLT;
+        BaseOpcodes->JumpGE = R2O_JumpGE;
+        BaseOpcodes->JumpGT = R2O_JumpGT;
+        BaseOpcodes->Call = R2O_Call;
+        BaseOpcodes->GetGlobalP3 = R2O_GetGlobalP3;
+        BaseOpcodes->GetGlobal3 = R2O_GetGlobal3;
+        BaseOpcodes->SetGlobal3 = R2O_SetGlobal3;
+        BaseOpcodes->PushI24 = R2O_PushI24;
+        BaseOpcodes->Switch = R2O_Switch;
+        BaseOpcodes->PushString = R2O_PushStringS;
+        BaseOpcodes->StrCopy = R2O_StrCopy;
+        BaseOpcodes->ItoS = R2O_ItoS;
+        BaseOpcodes->StrAdd = R2O_StrAdd;
+        BaseOpcodes->StrAddi = R2O_StrAddi;
+        BaseOpcodes->MemCopy = R2O_MemCopy;
+        BaseOpcodes->Catch = R2O_Catch;
+        BaseOpcodes->Throw = R2O_Throw;
+        BaseOpcodes->pCall = R2O_pCall;
+        BaseOpcodes->Push_Neg1 = R2O_Push_Neg1;
+        BaseOpcodes->Push_0 = R2O_Push_0;
+        BaseOpcodes->Push_1 = R2O_Push_1;
+        BaseOpcodes->Push_2 = R2O_Push_2;
+        BaseOpcodes->Push_3 = R2O_Push_3;
+        BaseOpcodes->Push_4 = R2O_Push_4;
+        BaseOpcodes->Push_5 = R2O_Push_5;
+        BaseOpcodes->Push_6 = R2O_Push_6;
+        BaseOpcodes->Push_7 = R2O_Push_7;
+        BaseOpcodes->PushF_Neg1 = R2O_PushF_Neg1;
+        BaseOpcodes->PushF_0 = R2O_PushF_0;
+        BaseOpcodes->PushF_1 = R2O_PushF_1;
+        BaseOpcodes->PushF_2 = R2O_PushF_2;
+        BaseOpcodes->PushF_3 = R2O_PushF_3;
+        BaseOpcodes->PushF_4 = R2O_PushF_4;
+        BaseOpcodes->PushF_5 = R2O_PushF_5;
+        BaseOpcodes->PushF_6 = R2O_PushF_6;
+        BaseOpcodes->PushF_7 = R2O_PushF_7;
+
+        //Extra GTAV Opcodes
+        BaseOpcodes->GetImmP = R2O_GetImmPs;
+        BaseOpcodes->GetImmP1 = R2O_GetImmP1;
+        BaseOpcodes->GetImmP2 = R2O_GetImmP2;
+        BaseOpcodes->GetHash = R2O_GetHash;
+
+        //RDR2 Extra Opcodes
+        BaseOpcodes->GetLocalS = R2O_GetLocalS;
+        BaseOpcodes->SetLocalS = R2O_SetLocalS;
+        BaseOpcodes->SetLocalSR = R2O_SetLocalSR;
+        BaseOpcodes->GetStaticS = R2O_GetStaticS;
+        BaseOpcodes->SetStaticS = R2O_SetStaticS;
+        BaseOpcodes->SetStaticSR = R2O_SetStaticSR;
+        BaseOpcodes->pGetS = R2O_pGetS;
+        BaseOpcodes->pSetS = R2O_pSetS;
+        BaseOpcodes->pSetSR = R2O_pSetSR;
+        BaseOpcodes->GetGlobalS = R2O_GetGlobalS;
+        BaseOpcodes->SetGlobalS = R2O_SetGlobalS;
+        BaseOpcodes->SetGlobalSR = R2O_SetGlobalSR;
+
+        BaseOpcodes->GetStaticP3 = R2O_GetStaticP3;
+        BaseOpcodes->GetStatic3 = R2O_GetStatic3;
+        BaseOpcodes->SetStatic3 = R2O_SetStatic3;
+
+    }
+
+    void Compile(const std::string& outDirectory) override
+    {
+        BuildTablesCheckEnc();
+        YSCWrite((outDirectory + HLData->getBuildFileName()).data(), !SCCL::Option_NoRSC7);
+    }
+protected:
+
+#pragma region Opcode_Functions
+    void Switch() override;
+#pragma endregion
+
+#pragma region Write_Functions
+    void WriteHeader() override;
+    void WritePointers() override;
+    void WriteNatives() override;
+    void YSCWrite(const char* path, bool AddRsc8Header = false);
+#pragma endregion
+
+
+};
+
+class CompileRDR2PC : public CompileRDR2Console
+{
+    const std::string OpcodeMapFileName = "RDR2OpcodeTranslationPC.csv";
+
+public:
+
+    CompileRDR2PC(const Script& data, bool Disable_Function_Names);
+
+    void Compile(const std::string& outDirectory) override
+    {
+        BuildTablesCheckEnc();
+        YSCWrite((outDirectory + HLData->getBuildFileName()).data(), !SCCL::Option_NoRSC7);
+    }
+private:
+
+#pragma region Write_Functions
+    void WriteNatives() override;
+#pragma endregion
+
+
+};
+

@@ -76,6 +76,7 @@ typedef int bool;
 
 typedef int Player;
 typedef int Entity;
+typedef int AnimScene;
 typedef Entity Ped;
 typedef Entity Vehicle;
 typedef Entity Object;
@@ -108,6 +109,13 @@ typedef int Iterator;
 typedef int IterationSet;
 typedef int GUIWindow;
 typedef float Time;
+typedef int Volume;
+typedef int ItemSet;
+typedef int Prompt;
+typedef int PersChar;
+typedef int PropSet;
+typedef int PopZone;
+typedef int any;
 
 typedef struct NetworkHandle
 {
@@ -217,23 +225,6 @@ typedef union flint
 	int Int;
 	float Float;
 } flint;
-
-typedef union any
-{
-	int Int;
-	float Float;
-	bool Bool;
-	char* CharP;
-	byte* ByteP;
-	int* IntP;
-	float* FloatP;
-	short* ShortP;
-	vector3* Vector3P;
-	quaternion* QuaternionP;
-	byte ByteArray[4];
-	char CharArray[4];
-	short ShortArray[2];
-} any;
 
 //poor mans constructors
 

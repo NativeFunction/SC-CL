@@ -299,25 +299,25 @@ extern __intrinsic float fMod(float numer, float denom);
 /// <param name="value">The value of the integer to be tested.</param>
 /// <param name="bitIndex">The bit index to be tested.<para>This value must be an integer literal.</para></param>
 /// <returns>The if the bit is set.</returns>
-extern __intrinsic bool bit_test(int value, const byte bitIndex);
+extern __intrinsic bool bitTest(int value, const byte bitIndex);
 
 /// <summary>Sets the bit at a index at the address of a value.</summary>
 /// <param name="address">The address of the value.</param>
 /// <param name="bitIndex">The bit index to be set.<para>This value must be an integer literal.</para></param>
 /// <returns></returns>
-extern __intrinsic void bit_set(int* address, const byte bitIndex);
+extern __intrinsic void bitSet(int* address, const byte bitIndex);
 
 /// <summary>Resets the bit at a index at the address of a value.</summary>
 /// <param name="address">The address of the value.</param>
 /// <param name="bitIndex">The bit index to be reset.<para>This value must be an integer literal.</para></param>
 /// <returns></returns>
-extern __intrinsic void bit_reset(int* address, const byte bitIndex);
+extern __intrinsic void bitReset(int* address, const byte bitIndex);
 
 /// <summary>Flips the bit at a index at the address of a value.</summary>
 /// <param name="address">The address of the value.</param>
 /// <param name="bitIndex">The bit index to be flipped.<para>This value must be an integer literal.</para></param>
 /// <returns></returns>
-extern __intrinsic void bit_flip(int* address, const byte bitIndex);
+extern __intrinsic void bitFlip(int* address, const byte bitIndex);
 
 /// <summary>Gets the byte at an address in big endian.</summary>
 /// <param name="addr">The address of the value you want to get.</param>

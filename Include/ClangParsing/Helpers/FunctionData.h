@@ -44,7 +44,8 @@ class FunctionData
 		bool isBuiltin : 1;
 		bool allowUnsafe : 1;
 		bool dontObf : 1;
-	}bitSet = { false, false, false, false, false };
+        bool mainFuncInline : 1;
+	}bitSet = { false, false, false, false, false, false };
 	std::vector<Opcode *> Instructions;
 	std::vector<FunctionData *> usedFuncs;
 	std::vector<StaticData*> _usedStatics;
@@ -90,6 +91,10 @@ public:
 		assert(index < Instructions.size() && "Instruction out of range");
 		return Instructions[index];
 	}
+    void addInstruction(const Opcode* op)
+    {
+        Instructions.push_back(new Opcode(op));
+    }
 	size_t getInstructionCount() const{
 		return Instructions.size();
 	}
@@ -102,6 +107,14 @@ public:
 	}
 	bool isBuiltIn()const{ return bitSet.isBuiltin; }
 	void setBuiltIn(){ bitSet.isBuiltin = true; }
+
+    bool isMainFuncInline()const {
+        return bitSet.mainFuncInline;
+    }
+    void setMainFuncInline()
+    {
+        bitSet.mainFuncInline = true;
+    }
 
 	bool getDontObfuscate()const{ return bitSet.dontObf; }
 	void setDontObfuscate(){ bitSet.dontObf = true; }
@@ -236,12 +249,16 @@ public:
 		TEST(bitIndex + bitCount >= 1 && bitIndex + bitCount <= 32, "bitindex + bitCount must be between 1 and 32");
 		TEST(Instructions.size(), "cannot add bitset to empty instruction stack");
 		
-		if (BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT || BT == BT_GTAIV || BT == BT_GTAV)
+		if (BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT || BT == BT_GTAIV || BT == BT_GTAV || BT == BT_RDR2 )
 		{
 			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, bitIndex));
 			Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, Utils::Bitwise::bitCountToIntEnd(bitIndex, bitCount)));
 			
-			if (P == P_PC)
+            if(BT == BT_RDR2)
+            {
+                addOpNative(0x68E1352AF48F905D, 3, 1);
+            }
+			else if (P == P_PC)
 			{
 				if (BT == BT_GTAV)
 				{
@@ -288,7 +305,7 @@ public:
 		pushComment("__bitset_set_temp_ptr");
 		addOpSetFrame(storageIndex[1]);//value
 
-		if (BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT || BT == BT_GTAIV || BT == BT_GTAV)
+		if (BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT || BT == BT_GTAIV || BT == BT_GTAV || BT == BT_RDR2)
 		{
 			addOpGetFrame(storageIndex[0]);
 			pushComment("__bitset_set_temp_ptr");
@@ -297,7 +314,11 @@ public:
 			addOpGetFrame(storageIndex[1]);
 			pushComment("__bitset_set_temp_val");
 
-			if (P == P_PC)
+            if (BT == BT_RDR2)
+            {
+                addOpNative(0x324DC1CEF57F31E6, 3, 1);
+            }
+			else if (P == P_PC)
 			{
 				if (BT == BT_GTAV)
 				{

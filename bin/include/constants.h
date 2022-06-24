@@ -56,7 +56,11 @@
 
 #define PI 3.14159265
 
-#if TARGET == TARGET_RDR
+#if TARGET == TARGET_RDR2
+
+#include "RDR2/consts.h"
+
+#elif TARGET == TARGET_RDR
 
 #include "RDR/consts32.h"
 

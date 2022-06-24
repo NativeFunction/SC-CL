@@ -6,16 +6,16 @@
 
 bool LoadTextureDictionary(const char* DictionaryName)
 {
-	if (has_streamed_texture_dict_loaded(DictionaryName))
+	if (HAS_STREAMED_TEXTURE_DICT_LOADED(DictionaryName))
 		return true;
 
-	request_streamed_texture_dict(DictionaryName, 0);
+	REQUEST_STREAMED_TEXTURE_DICT(DictionaryName, 0);
 
 	for (int i = 0; i < 100; i++)
 	{
-		if (has_streamed_texture_dict_loaded(DictionaryName))
+		if (HAS_STREAMED_TEXTURE_DICT_LOADED(DictionaryName))
 			return true;
-		wait(0);
+		WAIT(0);
 	}
 
 	Warn("Unable to load texture dictionary.");
@@ -24,21 +24,21 @@ bool LoadTextureDictionary(const char* DictionaryName)
 void CheckTextureDictionary(const char* DictionaryName)
 {
 	//TODO: add bool to not request multiple times
-	if (!has_streamed_texture_dict_loaded(DictionaryName))
-		request_streamed_texture_dict(DictionaryName, 0);
+	if (!HAS_STREAMED_TEXTURE_DICT_LOADED(DictionaryName))
+		REQUEST_STREAMED_TEXTURE_DICT(DictionaryName, 0);
 }
 bool InitScaleformMovie(const char* MovieName, int* SavedScaleformId)
 {
-	if (has_scaleform_movie_loaded(*SavedScaleformId))
+	if (HAS_SCALEFORM_MOVIE_LOADED(*SavedScaleformId))
 		return true;
 
-	*SavedScaleformId = request_scaleform_movie(MovieName);
+	*SavedScaleformId = REQUEST_SCALEFORM_MOVIE(MovieName);
 
 	for (int i = 0; i < 100; i++)
 	{
-		if (has_scaleform_movie_loaded(*SavedScaleformId))
+		if (HAS_SCALEFORM_MOVIE_LOADED(*SavedScaleformId))
 			return true;
-		wait(0);
+		WAIT(0);
 	}
 
 	Warn("Unable to initialize scaleform.");
@@ -47,8 +47,8 @@ bool InitScaleformMovie(const char* MovieName, int* SavedScaleformId)
 void CheckScaleformMovie(const char* MovieName, int* SavedScaleformId)
 {
 	//TODO: add bool to not request multiple times
-	if (has_scaleform_movie_loaded(*SavedScaleformId))
-		*SavedScaleformId = request_scaleform_movie(MovieName);
+	if (HAS_SCALEFORM_MOVIE_LOADED(*SavedScaleformId))
+		*SavedScaleformId = REQUEST_SCALEFORM_MOVIE(MovieName);
 }
 
 
@@ -56,49 +56,49 @@ Size GetSizeFromTexture(const char* DictionaryName, const char* TextureName)
 {
 	int ScreenRes[2];
 	
-	get_screen_resolution(&ScreenRes[0], &ScreenRes[1]);
-	vector3 TextureRes = get_texture_resolution(DictionaryName, TextureName);
+	GET_SCREEN_RESOLUTION(&ScreenRes[0], &ScreenRes[1]);
+	vector3 TextureRes = GET_TEXTURE_RESOLUTION(DictionaryName, TextureName);
 	return Vector2(TextureRes.x / (float)ScreenRes[0], TextureRes.y / (float)ScreenRes[1]);
 }
 Size GetSizeFromResolution(vector2 Resolution)
 {
 	int ScreenRes[2];
-	get_screen_resolution(&ScreenRes[0], &ScreenRes[1]);
+	GET_SCREEN_RESOLUTION(&ScreenRes[0], &ScreenRes[1]);
 	return Vector2(Resolution.x / (float)ScreenRes[0], Resolution.y / (float)ScreenRes[1]);
 }
 float GetFloatWidth(float Value, Font FontType, float Scale)
 {
-	_begin_text_command_width("NUMBER");
-	add_text_component_float(Value, 4);
-	set_text_font(FontType);
-	set_text_scale(1.0f, Scale);
-	return _end_text_command_get_width(true);
+	_BEGIN_TEXT_COMMAND_WIDTH("NUMBER");
+	ADD_TEXT_COMPONENT_FLOAT(Value, 4);
+	SET_TEXT_FONT(FontType);
+	SET_TEXT_SCALE(1.0f, Scale);
+	return _END_TEXT_COMMAND_GET_WIDTH(true);
 }
 float GetIntWidth(int Value, Font FontType, float Scale)
 {
-	_begin_text_command_width("NUMBER");
-	add_text_component_integer(Value);
-	set_text_font(FontType);
-	set_text_scale(1.0f, Scale);
-	return _end_text_command_get_width(true);
+	_BEGIN_TEXT_COMMAND_WIDTH("NUMBER");
+	ADD_TEXT_COMPONENT_INTEGER(Value);
+	SET_TEXT_FONT(FontType);
+	SET_TEXT_SCALE(1.0f, Scale);
+	return _END_TEXT_COMMAND_GET_WIDTH(true);
 }
 float GetStringWidth(const char* Value, Font FontType, float Scale)
 {
-	_begin_text_command_width("STRING");
-	add_text_component_substring_player_name(Value);
-	set_text_font(FontType);
-	set_text_scale(1.0f, Scale);
-	return _end_text_command_get_width(true);
+	_BEGIN_TEXT_COMMAND_WIDTH("STRING");
+	ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(Value);
+	SET_TEXT_FONT(FontType);
+	SET_TEXT_SCALE(1.0f, Scale);
+	return _END_TEXT_COMMAND_GET_WIDTH(true);
 }
 float GetStringHeight(const char* Value, Font FontType, float Scale, float Wrap, vector2 Pos)
 {
-	set_text_font(FontType);
-	set_text_wrap(0.0f, Wrap);
-	set_text_scale(1.0f, Scale);
-	_begin_text_command_line_count("STRING");
-	add_text_component_substring_player_name(Value);
+	SET_TEXT_FONT(FontType);
+	SET_TEXT_WRAP(0.0f, Wrap);
+	SET_TEXT_SCALE(1.0f, Scale);
+	_BEGIN_TEXT_COMMAND_LINE_COUNT("STRING");
+	ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(Value);
 
-	return _get_text_scale_height(Scale, FontType) * (float)_end_text_command_get_line_count(Pos);
+	return _GET_TEXT_SCALE_HEIGHT(Scale, FontType) * (float)_END_TEXT_COMMAND_GET_LINE_COUNT(Pos);
 }
 void Break(const char* str)
 {
@@ -107,84 +107,84 @@ void Break(const char* str)
 	strcpy(Buffer, "~r~Breakpoint~s~: ", 255);
 	stradd(Buffer, str, 255);
 
-	wait(0);//a button press before break
-	while (!is_disabled_control_just_pressed(2, INPUT_FRONTEND_ACCEPT))
+	WAIT(0);//a button press before break
+	while (!IS_DISABLED_CONTROL_JUST_PRESSED(2, INPUT_FRONTEND_ACCEPT))
 	{
 		print(Buffer, 1000);
-		wait(0);
+		WAIT(0);
 	}
-	wait(0);//a button press after break
+	WAIT(0);//a button press after break
 }
 void Notify(const char* str)
 {
-	_set_notification_text_entry("STRING");
-	add_text_component_substring_player_name(str);
-	_draw_notification(false, true);
+	_SET_NOTIFICATION_TEXT_ENTRY("STRING");
+	ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(str);
+	_DRAW_NOTIFICATION(false, true);
 }
 void PrintMult(const char* StrArr[10], int ms)
 {
-	begin_text_command_print("CELL_EMAIL_BCON");
+	BEGIN_TEXT_COMMAND_PRINT("CELL_EMAIL_BCON");
 	for (int i = 0; i < 10; i++)
 	{
 		if (StrArr[i])
-			add_text_component_substring_player_name(StrArr[i]);
+			ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(StrArr[i]);
 		else
 			break;
 	}
-	end_text_command_print(ms, 1);
+	END_TEXT_COMMAND_PRINT(ms, 1);
 }
 bool IsPlayerInGame(int PlayerIndex)
 {
-	return network_is_player_active(PlayerIndex) && does_entity_exist(get_player_ped(PlayerIndex));
+	return NETWORK_IS_PLAYER_ACTIVE(PlayerIndex) && DOES_ENTITY_EXIST(GET_PLAYER_PED(PlayerIndex));
 }
 int FindFreeCarSeat(Vehicle VehicleToFindSeat)
 {
-	int MaxPassengers = get_vehicle_max_number_of_passengers(VehicleToFindSeat);
+	int MaxPassengers = GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS(VehicleToFindSeat);
 
 	for (int i = -1; i < MaxPassengers; i++)
 	{
-		if (is_vehicle_seat_free(VehicleToFindSeat, i))
+		if (IS_VEHICLE_SEAT_FREE(VehicleToFindSeat, i))
 			return i;
 	}
 	return -2;
 }
 Vehicle GetCurrentVehicle()
 {
-	Ped MyPed = player_ped_id();
-	return is_ped_in_any_vehicle(MyPed, false) ? get_vehicle_ped_is_in(MyPed, false) : 0;
+	Ped MyPed = PLAYER_PED_ID();
+	return IS_PED_IN_ANY_VEHICLE(MyPed, false) ? GET_VEHICLE_PED_IS_IN(MyPed, false) : 0;
 }
 vector3 GetCoordInFrontOfGameplayCam(float Range)
 {
-	vector3 GameplayCamRot = get_gameplay_cam_rot(2);
-	vector3 GameplayCamCoord = get_gameplay_cam_coord();
-	float Tan = Range * cos(GameplayCamRot.x);
-	return Vector3(Tan * sin(-GameplayCamRot.z) + GameplayCamCoord.x, Tan * cos(-GameplayCamRot.z) + GameplayCamCoord.y, Range * sin(GameplayCamRot.x) + GameplayCamCoord.z);
+	vector3 GameplayCamRot = GET_GAMEPLAY_CAM_ROT(2);
+	vector3 GameplayCamCoord = GET_GAMEPLAY_CAM_COORD();
+	float Tan = Range * COS(GameplayCamRot.x);
+	return Vector3(Tan * SIN(-GameplayCamRot.z) + GameplayCamCoord.x, Tan * COS(-GameplayCamRot.z) + GameplayCamCoord.y, Range * SIN(GameplayCamRot.x) + GameplayCamCoord.z);
 }
 
 
 void Assert(const char* File, int Line, const char* Expression)
 {
-	const int FileEndPos = get_length_of_literal_string(File);
-	const int ExprEndPos = get_length_of_literal_string(File);
-	wait(0);
-	while (!is_disabled_control_just_pressed(2, INPUT_FRONTEND_ACCEPT))
+	const int FileEndPos = GET_LENGTH_OF_LITERAL_STRING(File);
+	const int ExprEndPos = GET_LENGTH_OF_LITERAL_STRING(File);
+	WAIT(0);
+	while (!IS_DISABLED_CONTROL_JUST_PRESSED(2, INPUT_FRONTEND_ACCEPT))
 	{
-		set_text_centre(true);
-		begin_text_command_display_text("CELL_EMAIL_BCON");
-		add_text_component_substring_player_name("Assertion failed!~n~~n~File: ");
+		SET_TEXT_CENTRE(true);
+		BEGIN_TEXT_COMMAND_DISPLAY_TEXT("CELL_EMAIL_BCON");
+		ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME("Assertion failed!~n~~n~File: ");
 
 
 		for (int i = 0; i < FileEndPos; i += 99)
-			add_text_component_substring_player_name(File + i);
+			ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(File + i);
 
-		add_text_component_substring_player_name(straddiGlobal("~n~Line: ", Line));
-		add_text_component_substring_player_name("~n~~n~Expression: ");
+		ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(straddiGlobal("~n~Line: ", Line));
+		ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME("~n~~n~Expression: ");
 
 		for (int i = 0; i < ExprEndPos; i += 99)
-			add_text_component_substring_player_name(Expression + i);
+			ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(Expression + i);
 
-		end_text_command_display_text(Vector2(0.5f, 0.5f));
-		wait(0);
+		END_TEXT_COMMAND_DISPLAY_TEXT(Vector2(0.5f, 0.5f));
+		WAIT(0);
 	}
-	wait(0);
+	WAIT(0);
 }

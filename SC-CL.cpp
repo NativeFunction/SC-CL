@@ -65,8 +65,8 @@ namespace SCCL
 			{
 				switch (scriptData->getBuildPlatform())
 				{
-					case P_X360:
-					case P_PS3:
+					case P_XBOX:
+					case P_PSX:
 					case P_PC:
 					{
 						CompileGTAIV c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
@@ -83,8 +83,8 @@ namespace SCCL
 			{
 				switch (scriptData->getBuildPlatform())
 				{
-					case P_X360:
-					case P_PS3:
+					case P_XBOX:
+					case P_PSX:
 					{
 						CompileRDR c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
 						c.Compile(outDir);
@@ -99,8 +99,8 @@ namespace SCCL
 			{
 				switch (scriptData->getBuildPlatform())
 				{
-					case P_X360:
-					case P_PS3:
+					case P_XBOX:
+					case P_PSX:
 					{
 						CompileGTAV c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
 						if (Option_ObfuscationLevel > obf_none)
@@ -112,7 +112,7 @@ namespace SCCL
 					break;
 					case P_PC:
 					{
-						CompileGTAVPC c(*scriptData, Option_PCVerison, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
+						CompileGTAVPC c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
 						if (Option_ObfuscationLevel > obf_none)
 						{
 							c.setEncryptStrings();
@@ -121,9 +121,38 @@ namespace SCCL
 					}
 					break;
 					default:
-						Throw("GTA V only supported on Xbox360 and PS3");
+						Throw("GTA V only supported on Xbox360, PS3, and PC");
 				}
 			}
+            case BT_RDR2:
+            {
+                switch (scriptData->getBuildPlatform())
+                {
+                case P_XBOX:
+                case P_PSX:
+                {
+                    CompileRDR2Console c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
+                    if (Option_ObfuscationLevel > obf_none)
+                    {
+                        c.setEncryptStrings();
+                    }
+                    c.Compile(outDir);
+                }
+                break;
+                case P_PC:
+                {
+                    CompileRDR2PC c(*scriptData, Option_DisableFunctionNames || Option_OptimizationLevel > OptimisationLevel::OL_None);
+                    if (Option_ObfuscationLevel > obf_none)
+                    {
+                        c.setEncryptStrings();
+                    }
+                    c.Compile(outDir);
+                }
+                break;
+                default:
+                    Throw("Red Dead Redemption 2 only supported on Console and PC");
+                }
+            }
 			break;
 			default:
 				Throw("Unsupported Build Platform");
@@ -140,8 +169,6 @@ namespace SCCL
 			return Dir.substr(BaseStartPos, BaseExtPos);
 		return Dir.substr(BaseStartPos, BaseExtPos - BaseStartPos);
 	}
-
-
 
 	void PrintVersion()
 	{

@@ -1463,9 +1463,9 @@ namespace SCCL
 					return true;
 				}
 			} break;
-			case JoaatCasedConst("bit_test"):
+			case JoaatCasedConst("bitTest"):
 			{
-				ChkHashCol("bit_test");
+				ChkHashCol("bitTest");
 				if (argCount == 2 && callee->getReturnType()->isBooleanType() && argArray[0]->getType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
@@ -1479,13 +1479,13 @@ namespace SCCL
 							return true;
 						}
 					}
-					Throw("bitIndex argument for bit_test must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
+					Throw("bitIndex argument for bitTest must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
 				}
-				Throw("bit_test must have signature \"extern __intrinsic bool bit_test(int value, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
+				Throw("bitTest must have signature \"extern __intrinsic bool bitTest(int value, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
 			} break;
-			case JoaatCasedConst("bit_set"):
+			case JoaatCasedConst("bitSet"):
 			{
-				ChkHashCol("bit_set");
+				ChkHashCol("bitSet");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
@@ -1499,13 +1499,13 @@ namespace SCCL
 							return true;
 						}
 					}
-					Throw("bitIndex argument for bit_set must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
+					Throw("bitIndex argument for bitSet must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
 				}
-				Throw("bit_set must have signature \"extern __intrinsic bool bit_set(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
+				Throw("bitSet must have signature \"extern __intrinsic bool bitSet(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
 			} break;
-			case JoaatCasedConst("bit_reset"):
+			case JoaatCasedConst("bitReset"):
 			{
-				ChkHashCol("bit_reset");
+				ChkHashCol("bitReset");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
@@ -1519,13 +1519,13 @@ namespace SCCL
 							return true;
 						}
 					}
-					Throw("bitIndex argument for bit_reset must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
+					Throw("bitIndex argument for bitReset must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
 				}
-				Throw("bit_reset must have signature \"extern __intrinsic bool bit_reset(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
+				Throw("bitReset must have signature \"extern __intrinsic bool bitReset(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
 			} break;
-			case JoaatCasedConst("bit_flip"):
+			case JoaatCasedConst("bitFlip"):
 			{
-				ChkHashCol("bit_flip");
+				ChkHashCol("bitFlip");
 				if (argCount == 2 && callee->getReturnType()->isVoidType() && argArray[0]->getType()->isPointerType() && argArray[0]->getType()->getPointeeType()->isIntegerType() && argArray[1]->getType()->isIntegerType())
 				{
 					llvm::APSInt result;
@@ -1539,9 +1539,9 @@ namespace SCCL
 							return true;
 						}
 					}
-					Throw("bitIndex argument for bit_flip must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
+					Throw("bitIndex argument for bitFlip must be a compile time constant integer between 0 and 31", TheRewriter, argArray[1]->getSourceRange());
 				}
-				Throw("bit_flip must have signature \"extern __intrinsic bool bit_flip(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
+				Throw("bitFlip must have signature \"extern __intrinsic bool bitFlip(int* address, const byte bitIndex);\"", TheRewriter, callee->getSourceRange());
 			} break;
 			case JoaatCasedConst("vector3ToVector2"):
 			{
@@ -3390,40 +3390,41 @@ namespace SCCL
 
 				}
 
-				if (isVariadic)
-				{
-					if (!VariadicSize)
-					{
-						int index = LocalVariables.addDecl("", 1);
-						AddInstruction(PushInt, 0);
-						AddInstruction(SetFrame, index);
-						AddInstructionComment(GetFrameP, "__builtin_va_list", index);
-						AddInstructionComment(PushInt, "__builtin_va_pcount", 0);
-						AddInstructionComment(PushInt, "__builtin_va_scount", 0);
-					}
-					else
-					{
-						int index = LocalVariables.addDecl("", VariadicSize);
-						if (VariadicSize > 1)
-						{
-							AddInstructionComment(PushInt, "Type Size (va list)", VariadicSize);
-							AddInstruction(GetFrameP, index);
-							AddInstruction(FromStack);
-							AddInstructionComment(GetFrameP, "__builtin_va_list", index);
+                if (isVariadic && !call->getDirectCallee()->hasAttr<NativeFuncAttr>())
+                {
+                    if (!VariadicSize)
+                    {
+                        int index = LocalVariables.addDecl("", 1);
+                        AddInstruction(PushInt, 0);
+                        AddInstruction(SetFrame, index);
+                        AddInstructionComment(GetFrameP, "__builtin_va_list", index);
+                        AddInstructionComment(PushInt, "__builtin_va_pcount", 0);
+                        AddInstructionComment(PushInt, "__builtin_va_scount", 0);
+                    }
+                    else
+                    {
+                        int index = LocalVariables.addDecl("", VariadicSize);
+                        if (VariadicSize > 1)
+                        {
+                            AddInstructionComment(PushInt, "Type Size (va list)", VariadicSize);
+                            AddInstruction(GetFrameP, index);
+                            AddInstruction(FromStack);
+                            AddInstructionComment(GetFrameP, "__builtin_va_list", index);
 
-							AddInstructionComment(PushInt, "__builtin_va_pcount", VariadicPCount);
-							AddInstructionComment(PushInt, "__builtin_va_scount", VariadicSize);
-						}
-						else
-						{
-							AddInstruction(SetFrame, index);
-							AddInstructionComment(GetFrameP, "__builtin_va_list", index);
-							AddInstructionComment(PushInt, "__builtin_va_pcount", 1);
-							AddInstructionComment(PushInt, "__builtin_va_scount", 1);
-						}
-					}
-				}
+                            AddInstructionComment(PushInt, "__builtin_va_pcount", VariadicPCount);
+                            AddInstructionComment(PushInt, "__builtin_va_scount", VariadicSize);
+                        }
+                        else
+                        {
+                            AddInstruction(SetFrame, index);
+                            AddInstructionComment(GetFrameP, "__builtin_va_list", index);
+                            AddInstructionComment(PushInt, "__builtin_va_pcount", 1);
+                            AddInstructionComment(PushInt, "__builtin_va_scount", 1);
+                        }
+                    }
+                }
 
+				
 				if (call->getDirectCallee() && call->getDirectCallee()->hasAttr<NativeFuncAttr>())
 				{
 					NativeFuncAttr *attr = call->getDirectCallee()->getAttr<NativeFuncAttr>();
@@ -3442,6 +3443,12 @@ namespace SCCL
 					{
 						//clang attribute arguments cannot be 64bits wide, so using 2 32 bit args can manually joining them is the nicest way to support pc
 						//when using 32 bit(xbox/ps3) the hi dword would be 0 so can be neglected
+
+                        if (isVariadic)
+                        {
+                            pCount += VariadicSize;
+                        }
+
 						AddInstruction(Native, call->getDirectCallee()->getNameAsString(), ((uint64_t)attr->getX64HiDwordHash() << 32) | attr->getHash(), pCount, getSizeFromBytes(getSizeOfType(type.getTypePtr())));
 					}
 					else
@@ -6076,6 +6083,7 @@ namespace SCCL
 			if (f->isVariadic())
 				paramSize += 3;
 
+
 			FunctionData* func = scriptData.createFunction(getNameForFunc(f), paramSize, getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), true);
 			if (f->hasAttr<MinSizeAttr>())
 			{
@@ -6084,6 +6092,9 @@ namespace SCCL
 			auto identifier = f->getIdentifier();
 			if (identifier && identifier->isStr("main"))//cant use f->isMain as its now freestanding exe
 			{
+                if (f->isInlined())
+                    func->setMainFuncInline();
+
 				scriptData.setMainFunction(func);
 			}
 			if (f->hasAttr<UnsafeFuncAttr>())
@@ -6170,6 +6181,7 @@ namespace SCCL
 
 			if (f->isVariadic())
 				paramSize += 3;
+
 
 			scriptData.createFunction(getNameForFunc(f), paramSize + (isa<CXXMethodDecl>(f) ? 1 : 0), getSizeFromBytes(getSizeOfType(f->getReturnType().getTypePtr())), false, true);
 

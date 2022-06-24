@@ -9,9 +9,9 @@
 #define GetImageBaseRem(x) ((x) - ImageBase)
 int* GetVehicleMetaAddress(VehicleHash Hash)
 {
-	const char* DisplayName = get_display_name_from_vehicle_model(Hash);
+	const char* DisplayName = GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(Hash);
 
-	if (are_strings_equal(DisplayName, "CARNOTFOUND"))
+	if (ARE_STRINGS_EQUAL(DisplayName, "CARNOTFOUND"))
 		return nullptr;
 	else
 		return Sub64P((int*)DisplayName, VMI_DisplayName, 0);
@@ -20,7 +20,7 @@ int* GetExecutableAddress()
 {
 	#if PLATFORM == PLATFORM_PC
 		#define ExeBaseToStringDist 31273176
-		return Sub64P((int*)_get_online_version(), ExeBaseToStringDist, 0);
+		return Sub64P((int*)_GET_ONLINE_VERSION(), ExeBaseToStringDist, 0);
 		#undef ExeBaseToStringDist
 	#elif PLATFORM == PLATFORM_XBOX
 		return (int*)0x82000000;

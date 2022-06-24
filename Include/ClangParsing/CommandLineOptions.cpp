@@ -19,9 +19,9 @@ namespace SCCL
 		ValueRequired,
 		cat(CompilerOptions),
 		values(
-		clEnumValN(Platform::P_X360, "X360", "Target Xbox (32 bit, big endian)"),
-		clEnumValN(Platform::P_PS3, "PS3", "Target PS3 (32 bit, big endian)"),
-		clEnumValN(Platform::P_PC, "PC", "Target PC (64 bit, little endian)")
+		clEnumValN(Platform::P_XBOX, "XBOX", "Target Xbox"),
+		clEnumValN(Platform::P_PSX, "PSX", "Target Playstation"),
+		clEnumValN(Platform::P_PC, "PC", "Target PC")
 	));
 
 	opt<BuildType> Option_BuildType(
@@ -35,7 +35,8 @@ namespace SCCL
 		clEnumValN(BuildType::BT_GTAIV_TBOGT, "GTAIV_TBOGT", "Grand Theft Auto IV The Ballad of Gay Tony (sco output)"),
 		clEnumValN(BuildType::BT_GTAV, "GTAV", "Grand Theft Auto V (#sc output)"),
 		clEnumValN(BuildType::BT_RDR_SCO, "RDR_SCO", "Red Dead Redemption (sco output)"),
-		clEnumValN(BuildType::BT_RDR_XSC, "RDR_#SC", "Red Dead Redemption (#sc output)")
+		clEnumValN(BuildType::BT_RDR_XSC, "RDR_#SC", "Red Dead Redemption (#sc output)"),
+		clEnumValN(BuildType::BT_RDR2, "RDR2", "Red Dead Redemption 2 (#sc output)")
 	));
 
 	opt<std::string> Option_OutputFileName(
@@ -48,7 +49,7 @@ namespace SCCL
 		desc("Choose obfuscation level: (This option is experimental use at your own risk)"),
 		cat(CompilerOptions),
 		values(
-		clEnumValN(obf_string, "Fs", "Obfuscate string table - GTA V Only"),
+		clEnumValN(obf_string, "Fs", "Obfuscate string table - GTA V and RDR2 Only"),
 		clEnumValN(obf_low, "F1", "Enable low obfuscations"),
 		clEnumValN(obf_default, "F2", "Enable default obfuscations"),
 		clEnumValN(obf_high, "F3", "Enable high obfuscations"),
@@ -65,12 +66,6 @@ namespace SCCL
         clEnumValN(GTAIVSCRFlags::SCRF_Standard, "None", "Sco output with no compression or encryption"),
         clEnumValN(GTAIVSCRFlags::SCRF_Encrypted, "Encrypt", "Sco output with encryption")
     ));
-
-	opt<uint32_t> Option_PCVerison(
-		"pc-version", desc("Sets the pc version for use in the native translation table"),
-		ValueRequired,
-		cat(CompilerOptions)
-	);
 
 	opt <uint32_t> Option_HostVarIndex(
 		"hvi", desc("Sets the starting index for host variables to ignore"),
@@ -137,7 +132,7 @@ namespace SCCL
 	#pragma region Bool_Group
 	//Grouping is for multi bool set support ex: -snb
 	opt<bool> Option_Singleton(
-		"s", desc("Limits script to one instance on runtime (GTAV | GTAIV)"),
+		"s", desc("Limits script to one instance on runtime (RDR2 | GTAV | GTAIV)"),
 		Grouping,
 		cat(CompilerOptions)
 	);

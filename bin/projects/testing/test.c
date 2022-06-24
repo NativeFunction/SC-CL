@@ -80,27 +80,27 @@ GUIWindow MainWindow;
 
 void Print(const char* Str, float SecTime, bool IsStringliteral)
 {
-	_clear_prints();
-	_print_subtitle(Str, SecTime, IsStringliteral, 2, 1, 0, 0, 0);
+	_CLEAR_PRINTS();
+	_PRINT_SUBTITLE(Str, SecTime, IsStringliteral, 2, 1, 0, 0, 0);
 }
 Actor GetPlayerActor()
 {
-	if (_is_actor_id_valid(0))
-		return get_player_actor(0);
+	if (_IS_ACTOR_ID_VALID(0))
+		return GET_PLAYER_ACTOR(0);
 	else 
 		return 0;
 }
 Controller GetPlayerController()
 {
-	if (_is_actor_id_valid(0))
-		return _get_actor_controller(0);
+	if (_IS_ACTOR_ID_VALID(0))
+		return _GET_ACTOR_CONTROLLER(0);
 	else 
 		return 0;
 }
 Actor CreateActor(Layout Layout, const char* ActorName, eActor ActorID, vector3 Position)
 {
-	Actor CreatedActor = find_actor_in_layout(Layout, ActorName);
-	if (is_actor_valid(find_actor_in_layout(Layout, ActorName)))
+	Actor CreatedActor = FIND_ACTOR_IN_LAYOUT(Layout, ActorName);
+	if (is_actor_valid(FIND_ACTOR_IN_LAYOUT(Layout, ActorName)))
 		destroy_actor(CreatedActor);
 
 	bool ActorLoaded = false;

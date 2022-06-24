@@ -40,12 +40,12 @@ void SCCL::ASTFrontendAction::AddDefines(Preprocessor &PP)
 
 	switch (scriptData->getBuildPlatform())
 	{
-		case P_X360:
+		case P_XBOX:
 			preDefines +=
 				"\n#define PLATFORM PLATFORM_X360"
 				"\n#define ENDIAN ENDIAN_BIG";
 			break;
-		case P_PS3:
+		case P_PSX:
 			preDefines +=
 				"\n#define PLATFORM PLATFORM_PS3"
 				"\n#define ENDIAN ENDIAN_BIG";
@@ -96,6 +96,14 @@ void SCCL::ASTFrontendAction::AddDefines(Preprocessor &PP)
 				preDefines += "\n#define PTRWIDTH 32";
 
 			break;
+
+        case BT_RDR2:
+            preDefines +=
+                "\n#define TARGET TARGET_RDR2"
+                "\n#define FILETYPE FILETYPE_" + scriptData->getPlatformAbvUpper() + string("SC");
+            preDefines += "\n#define PTRWIDTH 64";
+
+            break;
 	}
 	preDefines += "\n#undef _MSC_VER";
 	

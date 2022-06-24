@@ -77,90 +77,90 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{130629F0-649C-4E82-B00A-590905509FFB}</ProjectGuid>
     <RootNamespace>MenuBase</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAV|Win32'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV|Win32'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV TLAD|Win32'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV TBOGT|Win32'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDR _SC|Win32'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDR SCO|Win32'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAV|Itanium'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV|Itanium'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV TLAD|Itanium'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV TBOGT|Itanium'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDR _SC|Itanium'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDR SCO|Itanium'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -169,42 +169,42 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV TLAD|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GTAIV TBOGT|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDR _SC|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDR SCO|x64'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -718,24 +718,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CustomBuild Include="MenuBase.c">
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Win32'">"../../Debug/SC-CL.exe" -platform=X360 -emit-asm -build_type=GTAV -snb $(ProjectName).c ../../include/common.c Include/Utilities/Utils.c Include/Utilities/Memory.c "Include/Menu Internals/ItemExecution.c" "Include/Menu Internals/MenuUiHandling.c" "Include/Menu Internals/MenuExecutionHandling.c" -- -I "../../include/" -I "Include/Utilities/" -I "Include/Menu Internals/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Itanium'">"../../Debug/SC-CL.exe" -platform=PS3 -build_type=GTAV -snb $(ProjectName).c ../../include/common.c Include/Utilities/Utils.c Include/Utilities/Memory.c "Include/Menu Internals/ItemExecution.c" "Include/Menu Internals/MenuUiHandling.c" "Include/Menu Internals/MenuExecutionHandling.c" -- -I "../../include/" -I "Include/Utilities/" -I "Include/Menu Internals/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|x64'">"../../Debug/SC-CL.exe" -platform=PC -build_type=GTAV -pc_version=944 -snb $(ProjectName).c ../../include/common.c Include/Utilities/Utils.c Include/Utilities/Memory.c "Include/Menu Internals/ItemExecution.c" "Include/Menu Internals/MenuUiHandling.c" "Include/Menu Internals/MenuExecutionHandling.c" -- -I "../../include/" -I "Include/Utilities/" -I "Include/Menu Internals/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV|Win32'">"../../Debug/SC-CL.exe" -platform=X360 -build_type=GTAIV -s $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV|Itanium'">"../../Debug/SC-CL.exe" -platform=PS3 -build_type=GTAIV -s $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV|x64'">"../../Debug/SC-CL.exe" -platform=PC -build_type=GTAIV -s $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TLAD|Win32'">"../../Debug/SC-CL.exe" -platform=X360 -build_type=GTAV_TLAD -s $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TLAD|Itanium'">"../../Debug/SC-CL.exe" -platform=PS3 -build_type=GTAV_TLAD -s $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TLAD|x64'">"../../Debug/SC-CL.exe" -platform=PC -build_type=GTAV_TLAD -s $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TBOGT|Win32'">"../../Debug/SC-CL.exe" -platform=X360 -build_type=GTAV_TBOGT -s $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TBOGT|Itanium'">"../../Debug/SC-CL.exe" -platform=PS3 -build_type=GTAV_TBOGT -s $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TBOGT|x64'">"../../Debug/SC-CL.exe" -platform=PC -build_type=GTAV_TBOGT -s $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='RDR _SC|Win32'">"../../Debug/SC-CL.exe" -platform=X360 -build_type=RDR_#SC $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='RDR _SC|Itanium'">"../../Debug/SC-CL.exe" -platform=PS3 -build_type=RDR_#SC $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='RDR _SC|x64'">"../../Debug/SC-CL.exe" -platform=PC -build_type=RDR_#SC $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='RDR SCO|Win32'">"../../Debug/SC-CL.exe" -platform=X360 -build_type=RDR_SCO $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='RDR SCO|Itanium'">"../../Debug/SC-CL.exe" -platform=PS3 -build_type=RDR_SCO $(ProjectName).c -- -I "../../include/"</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='RDR SCO|x64'">"../../Debug/SC-CL.exe" -platform=PC -build_type=RDR_SCO $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Win32'">"../../Debug/SC-CL.exe" -platform=XBOX -target=GTAV -snb -vcx $(ProjectName).vcxproj -- -I "../../include/" -I "Include/Utilities/" -I "Include/Menu Internals/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|Itanium'">"../../Debug/SC-CL.exe" -platform=PSX -target=GTAV -snb -vcx $(ProjectName).vcxproj -- -I "../../include/" -I "Include/Utilities/" -I "Include/Menu Internals/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAV|x64'">"../../Debug/SC-CL.exe" -platform=PC -target=GTAV -snb -vcx $(ProjectName).vcxproj -- -I "../../include/" -I "Include/Utilities/" -I "Include/Menu Internals/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV|Win32'">"../../Debug/SC-CL.exe" -platform=XBOX -target=GTAIV -s $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV|Itanium'">"../../Debug/SC-CL.exe" -platform=PSX -target=GTAIV -s $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV|x64'">"../../Debug/SC-CL.exe" -platform=PC -target=GTAIV -s $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TLAD|Win32'">"../../Debug/SC-CL.exe" -platform=XBOX -target=GTAV_TLAD -s $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TLAD|Itanium'">"../../Debug/SC-CL.exe" -platform=PSX -target=GTAV_TLAD -s $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TLAD|x64'">"../../Debug/SC-CL.exe" -platform=PC -target=GTAV_TLAD -s $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TBOGT|Win32'">"../../Debug/SC-CL.exe" -platform=XBOX -target=GTAV_TBOGT -s $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TBOGT|Itanium'">"../../Debug/SC-CL.exe" -platform=PSX -target=GTAV_TBOGT -s $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='GTAIV TBOGT|x64'">"../../Debug/SC-CL.exe" -platform=PC -target=GTAV_TBOGT -s $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RDR _SC|Win32'">"../../Debug/SC-CL.exe" -platform=XBOX -target=RDR_#SC $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RDR _SC|Itanium'">"../../Debug/SC-CL.exe" -platform=PSX -target=RDR_#SC $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RDR _SC|x64'">"../../Debug/SC-CL.exe" -platform=PC -target=RDR_#SC $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RDR SCO|Win32'">"../../Debug/SC-CL.exe" -platform=XBOX -target=RDR_SCO $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RDR SCO|Itanium'">"../../Debug/SC-CL.exe" -platform=PSX -target=RDR_SCO $(ProjectName).c -- -I "../../include/"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RDR SCO|x64'">"../../Debug/SC-CL.exe" -platform=PC -target=RDR_SCO $(ProjectName).c -- -I "../../include/"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='GTAV|Win32'">MenuBase.dh%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='GTAV|Itanium'">MenuBase.dh%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='GTAV|x64'">MenuBase.dh%(Outputs)</Outputs>
