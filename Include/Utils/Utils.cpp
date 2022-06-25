@@ -9,7 +9,7 @@
 #include "Utils/Utils.h"
 #include <windows.h>
 #include "ConsoleColor.h"
-#include <experimental\filesystem>
+#include <filesystem>
 
 
 using namespace std;
@@ -50,17 +50,29 @@ namespace Utils
 
         bool CreateFileWithDir(const char* filePath, FILE*& file)
         {
-        std:string strDir = GetDir(filePath);
 
-            if (!std::experimental::filesystem::exists(std::experimental::filesystem::v1::path(strDir)))
-                std::experimental::filesystem::create_directories(std::experimental::filesystem::v1::path(strDir));
+            string dir = GetDir(filePath);
+
+            bool status = false;
+            try
+            {
+                status = std::filesystem::exists(std::filesystem::path(dir)) ?
+                    true :
+                    std::filesystem::create_directories(std::filesystem::path(dir));
+            }
+            catch (exception)
+            {
+
+            }
+
 
             file = fopen(filePath, "wb");
+            status = file != NULL;
 
-            if (file == NULL)
-                System::Throw("Could Not Create File: " + string(filePath));
+            if (!status)
+                Throw("Could Not create File: " + string(filePath));
 
-            return file != NULL;
+            return status;
         }
 
         bool LoadCSVMap(const string& path, bool hasHeader, int keyBase, unordered_map<uint64_t, uint64_t>& map, bool reverse)

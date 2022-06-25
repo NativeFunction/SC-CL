@@ -184,8 +184,7 @@ namespace Utils {
 				{
 					// handle the error
 					FreeLibrary(xCompressDLL);
-					cout << "Function: " << str;
-					Utils::System::Throw("xCompress Function Not Found");
+					Utils::System::Throw("xCompress Function " + str + " Not Found");
 				}
 			}
 			//}

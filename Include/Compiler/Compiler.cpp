@@ -1439,7 +1439,7 @@ void CompileGTAIV::SCOWrite(const char* path, CompileGTAIV::SCRFlags EncryptionC
 	const uint32_t HeaderSize = 24;
 	const vector<uint32_t> SCR_Header = {
 		Utils::Bitwise::SwapEndian((uint32_t)EncryptionCompressionLevel)//SCR.
-		, BuildBuffer.size()//code size
+		, (uint32_t)BuildBuffer.size()//code size
 		, HLData->getStaticCount()//statics count
 		, 0u//Globals Alloc Count
 		, Utils::Bitwise::SwapEndian(0u)//Script Flags
@@ -1572,7 +1572,7 @@ void CompileRDR::fixFunctionJumps()
 #pragma endregion
 
 #pragma region RSC85Parsing
-vector<size_t> CompileRDR::GetPageSizes(size_t& size)
+vector<size_t> CompileRDR::GetPageSizes(uint32_t& size)
 {
 	int rem = size % 4096;
 	if (rem != 0)
@@ -2131,13 +2131,13 @@ void CompileRDR::SCOWrite(const char* path, bool CompressAndEncrypt)
 		{ 
 		  Utils::Bitwise::SwapEndian(0x53435202u)//SCR.
 		, Utils::Bitwise::SwapEndian(0x349D018Au)//GlobalsSignature
-		, Utils::Bitwise::SwapEndian(CompressedData.size())
+		, Utils::Bitwise::SwapEndian((uint32_t)CompressedData.size())
 		, Utils::Bitwise::SwapEndian(-3u)//-3 is_crypt?
-		, Utils::Bitwise::SwapEndian(BuildBuffer.size())
+		, Utils::Bitwise::SwapEndian((uint32_t)BuildBuffer.size())
 		, Utils::Bitwise::SwapEndian(HLData->getStaticCount())
 		, Utils::Bitwise::SwapEndian(0u)//GlobalsCount
 		, Utils::Bitwise::SwapEndian(0u)//ParameterCount
-		, Utils::Bitwise::SwapEndian(NativeHashMap.size())
+		, Utils::Bitwise::SwapEndian((uint32_t)NativeHashMap.size())
 		, Utils::Bitwise::SwapEndian(0u)//unk36
 		, Utils::Bitwise::SwapEndian(0u)//unk40
 		, Utils::Bitwise::SwapEndian(0u)//unk44

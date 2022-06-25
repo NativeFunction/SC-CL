@@ -161,7 +161,7 @@ public:
 		return getScriptName() + "." + getBuildTypeExt();
 	}
 
-	size_t allocateStatic(size_t sizeOf){
+	uint32_t allocateStatic(size_t sizeOf){
 		while (IgnoredBlocks.size()){
 			auto& block = IgnoredBlocks.back();
 			if (newStaticCount + sizeOf >= block.startIndex){
@@ -172,12 +172,12 @@ public:
 			}
 			break;
 		}
-		return newStaticCount;
+		return (uint32_t)newStaticCount;
 	}
 
-	size_t getStaticCount()const
+	uint32_t getStaticCount()const
 	{
-		return newStaticCount;
+		return (uint32_t)newStaticCount;
 	}
 	void incStaticCount(std::shared_ptr<StaticData> staticData)
 	{

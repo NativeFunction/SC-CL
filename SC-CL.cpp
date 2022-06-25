@@ -323,7 +323,7 @@ namespace SCCL
 				Compilations.reset(new FixedCompilationDatabase(".", std::vector<std::string>()));
 			}
 		}
-        auto AdjustingCompilations = llvm::make_unique < clang::tooling::ArgumentsAdjustingCompilations > (std::move(Compilations));
+        auto AdjustingCompilations = std::make_unique<clang::tooling::ArgumentsAdjustingCompilations> (std::move(Compilations));
 
 		AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsBefore, ArgumentInsertPosition::BEGIN));
 		AdjustingCompilations->appendArgumentsAdjuster(getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
@@ -333,7 +333,7 @@ namespace SCCL
 
 int main(int argc, const char **argv)
 {
-	llvm::errs() << "Starting SC-CL ALPHA " << VERSION << " running Clang 6.0.0\n";
+	llvm::errs() << "Starting SC-CL " << VERSION << " running Clang 14.0.5\n";
 
 	SCCL::globalDirectory = Utils::IO::GetDir(string(argv[0]));
 

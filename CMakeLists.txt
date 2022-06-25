@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 2.8.10)
+cmake_minimum_required(VERSION 3.20.4)
 
 set(LLVM_LINK_COMPONENTS support)
 set(LLVM_USED_LIBS clangTooling clangBasic clangAST)
+
+set(CMAKE_CXX_STANDARD 20)
 
 set(source_list
 	"Include/ClangParsing/ASTConsumer.cpp"
@@ -88,11 +90,3 @@ foreach(resource IN LISTS resource_list)
     get_filename_component(resource_path "${resource}" PATH)
     source_group("Resource Files\\${resource_path}" FILES "${resource}")
 endforeach()
-
-add_custom_command(
-	TARGET SC-CL
-	PRE_BUILD
-	CMAKE_CURRENT_SOURCE_DIR "Include/Version/"
-	COMMAND "SC-CL_Version_Selector.exe"
-	COMMENT "Updating Version Number"
-)

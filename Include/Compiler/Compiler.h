@@ -36,25 +36,25 @@ public:
 		Pages.push_back(std::move(newPage));
 		lastPage = &Pages.back();
 	}
-	size_t getPageCount()const{ return Pages.size(); }
+	uint32_t getPageCount()const{ return (uint32_t)Pages.size(); }
 
-	size_t getPageCountIgnoreEmpty()const {
-		return (lastPage->size() ? Pages.size() : Pages.size() - 1);
+	uint32_t getPageCountIgnoreEmpty()const {
+		return (uint32_t)(lastPage->size() ? Pages.size() : Pages.size() - 1);
 	}
 
-	size_t getTotalSize()const {
-		return ((Pages.size() - 1) << 14) + getLastPageSize();
+	uint32_t getTotalSize()const {
+		return (uint32_t)((Pages.size() - 1) << 14) + getLastPageSize();
 	}
-	size_t getPageSize(int PageIndex)const
+	uint32_t getPageSize(int PageIndex)const
 	{
-		return Pages[PageIndex].size();
+		return (uint32_t)Pages[PageIndex].size();
 	}
-	size_t getLastPageSize()const{
-		return lastPage->size();
+	uint32_t getLastPageSize()const{
+		return (uint32_t)lastPage->size();
 	}
-	size_t getLastPageSizeIgnoreEmpty()const{
+	uint32_t getLastPageSizeIgnoreEmpty()const{
 		if (lastPage->size()){
-			return lastPage->size();
+			return (uint32_t)lastPage->size();
 		}
 		if (getPageCount() > 1){
 			return 0x4000;
@@ -206,11 +206,11 @@ public:
 		}
 	}
 	virtual void ChangeInt32(const uint32_t newValue, const size_t position) = 0;
-	size_t AddJumpTable(const uint32_t itemCount){
+	uint32_t AddJumpTable(const uint32_t itemCount){
 		//lastPage->resize(lastPage->size() + 3 & ~3, 0);
 		reserveBytes(itemCount * 4, 0);
 		size_t pageStartIndex = lastPage->size();
-		size_t tableIndex = getTotalSize();
+		auto tableIndex = getTotalSize();
 		lastPage->resize(pageStartIndex + itemCount * 4, 0);
 		return tableIndex;
 	}
@@ -525,7 +525,7 @@ protected:
 	virtual void AddJumpLoc(const JumpInstructionType it, const std::string& label)
 	{
 		// this should only be called on jump forward
-		JumpLocations.push_back({ CodePageData->getTotalSize(), it, label, false });
+		JumpLocations.push_back({ (uint32_t)CodePageData->getTotalSize(), it, label, false });
 		LabelLocations[label].JumpIndexes.push_back(JumpLocations.size() - 1);
 		switch (it)
 		{
@@ -847,7 +847,7 @@ private:
 	virtual void AddJumpLoc(const JumpInstructionType it, const std::string& label) override
 	{
 		// this should only be called on jump forward
-		JumpLocations.push_back({ CodePageData->getTotalSize(), it, label, false });
+		JumpLocations.push_back({ (uint32_t)CodePageData->getTotalSize(), it, label, false });
 		LabelLocations[label].JumpIndexes.push_back(JumpLocations.size() - 1);
 		switch (it)
 		{
@@ -1020,7 +1020,7 @@ private:
 	}
 	#pragma endregion
 	#pragma region RSC85Parsing
-	std::vector<size_t> GetPageSizes(size_t& size);
+	std::vector<size_t> GetPageSizes(uint32_t& size);
 	size_t GetHeaderPageIndex(const std::vector<size_t>& DataSizePages);
 	uint32_t ObjectStartPageSizeToFlag(size_t value)
 	{

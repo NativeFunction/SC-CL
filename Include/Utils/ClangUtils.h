@@ -24,7 +24,7 @@ public:
 	}
 
 	std::vector<clang::tooling::CompileCommand>
-		getCompileCommands(StringRef FilePath) const override {
+		getCompileCommands(llvm::StringRef FilePath) const override {
 		return adjustCommands(Compilations->getCompileCommands(FilePath));
 	}
 

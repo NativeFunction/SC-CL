@@ -25,7 +25,7 @@ namespace SCCL
 				exit(EXIT_FAILURE);
 		}
 
-		std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance &CI, StringRef file) override;
+		std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance& CI, llvm::StringRef file) override;
 
 	private:
 		clang::DiagnosticsEngine* diagnostics = NULL;
