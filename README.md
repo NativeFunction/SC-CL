@@ -13,26 +13,28 @@ Supported Targets
     * XSC format
     * CSC format
     * YSC format
+* Red Dead Redemption 2
+    * XSC format
+    * CSC format
+    * YSC format
 
 How To Build
 ---------------------------------
-1. Download [LLVM 6.0.0 source](http://releases.llvm.org/download.html#6.0.0)
-2. Download [clang-tools-extra 6.0.0 source](http://releases.llvm.org/download.html#6.0.0)
-3. Download [clang 6.0.0 SC-CL edited source](https://github.com/NativeFunction/Clang-6.0.0-SC-CL-Edited)
-4. Extract LLVM
-5. Make Directory llvm_src/tools/clang
-6. Move clang 6.0.0 SC-CL edited contents into llvm_src/tools/clang
-7. Make Directory llvm_src/tools/clang/tools/extra
-8. Move clang-tools-extra contents into llvm_src/tools/clang/tools/extra
-9. Make directory llvm_src/tools/clang/tools/extra/SC-CL
-10. Open llvm_src/tools/clang/tools/extra/CMakeLists.txt
-11. Add ```add_subdirectory(SC-CL)``` to bottom
-12. Download [SC-CL source](https://github.com/NativeFunction/SC-CL)
-13. Move SC-CL contents into llvm_src/tools/clang/tools/extra/SC-CL
-14. Run CMake on llvm_src dir
-15. Open llvm_bin/LLVM.sln or equivalent
-16. Go to Clang executables in solution explorer
-17. Right click on SC-CL and click build
+1. Download [LLVM 14.0.5 source](https://github.com/llvm/llvm-project/releases/tag/llvmorg-14.0.5)
+2. Extract LLVM
+3. Download [Clang SC-CL edited source](https://github.com/NativeFunction/Clang-SC-CL-Edited)
+4. Replace llvm_src/clang contents with Clang-SC-CL-Edited contents
+5. Make directory llvm_src/clang-tools-extra/SC-CL
+6. Open llvm_src/clang-tools-extra/CMakeLists.txt
+7. Add ```add_subdirectory(SC-CL)``` to bottom
+8. Download [SC-CL source](https://github.com/NativeFunction/SC-CL)
+9. Move SC-CL contents into llvm_src/clang-tools-extra/SC-CL
+10. Run CMake configure with source dir as llvm_src/llvm and bin dir as llvm_src/build
+11. Set LLVM option ```LLVM_ENABLE_PROJECTS=clang;clang-tools-extra```
+12. Run CMake generate
+13. Open llvm_src/build/LLVM.sln or equivalent
+14. Go to Clang executables in solution explorer
+15. Right click on SC-CL and click build
   
 Usage
 ---------------------------------
@@ -51,7 +53,7 @@ Clang Options:
 Compiler Options:
 
   Choose obfuscation level: (This option is experimental use at your own risk)
-    -Fs                      - Obfuscate string table - GTA V Only
+    -Fs                      - Obfuscate string table - GTA V and RDR2 Only
     -F1                      - Enable low obfuscations
     -F2                      - Enable default obfuscations
     -F3                      - Enable high obfuscations
@@ -74,14 +76,13 @@ Compiler Options:
   -name=<string>             - File name of output script, defaults to input file name
   -no-rsc7                   - Removes the RSC7 header from the output (GTAV)
   -out-dir=<string>          - Specify the output directory of the script
-  -pc-version=<uint>         - Sets the pc version for use in the native translation table
   -platform                  - Choose target platform:
-    =X360                    -   Target Xbox (32 bit, big endian)
-    =PS3                     -   Target PS3 (32 bit, big endian)
-    =PC                      -   Target PC (64 bit, little endian)
+    =XBOX                    -   Target Xbox
+    =PSX                     -   Target Playstation
+    =PC                      -   Target PC
   -pvi=<uint>                - Sets the starting index for player variables to ignore
   -pvs=<uint>                - Sets the amount of player variables to ignore
-  -s                         - Limits script to one instance on runtime (GTAV | GTAIV)
+  -s                         - Limits script to one instance on runtime (RDR2 | GTAV | GTAIV)
   -target                    - Choose build target:
     =GTAIV                   -   Grand Theft Auto IV (sco output)
     =GTAIV_TLAD              -   Grand Theft Auto IV The Lost and Damned (sco output)
@@ -89,6 +90,7 @@ Compiler Options:
     =GTAV                    -   Grand Theft Auto V (#sc output)
     =RDR_SCO                 -   Red Dead Redemption (sco output)
     =RDR_#SC                 -   Red Dead Redemption (#sc output)
+    =RDR2                    -   Red Dead Redemption 2 (#sc output)
   -vcx=<vcxproj path>        - Parses source files out of a vcxproj file to allow for seamless linking in Visual Studio
 
 Generic Options:
