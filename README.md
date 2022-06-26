@@ -1,5 +1,5 @@
 # SC-CL
-SC-CL is a Clang Compiler targeted towards Rockstar's scripting format.
+SC-CL is a Clang Compiler targeted towards the RAGE scripting format.
 
 Supported Targets
 ---------------------------------
