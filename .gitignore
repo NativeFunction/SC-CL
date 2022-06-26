@@ -1,9 +1,11 @@
 *
 !.gitignore
-!Clang Changes Documentation.txt
 !BuildTarget.h
 !CMakeLists.txt
 !Include/
+!lib/
+!xcompress64.lib
+!zlibstatic.lib
 !Compiler/
 !Crypto/
 !Compression/
@@ -15,7 +17,9 @@
 !Version.h
 !zconf.h
 !zlib.h
-!zlib.lib
+!sal.h
+!SourceAnnotations.H
+!xcompress.h
 !aes256.h
 !aes256.c
 !ConsoleColor.h
@@ -92,5 +96,4 @@ bin/projects/MenuBase/*.db
 bin/projects/MenuBase/*.opendb
 bin/projects/MenuBase/*.TMP
 *.exe
-!SC-CL_Version_Selector.exe
 /bin/projects/Network Protection
