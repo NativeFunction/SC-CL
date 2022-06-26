@@ -81,11 +81,13 @@ default: DivInt(x, y))
 #define ftos(flt, precision) 
 #endif
 
+
 /// <summary>Prints the specified string to the subtitle buffer.</summary>
 /// <param name="str">The string to be printed.</param>
 /// <param name="ms">The milliseconds that the string should be printed for.</param>
 /// <returns></returns>
 void print(const char* str, int ms);
+
 
 /// <summary>Concatinates two strings into one using a global char buffer.</summary>
 /// <param name="str1">The first string to be added to the buffer.</param>

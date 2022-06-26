@@ -787,17 +787,19 @@ namespace SCCL
 					loopLblCount++;
 
 					clang::Expr::EvalResult sResult, vResult;
-					if (argArray[2]->EvaluateAsInt(sResult, context) && sResult.Val.getInt().getSExtValue() % scriptData.getBuildPlatformSize() == 0 && argArray[1]->EvaluateAsInt(vResult, context))
+					if (argArray[2]->EvaluateAsInt(sResult, context) && sResult.Val.getInt().getSExtValue() % stackWidth == 0 && argArray[1]->EvaluateAsInt(vResult, context))
 					{
-						auto intRes = sResult.Val.getInt().getSExtValue();
+						auto size = sResult.Val.getInt().getSExtValue();
+						uint32_t value = (uint32_t)vResult.Val.getInt().getSExtValue();
 
-						if (intRes <= 0)
+						if (size <= 0)
 							Throw("memset size must greater then 0", TheRewriter, callee->getSourceRange());
-						if ((uint32_t)intRes > 255)
+						if (value > 255)
 							Throw("memset value must be a byte", TheRewriter, callee->getSourceRange());
-						int value = intRes & 0xFF;
+
+						value &= 0xFF;
 						value = value << 24 | value << 16 | value << 8 | value;
-						int itemCount = intRes / scriptData.getBuildPlatformSize();
+						int itemCount = size / stackWidth;
 						if (itemCount < 50)
 						{
 							if (value == 0)
@@ -831,7 +833,7 @@ namespace SCCL
 
 							AddInstruction(Label, "__memset-loop-" + to_string(loopLblCount));
 							AddInstruction(GetFrame, incIndex);
-							AddInstruction(PushInt, intRes);
+							AddInstruction(PushInt, size);
 							AddInstruction(JumpGE, "__memset-loopend-" + to_string(loopLblCount));
 
 							if (value == 0)
@@ -848,7 +850,7 @@ namespace SCCL
 							AddInstruction(PSet);
 
 							AddInstruction(GetFrame, incIndex);
-							AddInstruction(GetImmP, 1);
+							AddInstruction(GetImmP, 1);//add imm 4
 							AddInstruction(SetFrame, incIndex);
 							AddInstruction(Jump, "__memset-loop-" + to_string(loopLblCount));
 							AddInstruction(Label, "__memset-loopend-" + to_string(loopLblCount));

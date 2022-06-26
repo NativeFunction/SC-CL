@@ -54,6 +54,10 @@
 #define nullptr 0
 #define nullstr ""
 
+#ifdef _MSC_VER
+#define __FILE_NAME__ ""
+#endif
+
 #define PI 3.14159265
 
 #if TARGET == TARGET_RDR2

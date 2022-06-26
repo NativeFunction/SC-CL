@@ -5,7 +5,7 @@
 
 void PrintSubtitle(char* str)
 {
-	char* test = _GET_STRING_FROM_VECTOR(Vector3(1,2,3))l
+	char* test = _GET_STRING_FROM_VECTOR(Vector3(1,2,3));
 	
 	_UILOG_SET_CACHED_OBJECTIVE(VAR_STRING(0, "STRING_LITERAL", str));
 	_UILOG_PRINT_CACHED_OBJECTIVE();

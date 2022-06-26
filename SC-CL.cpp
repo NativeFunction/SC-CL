@@ -177,7 +177,7 @@ namespace SCCL
 
 	int ProcessFiles(ClangTool &Tool)
 	{
-		bool ProcessingFailed = true;
+		int ProcessingFailed = true;
 		if (SourcePaths.size() > 0)
 		{
 			//TODO: this is temporary. script name should be set from the file that the main function is in
@@ -196,7 +196,7 @@ namespace SCCL
 			/// the helper newFrontendActionFactory to create a default factory that will
 			/// return a new MyFrontendAction object every time.
 			/// To further customize this, we could create our own factory class.
-			if (!ProcessingFailed)
+			if (ProcessingFailed == 0)
 			{
 				//ProcessingSuccess
 				if (Option_HostVarSize)
@@ -222,9 +222,11 @@ namespace SCCL
 			else
 			{
 				//ProcessingFailed
+				Utils::System::Throw("Clang processing failed: " + to_string(ProcessingFailed));
+
 			}
 		}
-		return (int)ProcessingFailed;
+		return ProcessingFailed;
 	}
 
 	void ParseVCXPROJFile(llvm::cl::list<string>& SourcePaths)

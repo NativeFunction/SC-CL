@@ -2017,19 +2017,17 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 	{
 		// compressing and encrypting
 		vector<uint8_t> CompressedData;
-		uint32_t CompressedLen = 0;
+		uint64_t CompressedLen = 0;
 
 		switch (HLData->getBuildPlatform())
 		{
 			case Platform::P_XBOX:
 			{
-				Utils::Compression::xCompress Compression;
-				Compression.xCompressInit();
 
 				CompressedData.resize(BuildBuffer.size() + 8);
 				CompressedLen = 0;
 
-				Compression.Compress((uint8_t*)BuildBuffer.data(), BuildBuffer.size(), CompressedData.data() + 8, (int32_t*)&CompressedLen);
+				Utils::Compression::XCompress_Compress((uint8_t*)BuildBuffer.data(), BuildBuffer.size(), CompressedData.data() + 8, &CompressedLen);
 
 				if (CompressedLen > 0)
 				{

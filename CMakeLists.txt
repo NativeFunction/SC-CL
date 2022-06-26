@@ -38,6 +38,9 @@ set(header_list
 	"Include/Compiler/OpcodeConsts.h"
 	"Include/Compression/zconf.h"
 	"Include/Compression/zlib.h"
+	"Include/Compression/sal.h"
+	"Include/Compression/SourceAnnotations.H"
+	"Include/Compression/xcompress.h"
 	"Include/Crypto/aes256.h"
 	"Include/Utils/ClangUtils.h"
 	"Include/Utils/ConsoleColor.h"
@@ -55,7 +58,7 @@ set(resource_list
 	"contributors.txt"
 )
 
-link_directories(Include)
+link_directories(lib)
 
 add_clang_executable(SC-CL
 	SC-CL.cpp
@@ -64,12 +67,15 @@ add_clang_executable(SC-CL
 )
 
 
+
 include_directories(Include)
+
 target_link_libraries(SC-CL
 	PUBLIC clangTooling
 	PUBLIC clangBasic
 	PUBLIC clangASTMatchers
-	PUBLIC Compression/zlib
+	PUBLIC zlibstatic
+	PUBLIC xcompress64
 )
 
 foreach(source IN LISTS source_list)

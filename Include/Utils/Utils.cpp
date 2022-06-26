@@ -10,7 +10,7 @@
 #include <windows.h>
 #include "ConsoleColor.h"
 #include <filesystem>
-
+#include "Compression/xcompress.h"
 
 using namespace std;
 using namespace Utils::System;
@@ -56,9 +56,10 @@ namespace Utils
             bool status = false;
             try
             {
-                status = std::filesystem::exists(std::filesystem::path(dir)) ?
-                    true :
-                    std::filesystem::create_directories(std::filesystem::path(dir));
+                if(dir != "")
+                    status = std::filesystem::exists(std::filesystem::path(dir)) ?
+                        true :
+                        std::filesystem::create_directories(std::filesystem::path(dir));
             }
             catch (exception)
             {
@@ -340,38 +341,12 @@ namespace Utils
     namespace Compression
     {
 
-        void xCompress::xCompressInit()
-        {
-            if (!HasxCompressLoaded)
-            {
-                xCompressDLL = LoadLibraryA("xcompress32.dll");
-
-                if (xCompressDLL != NULL)
-                {
-                    LoadFunction<XMemCreateDecompressionContext_CALL>(&XMemCreateDecompressionContext, "XMemCreateDecompressionContext");
-                    LoadFunction<XMemDestroyDecompressionContext_CALL>(&XMemDestroyDecompressionContext, "XMemDestroyDecompressionContext");
-                    LoadFunction<XMemDecompress_CALL>(&XMemDecompress, "XMemDecompress");
-                    LoadFunction<XMemDecompressStream_CALL>(&XMemDecompressStream, "XMemDecompressStream");
-                    LoadFunction<XMemCreateCompressionContext_CALL>(&XMemCreateCompressionContext, "XMemCreateCompressionContext");
-                    LoadFunction<XMemDestroyCompressionContext_CALL>(&XMemDestroyCompressionContext, "XMemDestroyCompressionContext");
-                    LoadFunction<XMemResetCompressionContext_CALL>(&XMemResetCompressionContext, "XMemResetCompressionContext");
-                    LoadFunction<XMemCompress_CALL>(&XMemCompress, "XMemCompress");
-                    LoadFunction<XMemCompressStream_CALL>(&XMemCompressStream, "XMemCompressStream");
-                    HasxCompressLoaded = true;
-                }
-                else
-                    Throw("xCompress Not Found");
-
-
-            }
-        }
-
-        int32_t xCompress::Decompress(uint8_t* compressedData, int32_t compressedLen, uint8_t* decompressedData, int32_t decompressedLen)
+        int32_t XCompress_Decompress(uint8_t* compressedData, uint64_t compressedLen, uint8_t* decompressedData, uint64_t* decompressedLen)
         {
 
             // Setup our decompression context
-            int32_t DecompressionContext = 0;
-            int32_t hr = XMemCreateDecompressionContext(XMEMCODEC_TYPE::XMEMCODEC_LZX, 0, 0, DecompressionContext);
+            XMEMDECOMPRESSION_CONTEXT DecompressionContext = 0;
+            auto hr = XMemCreateDecompressionContext(XMEMCODEC_TYPE::XMEMCODEC_LZX, 0, 0, &DecompressionContext);
 
             try
             {
@@ -392,18 +367,17 @@ namespace Utils
             return hr;
         }
 
-        int32_t xCompress::Compress(uint8_t* Data, int32_t DataLen, uint8_t* CompressedData, int32_t * OutCompressedLen)
+        int32_t XCompress_Compress(uint8_t* Data, uint64_t DataLen, uint8_t* CompressedData, uint64_t* OutCompressedLen)
         {
-
             // Setup our decompression context
-            int32_t CompressionContext = 0;
+            XMEMCOMPRESSION_CONTEXT CompressionContext = 0;
 
-            int32_t hr = XMemCreateCompressionContext(XMEMCODEC_TYPE::XMEMCODEC_LZX, 0, 0, CompressionContext);
-            int32_t CompressedLen = DataLen;
+            int32_t hr = XMemCreateCompressionContext(XMEMCODEC_TYPE::XMEMCODEC_LZX, 0, 0, &CompressionContext);
+            uint64_t CompressedLen = DataLen;
 
             try
             {
-                hr = XMemCompress(CompressionContext, CompressedData, CompressedLen, Data, DataLen);
+                hr = XMemCompress(CompressionContext, CompressedData, &CompressedLen, Data, DataLen);
             }
             catch (exception ex)
             {
