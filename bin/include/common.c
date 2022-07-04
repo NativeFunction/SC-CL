@@ -135,12 +135,30 @@ const char* strcatGlobal(const char* str1, const char* str2)
 	return (char*)GlobalCharBuffer;
 }
 
-const char* straddiGlobal(const char* str, int i)
+const char* strcatiGlobal(const char* str, int i)
 {
 	//this takes advantage of strings being global
 	//this returns a static pointer so if you want to use the function again without losing the return you have to strcpy it
 
 	strcpy((char*)GlobalCharBuffer, str, 255);
+	straddi((char*)GlobalCharBuffer, i, 255);
+	return (char*)GlobalCharBuffer;
+}
+
+const char* strcpyGlobal(const char* str)
+{
+	strcpy((char*)GlobalCharBuffer, str, 255);
+	return (char*)GlobalCharBuffer;
+}
+
+const char* straddGlobal(const char* str)
+{
+	stradd((char*)GlobalCharBuffer, str, 255);
+	return (char*)GlobalCharBuffer;
+}
+
+const char* straddiGlobal(int i)
+{
 	straddi((char*)GlobalCharBuffer, i, 255);
 	return (char*)GlobalCharBuffer;
 }
@@ -375,89 +393,107 @@ float StringToFloat(const char* str)
 }
 
 //TODO: add these as intrinsics
-bool CmpLtU(int a, int b)
+//bool CmpLtU(int a, int b)
+//{
+//	if (a >= 0 && b >= 0)
+//		return a < b;
+//	else
+//	{
+//		if (a == b)
+//			return false;
+//
+//		int ltb = ~a & b;
+//
+//		ltb |= ltb >> 1;
+//		ltb |= ltb >> 2;
+//		ltb |= ltb >> 4;
+//		ltb |= ltb >> 8;
+//		ltb |= ltb >> 16;
+//		return ((a & ~b) & ~ltb) == 0;
+//	}
+//}
+//
+//bool CmpGtU(int a, int b)
+//{
+//	if (a >= 0 && b >= 0)
+//		return a > b;
+//	else
+//	{
+//		int ltb = ~a & b;
+//
+//		ltb |= ltb >> 1;
+//		ltb |= ltb >> 2;
+//		ltb |= ltb >> 4;
+//		ltb |= ltb >> 8;
+//		ltb |= ltb >> 16;
+//
+//		return ((a & ~b) & ~ltb) != 0;
+//	}
+//}
+//
+//int Diff64P(int* x, int* y)
+//{
+//	int out[2];
+//	out[0] = (int)x - (int)y;
+//	#if PTRWIDTH == 64
+//	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) - *(int*)((char*)&y + 4);
+//	if (CmpGtU(out[0], (int)x))
+//		out[1]--;
+//	#endif
+//	return out[0];
+//
+//}
+//
+//int* Sub64P(int* x, int yLeft, int yRight)
+//{
+//	int out[2];
+//	out[0] = (int)x - yLeft;
+//	#if PTRWIDTH == 64
+//	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) - yRight;
+//	if (CmpGtU(out[0], (int)x))
+//		out[1]--;
+//	#endif
+//	return (int*)out[0];
+//}
+//
+//int* Add64P(int* x, int yLeft, int yRight)
+//{
+//	int out[2];
+//	out[0] = (int)x + yLeft;
+//	#if PTRWIDTH == 64
+//	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) + yRight;
+//
+//	//out[1] = x[1] + yRight;
+//	//if (CmpLtU(out[0], (int)x))
+//		//out[1]++;
+//	#endif
+//	return (int*)out[0];
+//}
+//
+//int* Push64P(int LeftMost, int RightMost)
+//{
+//	#if PTRWIDTH == 64
+//	int out[2];
+//	out[0] = LeftMost;
+//	*(int*)((char*)out + 4) = RightMost;
+//	return (int*)out[0];
+//	#else
+//	return (int*)LeftMost;
+//	#endif
+//}
+
+void memset(void* ptr, byte value, unsigned int len)
 {
-	if (a >= 0 && b >= 0)
-		return a < b;
-	else
+	for (int i = 0; i < len; i++)
 	{
-		if (a == b)
-			return false;
-
-		int ltb = ~a & b;
-
-		ltb |= ltb >> 1;
-		ltb |= ltb >> 2;
-		ltb |= ltb >> 4;
-		ltb |= ltb >> 8;
-		ltb |= ltb >> 16;
-		return ((a & ~b) & ~ltb) == 0;
+		((char*)ptr)[i] = value;
 	}
 }
 
-bool CmpGtU(int a, int b)
+void memcpy(void* dest, const void* src, unsigned int len)
 {
-	if (a >= 0 && b >= 0)
-		return a > b;
-	else
+	for (int i = 0; i < len; i++)
 	{
-		int ltb = ~a & b;
-
-		ltb |= ltb >> 1;
-		ltb |= ltb >> 2;
-		ltb |= ltb >> 4;
-		ltb |= ltb >> 8;
-		ltb |= ltb >> 16;
-
-		return ((a & ~b) & ~ltb) != 0;
+		((char*)dest)[i] = ((char*)src)[i];
 	}
-}
-
-int Diff64P(int* x, int* y)
-{
-	int out[2];
-	out[0] = (int)x - (int)y;
-	#if PTRWIDTH == 64
-	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) - *(int*)((char*)&y + 4);
-	if (CmpGtU(out[0], (int)x))
-		out[1]--;
-	#endif
-	return out[0];
-
-}
-
-int* Sub64P(int* x, int yLeft, int yRight)
-{
-	int out[2];
-	out[0] = (int)x - yLeft;
-	#if PTRWIDTH == 64
-	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) - yRight;
-	if (CmpGtU(out[0], (int)x))
-		out[1]--;
-	#endif
-	return (int*)out[0];
-}
-
-int* Add64P(int* x, int yLeft, int yRight)
-{
-	int out[2];
-	out[0] = (int)x + yLeft;
-	#if PTRWIDTH == 64
-	*(int*)((char*)out + 4) = *(int*)((char*)&x + 4) + yRight;
-	//if (CmpLtU(out[0], (int)x))
-		//out[1]++;
-	#endif
-	return (int*)out[0];
-}
-
-int* Push64P(int LeftMost, int RightMost)
-{
-	#if PTRWIDTH == 64
-	int out[2];
-	out[0] = LeftMost;
-	*(int*)((char*)out + 4) = RightMost;
-	return (int*)out[0];
-	#else
-	return (int*)LeftMost;
-	#endif
 }

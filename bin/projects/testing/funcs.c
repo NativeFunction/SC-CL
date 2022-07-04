@@ -17,7 +17,7 @@ int ModifyByteOfInt(int value, int index, int val)
 {
 	index %= 4;
 	int* valuePtr = (int*)((int)&value + index);
-	*valuePtr = shift_left(val % 256, 24) | (*valuePtr & 0xFFFFFF);
+	*valuePtr = ((val % 256) << 24) | (*valuePtr & 0xFFFFFF);
 	return value;
 }
 
@@ -250,7 +250,6 @@ void mani(char* hair)
 	
 	int jml = sizeof(int) + 4;
 	expr2_test();
-	any xmr = {.Float = 5.5};
 
 		
 	short sarr[10] = {1,2,3,4,5,6,7,8,9,10};

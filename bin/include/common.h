@@ -76,7 +76,9 @@ default: DivInt(x, y))
 #define RadiansToDegrees(radians) (radians * (180.0f / PI))
 
 #if TARGET == TARGET_RDR
-#define ftos(flt, precision) _float_to_string(flt, 3, precision)
+#define ftos(flt, precision) _FLOAT_TO_STRING(flt, 3, precision)
+#elif TARGET == TARGET_RDR2
+#define ftos(flt, precision) _GET_STRING_FROM_FLOAT(flt, precision)
 #else
 #define ftos(flt, precision) 
 #endif
@@ -99,7 +101,14 @@ const char* strcatGlobal(const char* str1, const char* str2);
 /// <param name="str">The string to be added to the buffer.</param>
 /// <param name="i">The int to be converted and added to the buffer.</param>
 /// <returns>The pointer to the global char buffer.</returns>
-const char* straddiGlobal(const char* str, int i);
+const char* strcatiGlobal(const char* str, int i);
+
+
+const char* strcpyGlobal(const char* str);
+
+const char* straddGlobal(const char* str);
+
+const char* straddiGlobal(int i);
 
 /// <summary>Copies the string representation of i into the global char buffer.</summary>
 /// <param name="i">The int to be converted and copied to the buffer.</param>
@@ -228,3 +237,7 @@ int Diff64P(int* x, int* y);
 int* Sub64P(int* x, int yLeft, int yRight);
 int* Add64P(int* x, int yLeft, int yRight);
 int* Push64P(int LeftMost, int RightMost);
+
+void memset(void* ptr, byte value, unsigned int len);
+
+void memcpy(void* dest, const void* src, unsigned int len);

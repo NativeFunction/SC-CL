@@ -94,19 +94,6 @@
 #define stacksizeof(x) ((sizeof(x) + 3) >> 2)
 
 #pragma region String //{
-/// <summary>Sets the first num bytes of the block of memory pointed by ptr to the specified value.</summary>
-/// <param name="ptr">Pointer to the block of memory to fill.</param>
-/// <param name="value">Value to be set. The value is passed as an int, but the function fills the block of memory using the unsigned char conversion of this value.</param>
-/// <param name="len">Number of bytes to be set.</param>
-/// <returns></returns>
-extern __intrinsic void memset(void* ptr, byte value, unsigned int len);
-
-/// <summary>Copies the values of len bytes from the location pointed to by source directly to the memory block pointed to by destination.</summary>
-/// <param name="dest">Pointer to the destination array where the content is to be copied.</param>
-/// <param name="src">Pointer to the source of data to be copied.</param>
-/// <param name="len">Number of bytes to copy.</param>
-/// <returns></returns>
-extern __intrinsic void memcpy(void* dest, const void* src, unsigned int len);
 
 /// <summary>Copies the string pointed by source into the array pointed by destination, including the terminating null character (and stopping at that point).</summary>
 /// <param name="dest">Pointer to the destination array where the content is to be copied.</param>

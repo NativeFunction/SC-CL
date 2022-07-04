@@ -55,10 +55,10 @@
 #define unsafe
 #endif
 
-#if PLATFORM == PLATFORM_PC && TARGET == TARGET_GTAV
-#define int long long
-#define float double
-#endif
+//#if PLATFORM == PLATFORM_PC && (TARGET == TARGET_GTAV || TARGET == TARGET_RDR2)
+//#define int long long
+//#define float double
+//#endif
 
 //calculation range is -2,147,483,648 to 2,147,483,647
 //any value above or below that will be automatically cast to a signed int
@@ -79,6 +79,7 @@ typedef int Entity;
 typedef int AnimScene;
 typedef Entity Ped;
 typedef Entity Vehicle;
+typedef Ped Mount;
 typedef Entity Object;
 typedef uint Hash;
 typedef int Cam;
