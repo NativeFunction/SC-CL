@@ -75,6 +75,7 @@ target_link_libraries(SC-CL
 	PUBLIC clangBasic
 	PUBLIC clangASTMatchers
 	PUBLIC zlibstatic
+	PUBLIC legacy_stdio_definitions
 	PUBLIC xcompress64
 )
 

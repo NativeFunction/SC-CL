@@ -175,6 +175,7 @@ public:
 	void addOpPushInt(int immediate)
 	{
 		Instructions.push_back(Opcode::makeIntOpcode(OK_PushInt, immediate));
+		
 	}
 	void addOpPushFloat(float immediate)
 	{
@@ -524,6 +525,17 @@ public:
 	void addOpIsNotZero();
 	void addOpGetConv(const Script& scriptData, int size, bool isSigned);
 	void addOpSetConv(const Script& scriptData, int size);
+
+	void addOpPushInt64(uint64_t value);
+
+	void addOpPushInt64(int32_t valueUpper, int32_t valueLower);
+
+	void addOpAddImmInt64(int add);
+
+	void addOpCmpLtU();
+
+	void addOpAddInt64();
+
 #pragma endregion 
 
 	void addOpDup(){ Instructions.push_back(new Opcode(OK_Dup)); }

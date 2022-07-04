@@ -1,3 +1,4 @@
+#include "Script.h"
 #include "ClangParsing/Helpers/Script.h"
 #include "Utils/Utils.h"
 #include "Utils/ConstExpr.h"
@@ -270,7 +271,7 @@ string Script::getPlatformAbv() const
 		case P_PC: return (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT) ? "w" : "y";
 	}
 	Utils::System::Throw("No platform selected");
-	return 0;
+	return "";
 }
 string Script::getPlatformAbvUpper() const
 {
@@ -282,7 +283,7 @@ string Script::getPlatformAbvUpper() const
 		case P_PC: return (BT == BT_GTAIV || BT == BT_GTAIV_TLAD || BT == BT_GTAIV_TBOGT) ? "W" : "Y";
 	}
 	Utils::System::Throw("No platform selected");
-	return 0;
+	return "";
 }
 string Script::getBuildTypeExt() const
 {

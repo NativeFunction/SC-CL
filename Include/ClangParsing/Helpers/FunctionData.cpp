@@ -345,6 +345,228 @@ void FunctionData::addOpSetConv(const Script& scriptData, int size)
 
 
 }
+
+void FunctionData::addOpPushInt64(uint64_t value)
+{
+	addOpPushInt64(*(int32_t*)&value, ((int32_t*)&value)[1]);
+}
+void FunctionData::addOpPushInt64(int32_t valueUpper, int32_t valueLower)
+{
+	SCCL::LocalVariables.addLevel();
+	int push64Index = SCCL::LocalVariables.addDecl("__tempPush64__", 2);
+	
+	addOpPushInt(valueUpper);
+	addOpSetFrame(push64Index);
+	
+	addOpPushInt(valueLower);
+	addOpGetFrameP(push64Index);
+	addOpAddImmInt64(4);
+	addOpPSet();
+	addOpGetFrame(push64Index);//push64
+	SCCL::LocalVariables.removeLevel();
+}
+
+void FunctionData::addOpAddImmInt64(int add)
+{
+	SCCL::LocalVariables.addLevel();
+	int addImm64Index = SCCL::LocalVariables.addDecl("__tempAddImm64__", 1);
+	static uint64_t int64AddCarryLabel = 0;
+	assert(add >= 0 && "addOpAddImmInt64 neg not implemented");
+
+	addOpSetFrame(addImm64Index);
+
+	addOpGetFrame(addImm64Index);
+	addOpPushInt(-4);
+	addOpCmpGe();
+	addOpGetFrame(addImm64Index);
+	addOpPushInt(0);
+	addOpCmpLt();
+	addOpAnd();
+	addOpJumpFalse("__int64addimm-carryfalse-" + to_string(int64AddCarryLabel));
+
+	addOpGetFrame(addImm64Index);
+	addOpGetImmP(1);//account for carry
+	addOpAddImm(add - 8);
+	addOpJump("__int64addimm-carrytrue-" + to_string(int64AddCarryLabel));
+	addOpLabel("__int64addimm-carryfalse-" + to_string(int64AddCarryLabel));
+	addOpGetFrame(addImm64Index);
+	addOpAddImm(add);
+	addOpLabel("__int64addimm-carrytrue-" + to_string(int64AddCarryLabel));
+
+
+
+	SCCL::LocalVariables.removeLevel();
+	int64AddCarryLabel++;
+}
+
+void FunctionData::addOpCmpLtU()
+{
+	
+
+	SCCL::LocalVariables.addLevel();
+	int CmpLtULeftIndex = SCCL::LocalVariables.addDecl("__tempCmpLtULeft__", 1);
+	int CmpLtURightIndex = SCCL::LocalVariables.addDecl("__tempCmpLtURight__", 1);
+	static uint64_t CmpLtULabel = 0;
+
+	/*
+	
+	if (a >= 0 && b >= 0)
+        return a < b;
+
+    //equal, a = neg, b = pos
+    if (a == b || (a < 0 && b >= 0))
+        return false;
+
+    //a = pos, b = neg
+    if (a >= 0 && b < 0)
+        return true;
+
+    //a = neg, b = neg
+    //-1 -2
+    if (a < 0 && b < 0)
+        return -a > -b;
+	
+	*/
+
+
+
+	addOpSetFrame(CmpLtURightIndex);
+	addOpSetFrame(CmpLtULeftIndex);
+
+	addOpGetFrame(CmpLtULeftIndex);
+	addOpPushInt(0);
+	addOpCmpGe();
+
+	addOpGetFrame(CmpLtURightIndex);
+	addOpPushInt(0);
+	addOpCmpGe();
+
+	addOpAnd();
+	addOpJumpFalse("__CmpLtU-BothPos-Next-" + to_string(CmpLtULabel));
+	addOpGetFrame(CmpLtULeftIndex);
+	addOpGetFrame(CmpLtURightIndex);
+	addOpCmpLt();
+
+	addOpJump("__CmpLtU-BothPos-End-" + to_string(CmpLtULabel));
+	addOpLabel("__CmpLtU-BothPos-Next-" + to_string(CmpLtULabel));
+
+	addOpGetFrame(CmpLtULeftIndex);
+	addOpGetFrame(CmpLtURightIndex);
+	addOpCmpEq();
+
+	addOpGetFrame(CmpLtULeftIndex);
+	addOpPushInt(0);
+	addOpCmpLt();
+
+	addOpGetFrame(CmpLtURightIndex);
+	addOpPushInt(0);
+	addOpCmpGe();
+
+	addOpAnd();
+	addOpOr();
+	addOpJumpFalse("__CmpLtU-EqualOrNegPos-Next-" + to_string(CmpLtULabel));
+	
+	addOpPushInt(0);
+
+	addOpJump("__CmpLtU-BothPos-End-" + to_string(CmpLtULabel));
+	addOpLabel("__CmpLtU-EqualOrNegPos-Next-" + to_string(CmpLtULabel));
+
+	addOpGetFrame(CmpLtULeftIndex);
+	addOpPushInt(0);
+	addOpCmpGe();
+
+	addOpGetFrame(CmpLtURightIndex);
+	addOpPushInt(0);
+	addOpCmpLt();
+
+	addOpAnd();
+
+	addOpJumpFalse("__CmpLtU-PosNeg-Next-" + to_string(CmpLtULabel));
+	addOpPushInt(1);
+	addOpJump("__CmpLtU-BothPos-End-" + to_string(CmpLtULabel));
+	addOpLabel("__CmpLtU-PosNeg-Next-" + to_string(CmpLtULabel));
+
+
+	addOpGetFrame(CmpLtULeftIndex);
+	addOpPushInt(0);
+	addOpCmpLt();
+
+	addOpGetFrame(CmpLtURightIndex);
+	addOpPushInt(0);
+	addOpCmpLt();
+
+	addOpAnd();
+
+	addOpJumpFalse("__CmpLtU-NegNeg-Next-" + to_string(CmpLtULabel));
+	
+	addOpGetFrame(CmpLtULeftIndex);
+	addOpNeg();
+	addOpGetFrame(CmpLtURightIndex);
+	addOpNeg();
+	addOpCmpGt();
+
+	addOpJump("__CmpLtU-BothPos-End-" + to_string(CmpLtULabel));
+	addOpLabel("__CmpLtU-NegNeg-Next-" + to_string(CmpLtULabel));
+	
+	addOpPushInt(0);
+
+	addOpLabel("__CmpLtU-BothPos-End-" + to_string(CmpLtULabel));
+
+	SCCL::LocalVariables.removeLevel();
+	CmpLtULabel++;
+}
+
+void FunctionData::addOpAddInt64()
+{
+	SCCL::LocalVariables.addLevel();
+	int add64ResultIndex = SCCL::LocalVariables.addDecl("__tempAdd64__", 2);
+	int add64LeftIndex = SCCL::LocalVariables.addDecl("__tempAddLeft64__", 1);
+	int add64RightIndex = SCCL::LocalVariables.addDecl("__tempAddRight64__", 1);
+	static uint64_t AddInt64Label = 0;
+
+
+	addOpSetFrame(add64RightIndex);
+	addOpSetFrame(add64LeftIndex);
+
+	addOpGetFrame(add64LeftIndex);
+	addOpGetFrame(add64RightIndex);
+	addOpAdd();
+	addOpSetFrame(add64ResultIndex);//res
+
+
+
+	addOpGetFrameP(add64LeftIndex);
+	addOpAddImmInt64(4);
+	addOpPGet();
+	addOpGetFrameP(add64RightIndex);
+	addOpAddImmInt64(4);
+	addOpPGet();
+	addOpAdd();
+
+	addOpGetFrameP(add64ResultIndex);//res
+	addOpAddImmInt64(4);
+	addOpDup();
+	addOpSetFrame(add64ResultIndex + 1);//res
+
+	addOpPSet();
+
+	addOpGetFrame(add64ResultIndex);
+	addOpGetFrame(add64LeftIndex);
+	addOpCmpLtU();
+
+	addOpJumpFalse("__int64add-CmpLtU-False-" + to_string(AddInt64Label));
+
+	addOpGetFrame(add64ResultIndex + 1);
+	addOpPGet();
+	addOpAddImm(1);
+	addOpGetFrame(add64ResultIndex + 1);
+	addOpPSet();
+
+	addOpLabel("__int64add-CmpLtU-False-" + to_string(AddInt64Label));
+
+	SCCL::LocalVariables.removeLevel();
+}
+
 void FunctionData::AddSimpleOp(OpcodeKind operation)
 {
 	switch(operation)
