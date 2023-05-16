@@ -67,6 +67,7 @@ public:
 	void pushComment(const std::string& comment);
 	void pushCommentNewLine(const std::string& comment);
 	void AddSimpleOp(OpcodeKind operation);
+	void AddSimpleOp64(OpcodeKind operation);
 	bool endsWithReturn() const{ return Instructions.size() && Instructions.back()->getKind() == OK_Return; }//this will get confused by if else having a return, but it will just return false when there actually is a return so no harm
 	bool endsWithInlineReturn(const std::string& position) const;
 	void RemoveLast(){ Instructions.pop_back(); }
@@ -526,15 +527,38 @@ public:
 	void addOpGetConv(const Script& scriptData, int size, bool isSigned);
 	void addOpSetConv(const Script& scriptData, int size);
 
-	void addOpPushInt64(uint64_t value);
+	void addOpPush64(uint64_t value);
 
-	void addOpPushInt64(int32_t valueUpper, int32_t valueLower);
+	void addOpPush64(int32_t valueUpper, int32_t valueLower);
 
-	void addOpAddImmInt64(int add);
+	void addOpAddImm64(int add);
 
 	void addOpCmpLtU();
+	void addOpCmpGtU();
 
-	void addOpAddInt64();
+	void addOpAdd64();
+	void addOpSub64();
+	void addOpNot64();
+	void addOpNeg64();
+	void addOpAnd64();
+	void addOpOr64();
+	void addOpXor64();
+	void addOpShiftRight32U();
+	void addOpShiftRight64();
+	void addOpShiftLeft64();
+	void addOpAdc16();
+	void addOpMult64();
+	void addOpMultImm64(int mult);
+	void addOpCmpEq64();
+	void addOpCmpNe64();
+	void addOpCmpGt64();
+	void addOpCmpGe64();
+	void addOpCmpLt64();
+	void addOpCmpLe64();
+	void addOpDiv64();
+	void addOpMod64();
+
+
 
 #pragma endregion 
 
@@ -621,9 +645,9 @@ public:
 	void addOpFAddImm(float immediate);
 	void addOpFMultImm(float immediate);
 	void addOpGetImmPStack(){ Instructions.push_back(new Opcode(OK_GetImmPStack)); }
-	void addOpGetImmP(uint16_t index);
-	void addOpGetImm(uint16_t index);
-	void addOpSetImm(uint16_t index);
+	void addOpGetImmP(int index);
+	void addOpGetImm(int index);
+	void addOpSetImm(int index);
 
 	void addOpCall(FunctionData* callee)
 	{

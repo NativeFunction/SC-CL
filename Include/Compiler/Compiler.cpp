@@ -3524,7 +3524,7 @@ CompileRDR2PC::CompileRDR2PC(const Script& data, bool Disable_Function_Names) :
     {
         Utils::System::Throw("Could not load opcode map " + OpcodeMapFileName);
     }
-    memset(BaseOpcodes, opMap[R2PO_Nop], BASE_OPCODE_SIZE);
+    memset(BaseOpcodes, opMap[R2PO_Nop], sizeof(OpCodes));
 
     BaseOpcodes->Nop = opMap[R2PO_Nop];
     BaseOpcodes->Add = opMap[R2PO_Add];

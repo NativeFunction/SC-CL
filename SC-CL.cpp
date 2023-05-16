@@ -124,6 +124,7 @@ namespace SCCL
 						Throw("GTA V only supported on Xbox360, PS3, and PC");
 				}
 			}
+			break;
             case BT_RDR2:
             {
                 switch (scriptData->getBuildPlatform())

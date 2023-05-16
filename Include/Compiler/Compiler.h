@@ -1088,8 +1088,136 @@ public:
 	}
 
 private:
-	OpCodes GTAVOpcodes = { VO_Nop, VO_Add, VO_Sub, VO_Mult, VO_Div, VO_Mod, VO_Not, VO_Neg, VO_CmpEq, VO_CmpNe, VO_CmpGt, VO_CmpGe, VO_CmpLt, VO_CmpLe, VO_fAdd, VO_fSub, VO_fMult, VO_fDiv, VO_fMod, VO_fNeg, VO_fCmpEq, VO_fCmpNe, VO_fCmpGt, VO_fCmpGe, VO_fCmpLt, VO_fCmpLe, VO_vAdd, VO_vSub, VO_vMult, VO_vDiv, VO_vNeg, VO_And, VO_Or, VO_Xor, VO_ItoF, VO_FtoI, VO_FtoV, VO_PushB, VO_PushB2, VO_PushB3, VO_Push, VO_PushF, VO_Dup, VO_Drop, VO_CallNative, VO_Function, VO_Return, VO_pGet, VO_pSet, VO_pPeekSet, VO_ToStack, VO_FromStack, VO_GetArrayP1, VO_GetArray1, VO_SetArray1, VO_GetFrameP1, VO_GetFrame1, VO_SetFrame1, VO_GetStaticP1, VO_GetStatic1, VO_SetStatic1, VO_Add1, VO_Mult1, VO_GetImm1, VO_SetImm1, VO_PushS, VO_Add2, VO_Mult2, VO_GetImm2, VO_SetImm2, VO_GetArrayP2, VO_GetArray2, VO_SetArray2, VO_GetFrameP2, VO_GetFrame2, VO_SetFrame2, VO_GetStaticP2, VO_GetStatic2, VO_SetStatic2, VO_GetGlobalP2, VO_GetGlobal2, VO_SetGlobal2, VO_Jump, VO_JumpFalse, VO_JumpNE, VO_JumpEQ, VO_JumpLE, VO_JumpLT, VO_JumpGE, VO_JumpGT, VO_Call, VO_GetGlobalp3, VO_GetGlobal3, VO_SetGlobal3, VO_PushI24, VO_Switch, VO_PushString, VO_StrCopy, VO_ItoS, VO_StrAdd, VO_StrAddi, VO_Memcopy, VO_Catch, VO_Throw, VO_pCall, VO_Push_Neg1, VO_Push_0, VO_Push_1, VO_Push_2, VO_Push_3, VO_Push_4, VO_Push_5, VO_Push_6, VO_Push_7, VO_PushF_Neg1, VO_PushF_0, VO_PushF_1, VO_PushF_2, VO_PushF_3, VO_PushF_4, VO_PushF_5, VO_PushF_6, VO_PushF_7, VO_GetImmP, VO_GetImmP1, VO_GetImmP2, VO_GetHash };
+	OpCodes GTAVOpcodes = { 
+		  .Nop = VO_Nop
+		, .Add = VO_Add
+		, .Sub = VO_Sub
+		, .Mult = VO_Mult
+		, .Div = VO_Div
+		, .Mod = VO_Mod
+		, .Not = VO_Not
+		, .Neg = VO_Neg
+		, .CmpEq = VO_CmpEq
+		, .CmpNe = VO_CmpNe
+		, .CmpGt = VO_CmpGt
+		, .CmpGe = VO_CmpGe
+		, .CmpLt = VO_CmpLt
+		, .CmpLe = VO_CmpLe
+		, .fAdd = VO_fAdd
+		, .fSub = VO_fSub
+		, .fMult = VO_fMult
+		, .fDiv = VO_fDiv
+		, .fMod = VO_fMod
+		, .fNeg = VO_fNeg
+		, .fCmpEq = VO_fCmpEq
+		, .fCmpNe = VO_fCmpNe
+		, .fCmpGt = VO_fCmpGt
+		, .fCmpGe = VO_fCmpGe
+		, .fCmpLt = VO_fCmpLt
+		, .fCmpLe = VO_fCmpLe
+		, .vAdd = VO_vAdd
+		, .vSub = VO_vSub
+		, .vMult = VO_vMult
+		, .vDiv = VO_vDiv
+		, .vNeg = VO_vNeg
+		, .And = VO_And
+		, .Or = VO_Or
+		, .Xor = VO_Xor
+		, .ItoF = VO_ItoF
+		, .FtoI = VO_FtoI
+		, .FtoV = VO_FtoV
+		, .PushB = VO_PushB
+		, .PushB2 = VO_PushB2
+		, .PushB3 = VO_PushB3
+		, .Push = VO_Push
+		, .PushF = VO_PushF
+		, .Dup = VO_Dup
+		, .Drop = VO_Drop
+		, .CallNative = VO_CallNative
+		, .Function = VO_Function
+		, .Return = VO_Return
+		, .pGet = VO_pGet
+		, .pSet = VO_pSet
+		, .pPeekSet = VO_pPeekSet
+		, .ToStack = VO_ToStack
+		, .FromStack = VO_FromStack
+		, .GetArrayP1 = VO_GetArrayP1
+		, .GetArray1 = VO_GetArray1
+		, .SetArray1 = VO_SetArray1
+		, .GetFrameP1 = VO_GetFrameP1
+		, .GetFrame1 = VO_GetFrame1
+		, .SetFrame1 = VO_SetFrame1
+		, .GetStaticP1 = VO_GetStaticP1
+		, .GetStatic1 = VO_GetStatic1
+		, .SetStatic1 = VO_SetStatic1
+		, .Add1 = VO_Add1
+		, .Mult1 = VO_Mult1
+		, .GetImm1 = VO_GetImm1
+		, .SetImm1 = VO_SetImm1
+		, .PushS = VO_PushS
+		, .Add2 = VO_Add2
+		, .Mult2 = VO_Mult2
+		, .GetImm2 = VO_GetImm2
+		, .SetImm2 = VO_SetImm2
+		, .GetArrayP2 = VO_GetArrayP2
+		, .GetArray2 = VO_GetArray2
+		, .SetArray2 = VO_SetArray2
+		, .GetFrameP2 = VO_GetFrameP2
+		, .GetFrame2 = VO_GetFrame2
+		, .SetFrame2 = VO_SetFrame2
+		, .GetStaticP2 = VO_GetStaticP2
+		, .GetStatic2 = VO_GetStatic2
+		, .SetStatic2 = VO_SetStatic2
+		, .GetGlobalP2 = VO_GetGlobalP2
+		, .GetGlobal2 = VO_GetGlobal2
+		, .SetGlobal2 = VO_SetGlobal2
+		, .Jump = VO_Jump
+		, .JumpFalse = VO_JumpFalse
+		, .JumpNE = VO_JumpNE
+		, .JumpEQ = VO_JumpEQ
+		, .JumpLE = VO_JumpLE
+		, .JumpLT = VO_JumpLT
+		, .JumpGE = VO_JumpGE
+		, .JumpGT = VO_JumpGT
+		, .Call = VO_Call
+		, .GetGlobalP3 = VO_GetGlobalP3
+		, .GetGlobal3 = VO_GetGlobal3
+		, .SetGlobal3 = VO_SetGlobal3
+		, .PushI24 = VO_PushI24
+		, .Switch = VO_Switch
+		, .PushString = VO_PushString
+		, .StrCopy = VO_StrCopy
+		, .ItoS = VO_ItoS
+		, .StrAdd = VO_StrAdd
+		, .StrAddi = VO_StrAddi
+		, .MemCopy = VO_MemCopy
+		, .Catch = VO_Catch
+		, .Throw = VO_Throw
+		, .pCall = VO_pCall
+		, .Push_Neg1 = VO_Push_Neg1
+		, .Push_0 = VO_Push_0
+		, .Push_1 = VO_Push_1
+		, .Push_2 = VO_Push_2
+		, .Push_3 = VO_Push_3
+		, .Push_4 = VO_Push_4
+		, .Push_5 = VO_Push_5
+		, .Push_6 = VO_Push_6
+		, .Push_7 = VO_Push_7
+		, .PushF_Neg1 = VO_PushF_Neg1
+		, .PushF_0 = VO_PushF_0
+		, .PushF_1 = VO_PushF_1
+		, .PushF_2 = VO_PushF_2
+		, .PushF_3 = VO_PushF_3
+		, .PushF_4 = VO_PushF_4
+		, .PushF_5 = VO_PushF_5
+		, .PushF_6 = VO_PushF_6
+		, .PushF_7 = VO_PushF_7
+		, .GetImmP = VO_GetImmP
+		, .GetImmP1 = VO_GetImmP1
+		, .GetImmP2 = VO_GetImmP2
+		, .GetHash = VO_GetHash
 
+	};
 protected:
     std::unique_ptr<StringPageCollection> StringPageData;
 private:
@@ -1222,7 +1350,8 @@ public:
     CompileRDR2Console(const Script& data, bool Disable_Function_Names) :
         CompileGTAVPC(data, Disable_Function_Names)
     {
-        memset(BaseOpcodes, R2O_Nop, BASE_OPCODE_SIZE);
+		
+        memset(BaseOpcodes, R2O_Nop, sizeof(OpCodes));
 
         BaseOpcodes->Nop = R2O_Nop;
         BaseOpcodes->Add = R2O_Add;

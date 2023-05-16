@@ -815,7 +815,7 @@ namespace SCCL
                             for (int i = 0; i < itemCount; i++)
                             {
                                 if (stackWidth == 8)
-                                    AddInstruction(PushInt64, value, value);//value to set
+                                    AddInstruction(Push64, value, value);//value to set
                                 else
                                     AddInstruction(PushInt, value);//value to set
 
@@ -848,7 +848,7 @@ namespace SCCL
                         else
                         {
                             if (stackWidth == 8)
-                                AddInstruction(PushInt64, value, value);//value to set
+                                AddInstruction(Push64, value, value);//value to set
                             else
                                 AddInstruction(PushInt, value);//value to set
                         }
@@ -2348,9 +2348,9 @@ namespace SCCL
         case JoaatCasedConst("__setNamedStatic"):AddAsmIntrinsicStatic("__setNamedStatic", GetInsPtr(SetStatic)); break;
         case JoaatCasedConst("__addImm"):		AddAsmIntrinsic32("__addImm", GetInsPtr(AddImm)); break;
         case JoaatCasedConst("__multImm"):		AddAsmIntrinsic32("__multImm", GetInsPtr(MultImm)); break;
-        case JoaatCasedConst("__getImmP"):		AddAsmIntrinsic16("__getImmP", GetInsPtr(GetImmP)); break;
-        case JoaatCasedConst("__getImm"):		AddAsmIntrinsic16("__getImm", GetInsPtr(GetImm)); break;
-        case JoaatCasedConst("__setImm"):		AddAsmIntrinsic16("__setImm", GetInsPtr(SetImm)); break;
+        case JoaatCasedConst("__getImmP"):		AddAsmIntrinsic32("__getImmP", GetInsPtr(GetImmP)); break;
+        case JoaatCasedConst("__getImm"):		AddAsmIntrinsic32("__getImm", GetInsPtr(GetImm)); break;
+        case JoaatCasedConst("__setImm"):		AddAsmIntrinsic32("__setImm", GetInsPtr(SetImm)); break;
         case JoaatCasedConst("__getGlobalP"):	AddAsmIntrinsic32("__getGlobalP", GetInsPtr(GetGlobalP)); break;
         case JoaatCasedConst("__getGlobal"):	AddAsmIntrinsic32("__getGlobal", GetInsPtr(GetGlobal)); break;
         case JoaatCasedConst("__setGlobal"):	AddAsmIntrinsic32("__setGlobal", GetInsPtr(SetGlobal)); break;
@@ -3256,7 +3256,9 @@ namespace SCCL
         {
             if (result.Val.isInt())
             {
-                int64_t resValue = result.Val.getInt().getSExtValue();
+                uint64_t resValue = result.Val.getInt().getZExtValue();
+
+
                 if (!isLtoRValue)
                     return -1;
                 int val;
@@ -3267,10 +3269,10 @@ namespace SCCL
                 else
                 {
 
-                    if (doesInt64FitIntoInt32(resValue))
+                    if (resValue > 0xFFFFFFFF)
                     {
                         if (stackWidth == 8)
-                            AddInstruction(PushInt64, resValue);
+                            AddInstruction(Push64, resValue);
                         else
                         {
                             string value = to_string(resValue);
@@ -3890,7 +3892,16 @@ namespace SCCL
         {
             const UnaryOperator* op = cast<const UnaryOperator>(e);
 
+            
+
             Expr* subE = op->getSubExpr();
+
+            const clang::Type* pTypePtr = subE->getType().getTypePtr();
+
+
+            bool isLongLong = pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::ULongLong) ||
+                pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::LongLong);
+            
             if (op->getOpcode() == UO_Minus)
             {
                 if (isa<Expr>(subE))
@@ -3921,6 +3932,10 @@ namespace SCCL
                         else if (subE->getType()->isRealFloatingType())
                         {
                             AddInstruction(FNeg);
+                        }
+                        else if (isLongLong)
+                        {
+                            AddInstruction(Neg64);
                         }
                         else
                         {
@@ -3980,6 +3995,10 @@ namespace SCCL
                             AddInstruction(PushFloat, 0);
                             AddInstruction(FCmpEq);
                         }
+                        else if (isLongLong)
+                        {
+                            AddInstruction(Not64);
+                        }
                         else
                         {
                             AddInstruction(Not);
@@ -4013,6 +4032,11 @@ namespace SCCL
                         else if (subE->getType()->isComplexType())
                         {
                             AddInstruction(FNeg);
+                        }
+                        else if (isLongLong)
+                        {
+                            AddInstruction(PushInt, -1);
+                            AddInstruction(Xor64);
                         }
                         else
                         {
@@ -4229,15 +4253,12 @@ namespace SCCL
             int pMult = 1;
             if ((op->isPrefix() || op->isPostfix()) && subE->getType().getTypePtr()->isAnyPointerType())
             {
-                const clang::Type* pTypePtr = subE->getType().getTypePtr()->getPointeeType().getTypePtr();
-
                 int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
                 pMult = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
             }
 
             if (op->isPrefix())
             {
-
                 if (op->isIncrementOp())
                 {
 
@@ -4274,6 +4295,10 @@ namespace SCCL
                         else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
                         {
                             Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split(), SCCL::printingPolicy) + "'", TheRewriter, subE->getSourceRange());
+                        }
+                        else if (isLongLong)
+                        {
+                            AddInstruction(AddImm64, pMult);
                         }
                         else
                         {
@@ -4338,6 +4363,10 @@ namespace SCCL
                     else if (getSizeFromBytes(getSizeOfType(subE->getType().getTypePtr())) != 1)
                     {
                         Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split(), SCCL::printingPolicy) + "'", TheRewriter, subE->getSourceRange());
+                    }
+                    else if (isLongLong)
+                    {
+                        AddInstruction(AddImm64, -pMult);
                     }
                     else
                     {
@@ -4428,6 +4457,10 @@ namespace SCCL
                     {
                         Throw("Incriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split(), SCCL::printingPolicy) + "'", TheRewriter, subE->getSourceRange());
                     }
+                    else if (isLongLong)
+                    {
+                        AddInstruction(AddImm64, pMult);
+                    }
                     else
                     {
                         AddInstruction(AddImm, pMult);
@@ -4491,6 +4524,10 @@ namespace SCCL
                     {
                         Throw("Decriment operator used on unsupported type '" + QualType::getAsString(subE->getType().split(), SCCL::printingPolicy) + "'", TheRewriter, subE->getSourceRange());
                     }
+                    else if (isLongLong)
+                    {
+                        AddInstruction(AddImm64, -pMult);
+                    }
                     else
                     {
                         AddInstruction(AddImm, -pMult);
@@ -4505,6 +4542,13 @@ namespace SCCL
         {
             const BinaryOperator* bOp = cast<const BinaryOperator>(e);
             BinaryOperatorKind op = bOp->getOpcode();
+
+            const clang::Type* pTypePtrL = bOp->getLHS()->getType().getTypePtr();
+            const clang::Type* pTypePtrR = bOp->getRHS()->getType().getTypePtr();
+            bool isLongLong = pTypePtrL->isSpecificBuiltinType(clang::BuiltinType::Kind::ULongLong) ||
+                pTypePtrL->isSpecificBuiltinType(clang::BuiltinType::Kind::LongLong) ||
+                pTypePtrR->isSpecificBuiltinType(clang::BuiltinType::Kind::ULongLong) ||
+                pTypePtrR->isSpecificBuiltinType(clang::BuiltinType::Kind::LongLong);
 
             if (bOp->getOpcode() == BO_Assign)
             {
@@ -4971,13 +5015,29 @@ namespace SCCL
                         AddInstruction(PushInt, val * getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr));
                         if (pointerSet)
                         {
-                            AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            if (isLongLong)
+                            {
+                                AddFloatingOpCheck64(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            }
+                            else
+                            {
+                                AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            }
+                            
                             AddInstruction(PeekSet);
                             AddInstructionCondition(isLtoRValue, PGet, Drop);
                         }
                         else
                         {
-                            AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            if (isLongLong)
+                            {
+                                AddFloatingOpCheck64(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            }
+                            else
+                            {
+                                AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            }
+
                             if (isLtoRValue)
                             {
                                 AddInstruction(Dup);
@@ -4990,13 +5050,28 @@ namespace SCCL
                         AddInstruction(PushInt, val);
                         if (pointerSet)
                         {
-                            AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            if (isLongLong)
+                            {
+                                AddFloatingOpCheck64(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            }
+                            else
+                            {
+                                AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            }
                             AddInstruction(PeekSet);
                             AddInstructionCondition(isLtoRValue, PGet, Drop);
                         }
                         else
                         {
-                            AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            if (isLongLong)
+                            {
+                                AddFloatingOpCheck64(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            }
+                            else
+                            {
+                                AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                            }
+
                             if (bOp->getLHS()->getType()->isBooleanType())
                                 AddInstruction(IsNotZero);
                             if (isLtoRValue)
@@ -5013,18 +5088,36 @@ namespace SCCL
                     if (isa<clang::PointerType>(bOp->getLHS()->getType()))
                     {
                         const clang::Type* pTypePtr = bOp->getType().getTypePtr()->getPointeeType().getTypePtr();
-                        AddInstruction(MultImm, getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr));
+
+                        if(isLongLong)
+                            AddInstruction(MultImm64, getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr));
+                        else
+                            AddInstruction(MultImm, getSizeFromBytes(getSizeOfType(pTypePtr)) * MultValue(pTypePtr));
                     }
 
                     if (pointerSet)
                     {
-                        AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                        if (isLongLong)
+                        {
+                            AddFloatingOpCheck64(bOp->getType()->isFloatingType(), opcode, floatVar);
+                        }
+                        else
+                        {
+                            AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                        }
                         AddInstruction(PeekSet);
                         AddInstructionCondition(isLtoRValue, PGet, Drop);
                     }
                     else
                     {
-                        AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                        if (isLongLong)
+                        {
+                            AddFloatingOpCheck64(bOp->getType()->isFloatingType(), opcode, floatVar);
+                        }
+                        else
+                        {
+                            AddFloatingOpCheck(bOp->getType()->isFloatingType(), opcode, floatVar);
+                        }
                         if (bOp->getLHS()->getType()->isBooleanType())
                             AddInstruction(IsNotZero);
                         if (isLtoRValue)
@@ -5068,12 +5161,21 @@ namespace SCCL
                             int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
                             int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
-                            AddInstructionCondition(bOp->getLHS()->getType()->isFloatingType(), FSub, Sub);
+                            if (bOp->getLHS()->getType()->isFloatingType())
+                                AddInstruction(FSub);
+                            else if(isLongLong)
+                                AddInstruction(Sub64);
+                            else
+                                AddInstruction(Sub);
 
                             if (pSize > 1)
                             {
                                 AddInstruction(PushInt, pSize);
-                                AddInstruction(Div);
+
+                                if (isLongLong)
+                                    AddInstruction(Div64);
+                                else
+                                    AddInstruction(Div);
                             }
                             return -1;
                         }
@@ -5089,7 +5191,18 @@ namespace SCCL
                             const clang::Type* pTypePtr = bOp->getLHS()->getType().getTypePtr()->getPointeeType().getTypePtr();
                             int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
                             int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
-                            AddInstructionConditionally(pSize > 1, MultImm, pSize);
+                            if (pSize > 1)
+                            {
+                                if (isLongLong)
+                                {
+                                    AddInstruction(MultImm64, pSize);
+                                }
+                                else
+                                {
+                                    AddInstruction(MultImm, pSize);
+                                }
+                                
+                            }
                         }
                     }
                     else if (isRightPtr)
@@ -5103,7 +5216,17 @@ namespace SCCL
                             int pMultValue = pTypePtr->isCharType() ? 1 : (pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::Short) || pTypePtr->isSpecificBuiltinType(clang::BuiltinType::Kind::UShort)) ? 2 : stackWidth;
                             int pSize = getSizeFromBytes(getSizeOfType(pTypePtr)) * pMultValue;
 
-                            AddInstructionConditionally(pSize > 1, MultImm, pSize);
+                            if (pSize > 1)
+                            {
+                                if (isLongLong)
+                                {
+                                    AddInstruction(MultImm64, pSize);
+                                }
+                                else
+                                {
+                                    AddInstruction(MultImm, pSize);
+                                }
+                            }
                         }
 
                         parseExpression(bOp->getRHS(), bOp->getRHS()->getType().getTypePtr()->isArrayType(), true);
@@ -5114,6 +5237,7 @@ namespace SCCL
                         parseExpression(bOp->getLHS(), false, true);
                         parseExpression(bOp->getRHS(), false, true);
                     }
+
 
                     if (bOp->getLHS()->getType()->isFloatingType())
                     {
@@ -5147,30 +5271,34 @@ namespace SCCL
                     {
                         switch (op)
                         {
-                        case BO_EQ: AddInstruction(CmpEq); break;
-                        case BO_Mul: AddInstruction(Mult); break;
+                        case BO_EQ: if (isLongLong) AddInstruction(CmpEq64); else AddInstruction(CmpEq); break;
+                        case BO_Mul: if (isLongLong) AddInstruction(Mult64); else AddInstruction(Mult); break;
                         case BO_Div:
                         {
-                            bool isZeroDiv;
-                            AddInstruction(Div, &isZeroDiv);
+                            bool isZeroDiv = false;
+                            if (isLongLong) 
+                                AddInstruction(Div64);
+                            else
+                                AddInstruction(Div, &isZeroDiv);
+
                             if (isZeroDiv)
                             {
                                 Warn("Zero division error detected", TheRewriter, bOp->getRHS()->getSourceRange());//just warn the user of the undefined behaviour
                             }
                         } break;
-                        case BO_Rem: AddInstruction(Mod); break;
-                        case BO_Sub: AddInstruction(Sub); break;
-                        case BO_LT: AddInstruction(CmpLt); break;
-                        case BO_GT: AddInstruction(CmpGt); break;
-                        case BO_GE: AddInstruction(CmpGe); break;
-                        case BO_LE: AddInstruction(CmpLe); break;
-                        case BO_NE: AddInstruction(CmpNe); break;
-                        case BO_And: AddInstruction(And); break;
-                        case BO_Xor: AddInstruction(Xor); break;
-                        case BO_Add: AddInstruction(Add); break;
-                        case BO_Or: AddInstruction(Or); break;
-                        case BO_Shl: AddInstruction(ShiftLeft); break;
-                        case BO_Shr: AddInstruction(ShiftRight); break;
+                        case BO_Rem: if (isLongLong) AddInstruction(Mod64); else AddInstruction(Mod); break;
+                        case BO_Sub: if (isLongLong) AddInstruction(Sub64); else AddInstruction(Sub); break;
+                        case BO_LT: if (isLongLong) AddInstruction(CmpLt64); else AddInstruction(CmpLt); break;
+                        case BO_GT: if (isLongLong) AddInstruction(CmpGt64); else AddInstruction(CmpGt); break;
+                        case BO_GE: if (isLongLong) AddInstruction(CmpGe64); else AddInstruction(CmpGe); break;
+                        case BO_LE: if (isLongLong) AddInstruction(CmpLe64); else AddInstruction(CmpLe); break;
+                        case BO_NE: if (isLongLong) AddInstruction(CmpNe64); else AddInstruction(CmpNe); break;
+                        case BO_And: if (isLongLong) AddInstruction(And64); else AddInstruction(And); break;
+                        case BO_Xor: if (isLongLong) AddInstruction(Xor64); else AddInstruction(Xor); break;
+                        case BO_Add: if (isLongLong) AddInstruction(Add64); else AddInstruction(Add); break;
+                        case BO_Or: if (isLongLong) AddInstruction(Or64); else AddInstruction(Or); break;
+                        case BO_Shl: if (isLongLong) AddInstruction(ShiftLeft64); else AddInstruction(ShiftLeft); break;
+                        case BO_Shr: if (isLongLong) AddInstruction(ShiftRight64); else AddInstruction(ShiftRight); break;
                         default:
                             Throw("Unimplemented binary op " + bOp->getOpcodeStr().str(), TheRewriter, bOp->getExprLoc());
                         }

@@ -22,6 +22,7 @@ namespace SCCL
 	#define AddComment(comment)
 	#endif
 
+	#define AddFloatingOpCheck64(isFlt, opEnum, opEnumFlt) scriptData.getCurrentFunction()->AddSimpleOp64((isFlt) ? opEnumFlt : opEnum)
 	#define AddFloatingOpCheck(isFlt, opEnum, opEnumFlt) scriptData.getCurrentFunction()->AddSimpleOp((isFlt) ? opEnumFlt : opEnum)
 	#define AddInstructionCondition(cond, opNameTrue, opNameFalse, ...) {if (cond) scriptData.getCurrentFunction()->addOp##opNameTrue(__VA_ARGS__); else scriptData.getCurrentFunction()->addOp##opNameFalse(__VA_ARGS__);}
 	#define AddInstructionConditionally(cond, opName, ...) {if (cond) scriptData.getCurrentFunction()->addOp##opName(__VA_ARGS__);}
