@@ -1872,8 +1872,8 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
     //cout << "PageMap: " << PageMapPtrsSize << '\n';
     //cout << "Header: " << HeaderSize << '\n';
     //cout << "Codepage Ptrs: " << CodePagePtrsSize << '\n';
-    //cout << "Last Codepage: " << LastCodePageSize << '\n';
-    //cout << "Total Codepages: " << GetPadExpectedAmount(CodePageData->getTotalSize()) << '\n';
+    //cout << "Last Codepage Size: " << LastCodePageSize << '\n';
+    //cout << "Total Codepage Size: " << GetPadExpectedAmount(CodePageData->getTotalSize()) << '\n';
     //cout << "Total: "  << TotalData << "\n";
     //cout << "HeaderStartIndex: " << HeaderStartIndex << "\n";
     //Pause();
@@ -1908,7 +1908,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
 
     for (uint32_t i = 0; i < DataSizePages.size(); i++)
     {
-        const size_t CurrentSize = BuildBuffer.size();
+        size_t CurrentSize = BuildBuffer.size();
 #define SizeLeft (DataSizePages[i] - (BuildBuffer.size() - CurrentSize))
 
 
@@ -1943,8 +1943,9 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
                     for (; i < DataSizePages.size(); i++)
                     {
                         Size += DataSizePages[i];
-                        if (Size >= MaxSizeCodePageSize)
+                        if (Size > MaxSizeCodePageSize)
                             break;
+                        CurrentSize = BuildBuffer.size();
                     }
 
                     //operation timed out
@@ -2041,7 +2042,7 @@ void CompileRDR::XSCWrite(const char* path, bool CompressAndEncrypt)
             if (CompressedLen > 0)
             {
                 *(uint32_t*)CompressedData.data() = SwapEndian(0x0FF512F1);//LZX Signature?
-                *(uint32_t*)(CompressedData.data() + 4) = SwapEndian(CompressedLen);
+                *(uint32_t*)(CompressedData.data() + 4) = SwapEndian((uint32_t)CompressedLen);
                 CompressedLen += 8;
             }
             else Throw("Compression Failed");
