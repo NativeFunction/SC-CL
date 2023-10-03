@@ -46,7 +46,7 @@
 
 #if TARGET == TARGET_RDR2
 
-#include "RDR2/natives.h"
+#include "RDR2/natives64.h"
 
 #elif TARGET == TARGET_RDR
 
